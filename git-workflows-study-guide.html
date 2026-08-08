@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<title>Git Workflows: Branching Strategies for Real Teams</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔀</text></svg>">
+<style>
+  :root {
+    --bg: #f5f7fa;
+    --surface: #ffffff;
+    --surface2: #eef2f7;
+    --ink: #14202e;
+    --ink2: #3b4a5e;
+    --muted: #6b7888;
+    --line: #d6dee8;
+    --hairline: rgba(20,32,46,.11);
+    --accent: #2b59c3;
+    --accent-strong: #1d44a8;
+    --accent-wash: rgba(43,89,195,.10);
+    --blue: #1f6feb;
+    --blue-wash: rgba(31,111,235,.10);
+    --amber: #9a6500;
+    --amber-wash: rgba(154,101,0,.11);
+    --rose: #b23a5e;
+    --rose-wash: rgba(178,58,94,.10);
+    --danger: #c2363a;
+    --danger-wash: rgba(194,54,58,.10);
+    --code-bg: #e9eef5;
+    --terminal: #0d1626;
+    --terminal-ink: #d6e2f5;
+    --terminal-muted: #8298b5;
+    --terminal-accent: #6ea8ff;
+    --shadow: 0 8px 30px rgba(13,22,38,.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b1018;
+      --surface: #131b27;
+      --surface2: #1a2433;
+      --ink: #e8eef7;
+      --ink2: #b9c6d8;
+      --muted: #8493a6;
+      --line: #26334a;
+      --hairline: rgba(255,255,255,.10);
+      --accent: #6ea8ff;
+      --accent-strong: #9bc1ff;
+      --accent-wash: rgba(110,168,255,.12);
+      --blue: #72b7f0;
+      --blue-wash: rgba(114,183,240,.12);
+      --amber: #e3b04b;
+      --amber-wash: rgba(227,176,75,.13);
+      --rose: #ec8ca0;
+      --rose-wash: rgba(236,140,160,.12);
+      --danger: #ff8a7e;
+      --danger-wash: rgba(255,138,126,.13);
+      --code-bg: #18202e;
+      --terminal: #070b12;
+      --terminal-ink: #d6e2f5;
+      --terminal-muted: #8298b5;
+      --terminal-accent: #6ea8ff;
+      --shadow: 0 8px 30px rgba(0,0,0,.30);
+    }
+  }
+  :root.dark {
+    --bg: #0b1018; --surface: #131b27; --surface2: #1a2433;
+    --ink: #e8eef7; --ink2: #b9c6d8; --muted: #8493a6; --line: #26334a;
+    --hairline: rgba(255,255,255,.10); --accent: #6ea8ff; --accent-strong: #9bc1ff;
+    --accent-wash: rgba(110,168,255,.12); --blue: #72b7f0; --blue-wash: rgba(114,183,240,.12);
+    --amber: #e3b04b; --amber-wash: rgba(227,176,75,.13); --rose: #ec8ca0;
+    --rose-wash: rgba(236,140,160,.12); --danger: #ff8a7e;
+    --danger-wash: rgba(255,138,126,.13); --code-bg: #18202e;
+    --terminal: #070b12; --terminal-ink: #d6e2f5; --terminal-muted: #8298b5;
+    --terminal-accent: #6ea8ff; --shadow: 0 8px 30px rgba(0,0,0,.30);
+  }
+  :root.light {
+    --bg: #f5f7fa; --surface: #ffffff; --surface2: #eef2f7;
+    --ink: #14202e; --ink2: #3b4a5e; --muted: #6b7888; --line: #d6dee8;
+    --hairline: rgba(20,32,46,.11); --accent: #2b59c3; --accent-strong: #1d44a8;
+    --accent-wash: rgba(43,89,195,.10); --blue: #1f6feb; --blue-wash: rgba(31,111,235,.10);
+    --amber: #9a6500; --amber-wash: rgba(154,101,0,.11); --rose: #b23a5e;
+    --rose-wash: rgba(178,58,94,.10); --danger: #c2363a;
+    --danger-wash: rgba(194,54,58,.10); --code-bg: #e9eef5;
+    --terminal: #0d1626; --terminal-ink: #d6e2f5; --terminal-muted: #8298b5;
+    --terminal-accent: #6ea8ff; --shadow: 0 8px 30px rgba(13,22,38,.10);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.62 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  a { color: var(--accent-strong); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  button, input { font: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+  .skip-link {
+    position: fixed; left: 12px; top: -80px; z-index: 100;
+    background: var(--surface); color: var(--ink); padding: 8px 12px;
+    border: 1px solid var(--line); border-radius: 8px;
+  }
+  .skip-link:focus { top: 12px; }
+  .layout { display: flex; max-width: 1360px; margin: 0 auto; }
+  .toc {
+    position: sticky; top: 0; align-self: flex-start; width: 252px; height: 100vh;
+    overflow-y: auto; flex: 0 0 auto; padding: 24px 10px 28px 20px;
+    border-right: 1px solid var(--line);
+  }
+  .brand { font-size: 15px; font-weight: 800; letter-spacing: -.01em; }
+  .brand-sub { color: var(--muted); font-size: 12px; margin: 2px 0 16px; }
+  .toc-label {
+    color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .09em;
+    text-transform: uppercase; margin: 17px 10px 4px;
+  }
+  .toc a {
+    display: block; color: var(--ink2); text-decoration: none; font-size: 13px;
+    padding: 5px 10px; border-radius: 7px; margin: 1px 0;
+  }
+  .toc a:hover { background: var(--accent-wash); color: var(--accent-strong); }
+  .toc a.active { background: var(--accent-wash); color: var(--accent-strong); font-weight: 750; }
+  main { min-width: 0; flex: 1; padding: 38px 48px 100px; }
+  .theme-toggle {
+    position: fixed; right: 16px; top: 14px; z-index: 20; color: var(--ink2);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+    padding: 6px 13px; box-shadow: var(--shadow);
+  }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent-strong); }
+  .hero { padding: 18px 0 12px; }
+  .eyebrow { color: var(--accent-strong); font-size: 12px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+  h1 { margin: 7px 0 10px; font-size: clamp(34px, 5vw, 56px); line-height: 1.06; letter-spacing: -.045em; }
+  .subtitle { max-width: 67ch; color: var(--ink2); font-size: 19px; margin: 0 0 18px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge {
+    color: var(--ink2); background: var(--surface2); border: 1px solid var(--line);
+    border-radius: 999px; padding: 4px 10px; font-size: 12px;
+  }
+  h2 {
+    margin: 64px 0 14px; padding-top: 17px; border-top: 1px solid var(--line);
+    font-size: 26px; line-height: 1.22; letter-spacing: -.025em;
+  }
+  h3 { margin: 30px 0 9px; font-size: 18px; line-height: 1.3; }
+  h4 { margin: 20px 0 7px; font-size: 15px; }
+  p { color: var(--ink2); margin: 0 0 13px; }
+  li { color: var(--ink2); margin: 4px 0; }
+  strong { color: var(--ink); }
+  ul, ol { margin: 0 0 16px 23px; padding: 0; }
+  .lede { font-size: 18px; max-width: 68ch; }
+  code, kbd {
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: .88em;
+  }
+  code { color: var(--ink); background: var(--code-bg); padding: 1px 5px; border-radius: 5px; }
+  kbd {
+    display: inline-block; min-width: 1.7em; text-align: center; white-space: nowrap;
+    color: var(--ink); background: var(--surface); border: 1px solid var(--line);
+    border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; line-height: 1.45;
+  }
+  pre {
+    position: relative; margin: 0 0 17px; padding: 16px 18px; overflow-x: auto;
+    color: var(--terminal-ink); background: var(--terminal); border: 1px solid var(--line);
+    border-radius: 10px; line-height: 1.5;
+  }
+  pre code { color: inherit; background: none; padding: 0; font-size: 13px; }
+  .copy-btn {
+    position: absolute; right: 8px; top: 8px; border: 1px solid rgba(255,255,255,.18);
+    background: rgba(255,255,255,.08); color: var(--terminal-ink); border-radius: 6px;
+    padding: 3px 8px; font-size: 11px;
+  }
+  .copy-btn:hover { background: rgba(255,255,255,.15); }
+  .callout {
+    margin: 16px 0; padding: 13px 16px; border-left: 4px solid var(--accent);
+    border-radius: 0 9px 9px 0; background: var(--accent-wash); color: var(--ink2);
+  }
+  .callout.warn { border-color: var(--amber); background: var(--amber-wash); }
+  .callout.danger { border-color: var(--danger); background: var(--danger-wash); }
+  .callout.blue { border-color: var(--blue); background: var(--blue-wash); }
+  .callout strong:first-child { display: block; margin-bottom: 3px; }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 16px 0; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 16px 0; }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 11px;
+    padding: 16px; box-shadow: 0 2px 10px var(--hairline);
+  }
+  .card h3, .card h4 { margin-top: 0; }
+  .card p:last-child, .callout p:last-child { margin-bottom: 0; }
+  .keyline { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 7px 0; color: var(--ink2); }
+  .arrow { color: var(--muted); }
+  .table-wrap { overflow-x: auto; margin: 13px 0 20px; border: 1px solid var(--line); border-radius: 10px; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); font-size: 14px; }
+  th { text-align: left; color: var(--ink); background: var(--surface2); font-size: 12px; letter-spacing: .02em; }
+  th, td { padding: 9px 11px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  td { color: var(--ink2); }
+  .workflow {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; margin: 18px 0;
+  }
+  .workflow > div {
+    position: relative; text-align: center; padding: 12px 8px; color: var(--ink2);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 9px; font-size: 13px;
+  }
+  .workflow strong { display: block; color: var(--accent-strong); font-size: 12px; }
+  .workflow > div:not(:last-child)::after {
+    content: "→"; position: absolute; right: -9px; top: 50%; transform: translateY(-50%);
+    z-index: 2; color: var(--muted); background: var(--bg); padding: 0 2px;
+  }
+  .lab {
+    margin: 22px 0; padding: 19px; border: 1px solid var(--line); border-radius: 12px;
+    background: linear-gradient(145deg, var(--surface), var(--blue-wash));
+  }
+  .lab-title { color: var(--blue); font-weight: 850; font-size: 17px; margin-bottom: 5px; }
+  .lab-meta { color: var(--muted); font-size: 12px; margin-bottom: 14px; }
+  .checklist { list-style: none; margin-left: 0; }
+  .checklist li { position: relative; padding-left: 25px; }
+  .checklist li::before { content: "□"; position: absolute; left: 1px; color: var(--blue); font-weight: 800; }
+  details { margin: 11px 0; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
+  summary { cursor: pointer; color: var(--ink); font-weight: 720; padding: 10px 13px; }
+  details > :not(summary) { margin-left: 13px; margin-right: 13px; }
+  details > :last-child { margin-bottom: 13px; }
+  .pros { color: var(--accent-strong); font-weight: 720; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; margin: 16px 0 2px; }
+  .cons { color: var(--rose); font-weight: 720; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; margin: 14px 0 2px; }
+
+  .quiz-score {
+    position: sticky; top: 10px; z-index: 5; display: inline-block; margin: 8px 0 14px;
+    color: var(--accent-strong); background: var(--surface); border: 1px solid var(--line);
+    border-radius: 999px; padding: 6px 12px; box-shadow: var(--shadow); font-size: 13px;
+  }
+  .quiz-item { margin: 12px 0; padding: 15px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+  .quiz-q { color: var(--ink); font-weight: 700; }
+  .qnum { display: inline-block; min-width: 2.1em; color: var(--accent-strong); }
+  .quiz-answer { display: none; padding: 10px 0 2px; color: var(--ink2); }
+  .quiz-answer.open { display: block; }
+  .quiz-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+  .quiz-actions button {
+    color: var(--ink2); background: var(--surface2); border: 1px solid var(--line);
+    border-radius: 7px; padding: 5px 9px; font-size: 12px;
+  }
+  .quiz-actions button:hover { color: var(--accent-strong); border-color: var(--accent); }
+  .quiz-item.correct { border-color: var(--accent); background: var(--accent-wash); }
+  .quiz-item.missed { border-color: var(--amber); background: var(--amber-wash); }
+  .glossary { display: grid; grid-template-columns: 170px 1fr; gap: 0; border-top: 1px solid var(--line); }
+  .glossary dt, .glossary dd { margin: 0; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+  .glossary dt { color: var(--ink); font-weight: 750; }
+  .glossary dd { color: var(--ink2); }
+  .tiny { color: var(--muted); font-size: 12px; }
+  .danger-text { color: var(--danger); font-weight: 750; }
+
+  @media (max-width: 940px) {
+    .layout { display: block; }
+    .toc {
+      position: static; width: auto; height: auto; border-right: 0; border-bottom: 1px solid var(--line);
+      display: flex; flex-wrap: wrap; gap: 2px; padding: 14px 16px;
+    }
+    .brand, .brand-sub, .toc-label { width: 100%; }
+    .toc-label { margin-top: 8px; }
+    .toc a { font-size: 12px; padding: 4px 7px; }
+    main { padding: 28px 18px 80px; }
+    .workflow { grid-template-columns: 1fr; }
+    .workflow > div:not(:last-child)::after { content: "↓"; right: 50%; top: auto; bottom: -16px; transform: translateX(50%); }
+  }
+  @media (max-width: 680px) {
+    .grid, .grid-3 { grid-template-columns: 1fr; }
+    .glossary { grid-template-columns: 1fr; }
+    .glossary dt { border-bottom: 0; padding-bottom: 0; }
+    .theme-toggle { position: absolute; }
+  }
+  @media print {
+    :root { color-scheme: light; }
+    body { background: #fff; color: #111; font-size: 11pt; }
+    .toc, .theme-toggle, .skip-link, .copy-btn, .quiz-actions { display: none !important; }
+    main { padding: 0; max-width: none; }
+    a { color: #111; text-decoration: none; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 8pt; overflow-wrap: anywhere; }
+    h2 { break-before: page; }
+    h2:first-of-type { break-before: auto; }
+    h3, .card, .lab, .callout, table, .quiz-item { break-inside: avoid; }
+    details > *:not(summary) { display: block !important; }
+    .quiz-answer { display: block !important; }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to guide</a>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light and dark theme">Theme: auto</button>
+<div class="layout">
+<nav class="toc" aria-label="Guide contents">
+  <div class="brand">Git Workflows</div>
+  <div class="brand-sub">Branching strategies study guide</div>
+  <div class="toc-label">Start</div>
+  <a href="#orientation">1 · Orientation</a>
+  <a href="#floor">2 · Prerequisite floor</a>
+  <a href="#model">3 · The DAG model</a>
+  <div class="toc-label">Foundations</div>
+  <a href="#merges">4 · Merge models</a>
+  <a href="#prs">5 · PRs &amp; review</a>
+  <a href="#rebase">6 · Rebase &amp; conflicts</a>
+  <div class="toc-label">The core four</div>
+  <a href="#github-flow">7 · GitHub Flow</a>
+  <a href="#git-flow">8 · Git Flow</a>
+  <a href="#trunk">9 · Trunk-based</a>
+  <a href="#gitlab-flow">10 · GitLab Flow</a>
+  <div class="toc-label">Choosing &amp; running</div>
+  <a href="#matrix">11 · Decision matrix</a>
+  <a href="#process">12 · Team process layer</a>
+  <a href="#antipatterns">13 · Anti-patterns</a>
+  <a href="#capstone">14 · Capstone lab</a>
+  <div class="toc-label">Practice &amp; reference</div>
+  <a href="#troubleshooting">15 · Troubleshooting</a>
+  <a href="#cheatsheet">16 · Cheat sheet</a>
+  <a href="#glossary">17 · Glossary</a>
+  <a href="#quiz">18 · Quiz &amp; sources</a>
+</nav>
+
+<main id="content">
+<header class="hero">
+  <div class="eyebrow">For intermediate Git users joining real teams</div>
+  <h1>Git Workflows,<br>branching without the chaos.</h1>
+  <p class="subtitle">A workflow is not a tool — it is the contract a team makes about where work happens, how it integrates, and how it ships. Learn the four models you will actually meet, the merge mechanics underneath them, and how to choose, run, and survive any of them.</p>
+  <div class="badges">
+    <span class="badge">GitHub Flow</span>
+    <span class="badge">Git Flow</span>
+    <span class="badge">Trunk-based</span>
+    <span class="badge">GitLab Flow</span>
+    <span class="badge">single-file / offline</span>
+    <span class="badge">real-repo labs</span>
+    <span class="badge">interactive quiz</span>
+  </div>
+</header>
+
+<section id="orientation">
+  <h2>1 · Orientation: a workflow is a contract, not a tool</h2>
+  <p class="lede">Every team that shares a repository already has a git workflow — written down or not. The question is never "do we have one?" but "is ours deliberate, and does it fit how we ship?"</p>
+  <p>Git itself ships with almost no opinion about how you organize work. It gives you commits, branches, merges, tags, and a remote protocol. A <strong>workflow</strong> is the set of rules a team layers on top: which branch is sacred, where new work starts, how it gets reviewed, how it reaches production, and what the resulting history should look like. The four workflows in this guide are simply four common, named answers to those questions.</p>
+  <div class="grid">
+    <div class="card">
+      <h3>What a workflow decides</h3>
+      <ul>
+        <li>Which branch is always shippable.</li>
+        <li>Where feature work lives and how long it stays separate.</li>
+        <li>How work integrates into the shared line (merge vs rebase vs squash).</li>
+        <li>How releases and hotfixes are cut and tracked.</li>
+        <li>What "the history" is supposed to read like.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>What it does <em>not</em> decide</h3>
+      <ul>
+        <li>Which hosting platform you use (GitHub, GitLab, Bitbucket all support all four).</li>
+        <li>Whether you use a GUI or the CLI.</li>
+        <li>Your programming language or build system.</li>
+        <li>Whether you deploy continuously — though cadence heavily influences the choice.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>The four decision axes</h3>
+  <p>Almost every "which workflow?" debate collapses onto four axes. Memorize these; the decision matrix in <a href="#matrix">§11</a> is built directly on them.</p>
+  <div class="grid">
+    <div class="card">
+      <h3>1 · Release cadence</h3>
+      <p>Do you deploy the moment code lands, or do you cut scheduled, versioned releases? Continuous deployment pushes you toward trunk-based or GitHub Flow. Scheduled or installed releases push you toward Git Flow or GitLab Flow release branches.</p>
+    </div>
+    <div class="card">
+      <h3>2 · Team size &amp; concurrency</h3>
+      <p>How many people push at once? A solo or small team tolerates almost anything. Large concurrent teams need a model that minimizes integration pain — short-lived branches and strong automation.</p>
+    </div>
+    <div class="card">
+      <h3>3 · Deployment topology</h3>
+      <p>One live environment you can redeploy instantly? A staged pipeline (dev → staging → prod)? Software installed on customer machines that you must patch in place? Each maps to a different branch structure.</p>
+    </div>
+    <div class="card">
+      <h3>4 · CI/CD maturity + supported versions</h3>
+      <p>Fast, trustworthy automated tests are the prerequisite for short-lived-branch workflows. Having to maintain several old, supported versions (and backport fixes to them) pulls you toward release branches.</p>
+    </div>
+  </div>
+
+  <div class="callout blue">
+    <strong>Workflow vs merge strategy — don't confuse them</strong>
+    A workflow says <em>where</em> work goes (GitHub Flow, Git Flow, …). A <em>merge strategy</em> says <em>how</em> a branch lands — fast-forward, merge commit, squash, or rebase (<a href="#merges">§4</a>). They are orthogonal: you can run GitHub Flow with squash merges or with merge commits. Teams usually pair a workflow with a default strategy, but the choice is separate.
+  </div>
+
+  <h3>How to use this guide</h3>
+  <p>Read <a href="#floor">§2–§6</a> once; they are the engine every workflow is built from. Then study each workflow in <a href="#github-flow">§7–§10</a> — each is self-contained with a topology diagram, the real commands, pros and cons, and a throwaway-repo lab. Use <a href="#matrix">§11</a> when you must pick, <a href="#process">§12</a> when you must operationalize the choice, and <a href="#capstone">§14</a> to practice all four end to end. Treat the capstone and per-workflow labs as the real test — reading about merging is not the same skill as merging.</p>
+</section>
+
+<section id="floor">
+  <h2>2 · Prerequisite floor: what you already need</h2>
+  <p class="lede">This guide assumes you can already move around a repository on your own. If any item below is shaky, fix it first — workflows will not make sense until the primitives do.</p>
+  <h3>Hard prerequisites</h3>
+  <ul>
+    <li><strong>Commits and history:</strong> stage with <code>git add</code>, commit with <code>git commit</code>, read <code>git log</code> and <code>git diff</code>.</li>
+    <li><strong>Branches:</strong> create (<code>git switch -c</code>), switch (<code>git switch</code>), list (<code>git branch</code>), delete (<code>git branch -d</code>).</li>
+    <li><strong>Merging:</strong> merge one branch into another and read the result; know that a merge can create a merge commit.</li>
+    <li><strong>Remotes:</strong> what <code>origin</code> is, the difference between <code>git fetch</code>, <code>git pull</code>, and <code>git push</code>, and how to set an upstream.</li>
+  </ul>
+  <h3>Soft prerequisites (helpful)</h3>
+  <ul>
+    <li>Having opened a pull request or merge request at least once.</li>
+    <li>Having seen a merge conflict and at least attempted to resolve it.</li>
+    <li>A vague sense of what a "tag" or "release" is.</li>
+  </ul>
+  <h3>Just-in-time prerequisites</h3>
+  <p>Interactive rebase, conflict markers, and the <code>ours</code>/<code>theirs</code> vocabulary are introduced in <a href="#rebase">§6</a>, exactly when you need them — not before.</p>
+
+  <h3>Self-assessment</h3>
+  <p>Answer each before opening it. If you miss more than two, revisit the prerequisites before continuing.</p>
+  <details><summary>1. What does <code>git pull</code> actually do, in two steps?</summary><p><code>git pull</code> = <code>git fetch</code> (update your remote-tracking refs from <code>origin</code>) <strong>then</strong> integrate the fetched commits into your current branch (by merge, by default; or rebase if configured). Fetching alone never touches your working branch.</p></details>
+  <details><summary>2. After <code>git switch -c feature main</code>, where does <code>HEAD</code> point?</summary><p><code>HEAD</code> points to the new branch <code>feature</code>, which itself points at the same commit <code>main</code> pointed at when you created it. Both labels now sit on that commit until one moves.</p></details>
+  <details><summary>3. What is the difference between a fast-forward merge and a merge commit?</summary><p>A fast-forward just slides the target branch pointer forward when the source is strictly ahead — no new commit is made. A merge commit is a new commit with two parents, created when the two branches have diverged (or when you force one with <code>--no-ff</code>).</p></details>
+  <details><summary>4. You merged a feature branch and want to throw the merge away while it is still local. What do you reach for?</summary><p><code>git reset --hard HEAD~1</code> (undo the merge commit) or <code>git reset --hard ORIG_HEAD</code> (the recorded position before the merge). The reflog (<code>git reflog</code>) is your safety net. Once the merge is pushed and others have pulled, prefer a <code>git revert -m 1</code> instead.</p></details>
+  <details><summary>5. Why is <code>git push --force</code> on a shared branch dangerous?</summary><p>It rewrites the remote branch to match your local history, discarding any commits teammates pushed in the meantime. Their clones still hold the old commits; their next pull or push will conflict or silently re-push what you deleted. Use <code>--force-with-lease</code> if you must, and never on a protected integration branch.</p></details>
+  <details><summary>6. What is <code>origin/main</code>, and how is it different from <code>main</code>?</summary><p><code>main</code> is your local branch. <code>origin/main</code> is a <em>remote-tracking branch</em> — a local cache of where <code>main</code> was on the remote last time you fetched. It moves only when you fetch; it is not live.</p></details>
+</section>
+
+<section id="model">
+  <h2>3 · The DAG model: commits, pointers, and why branches are cheap</h2>
+  <p class="lede">Every workflow is easier to reason about once you stop picturing branches as "lines" and start picturing them as movable labels on a graph of immutable commits.</p>
+
+  <h3>Commits are immutable; branches are labels</h3>
+  <p>A commit is a snapshot plus metadata (author, message, timestamp) plus a pointer to its parent (or parents). A commit's hash is the SHA-1 of all of that content. Change anything — even the message — and you get a <em>different commit with a different hash</em>. The old commit still exists in your object store until garbage collection; that is what makes recovery possible.</p>
+  <p>A <strong>branch</strong> is none of that. A branch is a tiny movable pointer — a file containing one hash. <code>main</code> is just "the name of the commit we currently call main." Moving a branch is free, which is why creating and deleting branches is trivial and why short-lived branches are viable.</p>
+
+  <div class="callout">
+    <strong>First principle: nothing is ever "on a branch"</strong>
+    Commits are not owned by branches. A commit is reachable from zero or more branches. "Delete the feature branch" rarely deletes the commits — it just removes one label. As long as some ref (a branch, a tag, the reflog) can still reach them, the commits survive.
+  </div>
+
+  <h3>The graph is a DAG</h3>
+  <p>Commits form a directed acyclic graph (DAG). Each commit points back to its parent; merge commits point to two parents. <code>HEAD</code> is a special pointer that says "where you are now" — usually it points to a branch, which points to a commit. (<em>Detached HEAD</em> means <code>HEAD</code> points directly at a commit instead of a branch.)</p>
+  <pre><code># Two commits on main, then a feature branch diverges:
+#
+#   C0 ── C1 ────────── C4   (main)
+#             \
+#              C2 ── C3       (feature)
+#
+# HEAD -> feature -> C3 ;  main -> C4
+git log --graph --oneline --all --decorate</code></pre>
+
+  <h3>What merging and rebasing really do</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Operation</th><th>What it does to the graph</th><th>New commits?</th></tr></thead>
+    <tbody>
+      <tr><td>Fast-forward merge</td><td>Slides target pointer forward to source commit.</td><td>No</td></tr>
+      <tr><td>Merge commit</td><td>Creates a commit with two parents joining both lines.</td><td>Yes — the merge commit</td></tr>
+      <tr><td>Rebase</td><td>Copies your commits and replays them onto a new base, one at a time.</td><td>Yes — rewritten copies (new hashes)</td></tr>
+      <tr><td>Squash</td><td>Collapses several commits into one new commit on the target.</td><td>Yes — one new commit</td></tr>
+      <tr><td>Cherry-pick</td><td>Copies a single commit's changes onto your current branch.</td><td>Yes — a new commit with the same diff</td></tr>
+    </tbody>
+  </table></div>
+  <p>The whole rest of this guide is choosing <em>which</em> of those operations happen, <em>when</em>, and <em>on which branches</em>. That is literally what a workflow is.</p>
+</section>
+
+<section id="merges">
+  <h2>4 · Merge models: the engine underneath every workflow</h2>
+  <p class="lede">Before the named workflows, you must internalize the four ways a branch can land. Most heated "merge vs rebase" arguments are people talking past each other because they never separated these.</p>
+
+  <h3>The four models</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Model</th><th>What happens</th><th>History shape</th><th>Command / button</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Fast-forward (FF)</strong></td><td>Target is an ancestor of source, so the pointer just advances. No merge commit.</td><td>Perfectly linear.</td><td><code>git merge --ff-only</code></td></tr>
+      <tr><td><strong>Merge commit (no-FF)</strong></td><td>Always creates a two-parent commit, even when a FF was possible. Preserves "this came from a branch."</td><td>Branch bubbles visible.</td><td><code>git merge --no-ff</code></td></tr>
+      <tr><td><strong>Squash</strong></td><td>Collapses the branch's commits into a single new commit on the target.</td><td>Linear; one commit per PR.</td><td><code>git merge --squash</code> then commit; or "Squash and merge"</td></tr>
+      <tr><td><strong>Rebase</strong></td><td>Replays the branch's commits on top of the target, then fast-forwards.</td><td>Linear; keeps individual commits.</td><td><code>git rebase</code>; or "Rebase and merge"</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Same situation, four outcomes</h3>
+  <p>Start with <code>main</code> at <code>C1</code> and a feature branch with two commits <code>C2, C3</code>. Here is the resulting <code>main</code> history under each model:</p>
+  <pre><code># Starting point
+#   C0 ── C1            main
+#           \
+#            C2 ── C3   feature
+
+# 1) Fast-forward  --ff-only
+#   C0 ── C1 ── C2 ── C3        main
+#   (no merge commit; feature label absorbed)
+
+# 2) Merge commit  --no-ff
+#   C0 ── C1 ─────── M          main
+#           \       /
+#            C2 ── C3
+#   (M is the merge commit with two parents)
+
+# 3) Squash
+#   C0 ── C1 ── S               main
+#   (S holds the combined diff of C2+C3; C2,C3 dropped from main)
+
+# 4) Rebase + ff
+#   C0 ── C1 ── C2' ── C3'      main
+#   (C2',C3' are replayed copies with new hashes; linear)</code></pre>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Linear history (rebase / squash / ff)</h3>
+      <p>Reads top-to-bottom with no bubbles. Easier <code>git log</code>, cleaner <code>git bisect</code>, no "merge branch X" noise. Cost: rebase and squash <strong>rewrite commit hashes</strong>, and squash throws away per-commit granularity (and can flatten a set of commits where only the final one built).</p>
+    </div>
+    <div class="card">
+      <h3>Preserved topology (merge commit)</h3>
+      <p>Keeps the true story — which commits were grouped, where they branched. Useful for archaeology. Cost: a "noisy" graph, more commits to scroll, and merge commits that don't themselves carry changes.</p>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <strong>History shape is a policy — pick one and set the default</strong>
+    Mixed strategies produce the worst of all worlds: some PRs squashed, some merged, history you cannot reason about. Pick a single merge strategy per repository, configure it as the default button in your host, and document it. The workflow (§7–§10) usually implies a natural choice; the matrix in §11 lists the conventional pairing.
+  </div>
+
+  <h3>Decoupling deploy from release: feature flags</h3>
+  <p>One idea appears in modern workflow debates constantly: you do not have to <em>release</em> a feature when you <em>merge</em> it. With a <strong>feature flag</strong>, half-finished code can merge to the main line behind a default-off switch and be turned on later, independently of any deploy. This single technique is what makes trunk-based development viable for large teams — and it loosens the grip of long-lived feature branches everywhere.</p>
+</section>
+
+<section id="prs">
+  <h2>5 · Pull requests: the integration gate every modern workflow shares</h2>
+  <p class="lede">Whatever the workflow, on a hosted platform the moment of integration is almost always a pull request (GitHub/Bitbucket) or merge request (GitLab). Understanding what it is and is not prevents a lot of confusion.</p>
+  <p>A pull request (PR) is <strong>not a git concept</strong> — <code>git</code> has no PR command. It is a feature of the hosting platform: a proposed merge of one branch into another, bundled with a discussion thread, a diff view, continuous-integration status, and review approvals. Under the hood, finishing a PR just performs one of the four merges from <a href="#merges">§4</a> on the server.</p>
+
+  <div class="workflow" aria-label="Pull request lifecycle">
+    <div><strong>1 · Branch</strong>Off the base</div>
+    <div><strong>2 · Push</strong>To origin</div>
+    <div><strong>3 · Open</strong>Create the PR</div>
+    <div><strong>4 · Review</strong>Approve + CI green</div>
+    <div><strong>5 · Merge</strong>Strategy chosen here</div>
+  </div>
+
+  <h3>What a PR configures</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Setting</th><th>What it enforces</th></tr></thead>
+    <tbody>
+      <tr><td>Required reviewers / approvals</td><td>At least N people (or a CODEOWNER) must approve before merge.</td></tr>
+      <tr><td>Required status checks</td><td>CI must pass; optionally the branch must be up to date with the base.</td></tr>
+      <tr><td>Merge strategy buttons</td><td>Which of merge / squash / rebase the green button offers — and which is default.</td></tr>
+      <tr><td>Auto-delete branch</td><td>Remove the source branch after merge to keep the branch list clean.</td></tr>
+      <tr><td>Required linear history</td><td>Forbid merge commits entirely, forcing rebase/squash.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout blue">
+    <strong>"Merge the PR" = "do a merge on the server"</strong>
+    The platform UI is just a friendly front-end over a server-side <code>git merge</code>. That is why the merge-strategy choice (§4) appears as buttons on the PR. When you click <em>Squash and merge</em>, GitHub runs the equivalent of a squash merge and advances the base branch. The same primitives, wrapped in policy.
+  </div>
+
+  <h3>Review etiquette that transcends the workflow</h3>
+  <ul>
+    <li><strong>Small PRs.</strong> A 50-line PR gets a careful review; a 500-line PR gets a rubber stamp. Workflow choice does not change this — but trunk-based's short branches make it the default.</li>
+    <li><strong>Every commit on a feature branch should ideally build</strong> if you use rebase or merge-commit (not squash) integration — otherwise <code>git bisect</code> lands on broken commits.</li>
+    <li><strong>Keep the base fresh.</strong> Rebase or merge <code>main</code> into your branch before opening to shrink the final integration diff and catch conflicts early.</li>
+  </ul>
+</section>
+
+<section id="rebase">
+  <h2>6 · Rebase and conflict survival (just-in-time refresher)</h2>
+  <p class="lede">Every workflow produces conflicts eventually. This section gives you the minimum mechanics to survive them and the one rule that prevents most rebase disasters.</p>
+
+  <h3>What rebase does, precisely</h3>
+  <p><code>git rebase &lt;base&gt;</code> takes the commits that are on your current branch but not on <code>&lt;base&gt;</code>, sets your branch aside, moves its tip to <code>&lt;base&gt;</code>, then replays each saved commit one at a time. Each replayed commit becomes a <em>new commit with a new hash</em>. The history reads as if you had started from the new base all along.</p>
+  <pre><code># Before
+#   C0 ── C1 ── C2        main
+#           \
+#            A ── B       feature
+#
+# git switch feature
+# git rebase main
+#
+# After: A' and B' are replays (new hashes), tip now on C2
+#   C0 ── C1 ── C2        main
+#                \
+#                 A' ── B'  feature</code></pre>
+
+  <div class="callout danger">
+    <strong>The Golden Rule of rebase</strong>
+    Never rebase commits that other people already have — i.e. shared, pushed branches. Rebase rewrites hashes; anyone who built on the old commits is now stranded. Rebase your <em>own</em> local feature branch onto fresh <code>main</code> freely; rebase <code>main</code> itself, never.
+  </div>
+
+  <h3>Conflicts and how to read them</h3>
+  <p>A conflict happens when two branches change the same lines and git cannot combine them automatically. Git pauses and writes conflict markers into the file:</p>
+  <pre><code>def greeting():
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+    return "hello"        # your current branch (HEAD)
+=======
+    return "howdy"        # the commit being merged/replayed
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature</code></pre>
+  <p>Edit the file to the correct final content (removing all markers), then continue. The flow differs only slightly between merge and rebase:</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Step</th><th>During a merge</th><th>During a rebase</th></tr></thead>
+    <tbody>
+      <tr><td>After editing</td><td><code>git add &lt;file&gt;</code></td><td><code>git add &lt;file&gt;</code></td></tr>
+      <tr><td>Continue</td><td><code>git merge --continue</code> (or <code>git commit</code>)</td><td><code>git rebase --continue</code></td></tr>
+      <tr><td>Give up</td><td><code>git merge --abort</code></td><td><code>git rebase --abort</code></td></tr>
+      <tr><td>Skip a bad commit</td><td>—</td><td><code>git rebase --skip</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout warn">
+    <strong>"ours" and "theirs" flip during rebase</strong>
+    During a merge, <code>HEAD</code> (ours) is the branch you are on. During a rebase, git is replaying your commits onto the base one at a time — so at each step the base is "ours" and <em>your own commit</em> is "theirs." Never resolve by the label alone; read the actual diff and decide on content.
+  </div>
+
+  <h3>Recovery net</h3>
+  <p>If a merge or rebase goes sideways, <code>git reflog</code> records where every ref has been. You can almost always recover by checking out or resetting to a reflog entry. <code>ORIG_HEAD</code> conveniently records your position before the last merge/reset.</p>
+</section>
+
+<section id="github-flow">
+  <h2>7 · GitHub Flow — the simplest model that works</h2>
+  <p class="lede">One immortal branch (<code>main</code>), short-lived feature branches, a pull request, and a merge. That is the entire model. It is the default at most modern web companies for a reason.</p>
+
+  <h3>The rules</h3>
+  <ul>
+    <li><code>main</code> is always deployable. Anything in <code>main</code> is, or can immediately be, in production.</li>
+    <li>Branch off <code>main</code> for anything: <code>feature/x</code>, <code>fix/y</code>, <code>chore/z</code>.</li>
+    <li>Open a pull request early; get review; keep the branch short-lived (hours to a few days).</li>
+    <li>When approved and CI is green, merge into <code>main</code>. Deploy from <code>main</code>.</li>
+    <li>Delete the branch. No <code>develop</code>, no release branches.</li>
+  </ul>
+
+  <h3>Topology</h3>
+  <pre><code>main    C0 ── C1 ── M1 ── M2 ── M3   (always deployable)
+                 \   /   \   /
+feature           F1      F2              (short-lived, deleted after merge)</code></pre>
+
+  <div class="workflow" aria-label="GitHub Flow loop">
+    <div><strong>Branch</strong>off main</div>
+    <div><strong>Commit</strong>small &amp; often</div>
+    <div><strong>PR</strong>open &amp; review</div>
+    <div><strong>Merge</strong>into main</div>
+    <div><strong>Deploy</strong>from main</div>
+  </div>
+
+  <h3>The real loop</h3>
+  <pre><code>git switch main
+git pull --ff-only            # start from a fresh main
+git switch -c feature/dark-mode
+
+# ... make changes, commit ...
+git commit -am "Add dark mode"
+
+git push -u origin feature/dark-mode
+# open the PR in your host; get review; CI green
+
+# after merge (server side), clean up:
+git switch main
+git pull --ff-only
+git branch -d feature/dark-mode</code></pre>
+
+  <p class="pros">Pros</p>
+  <ul>
+    <li><strong>Simple.</strong> One integration branch. New people understand it in minutes.</li>
+    <li><strong>Few moving parts.</strong> No release/hotfix branch ceremony to learn.</li>
+    <li><strong>Deploys continuously.</strong> Nothing between "merged" and "shipped" but a deploy button.</li>
+    <li><strong>Short branches → fewer conflicts.</strong> Integration happens constantly.</li>
+  </ul>
+  <p class="cons">Cons</p>
+  <ul>
+    <li><strong>main must be always-releasable.</strong> This is load-bearing: it demands strong CI and the discipline to keep broken code out. Without it, the model breaks.</li>
+    <li><strong>No built-in release management.</strong> No formal "release 2.3" concept; versioning and changelogs are an add-on.</li>
+    <li><strong>Awkward for multiple supported versions.</strong> If you must patch v1 and v2 simultaneously, there is no structure for it.</li>
+    <li><strong>Rolled-back deploys need care.</strong> A bad merge means redeploying the previous <code>main</code> or reverting — there is no separate production branch to promote from.</li>
+  </ul>
+  <p><strong>Use it when</strong> you deploy continuously (web apps, SaaS), have trustworthy CI, and support essentially one live version. <strong>Avoid it when</strong> you ship versioned, installed artifacts or must maintain several old releases.</p>
+
+  <div class="lab">
+    <div class="lab-title">Lab 1 — GitHub Flow, end to end</div>
+    <div class="lab-meta">8 minutes · local only · no remote needed</div>
+    <pre><code># Lab 0 builds the playground. Run it once, then:
+git switch -c feature/dark-mode
+printf 'theme=dark\n' &gt;&gt; app.conf
+git add app.conf
+git commit -m "Add dark mode option"
+
+# simulate the PR merge (server-side, no-ff) locally:
+git switch main
+git merge --no-ff feature/dark-mode -m "Merge dark mode"
+git tag -a v0.2.0 -m "Dark mode release"   # optional version marker
+git branch -d feature/dark-mode
+git log --graph --oneline --all</code></pre>
+    <ul class="checklist">
+      <li>Confirm <code>main</code> advanced and a merge commit <code>M</code> exists.</li>
+      <li>Confirm the feature branch is gone but its commits survive in <code>main</code>.</li>
+      <li>Run <code>git log --graph</code> and match it to the topology diagram above.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="git-flow">
+  <h2>8 · Git Flow — structure for versioned releases</h2>
+  <p class="lede">Vincent Driessen's 2010 "successful Git branching model." Five branch types, explicit release and hotfix tracks, tags on production. It is the heavyweight champion — powerful for shipped software, overkill for a website.</p>
+
+  <h3>The five branch types</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Branch</th><th>Lifetime</th><th>Branched from</th><th>Merged into</th></tr></thead>
+    <tbody>
+      <tr><td><code>main</code></td><td>Forever</td><td>—</td><td>— (production; tagged here)</td></tr>
+      <tr><td><code>develop</code></td><td>Forever</td><td><code>main</code> initially</td><td><code>main</code> (via release)</td></tr>
+      <tr><td><code>feature/*</code></td><td>Short</td><td><code>develop</code></td><td><code>develop</code></td></tr>
+      <tr><td><code>release/*</code></td><td>Short</td><td><code>develop</code></td><td><code>main</code> <strong>and</strong> <code>develop</code></td></tr>
+      <tr><td><code>hotfix/*</code></td><td>Short</td><td><code>main</code></td><td><code>main</code> <strong>and</strong> <code>develop</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Topology</h3>
+  <pre><code>main      C0 ──────────────── R ────────── H ──   (tagged v1.0, v1.0.1)
+             \                / \          / \
+develop      D1 ── D2 ── D3 ──   ── D4 ──     ── D5
+                  \      /                \
+feature            F1 ──┘                  (next features)</code></pre>
+  <p>Features accumulate on <code>develop</code>. When a release is due, a <code>release/*</code> branch freezes, gets last polish, then merges to <code>main</code> (tagged) <em>and back</em> to <code>develop</code>. A production bug spawns <code>hotfix/*</code> off <code>main</code>, fixes it, merges to <code>main</code> (tagged) <em>and back</em> to <code>develop</code> so the fix isn't lost.</p>
+
+  <div class="workflow" aria-label="Git Flow release path">
+    <div><strong>Feature</strong>→ develop</div>
+    <div><strong>Release</strong>off develop</div>
+    <div><strong>Tag</strong>on main</div>
+    <div><strong>Back-merge</strong>→ develop</div>
+    <div><strong>Hotfix</strong>main→develop</div>
+  </div>
+
+  <p class="pros">Pros</p>
+  <ul>
+    <li><strong>Explicit release management.</strong> Clear "we are shipping 2.0" branch; tags mark exactly what shipped.</li>
+    <li><strong>Production vs next-release separation.</strong> <code>main</code> mirrors production; <code>develop</code> holds the future.</li>
+    <li><strong>First-class hotfix path.</strong> Patch production without waiting for the next release train.</li>
+    <li><strong>Suits installed/versioned software</strong> where artifacts are shipped and later patched in place.</li>
+  </ul>
+  <p class="cons">Cons</p>
+  <ul>
+    <li><strong>Complex.</strong> Five branch types, two back-merge points per release/hotfix — easy to get wrong.</li>
+    <li><strong>Heavy merge overhead.</strong> Lots of no-ff merges; the graph gets busy.</li>
+    <li><strong>Overkill for continuously-deployed web apps.</strong> Driessen himself later noted the model is overkill for teams that deploy many times a day; GitHub Flow or trunk-based fits better there.</li>
+    <li><strong>Long-lived <code>develop</code> can drift</strong> from <code>main</code>, making releases surprisingly large.</li>
+  </ul>
+  <div class="callout warn">
+    <strong>Don't confuse the model with the tool</strong>
+    "git-flow" is also a CLI extension (<code>git flow init</code>, <code>git flow feature start</code>) that automates the model. You do <em>not</em> need the tool to follow Git Flow — every step is ordinary <code>git</code>. Many teams follow the model with plain commands.
+  </div>
+
+  <div class="lab">
+    <div class="lab-title">Lab 2 — Git Flow release and hotfix</div>
+    <div class="lab-meta">15 minutes · local only</div>
+    <pre><code># from Lab 0 repo, on main
+git switch -c develop
+
+# feature → develop
+git switch -c feature/login develop
+printf 'login=true\n' &gt;&gt; app.conf
+git commit -am "Implement login"
+git switch develop
+git merge --no-ff feature/login -m "Merge feature/login"
+git branch -d feature/login
+
+# release → main (tag) AND develop
+git switch -c release/1.0 develop
+printf 'version=1.0.0\n' &gt; version.txt
+git commit -am "Bump version 1.0.0"
+git switch main
+git merge --no-ff release/1.0 -m "Release 1.0.0"
+git tag -a v1.0.0 -m "Release 1.0.0"
+git switch develop
+git merge --no-ff release/1.0 -m "Back-merge release/1.0 into develop"
+git branch -d release/1.0
+
+# hotfix off main → main (tag) AND develop
+git switch -c hotfix/1.0.1 main
+printf 'patch=security\n' &gt;&gt; app.conf
+git commit -am "Critical security fix"
+git switch main
+git merge --no-ff hotfix/1.0.1 -m "Hotfix 1.0.1"
+git tag -a v1.0.1 -m "Hotfix 1.0.1"
+git switch develop
+git merge --no-ff hotfix/1.0.1 -m "Back-merge hotfix into develop"
+git branch -d hotfix/1.0.1
+git tag --list</code></pre>
+    <ul class="checklist">
+      <li>Verify <code>develop</code> contains both the release and the hotfix (back-merges worked).</li>
+      <li>Verify <code>main</code> has exactly the production commits and tags <code>v1.0.0</code>, <code>v1.0.1</code>.</li>
+      <li>Run <code>git log --graph --oneline --all</code> and identify the two-parent merge commits.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="trunk">
+  <h2>9 · Trunk-based development — integration as the heartbeat</h2>
+  <p class="lede">Everyone integrates to one branch (<code>main</code>/<code>trunk</code>) frequently, with branches that live hours to a couple of days at most. Scale comes from small changes, fast review, strong CI, and feature flags — not from elaborate branch topology.</p>
+
+  <h3>The rules</h3>
+  <ul>
+    <li><code>main</code> (or <code>trunk</code>) is the single integration line and is always green.</li>
+    <li>Feature branches are <strong>short-lived</strong> — ideally less than a day, rarely more than three. Small, frequently merged changes.</li>
+    <li>Every merge is gated by CI; broken builds are the top priority to fix or revert.</li>
+    <li><strong>Feature flags</strong> let incomplete-but-safe code merge and hide behind a switch, decoupling merge from release.</li>
+    <li>History is kept linear — squash or rebase merges are conventional.</li>
+  </ul>
+
+  <h3>Topology</h3>
+  <pre><code>main   C0 ── C1 ── C2 ── C3 ── C4 ── C5 ── C6   (one green line)
+            \    /\    /\    /
+short         F0   F1    F2   (each &lt;1 day, squash-merged, deleted)</code></pre>
+
+  <div class="workflow" aria-label="Trunk-based loop">
+    <div><strong>Small branch</strong>off main</div>
+    <div><strong>CI gate</strong>must pass</div>
+    <div><strong>Fast review</strong>hours not days</div>
+    <div><strong>Squash merge</strong>to main</div>
+    <div><strong>Flag-gate</strong>release later</div>
+  </div>
+
+  <p class="pros">Pros</p>
+  <ul>
+    <li><strong>Minimal integration pain.</strong> Branches live so briefly that conflicts are tiny and rare.</li>
+    <li><strong>Fast feedback.</strong> Changes reach shared, tested code in hours.</li>
+    <li><strong>Scales to huge teams</strong> — used at Google, Meta, and others — <em>provided</em> CI and tooling are excellent.</li>
+    <li><strong>One clean line of history</strong>; bisects and reverts are trivial.</li>
+  </ul>
+  <p class="cons">Cons</p>
+  <ul>
+    <li><strong>Demands discipline and automation.</strong> Weak CI kills it: one bad merge breaks everyone within hours.</li>
+    <li><strong>Feature flags become mandatory infrastructure</strong>, with their own complexity and debt if unmanaged.</li>
+    <li><strong>Unnatural for multiple supported versions.</strong> Backporting fixes across old lines is not its strength — you'd add release branches on top.</li>
+    <li><strong>Culture shift.</strong> Teams used to week-long feature branches must learn to slice work small.</li>
+  </ul>
+  <div class="callout">
+    <strong>Trunk-based vs GitHub Flow — what's the difference?</strong>
+    They look alike (main + short feature branches + PR). The distinction is emphasis and degree: trunk-based makes <em>frequency</em> the doctrine — branches measured in hours, integration many times a day, feature flags to ship-incomplete-code safely. GitHub Flow is the simpler cousin that works fine with slightly longer branches and no flags. In practice the boundary is blurry; "we do trunk-based" usually means "we push the GitHub-Flow ideas to the limit."
+  </div>
+
+  <div class="lab">
+    <div class="lab-title">Lab 3 — Trunk-based squash-merge cycle</div>
+    <div class="lab-meta">8 minutes · local only</div>
+    <pre><code># from Lab 0 repo, on main (the trunk)
+git switch -c add-flag
+printf 'feature_x=on   # flag-gated, off in prod config\n' &gt;&gt; app.conf
+git commit -am "Implement X behind flag"
+
+# squash-merge keeps main linear; one commit per change
+git switch main
+git merge --squash add-flag
+git commit -m "Add feature X behind flag"
+git branch -D add-flag          # -D, not -d: see note
+
+git log --oneline</code></pre>
+    <ul class="checklist">
+      <li>Confirm <code>main</code> has one new commit (the squash), not the original branch commit.</li>
+      <li>Note we used <code>git branch -D</code>: after a squash merge the original branch commits are <em>not</em> on main, so <code>-d</code> (safe delete) refuses — that is expected and is itself a trunk-based teaching moment.</li>
+      <li>Run <code>git reflog</code> and confirm the squashed-away commit is still recoverable if needed.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="gitlab-flow">
+  <h2>10 · GitLab Flow — environment branches between you and production</h2>
+  <p class="lede">GitLab's model tries to keep GitHub Flow's simplicity while restoring a sane path from "merged" to "deployed." The signature idea: <strong>environment branches</strong> that track what is actually running in each environment.</p>
+
+  <h3>The rules (environment-branch variant)</h3>
+  <ul>
+    <li><code>main</code> (or <code>master</code>) is the source of truth where feature branches merge — the "latest" code.</li>
+    <li>Downstream <strong>environment branches</strong> — e.g. <code>pre-prod</code>, <code>production</code> — represent what is deployed in each place.</li>
+    <li>Code flows strictly downstream: <code>main</code> → <code>pre-prod</code> → <code>production</code>. You promote by merging upstream into downstream, never by cherry-picking forward.</li>
+    <li>A production hotfix branches off <code>production</code>, merges back to <code>production</code>, <em>and is cherry-picked back to <code>main</code></em> so the fix isn't lost.</li>
+  </ul>
+
+  <h3>Topology</h3>
+  <pre><code>main        C0 ── C1 ── C2 ── C3 ── C4 ── C5 ── (latest; feature merges land here)
+              \    \    \    \
+pre-prod       P1 ── P2 ── P3 ── P4 ───────────── (what's in staging)
+                              \
+production                     Q1 ── Q2 ───────── (what's actually live)
+
+# hotfix off production flows back to main via cherry-pick
+production  ── H ──
+main           ... cherry-pick H ...</code></pre>
+
+  <div class="workflow" aria-label="GitLab Flow promotion path">
+    <div><strong>Feature</strong>→ main</div>
+    <div><strong>Promote</strong>main→pre-prod</div>
+    <div><strong>Promote</strong>pre-prod→prod</div>
+    <div><strong>Hotfix</strong>off production</div>
+    <div><strong>Backport</strong>cherry-pick→main</div>
+  </div>
+
+  <p class="pros">Pros</p>
+  <ul>
+    <li><strong>Traceability.</strong> <code>production</code> literally is what is deployed — no guessing what shipped.</li>
+    <li><strong>Simpler than Git Flow.</strong> No <code>develop</code> or <code>release/*</code> ceremony; just environment branches.</li>
+    <li><strong>Suits staged deployment pipelines</strong> where you want explicit gates between environments.</li>
+    <li><strong>Release-branch variant exists too:</strong> for installed software, <code>stable</code> branches per release get cherry-picked bugfixes — Git Flow's release idea without its full weight.</li>
+  </ul>
+  <p class="cons">Cons</p>
+  <ul>
+    <li><strong>Cherry-pick drift.</strong> Backporting hotfixes to <code>main</code> by hand creates duplicate commits and can drift over time.</li>
+    <li><strong><code>production</code> can become a bottleneck</strong> if promotions are manual and infrequent — it lags <code>main</code> arbitrarily.</li>
+    <li><strong>More branches than GitHub Flow,</strong> so a bit more to keep straight; merges flow one direction only, which must be enforced.</li>
+    <li><strong>Environment-branch count grows</strong> with each deployment target (staging, UAT, prod, regional prods).</li>
+  </ul>
+  <div class="callout blue">
+    <strong>Two flavors, one idea</strong>
+    GitLab Flow's environment branches map a <em>deployment pipeline</em> (dev → staging → prod). Its release-branch flavor maps <em>supported versions</em> (v1, v2). Same downstream-only principle; different thing being tracked. Choose based on whether your pain is "what's deployed where" or "which versions do we support."
+  </div>
+
+  <div class="lab">
+    <div class="lab-title">Lab 4 — GitLab Flow promotion + hotfix</div>
+    <div class="lab-meta">12 minutes · local only</div>
+    <pre><code># from Lab 0 repo, on main
+git switch -c pre-prod main
+git switch -c production pre-prod     # production starts behind main
+
+# feature merges to main
+git switch -c feature/billing main
+printf 'billing=v2\n' &gt;&gt; app.conf
+git commit -am "Rewrite billing"
+git switch main
+git merge --no-ff feature/billing -m "Merge billing"
+git branch -d feature/billing
+
+# promote downstream: main -&gt; pre-prod -&gt; production
+git switch pre-prod
+git merge --no-ff main -m "Promote to pre-prod"
+git switch production
+git merge --no-ff pre-prod -m "Promote to production"
+
+# hotfix on production, then cherry-pick back to main
+git switch -c hotfix/prod-fix production
+printf 'fix=1\n' &gt;&gt; app.conf
+git commit -am "Production hotfix"
+git switch production
+git merge --no-ff hotfix/prod-fix -m "Apply prod hotfix"
+git switch main
+git cherry-pick hotfix/prod-fix
+git branch -D hotfix/prod-fix     # -D: original hotfix isn't on main (cherry-pick = new hash)
+git log --graph --oneline --all</code></pre>
+    <ul class="checklist">
+      <li>Confirm <code>production</code> got the change only after promotion, not at feature-merge time.</li>
+      <li>Confirm the hotfix commit appears on both <code>production</code> and <code>main</code> (cherry-pick succeeded; note the two have different hashes — same diff, new commit).</li>
+      <li>Verify downstream-only flow: nothing ever merged from <code>production</code> into <code>main</code> except via cherry-pick.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="matrix">
+  <h2>11 · Decision matrix: choosing the right workflow</h2>
+  <p class="lede">There is no universally best workflow — only the one that fits your release cadence, team size, deployment topology, and CI maturity. This matrix collapses the four axes from <a href="#orientation">§1</a> onto the four models.</p>
+
+  <h3>At a glance</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Workflow</th><th>Release cadence</th><th>Team size</th><th>Deploys / envs</th><th>Supported versions</th><th>Typical merge</th></tr></thead>
+    <tbody>
+      <tr><td><strong>GitHub Flow</strong></td><td>Continuous</td><td>Small–large</td><td>Single live env</td><td>One</td><td>Squash or merge</td></tr>
+      <tr><td><strong>Git Flow</strong></td><td>Scheduled / versioned</td><td>Small–medium</td><td>Shipped artifacts</td><td>Several</td><td>Merge commit</td></tr>
+      <tr><td><strong>Trunk-based</strong></td><td>Continuous (many/day)</td><td>Medium–very large</td><td>Single live env + flags</td><td>One (+ release branches)</td><td>Squash / rebase</td></tr>
+      <tr><td><strong>GitLab Flow</strong></td><td>Continuous, staged</td><td>Small–medium</td><td>Multi-env pipeline</td><td>One (or release branches)</td><td>Merge commit</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Recommendation by situation</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>If your situation is…</th><th>Lean toward</th><th>Because</th></tr></thead>
+    <tbody>
+      <tr><td>Web app / SaaS, deploy on every merge, one prod environment</td><td>GitHub Flow</td><td>Simplest model that fits; nothing between merge and ship.</td></tr>
+      <tr><td>Same as above but large team, many merges/day, strong CI</td><td>Trunk-based</td><td>Short branches + flags minimize integration pain at scale.</td></tr>
+      <tr><td>Shipped/installed software with semver releases you patch later</td><td>Git Flow</td><td>Release and hotfix branches are exactly the structure you need.</td></tr>
+      <tr><td>Multi-stage deploy pipeline (staging → prod) you want to track explicitly</td><td>GitLab Flow</td><td>Environment branches make "what's deployed" a branch you can read.</td></tr>
+      <tr><td>Solo dev or tiny team, low ceremony</td><td>GitHub Flow</td><td>Overhead of the others buys you nothing at that size.</td></tr>
+      <tr><td>Open-source project with external contributors</td><td>GitHub Flow + forking</td><td>Forks + PRs are the OSS integration model; covered in Further study.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>A decision walk</h3>
+  <div class="keyline">How do you ship? <span class="arrow">→</span> <strong>continuous</strong> or <strong>versioned</strong></div>
+  <div class="keyline">If <strong>continuous</strong>: one live env? <span class="arrow">→</span> yes → <strong>GitHub Flow</strong> (or <strong>trunk-based</strong> if large/many-merges)</div>
+  <div class="keyline">If <strong>continuous</strong> but staged envs matter? <span class="arrow">→</span> <strong>GitLab Flow</strong></div>
+  <div class="keyline">If <strong>versioned</strong>/shipped/patched? <span class="arrow">→</span> <strong>Git Flow</strong></div>
+
+  <div class="callout warn">
+    <strong>The wrong question: "which is best?"</strong>
+    The right question is "which fits our cadence, size, and environments — and can our CI actually support it?" A team that picks trunk-based without trustworthy CI will suffer; a team that picks Git Flow for a continuously-deployed website will drown in ceremony. Match the tool to the reality, then invest in the prerequisite (usually CI) that makes it work.
+  </div>
+  <p>These models also <em>compose</em>. It is common to run trunk-based on <code>main</code> and add release branches for the few supported versions you must patch — a hybrid of trunk-based and Git Flow's release idea. Pragmatism beats purity.</p>
+</section>
+
+<section id="process">
+  <h2>12 · The team-process layer: making a workflow stick</h2>
+  <p class="lede">Choosing a workflow is half the job. The other half is the policy and automation that make it real: branch protection, required checks, code ownership, and versioning conventions. Without these, the workflow is a suggestion.</p>
+
+  <h3>Branch protection / rulesets</h3>
+  <p>All major hosts let you make a branch (usually <code>main</code>) <strong>protected</strong>: direct pushes are blocked, merges require a PR, and certain conditions must be met. GitHub calls these <em>rulesets</em> (formerly branch-protection rules); GitLab calls them <em>protected branches</em>.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Rule</th><th>What it guarantees</th></tr></thead>
+    <tbody>
+      <tr><td>Require pull request before merge</td><td>No one commits straight to <code>main</code>.</td></tr>
+      <tr><td>Require approvals (N)</td><td>At least N reviewers sign off.</td></tr>
+      <tr><td>Require status checks to pass</td><td>CI must be green; optionally branch must be up to date.</td></tr>
+      <tr><td>Require linear history</td><td>Forbids merge commits — forces rebase/squash.</td></tr>
+      <tr><td>Dismiss stale approvals</td><td>New pushes invalidate old approvals.</td></tr>
+      <tr><td>Restrict force pushes &amp; deletions</td><td>History rewriting on the protected branch is blocked.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>CODEOWNERS — automatic review routing</h3>
+  <p>A <code>CODEOWNERS</code> file maps paths to the people or teams responsible for them. When a PR touches those paths, the host automatically requests their review — and with "require review from code owners" enabled, their approval becomes mandatory. It scales review across a large repo without a gatekeeper.</p>
+  <pre><code># .github/CODEOWNERS (GitHub)  /  CODEOWNERS (GitLab, repo root)
+# Each line: path pattern  owner(s)
+/src/payments/    @payments-team
+/src/auth/        @security-team @alice
+/docs/            @docs-team
+*.md              @docs-team
+/                 @lead-developers   # default fallback</code></pre>
+
+  <h3>Conventional commits and semantic versioning</h3>
+  <p>Pairing a workflow with a commit-message convention makes releases and changelogs automatable. <strong>Conventional Commits</strong> prefix messages with a type; <strong>SemVer</strong> derives the version bump from those types.</p>
+  <pre><code>feat: add dark mode               # → MINOR bump (1.2.0)
+fix: correct tax calculation      # → PATCH bump (1.2.1)
+feat!: redesign API               # → MAJOR bump (2.0.0)  (! = breaking)
+chore: bump dependencies          # → no release
+docs: update README               # → no release</code></pre>
+  <div class="table-wrap"><table>
+    <thead><tr><th>SemVer part</th><th>When it bumps</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td>MAJOR</td><td>Incompatible / breaking change</td><td>1.x.x → 2.0.0</td></tr>
+      <tr><td>MINOR</td><td>New backward-compatible feature</td><td>1.2.x → 1.3.0</td></tr>
+      <tr><td>PATCH</td><td>Backward-compatible bug fix</td><td>1.2.3 → 1.2.4</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Tags and releases</h3>
+  <ul>
+    <li><strong>Annotated tags</strong> (<code>git tag -a v1.2.0 -m "Release 1.2.0"</code>) carry a message, tagger, and date — recommended for releases.</li>
+    <li><strong>Lightweight tags</strong> (<code>git tag v1.2.0</code>) are just a pointer; fine for ephemeral marks.</li>
+    <li>Tags are not pushed automatically — <code>git push origin v1.2.0</code> (or <code>--tags</code>) ships them.</li>
+  </ul>
+
+  <div class="callout blue">
+    <strong>Process layer is workflow-independent</strong>
+    Branch protection, CODEOWNERS, conventional commits, and SemVer apply to <em>all four</em> workflows. They are the scaffolding that turns a branching model into a reliable team practice. Adopt them regardless of which workflow you chose in §11.
+  </div>
+</section>
+
+<section id="antipatterns">
+  <h2>13 · Anti-patterns and failure modes</h2>
+  <p class="lede">Most workflow pain is not from picking the wrong model — it is from violating the model's assumptions. These are the recurring ways teams get hurt.</p>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Long-lived feature branches</h3>
+      <p>A branch open for weeks drifts far from <code>main</code>; the merge becomes a conflict marathon ("merge hell") and a risky big-bang integration. <strong>Fix:</strong> slice work small; merge or rebase onto <code>main</code> daily. If work can't be small, use a feature flag and merge the incomplete-but-safe code.</p>
+    </div>
+    <div class="card">
+      <h3>Force-pushing shared branches</h3>
+      <p>Rewriting a branch others have built on strands their commits and corrupts their clones. <strong>Fix:</strong> enforce the Golden Rule (§6) — rebase only your own local branches; protect integration branches against force-push.</p>
+    </div>
+    <div class="card">
+      <h3>Git Flow for a continuously-deployed website</h3>
+      <p>The release/hotfix ceremony exists for shipped artifacts. On a web app it adds branches, back-merges, and delay for no benefit. <strong>Fix:</strong> drop to GitHub Flow or trunk-based; reserve Git Flow for genuinely versioned releases.</p>
+    </div>
+    <div class="card">
+      <h3>Merge button without a CI gate</h3>
+      <p>Anyone can land broken code on <code>main</code>, which then isn't deployable — breaking the one assumption GitHub Flow and trunk-based depend on. <strong>Fix:</strong> require passing status checks before merge (§12); treat a red <code>main</code> as an emergency.</p>
+    </div>
+    <div class="card">
+      <h3>Committing straight to main</h3>
+      <p>Bypasses review and CI. Sometimes fine for docs solo; fatal on a team. <strong>Fix:</strong> protect <code>main</code> so direct pushes are rejected; even small changes go through a PR.</p>
+    </div>
+    <div class="card">
+      <h3>Squashing away bisect granularity</h3>
+      <p>If a feature branch's intermediate commits didn't build, squashing them into one hides which step broke. A future <code>git bisect</code> may point only at the combined commit. <strong>Fix:</strong> keep every commit on a feature branch building; or accept that squash histories bisect at PR granularity.</p>
+    </div>
+    <div class="card">
+      <h3>Cherry-pick drift across release branches</h3>
+      <p>Manually cherry-picking the same fix into many branches creates duplicate, diverging commits that fall out of sync. <strong>Fix:</strong> automate backports; prefer one source of truth and scripted propagation; consider whether so many supported versions are really needed.</p>
+    </div>
+    <div class="card">
+      <h3>Giant pull requests</h3>
+      <p>Huge diffs get skimmed, not reviewed; they conflict more and are harder to revert. <strong>Fix:</strong> review culture that asks for smaller PRs; stack related changes; let trunk-based's short-branch discipline set the norm.</p>
+    </div>
+  </div>
+
+  <div class="callout danger">
+    <strong>The shared theme</strong>
+    Almost every anti-pattern is a violation of a workflow's load-bearing assumption: that <code>main</code> is green, that branches are short, that integration is frequent, that history of shared branches is stable. When a workflow hurts, ask first which assumption you are breaking — usually the fix is honoring the model, not changing it.
+  </div>
+</section>
+
+<section id="capstone">
+  <h2>14 · Capstone lab: run all four on one repo</h2>
+  <p class="lede">A single cumulative lab. You build a real shared repository with a bare remote and two "teammates," run GitHub Flow end to end, cut a Git Flow release, and finish with a trunk-based cycle. No GitHub account needed — the bare repo is the remote, and "merging a PR" is a local fetch-and-merge.</p>
+
+  <div class="lab">
+    <div class="lab-title">Capstone · Phase 0 — Shared remote + two clones</div>
+    <div class="lab-meta">setup · creates origin.git, alice, bob</div>
+    <pre><code>cap_dir="$(mktemp -d)/wf-capstone"
+mkdir -p "$cap_dir" && cd "$cap_dir"
+
+# bare repo = the shared "server"
+git init --bare origin.git
+
+# alice bootstraps the project
+git clone origin.git alice
+cd alice
+git switch -c main
+printf '# Capstone App\n' &gt; README.md
+printf 'theme=light\nversion=0.1.0\n' &gt; app.conf
+git add README.md app.conf
+git config user.name "Alice" && git config user.email "alice@example.invalid"
+git commit -m "Initial commit"
+git push -u origin main
+cd ..
+
+# bob clones the now-populated remote
+git clone origin.git bob
+cd bob
+git config user.name "Bob" && git config user.email "bob@example.invalid"</code></pre>
+  </div>
+
+  <div class="lab">
+    <div class="lab-title">Capstone · Phase 1 — GitHub Flow (Bob ships a feature)</div>
+    <div class="lab-meta">branch → push → Alice reviews &amp; merges</div>
+    <pre><code># --- in bob/ ---
+git switch -c feature/search
+printf 'search=on\n' &gt;&gt; app.conf
+git commit -am "Add search"
+git push -u origin feature/search
+
+# --- in alice/ ---  (Alice fetches the PR branch and merges it)
+cd ../alice
+git fetch origin
+git switch main
+git merge --no-ff origin/feature/search -m "Merge search (approved)"
+git push origin main
+git push origin --delete feature/search   # clean up the merged branch
+
+# --- back in bob/ ---  (Bob syncs the integrated main)
+cd ../bob
+git switch main
+git pull --ff-only
+cat app.conf        # should now contain search=on</code></pre>
+    <ul class="checklist">
+      <li>Both clones now agree: <code>main</code> contains the search change.</li>
+      <li>The feature branch was deleted on the remote after merge, just like a real merged PR.</li>
+    </ul>
+  </div>
+
+  <div class="lab">
+    <div class="lab-title">Capstone · Phase 2 — Git Flow release (Alice cuts v1.0.0)</div>
+    <div class="lab-meta">develop → release → main (tag) → develop</div>
+    <pre><code># --- in alice/ ---
+git switch -c develop
+git switch -c release/1.0 develop
+printf 'version=1.0.0\n' &gt; version.txt
+git add version.txt
+git commit -m "Bump version 1.0.0"
+
+git switch main
+git merge --no-ff release/1.0 -m "Release 1.0.0"
+git tag -a v1.0.0 -m "Release 1.0.0"
+git switch develop
+git merge --no-ff release/1.0 -m "Back-merge release/1.0 into develop"
+git branch -d release/1.0
+
+git push origin main develop
+git push origin v1.0.0
+
+# --- in bob/ ---  (Bob receives the new branches + tag)
+cd ../bob
+git fetch origin --tags
+git branch --track develop origin/develop 2&gt;/dev/null || true
+git switch main && git pull --ff-only
+git tag --list          # v1.0.0 present</code></pre>
+    <ul class="checklist">
+      <li><code>main</code> carries the release and tag <code>v1.0.0</code>; <code>develop</code> has the back-merge.</li>
+      <li>Bob can see both branches and the tag after fetching with <code>--tags</code>.</li>
+    </ul>
+  </div>
+
+  <div class="lab">
+    <div class="lab-title">Capstone · Phase 3 — Trunk-based squash cycle (Bob, fast)</div>
+    <div class="lab-meta">short branch → squash merge → linear main</div>
+    <pre><code># --- in bob/ ---  switch to trunk-style: develop is retired, main is the trunk
+git switch main
+git pull --ff-only
+git switch -c add-flag
+printf 'feature_x=on   # flag-gated\n' &gt;&gt; app.conf
+git commit -am "Implement X behind flag"
+
+git switch main
+git merge --squash add-flag
+git commit -m "Add feature X behind flag"
+git branch -D add-flag
+git push origin main
+
+# --- in alice/ ---  (Alice pulls the linear history)
+cd ../alice
+git switch main
+git pull --ff-only
+git log --oneline --graph --all
+cd ../bob</code></pre>
+    <ul class="checklist">
+      <li><code>main</code> history is linear — one squash commit for the feature, no merge bubble.</li>
+      <li>You have now exercised GitHub Flow, Git Flow, and trunk-based on the same shared repo with two contributors.</li>
+      <li>Stretch: add a GitLab Flow environment branch — <code>git switch -c production main</code> on alice, then promote <code>main</code> into <code>production</code> and push it.</li>
+    </ul>
+  </div>
+
+  <div class="callout">
+    <strong>What the capstone proves</strong>
+    You can move between workflows on a real shared repository, integrate another person's work, cut and tag a release, back-merge it, and keep history linear — all with plain <code>git</code> and a bare remote standing in for GitHub. The hosting platform only wraps these same operations in a PR UI and policy. If you completed every checklist item, you can run any team's workflow.
+  </div>
+</section>
+
+<section id="troubleshooting">
+  <h2>15 · Troubleshooting playbook</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Symptom</th><th>Likely cause</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td>Push rejected as "non-fast-forward"</td><td>Remote has commits you lack; your branch diverged</td><td><code>git fetch</code>, inspect, then <code>git pull --rebase</code> (own branch) or merge. Never blind force-push a shared branch.</td></tr>
+      <tr><td>Merge or rebase stuck with conflict markers</td><td>Same lines changed on both sides</td><td>Edit markers out, <code>git add</code>, then <code>--continue</code>; or <code>--abort</code> to retreat. See §6.</td></tr>
+      <tr><td>Branch delete refused ("not fully merged")</td><td>Squash-merged: original commits aren't on target</td><td>Use <code>git branch -D</code> deliberately — expected after squash. Confirm via reflog first if unsure.</td></tr>
+      <tr><td><code>main</code> is red / broken</td><td>CI gate missing or bypassed; broken merge landed</td><td>Revert the offending merge (<code>git revert -m 1</code>) to restore green fast; fix forward on a branch. Add required checks (§12).</td></tr>
+      <tr><td>Force-pushed branch broke teammates' clones</td><td>Shared history was rewritten</td><td>Stop; coordinate; teammates <code>git fetch</code> then <code>git reset --hard origin/&lt;branch&gt;</code>. Enable force-push protection to prevent recurrence.</td></tr>
+      <tr><td>Release missed a fix that's on <code>develop</code></td><td>Git Flow back-merge to develop was skipped, or fix landed after the release branch forked</td><td>Cherry-pick the fix onto the release/hotfix branch; ensure future releases merge release→develop.</td></tr>
+      <tr><td><code>production</code> far behind <code>main</code></td><td>GitLab Flow promotions stalled (manual bottleneck)</td><td>Automate promotion; treat a lagging <code>production</code> as a process smell, not a feature.</td></tr>
+      <tr><td>Tag missing on the remote</td><td>Tags aren't pushed by default</td><td><code>git push origin &lt;tag&gt;</code> or <code>git push --tags</code>.</td></tr>
+      <tr><td>Commit "disappeared" after rebase/reset</td><td>Hash rewritten; old commit orphaned but reachable</td><td><code>git reflog</code> → find the old hash → <code>git reset --hard &lt;hash&gt;</code> or branch off it.</td></tr>
+      <tr><td>Unsure what a merge will do</td><td>Risk of surprise</td><td>Preview with <code>git log &lt;branch&gt;..main</code> / <code>git diff ...</code>; do risky merges on a throwaway branch first.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Five-second pre-flight before any integration</h3>
+  <ol>
+    <li><strong>Where am I?</strong> <code>git status</code>, current branch, clean tree?</li>
+    <li><strong>What will move?</strong> Which branch advances, and is it shared?</li>
+    <li><strong>Reversible?</strong> Is this local-only (reflog saves me) or pushed (revert instead)?</li>
+    <li><strong>History rewrite?</strong> Am I rebasing commits anyone else has? If yes, stop.</li>
+    <li><strong>How do I verify?</strong> What command or CI result confirms it worked?</li>
+  </ol>
+</section>
+
+<section id="cheatsheet">
+  <h2>16 · Cheat sheet</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>GitHub Flow</h3>
+      <div class="keyline"><code>main</code> always deployable</div>
+      <div class="keyline">branch → PR → merge → deploy</div>
+      <div class="keyline">no release/hotfix branches</div>
+      <div class="keyline">best: continuous deploy, 1 env</div>
+    </div>
+    <div class="card">
+      <h3>Git Flow</h3>
+      <div class="keyline">main + develop + feature</div>
+      <div class="keyline">+ release + hotfix</div>
+      <div class="keyline">release → main(tag)+develop</div>
+      <div class="keyline">best: versioned/shipped software</div>
+    </div>
+    <div class="card">
+      <h3>Trunk-based</h3>
+      <div class="keyline"><code>main</code> = single green line</div>
+      <div class="keyline">branches &lt; 1–3 days</div>
+      <div class="keyline">feature flags + strong CI</div>
+      <div class="keyline">best: large team, many merges</div>
+    </div>
+    <div class="card">
+      <h3>GitLab Flow</h3>
+      <div class="keyline">main + env branches</div>
+      <div class="keyline">flow downstream only</div>
+      <div class="keyline">hotfix → cherry-pick → main</div>
+      <div class="keyline">best: staged deploy pipeline</div>
+    </div>
+  </div>
+
+  <h3>Merge strategies at a glance</h3>
+  <div class="grid">
+    <div class="card">
+      <h3>Fast-forward <code>--ff-only</code></h3>
+      <div class="keyline">linear · no merge commit</div>
+      <div class="keyline">only when target is ancestor</div>
+    </div>
+    <div class="card">
+      <h3>Merge commit <code>--no-ff</code></h3>
+      <div class="keyline">preserves branch topology</div>
+      <div class="keyline">two-parent commit</div>
+    </div>
+    <div class="card">
+      <h3>Squash <code>--squash</code></h3>
+      <div class="keyline">one commit per PR</div>
+      <div class="keyline">loses per-commit granularity</div>
+    </div>
+    <div class="card">
+      <h3>Rebase</h3>
+      <div class="keyline">linear, keeps commits</div>
+      <div class="keyline">rewrites hashes — own branches only</div>
+    </div>
+  </div>
+
+  <h3>Everyday commands</h3>
+  <div class="grid">
+    <div class="card">
+      <h3>Branch &amp; sync</h3>
+      <div class="keyline"><code>git switch -c feat main</code></div>
+      <div class="keyline"><code>git pull --rebase</code></div>
+      <div class="keyline"><code>git push -u origin feat</code></div>
+      <div class="keyline"><code>git branch -d feat</code></div>
+    </div>
+    <div class="card">
+      <h3>Integrate</h3>
+      <div class="keyline"><code>git merge --no-ff feat</code></div>
+      <div class="keyline"><code>git merge --squash feat</code></div>
+      <div class="keyline"><code>git rebase main</code></div>
+      <div class="keyline"><code>git cherry-pick &lt;hash&gt;</code></div>
+    </div>
+    <div class="card">
+      <h3>Recover</h3>
+      <div class="keyline"><code>git reflog</code></div>
+      <div class="keyline"><code>git reset --hard ORIG_HEAD</code></div>
+      <div class="keyline"><code>git revert -m 1 &lt;merge&gt;</code></div>
+      <div class="keyline"><code>git merge --abort</code></div>
+    </div>
+    <div class="card">
+      <h3>Release</h3>
+      <div class="keyline"><code>git tag -a v1.0.0 -m "..."</code></div>
+      <div class="keyline"><code>git push origin v1.0.0</code></div>
+      <div class="keyline">conventional commits → SemVer</div>
+      <div class="keyline">protect main; require CI</div>
+    </div>
+  </div>
+
+  <div class="callout"><strong>One rule worth memorizing</strong>Match the workflow to your release cadence, team size, deployment topology, and CI maturity — then invest in the CI and policy that make it stick. A workflow is a contract; honor its assumptions or it will hurt you.</div>
+</section>
+
+<section id="glossary">
+  <h2>17 · Glossary</h2>
+  <dl class="glossary">
+    <dt>Branch</dt><dd>A movable pointer (ref) to a commit. Cheap to create and delete; never confuses with the commits it points to.</dd>
+    <dt>Commit</dt><dd>An immutable snapshot + metadata + parent pointer(s), identified by a SHA hash. Changing anything yields a new commit.</dd>
+    <dt>DAG</dt><dd>Directed acyclic graph — the shape of git history. Commits point to parents; the graph has no cycles.</dd>
+    <dt>Fast-forward (FF)</dt><dd>A merge that only advances the target pointer because the source is strictly ahead. Creates no merge commit.</dd>
+    <dt>Feature flag</dt><dd>A runtime switch that lets merged-in code stay dormant, decoupling merge from release. Enables trunk-based at scale.</dd>
+    <dt>Golden Rule (rebase)</dt><dd>Never rebase commits others already have. Rebase only your own local branches.</dd>
+    <dt>Integration branch</dt><dd>The shared line everyone merges into (<code>main</code>, <code>develop</code>, or <code>trunk</code>).</dd>
+    <dt>Merge commit</dt><dd>A commit with two parents, created when diverged lines join (or forced with <code>--no-ff</code>).</dd>
+    <dt>Pull request (PR)</dt><dd>A hosting-platform feature: a proposed branch merge with review and CI. Not a git command. Called "merge request" on GitLab.</dd>
+    <dt>Rebase</dt><dd>Replaying commits onto a new base, producing new hashes. Yields linear history; rewrites shared history at your peril.</dd>
+    <dt>Reflog</dt><dd>A local log of where every ref has been. The recovery net for "lost" commits after reset/rebase.</dd>
+    <dt>Remote-tracking branch</dt><dd>A local cache (e.g. <code>origin/main</code>) of a remote branch's position at last fetch. Not live.</dd>
+    <dt>SemVer</dt><dd>Semantic versioning: MAJOR.MINOR.PATCH, bumped by breaking/feature/fix respectively.</dd>
+    <dt>Squash</dt><dd>Collapsing several commits into one new commit on the target. Clean history; loses granularity.</dd>
+    <dt>Tag</dt><dd>An immutable-ish ref marking a specific commit, usually a release. Annotated tags carry metadata.</dd>
+    <dt>Trunk</dt><dd>The single integration branch in trunk-based development; often literally named <code>main</code> or <code>trunk</code>.</dd>
+    <dt>Workflow</dt><dd>The agreed rules for where work happens, how it integrates, and how it ships — a contract, not a tool.</dd>
+  </dl>
+</section>
+
+<section id="quiz">
+  <h2>18 · Retrieval quiz and sources</h2>
+  <p>Answer aloud before revealing. Mark honestly; your score persists in this browser only.</p>
+  <div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0 answered</div>
+
+  <div class="quiz-item" data-q="1"><div class="quiz-q"><span class="qnum">Q1</span>What is the single load-bearing assumption shared by GitHub Flow and trunk-based development?</div><div class="quiz-answer">That <code>main</code> is always deployable — kept green by CI and review. Without trustworthy CI keeping <code>main</code> releasable, both models break.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="2"><div class="quiz-q"><span class="qnum">Q2</span>Name the four merge models and the one-word history shape each produces.</div><div class="quiz-answer">Fast-forward (linear), merge commit/no-ff (branch bubbles/topology), squash (linear, one commit per PR), rebase (linear, keeps commits).</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="3"><div class="quiz-q"><span class="qnum">Q3</span>In Git Flow, where do <code>release/*</code> and <code>hotfix/*</code> branches each merge <em>into</em>?</div><div class="quiz-answer">Both merge into <code>main</code> (where they're tagged) <strong>and back</strong> into <code>develop</code>, so the release contents and fixes aren't lost on the integration branch.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="4"><div class="quiz-q"><span class="qnum">Q4</span>State the Golden Rule of rebase and why it matters.</div><div class="quiz-answer">Never rebase commits that other people already have (shared/pushed branches). Rebase rewrites hashes, stranding anyone who built on the old commits and corrupting their clones.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="5"><div class="quiz-q"><span class="qnum">Q5</span>Why does <code>git branch -d</code> refuse after a squash merge, and what do you use instead?</div><div class="quiz-answer">Squash creates a brand-new commit on the target; the branch's original commits are <em>not</em> on the target, so <code>-d</code> (safe delete) sees them as "not fully merged." Use <code>git branch -D</code> deliberately — the commits remain recoverable via reflog.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="6"><div class="quiz-q"><span class="qnum">Q6</span>How do "ours" and "theirs" differ between a merge and a rebase?</div><div class="quiz-answer">In a merge, ours = your current branch (HEAD). In a rebase, the base you're replaying onto is "ours" at each step and your own replayed commit is "theirs" — so never resolve by label; read the diff.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="7"><div class="quiz-q"><span class="qnum">Q7</span>What is GitLab Flow's environment-branch rule, and how does a production hotfix return to <code>main</code>?</div><div class="quiz-answer">Code flows strictly downstream (main → pre-prod → production) via merge. A hotfix branches off <code>production</code>, merges back to <code>production</code>, then is <em>cherry-picked</em> back to <code>main</code> (nothing merges upstream from production except the cherry-pick).</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="8"><div class="quiz-q"><span class="qnum">Q8</span>What single technique makes trunk-based development viable for large teams, and why?</div><div class="quiz-answer">Feature flags. They let incomplete-but-safe code merge to <code>main</code> behind a default-off switch, decoupling merge from release so branches can stay short without blocking partially-built features.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="9"><div class="quiz-q"><span class="qnum">Q9</span>Why is squashing a feature branch whose intermediate commits didn't build a problem?</div><div class="quiz-answer">A future <code>git bisect</code> can only point at the combined squash commit, hiding which step broke — you lose the granularity to locate a regression. Keep every commit on a feature branch building, or accept PR-granularity bisects.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="10"><div class="quiz-q"><span class="qnum">Q10</span>A push is rejected as "non-fast-forward." What's the safe next step — and what must you not do?</div><div class="quiz-answer"><code>git fetch</code>, inspect the divergence, then <code>git pull --rebase</code> (or merge) on your own branch. Do <strong>not</strong> blind <code>--force</code>-push a shared branch — it discards teammates' commits and corrupts their clones. Use <code>--force-with-lease</code> only if you understand what it protects.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="11"><div class="quiz-q"><span class="qnum">Q11</span>Map each SemVer bump (MAJOR/MINOR/PATCH) to a conventional-commit type.</div><div class="quiz-answer">MAJOR ← <code>feat!</code> / breaking change; MINOR ← <code>feat</code> (backward-compatible feature); PATCH ← <code>fix</code> (backward-compatible fix). <code>chore</code>/<code>docs</code> trigger no release.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="12"><div class="quiz-q"><span class="qnum">Q12</span>A teammate force-pushed the shared feature branch and your clone is now confused. How do you recover and prevent it?</div><div class="quiz-answer">Recover: <code>git fetch</code>, then <code>git reset --hard origin/&lt;branch&gt;</code> to align with the rewritten remote (after confirming your local work is saved/committed elsewhere). Prevent: enable force-push protection / rulesets on shared branches; enforce the Golden Rule of rebase.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="13"><div class="quiz-q"><span class="qnum">Q13</span>Four decision axes for choosing a workflow — name them.</div><div class="quiz-answer">Release cadence (continuous vs versioned), team size &amp; concurrency, deployment topology (one env vs staged pipeline vs shipped artifacts), and CI/CD maturity + number of supported versions.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="14"><div class="quiz-q"><span class="qnum">Q14</span>True or false: "Git Flow is the right default for a web app that deploys many times a day." Why?</div><div class="quiz-answer">False. Git Flow's release/hotfix ceremony exists for shipped/versioned artifacts; on a continuously-deployed web app it adds branches, back-merges, and delay for no benefit. Use GitHub Flow or trunk-based instead. (Driessen himself flagged this.)</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+
+  <h3>Sources</h3>
+  <p class="tiny">External links require network; the guide itself works fully offline. Content reflects the widely documented public models as of 2026-07-23.</p>
+  <ul>
+    <li><a href="https://nvie.com/posts/a-successful-git-branching-model/" target="_blank" rel="noopener">Vincent Driessen — A successful Git branching model (Git Flow, 2010)</a></li>
+    <li><a href="https://github.com/nvie/gitflow" target="_blank" rel="noopener">gitflow — the model and the CLI extension (nvie)</a></li>
+    <li><a href="https://docs.github.com/en/get-started/using-github/github-flow" target="_blank" rel="noopener">GitHub Docs — GitHub Flow</a></li>
+    <li><a href="https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-branches-in-your-repository/configuring-pull-request-merges" target="_blank" rel="noopener">GitHub Docs — Configuring pull request merges (merge strategies)</a></li>
+    <li><a href="https://trunkbaseddevelopment.com/" target="_blank" rel="noopener">trunkbaseddevelopment.com — Trunk-Based Development reference</a></li>
+    <li><a href="https://about.gitlab.com/topics/version-control/what-is-gitlab-flow/" target="_blank" rel="noopener">GitLab — What is GitLab Flow?</a></li>
+    <li><a href="https://docs.gitlab.com/ee/topics/gitlab_flow.html" target="_blank" rel="noopener">GitLab Docs — GitLab Flow (environment &amp; release branches)</a></li>
+    <li><a href="https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging" target="_blank" rel="noopener">Pro Git — Basic Branching and Merging</a></li>
+    <li><a href="https://git-scm.com/book/en/v2/Git-Branching-Rebasing" target="_blank" rel="noopener">Pro Git — Rebasing</a></li>
+    <li><a href="https://www.conventionalcommits.org/" target="_blank" rel="noopener">Conventional Commits specification</a></li>
+    <li><a href="https://semver.org/" target="_blank" rel="noopener">Semantic Versioning 2.0.0</a></li>
+    <li><a href="https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners" target="_blank" rel="noopener">GitHub Docs — About CODEOWNERS</a></li>
+  </ul>
+  <div class="callout blue"><strong>Keep practicing</strong>Re-run the capstone (§14) until every phase feels routine, then try it on a real team repository. The workflows differ in topology, but the primitives — branch, rebase, merge, squash, tag, protect — are the same everywhere.</div>
+</section>
+</main>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const root = document.documentElement;
+  const themeButton = document.getElementById('themeToggle');
+  const savedTheme = localStorage.getItem('gw-guide-theme');
+  if (savedTheme === 'light' || savedTheme === 'dark') root.classList.add(savedTheme);
+
+  function themeName() {
+    if (root.classList.contains('light')) return 'light';
+    if (root.classList.contains('dark')) return 'dark';
+    return 'auto';
+  }
+  function updateThemeLabel() { themeButton.textContent = `Theme: ${themeName()}`; }
+  updateThemeLabel();
+  themeButton.addEventListener('click', () => {
+    const current = themeName();
+    root.classList.remove('light', 'dark');
+    const next = current === 'auto' ? 'dark' : current === 'dark' ? 'light' : 'auto';
+    if (next !== 'auto') root.classList.add(next);
+    localStorage.setItem('gw-guide-theme', next);
+    updateThemeLabel();
+  });
+
+  document.querySelectorAll('pre').forEach(pre => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'copy-btn';
+    button.textContent = 'Copy';
+    button.setAttribute('aria-label', 'Copy code block');
+    button.addEventListener('click', async () => {
+      const code = pre.querySelector('code');
+      try {
+        await navigator.clipboard.writeText(code ? code.innerText : pre.innerText);
+        button.textContent = 'Copied';
+      } catch (_) {
+        button.textContent = 'Select text';
+      }
+      setTimeout(() => { button.textContent = 'Copy'; }, 1500);
+    });
+    pre.appendChild(button);
+  });
+
+  const tocLinks = [...document.querySelectorAll('.toc a[href^="#"]')];
+  const sections = tocLinks.map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver(entries => {
+      const visible = entries.filter(e => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (!visible) return;
+      tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === `#${visible.target.id}`));
+    }, { rootMargin: '-12% 0px -72% 0px', threshold: 0 });
+    sections.forEach(section => observer.observe(section));
+  }
+
+  const quizKey = 'gw-guide-quiz-v1';
+  let quizState = {};
+  try { quizState = JSON.parse(localStorage.getItem(quizKey) || '{}'); } catch (_) { quizState = {}; }
+  const quizItems = [...document.querySelectorAll('.quiz-item')];
+  const quizScore = document.getElementById('quizScore');
+
+  function updateQuiz() {
+    let got = 0, missed = 0;
+    quizItems.forEach(item => {
+      const state = quizState[item.dataset.q];
+      item.classList.toggle('correct', state === 'got');
+      item.classList.toggle('missed', state === 'missed');
+      if (state === 'got') got++;
+      if (state === 'missed') missed++;
+    });
+    quizScore.textContent = `Score: ${got} learned · ${missed} review · ${got + missed}/${quizItems.length} answered`;
+    localStorage.setItem(quizKey, JSON.stringify(quizState));
+  }
+
+  quizItems.forEach(item => {
+    const answer = item.querySelector('.quiz-answer');
+    item.querySelector('.reveal').addEventListener('click', buttonEvent => {
+      answer.classList.toggle('open');
+      buttonEvent.currentTarget.textContent = answer.classList.contains('open') ? 'Hide' : 'Reveal';
+    });
+    item.querySelector('.got').addEventListener('click', () => { quizState[item.dataset.q] = 'got'; updateQuiz(); });
+    item.querySelector('.missed').addEventListener('click', () => { quizState[item.dataset.q] = 'missed'; answer.classList.add('open'); updateQuiz(); });
+  });
+  updateQuiz();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="A practical, hands-on user guide for Syncthing: continuous peer-to-peer file sync across macOS, Ubuntu/WSL, iOS (Möbius Sync), and Windows — no cloud, no server, no account.">
+<title>Syncthing Field Guide — Your Files, Every Device, No Cloud</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23161009'/><circle cx='50' cy='50' r='30' fill='none' stroke='%23e58a4b' stroke-width='6'/><circle cx='50' cy='20' r='8' fill='%23e58a4b'/><circle cx='76' cy='65' r='8' fill='%2349b8a5'/><circle cx='24' cy='65' r='8' fill='%2349b8a5'/></svg>">
+<style>
+  /* Palette: copper/terracotta + deep teal — deliberately distinct from sibling
+     guides (chezmoi raspberry, fzf teal/coral, git-workflows cobalt, lazygit
+     green, sqlite violet, cmux blue, gascity amber, gastown teal).
+     No color literals outside this variable block, except deliberate constants:
+     the terminal/sim panels are always dark (#4a3722 borders, rgba overlays)
+     and the brand/step glyph colors are tuned per theme below. */
+  :root {
+    --bg: #faf6f2; --surface: #ffffff; --surface-2: #f2e9e1; --ink: #241609;
+    --ink-2: #55402e; --muted: #857260; --line: #ddccbb; --hairline: rgba(36,22,9,.1);
+    --accent: #b04a12; --accent-strong: #8f3a0c; --accent-wash: rgba(176,74,18,.09);
+    --teal: #0e7a6c; --teal-wash: rgba(14,122,108,.10); --gold: #8d6500;
+    --gold-wash: rgba(141,101,0,.11); --blue: #1465a0; --blue-wash: rgba(20,101,160,.10);
+    --danger: #b3261e; --danger-wash: rgba(179,38,30,.10); --terminal: #1a1109;
+    --terminal-2: #271a10; --terminal-ink: #f5ebdf; --terminal-muted: #a28d77;
+    --terminal-accent: #ffab6b; --terminal-gold: #ffd166; --terminal-teal: #5fd3bf;
+    --code-bg: #f0e5d8; --shadow: 0 18px 50px rgba(56,34,15,.10); --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #150e07; --surface: #1e150c; --surface-2: #2a1f13; --ink: #f8efe4;
+      --ink-2: #d3c2ae; --muted: #9b8873; --line: #453522; --hairline: rgba(255,255,255,.10);
+      --accent: #ff9d55; --accent-strong: #ffb87e; --accent-wash: rgba(255,157,85,.12);
+      --teal: #57cfba; --teal-wash: rgba(87,207,186,.12); --gold: #e4bd55;
+      --gold-wash: rgba(228,189,85,.13); --blue: #79bdea; --blue-wash: rgba(121,189,234,.12);
+      --danger: #ff8a7e; --danger-wash: rgba(255,138,126,.12); --terminal: #120c05;
+      --terminal-2: #1e150c; --terminal-ink: #f5ebdf; --terminal-muted: #a28d77;
+      --terminal-accent: #ffab6b; --terminal-gold: #ffd166; --terminal-teal: #5fd3bf;
+      --code-bg: #2c2114; --shadow: 0 18px 50px rgba(0,0,0,.30);
+    }
+  }
+  :root.dark {
+    --bg:#150e07;--surface:#1e150c;--surface-2:#2a1f13;--ink:#f8efe4;--ink-2:#d3c2ae;
+    --muted:#9b8873;--line:#453522;--hairline:rgba(255,255,255,.10);--accent:#ff9d55;
+    --accent-strong:#ffb87e;--accent-wash:rgba(255,157,85,.12);--teal:#57cfba;
+    --teal-wash:rgba(87,207,186,.12);--gold:#e4bd55;--gold-wash:rgba(228,189,85,.13);
+    --blue:#79bdea;--blue-wash:rgba(121,189,234,.12);--danger:#ff8a7e;
+    --danger-wash:rgba(255,138,126,.12);--terminal:#120c05;--terminal-2:#1e150c;
+    --terminal-ink:#f5ebdf;--terminal-muted:#a28d77;--terminal-accent:#ffab6b;
+    --terminal-gold:#ffd166;--terminal-teal:#5fd3bf;--code-bg:#2c2114;
+    --shadow:0 18px 50px rgba(0,0,0,.30)
+  }
+  :root.light {
+    --bg:#faf6f2;--surface:#fff;--surface-2:#f2e9e1;--ink:#241609;--ink-2:#55402e;
+    --muted:#857260;--line:#ddccbb;--hairline:rgba(36,22,9,.1);--accent:#b04a12;
+    --accent-strong:#8f3a0c;--accent-wash:rgba(176,74,18,.09);--teal:#0e7a6c;
+    --teal-wash:rgba(14,122,108,.10);--gold:#8d6500;--gold-wash:rgba(141,101,0,.11);
+    --blue:#1465a0;--blue-wash:rgba(20,101,160,.10);--danger:#b3261e;
+    --danger-wash:rgba(179,38,30,.10);--terminal:#1a1109;--terminal-2:#271a10;
+    --terminal-ink:#f5ebdf;--terminal-muted:#a28d77;--terminal-accent:#ffab6b;
+    --terminal-gold:#ffd166;--terminal-teal:#5fd3bf;--code-bg:#f0e5d8;
+    --shadow:0 18px 50px rgba(56,34,15,.10)
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 16px; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.62 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  a { color: var(--accent-strong); text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  button,input { font: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+  .skip { position: fixed; left: 12px; top: -80px; z-index: 100; padding: 8px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+  .skip:focus { top: 12px; }
+  .layout { display: flex; max-width: 1440px; margin: 0 auto; }
+  .sidebar { position: sticky; top: 0; align-self: flex-start; width: 272px; height: 100vh; flex: 0 0 auto; overflow-y: auto; padding: 23px 16px 30px 20px; border-right: 1px solid var(--line); background: color-mix(in srgb,var(--bg) 92%,transparent); }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 850; letter-spacing: -.02em; }
+  .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: #fff; background: var(--accent); font: 900 15px/1 ui-monospace,monospace; }
+  :root.dark .brand-mark { color: #2b1405; }
+  @media (prefers-color-scheme: dark) { :root:not(.light) .brand-mark { color: #2b1405; } }
+  .brand-sub { margin: 5px 0 14px 44px; color: var(--muted); font-size: 11px; }
+  .toc-toggle { display: none; margin: 10px 0 2px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink-2); background: var(--surface); font-size: 13px; }
+  .toc-group { margin: 16px 8px 4px; color: var(--muted); font-size: 10px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+  .sidebar nav a { display: block; margin: 1px 0; padding: 5px 8px; border-radius: 7px; color: var(--ink-2); font-size: 12.5px; text-decoration: none; }
+  .sidebar nav a:hover,.sidebar nav a.active { color: var(--accent-strong); background: var(--accent-wash); }
+  .sidebar nav a.active { font-weight: 780; }
+  main { min-width: 0; flex: 1; padding: 42px 54px 110px; }
+  .theme-toggle,.top-button { position: fixed; z-index: 30; right: 16px; border: 1px solid var(--line); color: var(--ink-2); background: var(--surface); border-radius: 999px; box-shadow: var(--shadow); }
+  .theme-toggle { top: 14px; padding: 6px 13px; }
+  .top-button { bottom: 16px; padding: 7px 12px; opacity: 0; pointer-events: none; transform: translateY(8px); transition: .2s; text-decoration: none; }
+  .top-button.visible { opacity: 1; pointer-events: auto; transform: none; }
+  .hero { position: relative; padding: 20px 0 36px; }
+  .hero::after { content:""; display:block; height:1px; margin-top:34px; background:linear-gradient(90deg,var(--accent),var(--teal),transparent 80%); }
+  .eyebrow { color: var(--teal); font-size: 11px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+  h1 { max-width: 900px; margin: 7px 0 13px; font-size: clamp(40px,6vw,72px); line-height: .98; letter-spacing: -.055em; }
+  .hero .accent { color: var(--accent-strong); }
+  .subtitle { max-width: 70ch; margin: 0 0 19px; color: var(--ink-2); font-size: 19px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge { padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink-2); background: var(--surface); font-size: 11px; }
+  section { max-width: 980px; }
+  h2 { margin: 67px 0 16px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 30px; line-height: 1.18; letter-spacing: -.035em; }
+  h3 { margin: 32px 0 9px; font-size: 19px; line-height: 1.28; letter-spacing: -.01em; }
+  h4 { margin: 22px 0 8px; font-size: 15px; }
+  p { max-width: 78ch; margin: 0 0 14px; color: var(--ink-2); }
+  ul,ol { margin: 0 0 17px 23px; padding: 0; }
+  li { margin: 5px 0; color: var(--ink-2); }
+  strong { color: var(--ink); }
+  .lede { max-width: 72ch; font-size: 18px; }
+  code,kbd { font-family: ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace; font-size: .88em; }
+  code { padding: 1px 5px; border-radius: 5px; color: var(--ink); background: var(--code-bg); }
+  :not(pre) > code { overflow-wrap: anywhere; }
+  kbd { display:inline-block; min-width:1.7em; padding:1px 6px; text-align:center; white-space:nowrap; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-bottom-width:2px; border-radius:5px; line-height:1.45; }
+  pre { position:relative; margin:0 0 18px; padding:18px 20px; overflow-x:auto; border:1px solid #4a3722; border-radius:12px; color:var(--terminal-ink); background:var(--terminal); line-height:1.55; }
+  pre code { padding:0; color:inherit; background:none; font-size:13px; }
+  .copy { position:absolute; top:8px; right:8px; padding:3px 8px; border:1px solid rgba(255,255,255,.17); border-radius:6px; color:var(--terminal-ink); background:rgba(255,255,255,.07); font-size:11px; }
+  .copy:hover { background:rgba(255,255,255,.14); }
+  .comment { color:var(--terminal-muted); } .cmd { color:var(--terminal-accent); } .arg { color:var(--terminal-gold); }
+  .out { color:var(--terminal-muted); }
+  .callout { margin:17px 0; padding:14px 17px; border-left:4px solid var(--accent); border-radius:0 10px 10px 0; color:var(--ink-2); background:var(--accent-wash); }
+  .callout strong:first-child { display:block; margin-bottom:3px; }
+  .callout.warn { border-color:var(--gold); background:var(--gold-wash); }
+  .callout.danger { border-color:var(--danger); background:var(--danger-wash); }
+  .callout.blue { border-color:var(--blue); background:var(--blue-wash); }
+  .callout.teal { border-color:var(--teal); background:var(--teal-wash); }
+  .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:17px 0; }
+  .grid.three { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .card { padding:17px; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:0 3px 15px var(--hairline); }
+  .card h3,.card h4 { margin-top:0; }
+  #cheatsheet .card h3 { font-size:15px; }
+  .card p:last-child,.callout p:last-child { margin-bottom:0; }
+  .mini { color:var(--muted); font-size:12px; }
+  .sources-line { margin:20px 0 0; color:var(--muted); font-size:12px; }
+  .table-wrap { margin:14px 0 22px; overflow-x:auto; border:1px solid var(--line); border-radius:12px; }
+  table { width:100%; border-collapse:collapse; background:var(--surface); font-size:13.5px; }
+  th { color:var(--ink); background:var(--surface-2); font-size:11px; letter-spacing:.04em; text-transform:uppercase; }
+  th,td { padding:10px 12px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+  tr:last-child td { border-bottom:0; }
+  td { color:var(--ink-2); }
+  .lab { margin:23px 0; padding:21px; border:1px solid var(--line); border-radius:14px; background:linear-gradient(145deg,var(--surface),var(--teal-wash)); }
+  .lab-head { display:flex; justify-content:space-between; gap:14px; align-items:start; margin-bottom:9px; }
+  .lab-title { color:var(--teal); font-weight:850; font-size:18px; }
+  .lab-time { flex:0 0 auto; padding:3px 8px; color:var(--muted); background:var(--surface); border:1px solid var(--line); border-radius:99px; font-size:11px; }
+  .check { list-style:none; margin-left:0; }
+  .check li { position:relative; padding-left:25px; }
+  .check li::before { content:"□"; position:absolute; left:1px; color:var(--teal); font-weight:900; }
+  details { margin:11px 0; border:1px solid var(--line); border-radius:10px; background:var(--surface); }
+  summary { padding:11px 14px; cursor:pointer; color:var(--ink); font-weight:750; }
+  details > :not(summary) { margin-left:14px; margin-right:14px; }
+  details > :last-child { margin-bottom:14px; }
+  .sim { margin:20px 0; overflow:hidden; border:1px solid #4a3722; border-radius:14px; background:var(--terminal); color:var(--terminal-ink); box-shadow:var(--shadow); }
+  .sim-head { display:flex; justify-content:space-between; gap:10px; padding:9px 13px; color:var(--terminal-muted); background:var(--terminal-2); border-bottom:1px solid #4a3722; font:11px ui-monospace,monospace; }
+  .sim-panels { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0; }
+  .sim-panel { padding:12px 14px; border-right:1px solid #4a3722; min-height:130px; }
+  .sim-panel:last-child { border-right:0; }
+  .sim-panel h4 { margin:0 0 3px; color:var(--terminal-accent); font:700 12px ui-monospace,monospace; }
+  .sim-panel .st { margin:0 0 8px; font:10.5px ui-monospace,monospace; color:var(--terminal-muted); }
+  .sim-panel.offline { opacity:.45; }
+  .sim-file { display:flex; justify-content:space-between; gap:8px; padding:4px 6px; border-radius:5px; font:12.5px/1.5 ui-monospace,monospace; }
+  .sim-file .v { color:var(--terminal-gold); }
+  .sim-file.drift { background:rgba(255,171,107,.13); }
+  .sim-file.conflict { background:rgba(255,138,126,.16); }
+  .sim-buttons { display:flex; flex-wrap:wrap; gap:7px; padding:11px 13px; border-top:1px solid #4a3722; background:var(--terminal-2); }
+  .sim-buttons button { padding:4px 11px; border:1px solid rgba(255,255,255,.2); border-radius:99px; color:var(--terminal-ink); background:rgba(255,255,255,.06); font:12px ui-monospace,monospace; }
+  .sim-buttons button:hover { background:rgba(255,255,255,.14); }
+  .sim-log { max-height:190px; overflow-y:auto; padding:11px 14px; border-top:1px solid #4a3722; font:12.5px/1.55 ui-monospace,monospace; }
+  .sim-log .p { color:var(--terminal-accent); }
+  .sim-log .o { color:var(--terminal-muted); }
+  .sim-log .add { color:var(--terminal-teal); }
+  .step { display:grid; grid-template-columns:42px 1fr; gap:13px; margin:18px 0; }
+  .step-num { display:grid; place-items:center; width:38px; height:38px; border-radius:12px; color:#fff; background:var(--accent); font-weight:900; }
+  :root.dark .step-num { color:#2b1405; }
+  @media (prefers-color-scheme: dark) { :root:not(.light) .step-num { color:#2b1405; } }
+  .step h3 { margin:4px 0 8px; }
+  .pill { display:inline-block; margin:2px 3px 2px 0; padding:2px 8px; border-radius:99px; color:var(--ink-2); background:var(--surface-2); font-size:11px; }
+  .flow { display:flex; flex-wrap:wrap; gap:8px; align-items:stretch; margin:17px 0; }
+  .flow .fbox { flex:1 1 150px; padding:11px 13px; border:1px solid var(--line); border-radius:10px; background:var(--surface); font-size:13px; color:var(--ink-2); }
+  .flow .fbox b { display:block; color:var(--ink); margin-bottom:2px; }
+  .flow .farr { align-self:center; color:var(--accent); font-weight:900; }
+  .source-list li { margin-bottom:8px; }
+  .diagram { margin:22px 0 10px; }
+  .diagram svg { display:block; width:100%; height:auto; }
+  .diagram figcaption { margin-top:7px; color:var(--muted); font-size:12px; }
+  .d-box { fill:var(--surface); stroke:var(--line); stroke-width:1.5; }
+  .d-hot { stroke:var(--accent); }
+  .d-teal { stroke:var(--teal); }
+  .d-inner { fill:var(--surface-2); stroke:var(--hairline); }
+  .d-title { fill:var(--accent-strong); font:750 15px ui-monospace,monospace; }
+  .d-text { fill:var(--ink-2); font:12px system-ui,sans-serif; }
+  .d-label { fill:var(--teal); font:700 11px ui-monospace,monospace; }
+  .d-mono { fill:var(--muted); font:11px ui-monospace,monospace; }
+  .d-arrow { stroke:var(--teal); stroke-width:2; fill:none; }
+  .d-arrow2 { stroke:var(--accent); stroke-width:2; fill:none; }
+  .d-dash { stroke-dasharray:5 5; }
+  .d-arrhead { fill:var(--teal); }
+  .d-arrhead2 { fill:var(--accent); }
+  .glossary dt { margin-top:14px; color:var(--ink); font-weight:800; }
+  .glossary dd { margin:3px 0 0 0; color:var(--ink-2); max-width:78ch; }
+  .index-cols { columns:3; column-gap:28px; margin:15px 0; }
+  .index-cols li { break-inside:avoid; margin:3px 0; font-size:13.5px; list-style:none; }
+  .index-cols ul { margin:0; }
+  .index-letter { margin:10px 0 4px; color:var(--accent-strong); font-weight:900; font-size:13px; letter-spacing:.08em; }
+  .quiz-score { margin:6px 0 15px; padding:8px 12px; border:1px solid var(--line); border-radius:9px; color:var(--ink-2); background:var(--surface); font-size:13px; }
+  .quiz-item { margin:12px 0; padding:14px 16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
+  .quiz-q { color:var(--ink); font-weight:750; }
+  .quiz-q .qnum { margin-right:8px; color:var(--teal); font:800 12px ui-monospace,monospace; }
+  .quiz-answer { display:none; padding:9px 0 2px; color:var(--ink-2); }
+  .quiz-answer.open { display:block; }
+  .quiz-actions { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
+  .quiz-actions button { padding:4px 11px; border:1px solid var(--line); border-radius:99px; color:var(--ink-2); background:var(--surface-2); font-size:12px; }
+  .quiz-actions button:hover { color:var(--accent-strong); border-color:var(--accent); }
+  .quiz-reset { margin:-6px 0 15px; }
+  .quiz-item.correct { border-color:var(--accent); background:var(--accent-wash); }
+  .quiz-item.missed { border-color:var(--gold); background:var(--gold-wash); }
+  .print-only { display:none; }
+  @media (max-width:1000px) {
+    .sidebar { width:235px; } main { padding:38px 30px 100px; } .grid.three { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .index-cols { columns:2; } .sim-panels { grid-template-columns:1fr; } .sim-panel { border-right:0; border-bottom:1px solid #4a3722; }
+  }
+  @media (max-width:760px) {
+    .layout { display:block; } .sidebar { position:relative; width:auto; height:auto; padding:15px; border-right:0; border-bottom:1px solid var(--line); }
+    .brand-sub,.sidebar nav { display:none; }
+    .toc-toggle { display:inline-block; }
+    .sidebar.open nav { display:block; padding-top:6px; }
+    main { padding:25px 17px 80px; } .theme-toggle { top:10px; } .grid,.grid.three { grid-template-columns:minmax(0,1fr); }
+    .lab-head { display:block; } .lab-time { display:inline-block; margin-top:5px; }
+    .index-cols { columns:1; }
+  }
+  @media print {
+    :root { --bg:#fff;--surface:#fff;--surface-2:#f3f1ee;--ink:#111;--ink-2:#333;--muted:#666;--line:#bbb; }
+    body { font-size:10.5pt; } .sidebar,.theme-toggle,.top-button,.copy,.sim,.quiz-actions { display:none!important; }
+    .quiz-answer { display:block; }
+    details { border:0; } details > * { display:block; }
+    main { padding:0; } .print-only { display:block; } h2 { break-after:avoid; margin-top:30px; } pre,.card,.lab,table,.quiz-item { break-inside:avoid; }
+    a { color:#111; text-decoration:none; } a[href^="http"]::after { content:" (" attr(href) ")"; font-size:8pt; word-break:break-all; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#content">Skip to guide</a>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle color theme">◐ Theme</button>
+<a class="top-button" id="topButton" href="#top" aria-label="Back to top">↑ Top</a>
+<div class="layout" id="top">
+  <aside class="sidebar" aria-label="Guide navigation">
+    <div class="brand"><span class="brand-mark">⇄</span><span>syncthing field guide</span></div>
+    <button class="toc-toggle" id="tocToggle" type="button" aria-expanded="false" aria-controls="toc">☰ Contents</button>
+    <div class="brand-sub">every device, no cloud</div>
+    <nav id="toc">
+      <div class="toc-group">Foundations</div>
+      <a href="#mental-model">1 · Mental model</a>
+      <a href="#prereqs">2 · Prerequisite floor</a>
+      <a href="#install">3 · Install &amp; verify</a>
+      <div class="toc-group">Core mechanics</div>
+      <a href="#devices">4 · Devices &amp; identity</a>
+      <a href="#folders">5 · Folders &amp; folder types</a>
+      <a href="#simulator">6 · Cluster simulator</a>
+      <a href="#ignores">7 · Ignore patterns</a>
+      <a href="#conflicts">8 · Conflicts</a>
+      <a href="#versioning">9 · File versioning</a>
+      <div class="toc-group">Your fleet</div>
+      <a href="#topology">10 · Topology for your fleet</a>
+      <a href="#ios">11 · iOS: Möbius Sync</a>
+      <a href="#wsl-windows">12 · WSL &amp; native Windows</a>
+      <div class="toc-group">Operations</div>
+      <a href="#operations">13 · Running it for years</a>
+      <a href="#capstone">14 · Capstone</a>
+      <a href="#troubleshooting">15 · Troubleshooting</a>
+      <a href="#cheatsheet">16 · Cheat sheet</a>
+      <div class="toc-group">Reference</div>
+      <a href="#glossary">Glossary</a>
+      <a href="#index">Index</a>
+      <a href="#quiz">Retrieval quiz</a>
+      <a href="#sources">Sources</a>
+    </nav>
+  </aside>
+
+  <main id="content">
+    <header class="hero">
+      <div class="eyebrow">Peer-to-peer file sync · user guide + hands-on labs</div>
+      <h1>Your files, every device,<br><span class="accent">no cloud in between.</span></h1>
+      <p class="subtitle">Syncthing keeps folders identical across your Mac, Ubuntu/WSL, iPhone, and Windows machines by talking device-to-device over TLS — no server, no account, no third party holding your data.</p>
+      <div class="badges">
+        <span class="badge">Checked with syncthing v2.1.3 "Hafnium Hornet" · 2026-08-06</span>
+        <span class="badge">macOS (Homebrew) · Ubuntu/WSL · Windows · iOS via Möbius Sync 1.28.0</span>
+        <span class="badge">Single file · works offline</span>
+        <span class="badge">Labs from real two-instance transcripts · cluster simulator included</span>
+      </div>
+    </header>
+    <section id="mental-model">
+      <h2>1 · Mental model: a cluster of equals, not a client and a server</h2>
+      <p class="lede">Syncthing is not "Dropbox you host yourself." There is no server anywhere — not even optionally. Every device runs the same program, holds a full copy of every folder it shares, and exchanges changes directly with the other devices it trusts. The cluster has no center, so there is nothing to rent, nothing to back up specially, and no single machine whose death takes your data with it.</p>
+      <p>Four ideas carry everything else in this guide:</p>
+      <ul>
+        <li><strong>A <a href="#g-device">device</a> is an identity, not an address.</strong> Each installation generates a key pair; the <a href="#g-device-id">device ID</a> is a fingerprint of its certificate. Devices connect only to IDs they have been explicitly told to trust — both sides must add each other (§4).</li>
+        <li><strong>A <a href="#g-folder">folder</a> is the unit of sharing.</strong> You share folder X with devices B and C, folder Y with B only. Every device holds a real, ordinary copy of each folder it participates in — there is no "streaming" or placeholder mode.</li>
+        <li><strong>Devices exchange <a href="#g-index">indexes</a>, then blocks.</strong> Each device scans its folders, hashes files into blocks, and announces "here is what I have" to connected peers. Peers pull only the blocks they are missing — from whichever connected device has them, torrent-style.</li>
+        <li><strong>Change history is per-file <a href="#g-version-vector">version vectors</a>, not timestamps alone.</strong> That is how the cluster distinguishes "B has a newer version" from "A and B changed the same file independently" — the latter is a conflict (§8), and no device's opinion outranks another's.</li>
+      </ul>
+      <figure class="diagram">
+        <svg viewBox="0 0 960 380" role="img" aria-labelledby="clusterDiagramTitle">
+          <title id="clusterDiagramTitle">A Syncthing cluster of four devices: Mac, Ubuntu in WSL, iPhone running Möbius Sync, and a Windows PC. Devices connect pairwise over TLS. Each connection carries index exchange then block transfer. There is no server; discovery and relay servers only help devices find each other.</title>
+          <defs>
+            <marker id="arrT" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" class="d-arrhead"/>
+            </marker>
+          </defs>
+          <rect x="40" y="40" width="220" height="92" rx="14" class="d-box d-hot"/>
+          <text x="150" y="70" text-anchor="middle" class="d-title">Mac</text>
+          <text x="150" y="90" text-anchor="middle" class="d-mono">syncthing v2.1.3 · brew</text>
+          <text x="150" y="110" text-anchor="middle" class="d-text">full copy of Notes + Docs</text>
+          <rect x="700" y="40" width="220" height="92" rx="14" class="d-box d-hot"/>
+          <text x="810" y="70" text-anchor="middle" class="d-title">Ubuntu (WSL)</text>
+          <text x="810" y="90" text-anchor="middle" class="d-mono">syncthing via apt</text>
+          <text x="810" y="110" text-anchor="middle" class="d-text">full copy of Notes + Docs</text>
+          <rect x="40" y="250" width="220" height="92" rx="14" class="d-box d-teal"/>
+          <text x="150" y="280" text-anchor="middle" class="d-title">iPhone</text>
+          <text x="150" y="300" text-anchor="middle" class="d-mono">Möbius Sync (Syncthing 1.28)</text>
+          <text x="150" y="320" text-anchor="middle" class="d-text">full copy of Notes</text>
+          <rect x="700" y="250" width="220" height="92" rx="14" class="d-box d-teal"/>
+          <text x="810" y="280" text-anchor="middle" class="d-title">Windows PC</text>
+          <text x="810" y="300" text-anchor="middle" class="d-mono">syncthing.exe (optional)</text>
+          <text x="810" y="320" text-anchor="middle" class="d-text">full copy of Docs</text>
+          <line x1="262" y1="86" x2="696" y2="86" class="d-arrow" marker-start="url(#arrT)" marker-end="url(#arrT)"/>
+          <text x="479" y="74" text-anchor="middle" class="d-label">TLS 1.3 · index exchange → block transfer</text>
+          <line x1="150" y1="134" x2="150" y2="246" class="d-arrow" marker-start="url(#arrT)" marker-end="url(#arrT)"/>
+          <line x1="810" y1="134" x2="810" y2="246" class="d-arrow" marker-start="url(#arrT)" marker-end="url(#arrT)"/>
+          <line x1="262" y1="132" x2="696" y2="250" class="d-arrow d-dash" marker-start="url(#arrT)" marker-end="url(#arrT)"/>
+          <line x1="262" y1="250" x2="696" y2="132" class="d-arrow d-dash" marker-start="url(#arrT)" marker-end="url(#arrT)"/>
+          <text x="479" y="222" text-anchor="middle" class="d-mono">every pair that shares a folder connects directly when both are online</text>
+          <text x="479" y="368" text-anchor="middle" class="d-mono">no server holds files — discovery/relay servers (optional) only help devices find each other</text>
+        </svg>
+        <figcaption>The cluster is a mesh of equals. Dashed lines: pairs that connect when both happen to be online — an iPhone is rarely one of them (§11).</figcaption>
+      </figure>
+      <div class="callout"><strong>Key idea: sync is continuous convergence, not a "sync now" event</strong>Each device watches its folders (filesystem watcher + periodic full scan), announces changes to whoever is connected, and pulls what it is missing. Devices that are offline simply catch up the next time they connect — from any device that already has the new blocks. You never "run a sync"; you let the cluster converge.</div>
+      <div class="callout danger"><strong>Syncthing is not a backup</strong>The docs say it plainly: every change propagates — including deletions and ransomware-encrypted files. Versioning (§9) softens this but does not replace real backups. Keep Time Machine / restic / whatever you use running on at least one device that holds a full copy.</div>
+      <h3>The wrong question: "how do I sync through the cloud?"</h3>
+      <p>The right question is "when are two of my devices awake at the same time?" A cloud service is always awake, so any device can sync at any hour. A Syncthing cluster only moves data while two members are online together. On a desktop fleet this is a non-issue. With an iPhone in the cluster it becomes the central design constraint — iOS will not let Möbius Sync run continuously in the background (§11) — and it is why §10 recommends designating your most-on device as the de-facto hub.</p>
+      <p class="sources-line">Sources: <a href="https://docs.syncthing.net/intro/getting-started.html" target="_blank" rel="noopener">Getting started</a> · <a href="https://docs.syncthing.net/specs/bep-v1.html" target="_blank" rel="noopener">Block Exchange Protocol spec</a> · <a href="https://docs.syncthing.net/users/faq.html" target="_blank" rel="noopener">FAQ</a></p>
+    </section>
+
+    <section id="prereqs">
+      <h2>2 · Prerequisite floor</h2>
+      <p class="lede">Syncthing asks little. You already run it — the floor here is the vocabulary and shell comfort the labs assume. Check honestly; gaps show up later as "why is this folder red" confusion, not as errors.</p>
+      <div class="grid three">
+        <div class="card"><h3>Shell — hard</h3><p>Run commands, edit a text file, understand what a hidden dot-file is, and use <code>mktemp -d</code>-style throwaway directories. Labs run everything in a scratch area.</p></div>
+        <div class="card"><h3>Networks — soft</h3><p>Helpful: what a port is, LAN vs internet, why NAT breaks inbound connections. §4 teaches the Syncthing-specific parts (discovery, relays) from zero.</p></div>
+        <div class="card"><h3>Systemd / launchd — just-in-time</h3><p>Only needed for autostart on Linux/WSL (§12–13). Introduced there with exact commands; no prior fluency assumed.</p></div>
+      </div>
+      <h3>Self-assessment</h3>
+      <ul class="check">
+        <li>Can you explain the difference between a file's content and its metadata (mtime, permissions)?</li>
+        <li>Do you know why two machines behind different home routers cannot simply open TCP connections to each other?</li>
+        <li>Can you find and edit a config file under <code>~/Library/Application Support</code> (macOS) or <code>~/.config</code> (Linux)?</li>
+      </ul>
+      <p>Two or more checked: proceed. Fewer: proceed anyway — every lab is disposable and touches nothing real — but expect to look things up as you go.</p>
+    </section>
+
+    <section id="install">
+      <h2>3 · Install &amp; verify on every platform you own</h2>
+      <p class="lede">One program, four platforms, four install stories. The binary is the same everywhere; what differs is how it starts at boot and where its config lives. Get the paths into your head now — every troubleshooting session ends up in one of these directories.</p>
+      <h3>macOS — Homebrew (what this guide was verified on)</h3>
+      <pre><code><span class="cmd">brew</span> install syncthing
+<span class="cmd">brew</span> services start syncthing   <span class="comment"># autostart at login via launchd</span>
+<span class="cmd">syncthing</span> --version
+<span class="out">syncthing v2.1.3 "Hafnium Hornet" (go1.26.5 darwin-amd64) brew@Sonoma 2026-08-03 21:36:05 UTC [noupgrade]</span></code></pre>
+      <p>Where everything lives — from <code>syncthing paths</code> on this Mac, verbatim:</p>
+      <pre><code><span class="cmd">syncthing</span> paths
+<span class="out">Configuration file:
+    /Users/you/Library/Application Support/Syncthing/config.xml
+Device private key &amp; certificate files:
+    .../Syncthing/key.pem  .../Syncthing/cert.pem
+Database location:
+    .../Syncthing/index-v2
+Log file:
+    .../Syncthing/syncthing.log
+Default sync folder directory:
+    /Users/you/Sync</span></code></pre>
+      <div class="callout warn"><strong>key.pem is your device's identity</strong>Delete the config directory and you have not "reset Syncthing" — you have destroyed the device's identity. Every peer must then re-add the new device ID. Back up <code>key.pem</code>/<code>cert.pem</code> if you ever migrate a machine and want it to keep being "the same device".</div>
+      <h3>Ubuntu — including inside WSL</h3>
+      <p>Use the official apt repository, not Ubuntu's own package (which lags). The <code>stable-v2</code> channel tracks the v2 line, updated the first Tuesday of each month:</p>
+      <pre><code><span class="cmd">sudo</span> mkdir -p /etc/apt/keyrings
+<span class="cmd">sudo</span> curl -L -o /etc/apt/keyrings/syncthing-archive-keyring.gpg https://syncthing.net/release-key.gpg
+<span class="cmd">echo</span> <span class="arg">"deb [signed-by=/etc/apt/keyrings/syncthing-archive-keyring.gpg] https://apt.syncthing.net/ syncthing stable-v2"</span> | sudo tee /etc/apt/sources.list.d/syncthing.list
+<span class="cmd">sudo</span> apt-get update &amp;&amp; <span class="cmd">sudo</span> apt-get install syncthing</code></pre>
+      <p>Config lives in <code>~/.local/state/syncthing</code> (v2 default on Linux; older installs may still use <code>~/.config/syncthing</code>). Autostart on Linux is a systemd user service — §12 covers the WSL-specific parts.</p>
+      <h3>Windows — native, three official options</h3>
+      <div class="table-wrap"><table><thead><tr><th>Option</th><th>What it is</th><th>Pick it when</th></tr></thead><tbody>
+        <tr><td><strong>Syncthing Windows Setup</strong></td><td>Lightweight official-recommended installer; installs, autostarts, firewall rules</td><td>Default choice for a native Windows machine</td></tr>
+        <tr><td>Base zip (<code>syncthing.exe</code>)</td><td>Bare binary from syncthing.net/downloads; you arrange autostart (Task Scheduler with <code>--no-console --no-browser</code>)</td><td>You want full manual control</td></tr>
+        <tr><td>SyncTrayzor v2</td><td>Tray utility + launcher (GermanCoding fork — the original by canton7 is discontinued and breaks with Syncthing 2.x)</td><td>You want a tray icon and GUI wrapper</td></tr>
+      </tbody></table></div>
+      <h3>iOS — Möbius Sync</h3>
+      <p>Third-party App Store client embedding the real Syncthing engine (currently Syncthing 1.28.0 inside Möbius 1.28.0). Free up to 20&nbsp;MB inside its own sandbox; one-time $4.99 purchase for unlimited sync. It participates in the cluster as a normal device — the deep behavioral differences are iOS's, not Möbius's (§11).</p>
+      <div class="callout teal"><strong>Version skew is fine</strong>Your Mac runs Syncthing 2.1.3; Möbius embeds 1.28.0. The sync protocol (BEP) is unchanged between v1 and v2, so mixed clusters just work. The v2 differences are local: SQLite database, structured logs, CLI flags (§13).</div>
+      <p class="sources-line">Sources: <a href="https://apt.syncthing.net/" target="_blank" rel="noopener">apt.syncthing.net</a> · <a href="https://syncthing.net/downloads/" target="_blank" rel="noopener">syncthing.net/downloads</a> · <a href="https://docs.syncthing.net/users/autostart.html" target="_blank" rel="noopener">Autostart docs</a> · <a href="https://mobiussync.com/" target="_blank" rel="noopener">Möbius Sync</a></p>
+    </section>
+    <section id="devices">
+      <h2>4 · Devices &amp; identity: trust is explicit, addresses are optional</h2>
+      <p class="lede">Everything Syncthing does rests on one security decision made well: a device is its key pair. The 56-character device ID is a fingerprint of a self-signed TLS certificate, generated on first run. Connections are mutual-TLS: each side proves it owns the private key behind its ID, and each side checks the other's ID against its trusted list. No passwords, no accounts, nothing to phish.</p>
+      <pre><code><span class="cmd">syncthing</span> device-id --home=$LAB/home-a   <span class="comment"># or Actions → Show ID in the GUI</span>
+<span class="out">4IT7P52-SRGKLEY-FXEQLAV-ZVFEFJ6-OWZOAFS-V526GMB-B763XFM-T4MWMQF</span></code></pre>
+      <ul>
+        <li><strong>Pairing is symmetric.</strong> "Two devices will <em>only</em> connect and talk to each other if they are both configured with each other's device ID." Adding B on A produces a pending request on B; B must accept (or pre-add A). One-sided adds do nothing.</li>
+        <li><strong>IDs are not secrets.</strong> Knowing an ID doesn't let anyone connect — your device ignores IDs it hasn't trusted. Paste them in chat freely.</li>
+        <li><strong>Finding peers is a separate problem from trusting them.</strong> Trust is the ID list; <em>finding</em> the current IP of a trusted device is discovery, below.</li>
+      </ul>
+      <h3>How devices find and reach each other</h3>
+      <div class="table-wrap"><table><thead><tr><th>Mechanism</th><th>What it does</th><th>Default</th><th>Turn it off when</th></tr></thead><tbody>
+        <tr><td><strong>Local discovery</strong></td><td>UDP broadcast on port 21027 announces "ID X is at this LAN address"</td><td>On</td><td>Never, for a home fleet — it is what makes LAN sync zero-config</td></tr>
+        <tr><td><strong>Global discovery</strong></td><td>Devices report their address to Syncthing's public discovery servers; peers look IDs up there</td><td>On</td><td>LAN-only privacy posture; then set static addresses per device</td></tr>
+        <tr><td><strong>Relays</strong></td><td>When no direct path exists (both sides NATed), traffic bounces through a community relay — still end-to-end TLS-encrypted</td><td>On</td><td>You've arranged port forwarding or Tailscale; relays are slow (last resort by design, priority 50 vs 10 for LAN)</td></tr>
+        <tr><td><strong>Static addresses</strong></td><td>Set <code>tcp://host:port</code> on the device instead of <code>dynamic</code></td><td>—</td><td>Use for always-known hosts (VPN, LAN server); fastest and most private path</td></tr>
+      </tbody></table></div>
+      <p>Sync itself listens on <strong>port 22000</strong> (TCP and QUIC over UDP). For two devices on your LAN, nothing needs opening — local discovery plus direct TCP just works. For internet sync without relays, forward 22000 on one side; one reachable member is enough for the pair.</p>
+      <div class="lab">
+        <div class="lab-head"><div class="lab-title">Lab 1 · Build a two-device cluster on one machine</div><span class="lab-time">15 min · local only · touches nothing real</span></div>
+        <p>You will run two isolated Syncthing instances side by side, pair them, and watch a folder converge. This sandbox is reused by every later lab — and it is the exact setup used to verify this guide. Your real Syncthing (and its config) is never touched: everything lives under <code>$LAB</code> with discovery, relays, and NAT traversal disabled.</p>
+        <pre><code><span class="cmd">LAB</span>=$(mktemp -d /tmp/st-lab.XXXX) &amp;&amp; mkdir -p $LAB/folder-a $LAB/folder-b
+<span class="cmd">syncthing</span> generate --home=$LAB/home-a
+<span class="out">... INF Calculated device ID (device=4IT7P52-SRGKLEY-... )</span>
+<span class="cmd">syncthing</span> generate --home=$LAB/home-b
+<span class="out">... INF Calculated device ID (device=RLEX6CH-D5B77QK-... )</span></code></pre>
+        <p>Isolate the instances (fixed localhost ports, all discovery off). Open <code>$LAB/home-a/config.xml</code> and set — in <code>&lt;gui&gt;&lt;address&gt;</code> → <code>127.0.0.1:8391</code>; replace the three <code>&lt;listenAddress&gt;</code> lines with one <code>tcp://127.0.0.1:22101</code>; set <code>globalAnnounceEnabled</code>, <code>localAnnounceEnabled</code>, <code>relaysEnabled</code>, <code>natEnabled</code>, <code>crashReportingEnabled</code> to <code>false</code> and <code>urAccepted</code> to <code>-1</code>. Same for home-b with ports 8392 / 22102. Then start both:</p>
+        <pre><code><span class="cmd">syncthing</span> serve --home=$LAB/home-a --no-browser --no-restart --no-upgrade &gt; $LAB/a.log 2&gt;&amp;1 &amp;
+<span class="cmd">syncthing</span> serve --home=$LAB/home-b --no-browser --no-restart --no-upgrade &gt; $LAB/b.log 2&gt;&amp;1 &amp;
+<span class="cmd">grep</span> "GUI and API" $LAB/a.log
+<span class="out">... INF GUI and API listening (address=127.0.0.1:8391 log.pkg=api)</span></code></pre>
+        <p>Pair them and share a folder — the CLI equivalent of "Add Remote Device" + "Add Folder" in both GUIs. Note the symmetry: four commands per side would be needed in the GUI too (add device, accept device, add folder, accept folder):</p>
+        <pre><code><span class="cmd">A</span>=$(syncthing device-id --home=$LAB/home-a); <span class="cmd">B</span>=$(syncthing device-id --home=$LAB/home-b)
+<span class="cmd">syncthing</span> cli --home=$LAB/home-a config devices add --device-id $B --name lab-b --addresses tcp://127.0.0.1:22102
+<span class="cmd">syncthing</span> cli --home=$LAB/home-b config devices add --device-id $A --name lab-a --addresses tcp://127.0.0.1:22101
+<span class="cmd">syncthing</span> cli --home=$LAB/home-a config folders add --id notes --label <span class="arg">"Notes"</span> --path $LAB/folder-a
+<span class="cmd">syncthing</span> cli --home=$LAB/home-a config folders notes devices add --device-id $B
+<span class="cmd">syncthing</span> cli --home=$LAB/home-b config folders add --id notes --label <span class="arg">"Notes"</span> --path $LAB/folder-b
+<span class="cmd">syncthing</span> cli --home=$LAB/home-b config folders notes devices add --device-id $A</code></pre>
+        <p>Within seconds the log shows the handshake:</p>
+        <pre><code><span class="cmd">grep</span> -E "Established|New device" $LAB/a.log | tail -2
+<span class="out">... INF Established secure connection (device=RLEX6CH ... connection.crypto=TLS1.3-TLS_AES_128_GCM_SHA256 connection.prio=10 ...)
+... INF New device connection (device=RLEX6CH address=127.0.0.1:22102 remote.name=... remote.client=syncthing remote.version=v2.1.3 ...)</span></code></pre>
+        <ul class="check">
+          <li>Create a file: <code>echo "# Meeting notes" &gt; $LAB/folder-a/todo.md</code>. Expect: within ~10 s it appears in <code>$LAB/folder-b/</code>.</li>
+          <li>Seed the subdirectory later labs use: <code>mkdir $LAB/folder-a/vault &amp;&amp; echo "first idea" &gt; $LAB/folder-a/vault/ideas.md</code>. Expect: <code>vault/ideas.md</code> appears on B as well — directories sync implicitly with their contents.</li>
+          <li>Both folders now contain a <code>.stfolder/</code> directory — the folder marker Syncthing uses to confirm the path is really mounted before it dares sync (deleting it stops the folder with an error instead of propagating an empty disk).</li>
+          <li>Open <a href="http://127.0.0.1:8391">http://127.0.0.1:8391</a> and <code>:8392</code> — two full GUIs, two devices, one shared folder. Poke around; this is your consequence-free playground.</li>
+        </ul>
+      </div>
+      <div class="callout blue"><strong>Introducer: pairing shortcuts for bigger fleets</strong>Marking a device as "Introducer" makes your device auto-trust whichever devices <em>it</em> shares your folders with. Convenient at 4+ devices (pair everyone with the hub once); skip it while your fleet is 3 devices — explicit pairing is clearer and introducer removals can surprise you (<code>skipIntroductionRemovals</code> exists for that reason).</div>
+      <p class="sources-line">Sources: <a href="https://docs.syncthing.net/intro/getting-started.html" target="_blank" rel="noopener">Getting started</a> · <a href="https://docs.syncthing.net/users/firewall.html" target="_blank" rel="noopener">Firewall docs</a> · <a href="https://docs.syncthing.net/users/relaying.html" target="_blank" rel="noopener">Relaying</a></p>
+    </section>
+
+    <section id="folders">
+      <h2>5 · Folders &amp; folder types: the direction of truth</h2>
+      <p class="lede">A folder in Syncthing is an agreement between devices: same folder ID, possibly different local paths, possibly different rules about who may change what. The folder <em>type</em> on each device sets the direction changes are allowed to flow — and choosing types deliberately is what turns "everything syncs everywhere" into a design.</p>
+      <ul>
+        <li><strong>Folder ID</strong> is the cluster-wide name (immutable, e.g. <code>notes</code> or an auto-generated <code>abcde-fghij</code>); the <strong>label</strong> is your local display name (change freely).</li>
+        <li>Paths differ per device: <code>~/Notes</code> on the Mac, <code>/home/paul/notes</code> in WSL, sandbox storage on iPhone. Only the ID must match.</li>
+        <li>Each device applies its own type, watcher settings, ignore patterns (§7), and versioning (§9) — these are all <em>local</em> decisions, not cluster-wide ones.</li>
+      </ul>
+      <div class="table-wrap"><table><thead><tr><th>Type (per device)</th><th>Outbound changes</th><th>Inbound changes</th><th>Use it for</th><th>Red button</th></tr></thead><tbody>
+        <tr><td><strong>Send &amp; Receive</strong> (default)</td><td>Sent</td><td>Applied</td><td>Normal working copies — your Mac and WSL for notes and docs</td><td>—</td></tr>
+        <tr><td><strong>Send Only</strong></td><td>Sent</td><td>Ignored (tracked, shown as "out of sync")</td><td>A reference copy nothing may overwrite — e.g. the Möbius photo export is forced to this type</td><td><em>Override Changes</em>: stomp remote edits with local state</td></tr>
+        <tr><td><strong>Receive Only</strong></td><td>Blocked</td><td>Applied</td><td>Mirrors and backup targets; a replica you want tamper-evident</td><td><em>Revert Local Changes</em>: discard local edits, re-adopt cluster state</td></tr>
+        <tr><td><strong>Receive Encrypted</strong></td><td>Originates nothing; re-serves stored ciphertext to peers</td><td>Stored encrypted</td><td>Untrusted storage node (VPS) that holds ciphertext it cannot read — set an encryption password when sharing</td><td>—</td></tr>
+      </tbody></table></div>
+      <div class="callout warn"><strong>Receive Encrypted: the password is the data</strong>The folder password is set on the trusted side when sharing and never leaves your trusted devices. The encrypted node stores ciphertext it cannot read, yet still re-serves those blocks to your other devices — that is what makes it a usable untrusted hub. Lose the password and that ciphertext is unrecoverable. Keep it wherever you keep real secrets, never on the untrusted node itself.</div>
+      <div class="lab">
+        <div class="lab-head"><div class="lab-title">Lab 2 · Receive-only: watch local edits get blocked, then revert them</div><span class="lab-time">10 min · continues Lab 1</span></div>
+        <p>Make instance B a receive-only mirror, edit a file on B behind the cluster's back, and observe that the edit stays local — then revert it.</p>
+        <pre><code><span class="cmd">syncthing</span> cli --home=$LAB/home-b config folders notes type set receiveonly
+<span class="cmd">echo</span> <span class="arg">"local edit on receive-only B"</span> &gt;&gt; $LAB/folder-b/todo.md
+<span class="comment"># force a rescan so the change registers immediately (or wait for the watcher)</span>
+<span class="cmd">BKEY</span>=$(grep -o '&lt;apikey&gt;[^&lt;]*' $LAB/home-b/config.xml | cut -d'&gt;' -f2)
+<span class="cmd">curl</span> -s -X POST -H <span class="arg">"X-API-Key: $BKEY"</span> <span class="arg">"http://127.0.0.1:8392/rest/db/scan?folder=notes"</span>
+<span class="cmd">curl</span> -s -H <span class="arg">"X-API-Key: $BKEY"</span> <span class="arg">"http://127.0.0.1:8392/rest/db/status?folder=notes"</span> | grep -o '"receiveOnlyChangedFiles":[0-9]*'
+<span class="out">"receiveOnlyChangedFiles":1</span></code></pre>
+        <ul class="check">
+          <li>Check A's copy of <code>todo.md</code> — the edit never arrived. B's GUI shows the folder in the "Local Additions" state with the red <em>Revert Local Changes</em> button.</li>
+          <li>Revert via REST: <code>curl -s -X POST -H "X-API-Key: $BKEY" "http://127.0.0.1:8392/rest/db/revert?folder=notes"</code>. Expect: B's <code>todo.md</code> returns to the cluster version; <code>receiveOnlyChangedFiles</code> drops to 0.</li>
+          <li>Set the type back for later labs: <code>syncthing cli --home=$LAB/home-b config folders notes type set sendreceive</code></li>
+        </ul>
+        <div class="callout warn"><strong>Observed drift from the CLI docs (v2.1.3)</strong>The CLI's <code>operations folder-override</code> claims to handle "local for receiveonly", but in this lab it returned silently without reverting anything; the REST <code>/rest/db/revert</code> endpoint (which the GUI button calls) worked. Prefer the GUI button or REST for reverts.</div>
+      </div>
+      <div class="callout"><strong>Misconception: "folder type is a property of the folder"</strong>Tempting, wrong. The type is per-device. The same folder can be send-receive on your Mac, receive-only on a mirror, send-only on the phone exporting photos. Direction of truth is something each device declares about itself.</div>
+      <p class="sources-line">Sources: <a href="https://docs.syncthing.net/users/foldertypes.html" target="_blank" rel="noopener">Folder types</a> · <a href="https://docs.syncthing.net/users/untrusted.html" target="_blank" rel="noopener">Untrusted (encrypted) devices</a></p>
+    </section>
+    <section id="simulator">
+      <h2>6 · Cluster simulator: propagation, offline devices, conflicts</h2>
+      <p>Before the deeper mechanics, internalize the rhythm. This simulator models one file (<code>todo.md</code>) across three devices. Version counters stand in for content. Take devices offline, edit on different members, reconnect, and watch convergence — including how a genuine conflict is born. <span class="mini">Simplified on purpose: real Syncthing tracks per-file version vectors and syncs at block level; the simulator collapses that to "who has the newest version" plus "did two devices diverge".</span></p>
+      <div class="sim" id="simBox">
+        <div class="sim-head"><span>syncthing · cluster practice</span><span>v1 = version counters, not contents</span></div>
+        <div class="sim-panels" id="simPanels"></div>
+        <div class="sim-buttons" role="group" aria-label="Simulated cluster actions">
+          <button type="button" data-act="editMac">edit on Mac</button>
+          <button type="button" data-act="editWsl">edit on WSL</button>
+          <button type="button" data-act="editPhone">edit on iPhone</button>
+          <button type="button" data-act="togglePhone">iPhone app open/closed</button>
+          <button type="button" data-act="toggleWsl">WSL online/offline</button>
+          <button type="button" data-act="reset">reset</button>
+        </div>
+        <div class="sim-log" id="simLog" aria-live="polite"></div>
+      </div>
+      <p>Things to try, in order:</p>
+      <ol>
+        <li>Edit on Mac twice — WSL follows instantly, the iPhone only if its app is "open". That lag is the everyday iOS reality (§11).</li>
+        <li>Close the iPhone app, edit on Mac, then open the app: it catches up. Offline devices converge on reconnect; nothing is lost.</li>
+        <li>Close the iPhone app, edit on Mac <em>and</em> on iPhone, then open the app: <strong>conflict</strong> — both edited version 1 independently. The cluster keeps the newer edit under the original name and preserves the loser as a <code>sync-conflict</code> file (§8). Nothing is silently discarded.</li>
+      </ol>
+    </section>
+
+    <section id="ignores">
+      <h2>7 · Ignore patterns: what never enters the cluster</h2>
+      <p class="lede">Ignoring is how you keep junk — OS droppings, caches, build artifacts, an Obsidian workspace file that differs per machine — from ping-ponging between devices. The rules live in <code>.stignore</code> at the folder root, and the single most important fact about that file: <strong>it never syncs</strong>. Each device decides for itself what it refuses to see.</p>
+      <div class="table-wrap"><table><thead><tr><th>Pattern</th><th>Meaning</th></tr></thead><tbody>
+        <tr><td><code>*.tmp</code></td><td><code>*</code> matches within one path level (no <code>/</code>); this matches any .tmp file in any directory</td></tr>
+        <tr><td><code>build/**</code></td><td><code>**</code> also crosses <code>/</code> — everything under any <code>build</code> directory</td></tr>
+        <tr><td><code>/Drafts</code></td><td>Leading <code>/</code> roots the pattern: only <code>Drafts</code> at the folder root</td></tr>
+        <tr><td><code>{cache,tmp}</code></td><td>Alternatives; <code>[a-z]</code> character ranges also work</td></tr>
+        <tr><td><code>(?i)thumbs.db</code></td><td>Case-insensitive match</td></tr>
+        <tr><td><code>(?d).DS_Store</code></td><td>"Deletable": Syncthing may delete this file if it is the only thing blocking a directory deletion — use for all OS junk</td></tr>
+        <tr><td><code>!/Important</code></td><td>Negation: keep syncing this even if a later pattern would ignore it</td></tr>
+        <tr><td><code>// note</code></td><td>Comment. <code>#include otherfile.txt</code> pulls patterns from a file that <em>can</em> sync</td></tr>
+      </tbody></table></div>
+      <p><strong>First match wins, top to bottom.</strong> Put negations (<code>!</code>) above the broad patterns they punch holes in. One performance caveat from the docs: a non-rooted negation like <code>!foo/bar</code> forces Syncthing to scan inside otherwise-ignored directories; rooted ones (<code>!/foo</code>) don't.</p>
+      <p>A battle-tested starter for a notes/docs folder synced across macOS, Linux, and iOS:</p>
+      <pre><code><span class="comment">// OS junk — deletable so it never blocks a folder delete</span>
+(?d).DS_Store
+(?d)._*
+(?d)Thumbs.db
+(?d)desktop.ini
+<span class="comment">// editor / app litter</span>
+*.tmp
+*~
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json</code></pre>
+      <div class="callout warn"><strong>Obsidian: sync the vault, not the whole <code>.obsidian</code></strong>Plugins and themes syncing across devices is usually what you want, but <code>workspace.json</code> is per-device UI state (open tabs, pane layout) and generates endless noise and conflicts. Ignore the workspace files, keep the rest.</div>
+      <div class="lab">
+        <div class="lab-head"><div class="lab-title">Lab 3 · Prove ignores are local and non-destructive</div><span class="lab-time">5 min · continues Lab 1</span></div>
+        <pre><code><span class="cmd">printf</span> <span class="arg">'*.tmp\n(?d).DS_Store\n'</span> &gt; $LAB/folder-a/.stignore
+<span class="cmd">echo</span> scratch &gt; $LAB/folder-a/scratch.tmp
+<span class="comment"># wait ~10s for the watcher, then:</span>
+<span class="cmd">ls</span> $LAB/folder-b/
+<span class="out">todo.md   vault/          # no scratch.tmp — and no .stignore either</span></code></pre>
+        <ul class="check">
+          <li><code>scratch.tmp</code> never reaches B, and B has no <code>.stignore</code> — confirm both.</li>
+          <li>Now delete the pattern lines from <code>.stignore</code> on A. Expect: <code>scratch.tmp</code> syncs over on the next scan. Un-ignoring makes files simply enter the cluster; nothing is deleted.</li>
+        </ul>
+      </div>
+      <div class="callout danger"><strong>The ignore-then-delete trap</strong>Files that are already synced and <em>then</em> ignored fall out of Syncthing's view on every device — but the existing copies stay on disk. If you later delete them on one device, the deletion does <strong>not</strong> propagate (they're ignored!), leaving zombie copies elsewhere. Order of operations for retiring junk that already synced: add the ignore pattern on <em>all</em> devices first, then delete locally on each device.</div>
+      <p class="sources-line">Sources: <a href="https://docs.syncthing.net/users/ignoring.html" target="_blank" rel="noopener">Ignoring files</a></p>
+    </section>
+
+    <section id="conflicts">
+      <h2>8 · Conflicts: how simultaneous edits are survived</h2>
+      <p class="lede">A conflict is not an error. It is the honest answer to an unanswerable question: two devices changed the same file while out of contact, and no algorithm can know which edit you meant to keep. Syncthing's move is to keep both — one under the original name, one renamed — and let you merge. Understanding exactly which copy wins removes all the fear.</p>
+      <p>Both experiments below are real transcripts from the Lab 1 cluster (instance A = <code>4IT7P52</code>, instance B = <code>RLEX6CH</code>). B was stopped, both sides edited <code>todo.md</code>, B restarted:</p>
+      <pre><code><span class="cmd">ls</span> $LAB/folder-a/
+<span class="out">todo.md
+todo.sync-conflict-20260806-113158-RLEX6CH.md
+vault/</span>
+<span class="cmd">cat</span> $LAB/folder-a/todo.md
+<span class="out"># Meeting notes
+edit from other laptop      ← B's edit won the original filename</span>
+<span class="cmd">cat</span> $LAB/folder-a/todo.sync-conflict-*.md
+<span class="out"># Meeting notes
+edit from Mac               ← A's edit preserved in the conflict copy</span></code></pre>
+      <p>Read the conflict filename like this:</p>
+      <div class="flow">
+        <div class="fbox"><b>todo</b>original name</div>
+        <div class="farr">·</div>
+        <div class="fbox"><b>sync-conflict</b>fixed marker</div>
+        <div class="farr">·</div>
+        <div class="fbox"><b>20260806-113158</b>date &amp; time the conflict was resolved</div>
+        <div class="farr">·</div>
+        <div class="fbox"><b>RLEX6CH</b>short ID of the device whose change <em>won</em></div>
+        <div class="farr">·</div>
+        <div class="fbox"><b>.md</b>extension kept, so previews still work</div>
+      </div>
+      <p>Repeating the experiment with the edit order reversed (A edited last) produced <code>ideas.sync-conflict-20260806-113306-4IT7P52.md</code> — A's short ID, and A's newer edit kept the original name. So: <strong>the more recently modified version wins the filename; the older version becomes the conflict copy; the suffix names the winner's device.</strong> The conflict file itself then syncs to every device, so you can merge from anywhere.</p>
+      <ul>
+        <li>Conflict copies per file are capped by the folder's <code>maxConflicts</code> (default 10, −1 = unlimited, 0 = disable conflict copies entirely — don't).</li>
+        <li>Since v2, a deletion can win against an edit — the edited file then survives as a conflict copy rather than silently reappearing.</li>
+        <li>Identical changes on both sides (same content) are not conflicts; version vectors merge cleanly.</li>
+      </ul>
+      <h3>Living with conflicts in a notes vault</h3>
+      <p>For Obsidian, conflicts concentrate in whatever file you edit on iPhone and Mac in the same afternoon. The workflow that works: search the vault for <code>sync-conflict</code> weekly (or add an Obsidian saved search), diff, merge the lines you want, delete the conflict copy. Prevention beats cure: open Möbius before and after phone editing sessions so the phone is never far behind (§11).</p>
+      <div class="lab">
+        <div class="lab-head"><div class="lab-title">Lab 4 · Manufacture and resolve a conflict</div><span class="lab-time">8 min · continues Lab 1</span></div>
+        <pre><code><span class="cmd">pkill</span> -f "home=$LAB/home-b"        <span class="comment"># take B offline</span>
+<span class="cmd">echo</span> <span class="arg">"edit from A"</span> &gt;&gt; $LAB/folder-a/todo.md
+<span class="cmd">echo</span> <span class="arg">"edit from B"</span> &gt;&gt; $LAB/folder-b/todo.md
+<span class="cmd">syncthing</span> serve --home=$LAB/home-b --no-browser --no-restart --no-upgrade &gt;&gt; $LAB/b.log 2&gt;&amp;1 &amp;
+<span class="comment"># wait ~15s for reconnect + sync, then:</span>
+<span class="cmd">ls</span> $LAB/folder-a/ | grep conflict
+<span class="out">todo.sync-conflict-20260806-...-RLEX6CH.md</span></code></pre>
+        <ul class="check">
+          <li>Predict before looking: which content is in <code>todo.md</code>, which in the conflict file? (You edited B second, so B's line should win the name.)</li>
+          <li>Resolve it: merge the missing line into <code>todo.md</code>, delete the conflict file. Expect: both actions propagate to the other side within seconds.</li>
+        </ul>
+      </div>
+      <div class="callout"><strong>Misconception: "last write wins means data loss"</strong>Last write wins <em>the filename</em>, never the data. The losing version is right there next to it, synced everywhere, up to <code>maxConflicts</code> deep. Syncthing loses conflicting data only if you set <code>maxConflicts</code> to 0.</div>
+      <p class="sources-line">Sources: <a href="https://docs.syncthing.net/users/syncing.html" target="_blank" rel="noopener">Syncing details / conflicting changes</a> · <a href="https://docs.syncthing.net/users/config.html" target="_blank" rel="noopener">Config reference (maxConflicts)</a></p>
+    </section>
+    <section id="versioning">
+      <h2>9 · File versioning: a seatbelt against other devices</h2>
+      <p class="lede">Versioning answers one precise question: when <em>another device's</em> change overwrites or deletes a file here, should the old local copy be kept? It triggers only for changes received from the cluster — your own local edits are never versioned. That asymmetry is why versioning is a seatbelt, not a backup: it protects you from your other devices, not from yourself.</p>
+      <div class="table-wrap"><table><thead><tr><th>Mode</th><th>Keeps</th><th>Parameters</th><th>Choose when</th></tr></thead><tbody>
+        <tr><td><strong>Trash Can</strong></td><td>One previous version per file</td><td><code>cleanoutDays</code> (0 = keep forever)</td><td>Minimum viable safety; mimics a recycle bin</td></tr>
+        <tr><td><strong>Simple</strong></td><td>N previous versions</td><td><code>keep</code> (count), <code>cleanoutDays</code></td><td><strong>Recommended default</strong> — predictable size, real history</td></tr>
+        <tr><td><strong>Staggered</strong></td><td>Thinning history: 30-sec grain first hour → hourly for a day → daily for 30 days → weekly until <code>maxAge</code></td><td><code>maxAge</code> (days, 0 = forever)</td><td>Long-lived documents where "last Tuesday's version" matters</td></tr>
+        <tr><td><strong>External</strong></td><td>Whatever your script does</td><td><code>command</code> with <code>%FOLDER_PATH%</code> <code>%FILE_PATH%</code></td><td>Piping into your own archive tooling</td></tr>
+      </tbody></table></div>
+      <p>Versions land in <code>.stversions/</code> inside the folder (configurable; keep a custom path on the same filesystem — the docs warn moving files into it may otherwise fail). Real transcript — B had Simple versioning (<code>keep=5</code>) while A edited <code>todo.md</code> and deleted <code>vault/ideas.md</code>:</p>
+      <pre><code><span class="cmd">syncthing</span> cli --home=$LAB/home-b config folders notes versioning type set simple
+<span class="cmd">syncthing</span> cli --home=$LAB/home-b config folders notes versioning params set keep 5
+<span class="comment"># on A: edit todo.md, delete vault/ideas.md — then on B:</span>
+<span class="cmd">ls</span> -R $LAB/folder-b/.stversions
+<span class="out">todo~20260806-113350.md
+vault:
+ideas~20260806-113400.md</span></code></pre>
+      <p>Note the naming: <code>name~YYYYMMDD-HHMMSS.ext</code>. A remote <em>delete</em> also produces a version — the deleted file's last content is stashed. This is your ransomware/fat-finger recovery path: if a compromised or confused device deletes everything, devices with versioning hold the corpses in <code>.stversions</code>.</p>
+      <div class="callout warn"><strong>Versioning is per-device, like folder type</strong>Enable it on the device you treat as the safety copy (your Mac, or a future always-on node). Enabling it on the iPhone would be pointless (Möbius storage is precious) — and remember versioning never protects against edits made <em>on that same device</em>.</div>
+      <div class="callout blue"><strong>Restoring</strong>The GUI's folder menu → <em>Versions</em> lists archived versions with a Restore button. By hand: copy the file out of <code>.stversions</code>, strip the <code>~timestamp</code> suffix, drop it back into the folder — it syncs like any other change.</div>
+      <p class="sources-line">Sources: <a href="https://docs.syncthing.net/users/versioning.html" target="_blank" rel="noopener">Versioning docs</a></p>
+    </section>
+
+    <section id="topology">
+      <h2>10 · Topology for your fleet: pick where truth concentrates</h2>
+      <p class="lede">Your fleet: a Mac (on most of the day), Ubuntu inside WSL on a Windows machine, an iPhone that syncs only when Möbius gets CPU time, and possibly native Windows joining later. The wrong question is "mesh or hub?" — Syncthing is always a mesh; every pair that shares a folder may connect. The right question is: <em>which device is online enough to be the one everyone else converges through?</em></p>
+      <h3>The two shapes</h3>
+      <div class="grid">
+        <div class="card"><h3>Full mesh</h3><p>Every device shares every folder with every other device. Any two online members sync directly. Most resilient; pairing effort grows quadratically; conflict windows shrink because updates take every available path.</p></div>
+        <div class="card"><h3>Hub-and-spoke</h3><p>Every device pairs only with one always-on hub (NAS, Pi, home server). One pairing per new device; the hub is always awake to receive and re-serve changes — spokes never need to be online together. The hub is also the natural home for versioning and backups.</p></div>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Criterion</th><th>Full mesh</th><th>Hub-and-spoke</th></tr></thead><tbody>
+        <tr><td>Needs an always-on device</td><td>No</td><td>Yes — its whole point</td></tr>
+        <tr><td>Two laptops closed at different times</td><td>May never overlap → stale + conflict-prone</td><td>Hub bridges the time gap</td></tr>
+        <tr><td>iPhone reality (app rarely awake)</td><td>Phone must catch <em>some</em> peer awake</td><td>Hub is always there the moment Möbius wakes</td></tr>
+        <tr><td>Pairing effort at N devices</td><td>N·(N−1)/2 pairs</td><td>N−1 pairs</td></tr>
+        <tr><td>Single point of failure</td><td>None</td><td>Hub down → sync pauses (data is still everywhere)</td></tr>
+      </tbody></table></div>
+      <h3>Recommendation for this fleet</h3>
+      <p><strong>Run mesh-with-a-de-facto-hub: pair everything with everything (it's 3–4 devices), but treat the Mac as the hub until you own an always-on box.</strong> Concretely:</p>
+      <ul>
+        <li>Pair all pairs: Mac⇄WSL, Mac⇄iPhone, WSL⇄iPhone. At this fleet size the pairing cost is trivial, and direct WSL⇄iPhone sync is a free bonus when both happen to be awake.</li>
+        <li>The Mac — your most-on device — carries versioning (§9) for every folder and is the machine your backups run on. When you open Möbius on the phone, the Mac is the peer most likely to be reachable.</li>
+        <li>Point of discipline: <em>edit-heavy folders converge through the most-on device.</em> Finish a phone editing session by opening Möbius while the Mac is awake; that closes the conflict window (§8).</li>
+        <li>The upgrade path when you get a Pi/NAS: add it, share all folders to it, mark it Introducer, give it staggered versioning — nothing else changes. Your topology is already hub-shaped; you're just replacing the hub with something that never sleeps.</li>
+      </ul>
+      <h3>Translation layer: cloud-sync instincts → Syncthing moves</h3>
+      <div class="table-wrap"><table><thead><tr><th>Dropbox/iCloud instinct</th><th>Syncthing move</th><th>Why it's better here</th></tr></thead><tbody>
+        <tr><td>"It's synced when it's in the cloud"</td><td>It's synced when a peer holds it — check the folder's "Up to Date" on <em>both</em> devices</td><td>No third party ever holds plaintext; you can verify convergence directly</td></tr>
+        <tr><td>Selective sync to save disk</td><td>Share fewer folders with that device; or ignore patterns (§7)</td><td>Explicit per-device contracts instead of placeholder magic that needs the network</td></tr>
+        <tr><td>Restore from the website's trash</td><td><code>.stversions</code> on a device with versioning (§9)</td><td>Recovery is local and instant; retention is your policy, not a plan tier</td></tr>
+        <tr><td>Share a link with someone</td><td>Not Syncthing's job — it syncs <em>your own devices</em></td><td>Honest scope; use email/another tool for handing files to other people</td></tr>
+        <tr><td>"The app is signed in, so it's syncing"</td><td>The daemon is running and peers are <em>Connected</em> — check the GUI's device list</td><td>Nothing hides behind an account; connection state is the whole story</td></tr>
+        <tr><td>Pay for more space</td><td>Buy a disk. Every device holds full copies of what it shares</td><td>Cost scales with your hardware, not a subscription</td></tr>
+      </tbody></table></div>
+      <div class="callout teal"><strong>LAN days are free days</strong>When Mac and the WSL machine sit on the same home network, they find each other by local discovery and sync at wire speed with zero internet dependency. The topology above costs nothing while you're home and degrades gracefully (global discovery → direct → relay) when you're not.</div>
+      <p class="sources-line">Sources: <a href="https://docs.syncthing.net/users/faq.html" target="_blank" rel="noopener">FAQ</a> · <a href="https://docs.syncthing.net/users/relaying.html" target="_blank" rel="noopener">Relaying</a> · <a href="https://mobiussync.com/faq/" target="_blank" rel="noopener">Möbius FAQ (background limits)</a></p>
+    </section>
+    <section id="ios">
+      <h2>11 · iOS: Möbius Sync, honestly</h2>
+      <p class="lede">There is no first-party Syncthing for iOS because iOS forbids what Syncthing is: a daemon that runs forever. Möbius Sync embeds the real engine and works well — provided you design around one truth: <strong>the phone syncs when the app is open, briefly after, and in occasional background slots iOS grants; nothing more.</strong> The Möbius FAQ's own numbers: expect roughly 1–2 hours of total daily sync activity once established.</p>
+      <h3>What that means in practice</h3>
+      <ul>
+        <li><strong>The habit that replaces "it just syncs":</strong> open Möbius when you sit down with the phone and when you finish editing. Foreground time is sync time. Everything else is best-effort.</li>
+        <li><strong>Two iOS devices syncing directly is near-hopeless</strong> — their background windows rarely overlap (the FAQ says to open both apps simultaneously). Another argument for converging through the Mac (§10).</li>
+        <li><strong>First sync is slow to start:</strong> initial background scheduling can take up to 24 h to establish. Leave the app open in foreground for the first big sync.</li>
+        <li><strong>Cellular:</strong> Möbius syncs over cellular by default — check its settings if your vault is large and your plan is not.</li>
+      </ul>
+      <h3>Where files live on the phone</h3>
+      <ul>
+        <li>Synced folders live in the Möbius sandbox, fully visible in the <strong>Files app</strong> ("Open Folder" from Möbius, or Files → On My iPhone → Möbius Sync). Obsidian mobile can open a vault there; other apps can "Save to Files" into a synced folder.</li>
+        <li><strong>External folders</strong> (other apps' sandboxes, via "Pick External Folder") exist but the developers themselves label the feature DANGEROUS — corruption risk when two apps write the same files. Prefer the Möbius-sandbox-as-vault pattern.</li>
+        <li><strong>Photos:</strong> "Pick Photo Folder" exports collections from the photo library — <em>send-only, one way, deletions propagate</em>. Treat it as "publish camera roll to the cluster", and give the receiving side versioning.</li>
+      </ul>
+      <div class="callout warn"><strong>Möbius embeds Syncthing 1.28 — expect an older GUI dialect</strong>Möbius 1.28.0 ships Syncthing 1.28.0 (v1 line). Protocol interop with your v2 desktops is seamless, but v2-only niceties (GUI grouping, SQLite-era details, some config options) won't exist on the phone. Configure per-folder specifics from the desktop side where possible.</div>
+      <div class="callout danger"><strong>The phone is the weakest cluster member — never the only holder of anything</strong>iOS may evict, the app may be offloaded, iCloud backup of the sandbox interacts oddly (the FAQ notes sync folders are currently included in iCloud backups). Every folder the phone participates in must also live on at least one desktop.</div>
+      <p class="sources-line">Sources: <a href="https://mobiussync.com/faq/" target="_blank" rel="noopener">Möbius Sync FAQ</a> · <a href="https://apps.apple.com/us/app/m%C3%B6bius-sync/id1539203216" target="_blank" rel="noopener">App Store listing (1.28.0)</a></p>
+    </section>
+
+    <section id="wsl-windows">
+      <h2>12 · WSL &amp; native Windows: one machine, two worlds</h2>
+      <p class="lede">A Windows box with WSL gives you two places to run Syncthing, and the right answer depends on where the files live. The rule that decides everything: <strong>run Syncthing in the same world as the files it watches.</strong> Cross the boundary and you lose change notifications, speed, or both.</p>
+      <h3>Syncing files that live in the Linux filesystem (recommended)</h3>
+      <p>Your setup — Syncthing under Ubuntu/WSL, folders under <code>~</code> in ext4 — is the good case: native inotify, native speed. Two WSL-specific operational notes:</p>
+      <ul>
+        <li><strong>Autostart:</strong> modern WSL2 supports systemd. Check <code>systemctl</code> works; then <code>systemctl --user enable --now syncthing.service</code> gives you the standard Linux setup. Caveat: a user service runs only while WSL itself is running — WSL starts on demand and Windows may terminate an idle distro. If sync should survive "I closed all my terminals", keep a background <code>wsl</code> process alive (e.g. a Task Scheduler entry at logon running <code>wsl -d Ubuntu --exec dbus-launch true</code> or simply <code>wsl ~ -e sleep infinity</code>), or run Syncthing on the Windows side instead.</li>
+        <li><strong>Reachability:</strong> WSL2 is NATed behind the Windows host by default; other LAN devices can't reach port 22000 inside WSL directly, and local discovery broadcasts don't cross the NAT. In practice the WSL instance simply dials <em>out</em> to your Mac (which is reachable), and sync works fine. If you want inbound reachability, newer WSL offers mirrored networking mode; otherwise <code>netsh interface portproxy</code> forwards 22000 from the host.</li>
+      </ul>
+      <h3>Syncing files that live on the Windows side</h3>
+      <p>Do <em>not</em> point WSL Syncthing at <code>/mnt/c/...</code>. Two well-documented problems: changes made by Windows programs on <code>/mnt/c</code> generate no inotify events inside WSL (microsoft/WSL #4739), so Syncthing sees edits only on its hourly full rescan; and 9p filesystem access runs at a fraction of native speed. For Windows-side files, install native Windows Syncthing (§3) — it is a first-class platform with its own filesystem watcher.</p>
+      <div class="table-wrap"><table><thead><tr><th>Files live in</th><th>Run Syncthing</th><th>Watcher</th><th>Notes</th></tr></thead><tbody>
+        <tr><td>WSL ext4 (<code>~/...</code>)</td><td>Inside WSL (apt)</td><td>inotify, instant</td><td>Your current setup — correct</td></tr>
+        <tr><td>Windows NTFS (<code>C:\...</code>)</td><td>Native Windows</td><td>Windows watcher, instant</td><td>Syncthing Windows Setup installer; case-insensitive FS handled</td></tr>
+        <tr><td>Windows NTFS via <code>/mnt/c</code></td><td colspan="2">— avoid —</td><td>No change events from Windows apps; slow 9p I/O; hourly-rescan-only sync</td></tr>
+      </tbody></table></div>
+      <div class="callout blue"><strong>Both at once is fine</strong>WSL Syncthing and native Windows Syncthing are just two more devices to the cluster — separate identities, separate configs, no conflict. Give them distinct device names ("win-native", "win-wsl") and let each own the folders on its side of the fence.</div>
+      <div class="callout"><strong>Misconception: "WSL and Windows are one device"</strong>To Syncthing they are two machines that happen to share hardware. Each generates its own ID, holds its own copies, pairs separately. Sharing one folder into both worlds means two full copies on one disk — usually a sign the folder belongs to only one world.</div>
+      <p class="sources-line">Sources: <a href="https://docs.syncthing.net/users/autostart.html" target="_blank" rel="noopener">Autostart docs</a> · <a href="https://github.com/microsoft/WSL/issues/4739" target="_blank" rel="noopener">WSL issue #4739 (no inotify across 9p)</a> · <a href="https://github.com/Bill-Stewart/SyncthingWindowsSetup" target="_blank" rel="noopener">Syncthing Windows Setup</a></p>
+    </section>
+
+    <section id="operations">
+      <h2>13 · Running it for years: GUI, CLI, REST, upgrades</h2>
+      <p class="lede">Syncthing is a daemon with three equally real control surfaces: the web GUI on <code>127.0.0.1:8384</code>, the <code>syncthing cli</code> wrapper, and the REST API both are built on. Learn the mapping once and no interface ever feels magical again.</p>
+      <h3>The three surfaces, same object</h3>
+      <div class="table-wrap"><table><thead><tr><th>Task</th><th>GUI</th><th>CLI</th><th>REST</th></tr></thead><tbody>
+        <tr><td>Show own ID</td><td>Actions → Show ID</td><td><code>syncthing device-id</code></td><td><code>GET /rest/system/status</code> → <code>myID</code></td></tr>
+        <tr><td>List folders</td><td>left panel</td><td><code>syncthing cli config folders list</code></td><td><code>GET /rest/config/folders</code></td></tr>
+        <tr><td>Sync progress</td><td>folder card %</td><td>—</td><td><code>GET /rest/db/completion?folder=ID</code></td></tr>
+        <tr><td>Force rescan</td><td>folder → Rescan</td><td>—</td><td><code>POST /rest/db/scan?folder=ID</code></td></tr>
+        <tr><td>Pause device</td><td>device → Pause</td><td><code>...config devices ID paused set true</code></td><td><code>PATCH /rest/config/devices/ID</code></td></tr>
+        <tr><td>Restart daemon</td><td>Actions → Restart</td><td><code>syncthing cli operations restart</code></td><td><code>POST /rest/system/restart</code></td></tr>
+      </tbody></table></div>
+      <p>REST calls need the API key from Actions → Settings (or <code>&lt;apikey&gt;</code> in config.xml). Real transcript from the lab cluster:</p>
+      <pre><code><span class="cmd">curl</span> -s -H <span class="arg">"X-API-Key: $APIKEY"</span> <span class="arg">"http://127.0.0.1:8384/rest/db/completion?folder=notes"</span>
+<span class="out">{
+  "completion": 100,
+  "globalBytes": 66,
+  "needBytes": 0,
+  "needItems": 0,
+  ...
+}</span></code></pre>
+      <h3>Housekeeping that matters</h3>
+      <ul>
+        <li><strong>Set a GUI password</strong> (Actions → Settings → GUI). The GUI binds to localhost by default, but any local process can otherwise reconfigure your Syncthing — the daemon nags about this for good reason. Required before ever exposing the GUI beyond localhost (prefer an SSH tunnel anyway).</li>
+        <li><strong>Watcher + rescan:</strong> the filesystem watcher (default on, 10 s settle delay) catches changes instantly; a full scan every <code>rescanIntervalS</code> (default 3600 s) catches what the watcher missed. On Linux, large folders may need <code>fs.inotify.max_user_watches</code> raised — one watch per directory; older kernels default to 8192, newer ones scale the default with RAM, so check <code>sysctl fs.inotify.max_user_watches</code> first.</li>
+        <li><strong>Upgrades:</strong> brew/apt handle it on your machines (the brew build shows <code>[noupgrade]</code> — auto-upgrade disabled, package manager's job). Mixed versions across the fleet are fine (§3).</li>
+        <li><strong>v1 → v2 memory aid:</strong> v2 = SQLite database (first start after upgrade migrates, can be slow), structured log lines like the ones in the labs, deleted-file records forgotten after ~6 months, single-dash long flags removed (<code>--home</code> not <code>-home</code>).</li>
+        <li><strong>Monitoring at a glance:</strong> GUI front page — every folder "Up to Date", every device "Connected" or recently seen. That page <em>is</em> the health check; anything red or yellow maps to a row in §15.</li>
+      </ul>
+      <h3>Fleet surgery: retiring, moving, renaming</h3>
+      <ul>
+        <li><strong>Retire a device:</strong> remove it on each remaining peer (GUI: device → Remove, or <code>syncthing cli config devices remove --device-id ID</code>). Removal only ends the sync agreement — every device keeps its local files. Do the same on the retired machine if it lives on in another role.</li>
+        <li><strong>Un-share or remove a folder:</strong> removing a folder from Syncthing deletes the agreement and its index, never the files. The now-orphaned copies stay on disk on every former member; delete them manually where unwanted.</li>
+        <li><strong>Move a folder to a new path on the same device:</strong> pause the folder (or stop the daemon), move the directory whole — <code>.stfolder</code> included — edit the folder's path, resume. The rescan re-hashes, finds everything unchanged, and nothing re-transfers.</li>
+        <li><strong>Renaming:</strong> the label changes freely, per device. The folder ID is immutable — "changing" it means removing the folder and adding a new one, which the cluster treats as a brand-new folder with a full re-index.</li>
+      </ul>
+      <p class="sources-line">Sources: <a href="https://docs.syncthing.net/dev/rest.html" target="_blank" rel="noopener">REST API</a> · <a href="https://docs.syncthing.net/users/config.html" target="_blank" rel="noopener">Config reference</a> · <a href="https://github.com/syncthing/syncthing/releases/tag/v2.0.0" target="_blank" rel="noopener">v2.0.0 release notes</a></p>
+    </section>
+    <section id="capstone">
+      <h2>14 · Capstone: audit and harden your real fleet</h2>
+      <p class="lede">Everything so far ran in the sandbox. The capstone applies it to your production cluster — Mac, WSL, iPhone — as an audit-then-harden pass. Nothing here is destructive; every step is a check followed by an explicit, reversible change. Budget 45–60 minutes with the phone at hand.</p>
+      <div class="step"><div class="step-num">1</div><div><h3>Map what you actually have</h3><p>On the Mac GUI: list every folder, its ID, which devices share it, its type, its versioning. Write it down (three columns: folder → devices → type/versioning). Most long-running setups contain a surprise — an old folder still shared with a retired laptop, or a default <code>~/Sync</code> nobody uses. Remove dead devices and dead folders now.</p></div></div>
+      <div class="step"><div class="step-num">2</div><div><h3>Verify the direction of truth</h3><p>For each folder, ask: should every member be able to change it? Photo export from the phone → the receiving desktop folder can stay send-receive, but consider receive-only if only the phone should originate photos (§5). Notes vault → send-receive everywhere is correct.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div><h3>Ignore the junk, in the right order</h3><p>Add the §7 starter <code>.stignore</code> (OS junk + Obsidian workspace files) on <em>every</em> desktop member of the vault folder first, then clean existing synced junk device by device. Confirm afterward: edit a note on the phone, check no <code>workspace.json</code> churn appears in the Mac's recent changes.</p></div></div>
+      <div class="step"><div class="step-num">4</div><div><h3>Turn on versioning where truth concentrates</h3><p>On the Mac (§10): Simple versioning, <code>keep=10</code>, on the vault and documents folders. Prove it works: from the phone, edit one note; on the Mac, find the pre-edit copy in <code>.stversions</code> (§9).</p></div></div>
+      <div class="step"><div class="step-num">5</div><div><h3>Manufacture one real conflict — and resolve it calmly</h3><p>Airplane-mode the phone, edit the same note on phone and Mac, reconnect, open Möbius. Find the <code>sync-conflict</code> file, read its name aloud (winner's short ID — whose edit won?), merge, delete. You have now done the scariest thing Syncthing will ever do to you, on purpose (§8).</p></div></div>
+      <div class="step"><div class="step-num">6</div><div><h3>Close the loop on operations</h3><p>GUI password set on Mac and WSL (§13). WSL: <code>systemctl --user status syncthing</code> healthy, and decide explicitly how WSL stays alive (§12). Phone: confirm the open-Möbius-after-editing habit by checking "Last seen" for the phone on the Mac — it should be today.</p></div></div>
+      <p><strong>Mastery bar:</strong> you can draw your cluster from memory — every folder, its members, each member's type and versioning — and predict where a conflict file lands before it happens. If any folder's sharing surprised you in step 1, re-run this capstone after a month.</p>
+    </section>
+
+    <section id="troubleshooting">
+      <h2>15 · Troubleshooting: symptom → cause → fix</h2>
+      <div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr></thead><tbody>
+        <tr><td>Devices show Disconnected though both online</td><td>One side hasn't accepted the other; or discovery can't find an address</td><td>Check both GUIs for a pending "Add device?" banner; verify both list each other's exact ID; on static setups check the address field</td></tr>
+        <tr><td>Folder stopped, red "folder marker missing"</td><td><code>.stfolder</code> deleted, or the disk/mount holding the folder isn't there</td><td>Restore the mount, or recreate the marker (folder → red text → link) once you're sure the path is right — the marker is the guard against syncing an empty mount as "everything deleted"</td></tr>
+        <tr><td>"Out of sync" items that never clear</td><td>Ignore-pattern mismatch between devices (one side ignores what the other announces), or permissions errors</td><td>Compare <code>.stignore</code> on both; check the failed-items list on the folder card for exact filenames and errors</td></tr>
+        <tr><td>Changes take an hour to propagate from WSL or Linux</td><td>Watcher dead: inotify watch limit exhausted, or files on <code>/mnt/c</code> (no events at all)</td><td>Raise <code>fs.inotify.max_user_watches</code>; move the folder into ext4 or run native Windows Syncthing for Windows-side files (§12)</td></tr>
+        <tr><td>Sync crawls though both on same LAN</td><td>Peers connected via relay (check device row: "Relayed")</td><td>Confirm local discovery on and UDP 21027 not blocked; same subnet; worst case set a static <code>tcp://ip:22000</code> address</td></tr>
+        <tr><td>Phone perpetually behind</td><td>Expecting background magic iOS won't give</td><td>Open Möbius deliberately (§11); confirm a desktop peer is awake at those moments (§10)</td></tr>
+        <tr><td>Conflict files piling up in the vault</td><td>Editing on two devices within the phone's long sync gaps</td><td>End phone sessions by opening Möbius; weekly <code>sync-conflict</code> search-and-merge (§8)</td></tr>
+        <tr><td>"Local Additions" on a receive-only folder</td><td>Something wrote into the mirror</td><td>Expected tamper flag — review, then Revert Local Changes (GUI/REST; CLI override was a no-op in our v2.1.3 test, §5)</td></tr>
+        <tr><td>Disk filling invisibly</td><td><code>.stversions</code> growing without cleanout</td><td>Set <code>cleanoutDays</code>/lower <code>keep</code>; check <code>du -sh .stversions</code> on versioned folders</td></tr>
+        <tr><td>Device identity lost after machine rebuild</td><td>New <code>key.pem</code> → new device ID</td><td>Restore <code>key.pem</code>/<code>cert.pem</code>/<code>config.xml</code> from backup to resurrect the old identity, or re-pair everywhere (§3)</td></tr>
+      </tbody></table></div>
+      <p class="sources-line">Sources: <a href="https://docs.syncthing.net/users/faq.html" target="_blank" rel="noopener">FAQ</a> · <a href="https://forum.syncthing.net/" target="_blank" rel="noopener">Community forum (searchable symptom archive)</a></p>
+    </section>
+
+    <section id="cheatsheet">
+      <h2>16 · Cheat sheet</h2>
+      <h3>Universal starting pattern — new device joins the fleet</h3>
+      <pre><code><span class="comment"># on the new device</span>
+<span class="cmd">syncthing</span> device-id                     <span class="comment"># note the ID (or GUI: Actions → Show ID)</span>
+<span class="comment"># on an existing device's GUI: Add Remote Device → paste ID</span>
+<span class="comment"># on the new device: accept the pending request; accept each offered folder,</span>
+<span class="comment"># choosing its local path — then set type, ignores, versioning per role</span></code></pre>
+      <div class="grid">
+        <div class="card"><h3>Paths (macOS · brew)</h3><p><code>~/Library/Application Support/Syncthing/</code> — config.xml, key.pem, index-v2 DB, log<br>Linux v2: <code>~/.local/state/syncthing</code><br>GUI: <code>127.0.0.1:8384</code></p></div>
+        <div class="card"><h3>Ports</h3><p><code>22000</code> TCP+UDP sync · <code>21027</code> UDP local discovery · GUI <code>8384</code> localhost. LAN: nothing to open. WAN direct: forward 22000 on one side.</p></div>
+        <div class="card"><h3>Daily CLI</h3><p><code>syncthing device-id</code><br><code>syncthing cli config folders list</code><br><code>syncthing cli config devices list</code><br><code>syncthing cli operations restart</code><br><code>syncthing paths</code></p></div>
+        <div class="card"><h3>REST skeleton</h3><p><code>curl -H "X-API-Key: KEY" http://127.0.0.1:8384/rest/db/completion?folder=ID</code> · scan/revert via POST (§5, §13)</p></div>
+        <div class="card"><h3>Special names</h3><p><code>.stfolder</code> marker (never delete) · <code>.stignore</code> local ignores · <code>.stversions</code> archived versions · <code>name.sync-conflict-DATE-TIME-WINNER.ext</code></p></div>
+        <div class="card"><h3>Ignore starter</h3><p><code>(?d).DS_Store</code> · <code>(?d)._*</code> · <code>(?d)Thumbs.db</code> · <code>*.tmp</code> · <code>.obsidian/workspace*.json</code> — first match wins, <code>!</code> negations on top</p></div>
+        <div class="card"><h3>Folder types</h3><p>sendreceive (default) · sendonly + Override · receiveonly + Revert · receiveencrypted (untrusted node)</p></div>
+        <div class="card"><h3>Versioning quick pick</h3><p>Simple, keep=10, on the hub/Mac. Staggered for long-lived docs. Remote changes only — never local edits.</p></div>
+      </div>
+    </section>
+    <section id="glossary">
+      <h2>Glossary</h2>
+      <dl class="glossary">
+        <dt id="g-bep">BEP — Block Exchange Protocol</dt><dd>The wire protocol devices speak: index exchange, block requests, over TLS. Unchanged between Syncthing v1 and v2, which is why mixed clusters work. (<a href="#mental-model">§1</a>)</dd>
+        <dt id="g-cluster">Cluster</dt><dd>The set of devices that trust each other and share folders. No member is special; there is no server. (<a href="#mental-model">§1</a>)</dd>
+        <dt id="g-conflict">Conflict / sync-conflict file</dt><dd>Result of two devices editing the same file while out of contact. Newer modification wins the filename; the older version is preserved as <code>name.sync-conflict-DATE-TIME-WINNERID.ext</code> and syncs everywhere. (<a href="#conflicts">§8</a>)</dd>
+        <dt id="g-device">Device</dt><dd>One Syncthing installation — an identity (key pair), not a machine. WSL and native Windows on one laptop are two devices. (<a href="#devices">§4</a>, <a href="#wsl-windows">§12</a>)</dd>
+        <dt id="g-device-id">Device ID</dt><dd>56-character fingerprint of a device's TLS certificate, e.g. <code>4IT7P52-…</code>. Public; trust requires both sides adding each other's. (<a href="#devices">§4</a>)</dd>
+        <dt id="g-discovery">Discovery (local / global)</dt><dd>How trusted devices find each other's current address: LAN broadcast on UDP 21027, or Syncthing's public lookup servers. Separate from trust. (<a href="#devices">§4</a>)</dd>
+        <dt id="g-folder">Folder</dt><dd>The unit of sharing: cluster-wide ID, per-device path, per-device type/ignores/versioning. (<a href="#folders">§5</a>)</dd>
+        <dt id="g-folder-marker">Folder marker (.stfolder)</dt><dd>Empty directory proving the folder's path is really present; its absence stops the folder instead of syncing a vanished disk as mass deletion. (<a href="#devices">§4</a>, <a href="#troubleshooting">§15</a>)</dd>
+        <dt id="g-folder-type">Folder type</dt><dd>Per-device direction of truth: send-receive, send-only (Override), receive-only (Revert), receive-encrypted. (<a href="#folders">§5</a>)</dd>
+        <dt id="g-ignore">Ignore patterns (.stignore)</dt><dd>Per-device rules for what never enters or leaves this copy; never synced itself; first match wins. (<a href="#ignores">§7</a>)</dd>
+        <dt id="g-index">Index</dt><dd>A device's database of file metadata and block hashes for a folder, exchanged with peers so each knows what to pull. Stored in the v2 SQLite database (<code>index-v2</code>). (<a href="#mental-model">§1</a>)</dd>
+        <dt id="g-introducer">Introducer</dt><dd>A device whose own trusted devices you automatically trust for shared folders — pairing shortcut for hub setups. (<a href="#devices">§4</a>)</dd>
+        <dt id="g-mobius">Möbius Sync</dt><dd>Third-party iOS client embedding the Syncthing engine (1.28.0). Syncs while foregrounded plus limited background slots. (<a href="#ios">§11</a>)</dd>
+        <dt id="g-relay">Relay</dt><dd>Community server that forwards still-encrypted traffic when no direct connection is possible. Slow by design priority; disable only when you have a guaranteed direct path. (<a href="#devices">§4</a>)</dd>
+        <dt id="g-rescan">Rescan / watcher</dt><dd>Two change-detection layers: instant filesystem watcher (10 s settle) and periodic full scan (default 1 h) as the safety net. (<a href="#operations">§13</a>)</dd>
+        <dt id="g-stversions">.stversions</dt><dd>Directory holding archived versions (<code>name~YYYYMMDD-HHMMSS.ext</code>) when versioning is enabled — remote changes and deletes only. (<a href="#versioning">§9</a>)</dd>
+        <dt id="g-version-vector">Version vector</dt><dd>Per-file record of which device made which change generation; how the cluster distinguishes "newer" from "diverged" without trusting clocks alone. (<a href="#mental-model">§1</a>, <a href="#conflicts">§8</a>)</dd>
+        <dt id="g-versioning">File versioning</dt><dd>Per-device policy (trash can / simple / staggered / external) archiving the previous local copy when a remote change overwrites or deletes it. (<a href="#versioning">§9</a>)</dd>
+      </dl>
+    </section>
+
+    <section id="index">
+      <h2>Index</h2>
+      <div class="index-cols">
+        <div class="index-letter">A–C</div>
+        <ul>
+          <li><a href="#operations">API key</a></li>
+          <li><a href="#install">apt repository (stable-v2)</a></li>
+          <li><a href="#operations">autostart · macOS (brew services)</a></li>
+          <li><a href="#wsl-windows">autostart · WSL/systemd</a></li>
+          <li><a href="#mental-model">backup — Syncthing is not one</a></li>
+          <li><a href="#glossary">BEP</a></li>
+          <li><a href="#ios">cellular data (Möbius)</a></li>
+          <li><a href="#simulator">cluster simulator</a></li>
+          <li><a href="#conflicts">conflict filename anatomy</a></li>
+          <li><a href="#conflicts">conflicts — who wins</a></li>
+        </ul>
+        <div class="index-letter">D–I</div>
+        <ul>
+          <li><a href="#devices">device ID</a></li>
+          <li><a href="#devices">discovery, local &amp; global</a></li>
+          <li><a href="#folders">folder ID vs label</a></li>
+          <li><a href="#folders">folder types</a></li>
+          <li><a href="#troubleshooting">folder marker missing</a></li>
+          <li><a href="#operations">GUI password</a></li>
+          <li><a href="#ignores">ignore patterns · syntax table</a></li>
+          <li><a href="#ignores">ignore-then-delete trap</a></li>
+          <li><a href="#wsl-windows">inotify limits · /mnt/c</a></li>
+          <li><a href="#devices">introducer</a></li>
+        </ul>
+        <div class="index-letter">K–R</div>
+        <ul>
+          <li><a href="#install">key.pem — identity backup</a></li>
+          <li><a href="#topology">LAN sync / zero-config</a></li>
+          <li><a href="#conflicts">maxConflicts</a></li>
+          <li><a href="#operations">moving a folder to a new path</a></li>
+          <li><a href="#ios">Möbius Sync · background limits</a></li>
+          <li><a href="#ios">Obsidian on iPhone</a></li>
+          <li><a href="#ignores">Obsidian workspace.json</a></li>
+          <li><a href="#folders">Override Changes (send-only)</a></li>
+          <li><a href="#install">paths (config, DB, log)</a></li>
+          <li><a href="#ios">photo export (send-only)</a></li>
+          <li><a href="#cheatsheet">ports 22000 / 21027 / 8384</a></li>
+          <li><a href="#devices">relays</a></li>
+          <li><a href="#operations">removing devices &amp; folders</a></li>
+          <li><a href="#operations">REST API</a></li>
+          <li><a href="#folders">Revert Local Changes (receive-only)</a></li>
+        </ul>
+        <div class="index-letter">S–W</div>
+        <ul>
+          <li><a href="#devices">.stfolder</a></li>
+          <li><a href="#ignores">.stignore</a></li>
+          <li><a href="#versioning">.stversions</a></li>
+          <li><a href="#devices">static addresses</a></li>
+          <li><a href="#install">SyncTrayzor v2</a></li>
+          <li><a href="#operations">syncthing cli</a></li>
+          <li><a href="#topology">topology recommendation</a></li>
+          <li><a href="#topology">translation from Dropbox/iCloud</a></li>
+          <li><a href="#operations">upgrades &amp; v2 changes</a></li>
+          <li><a href="#folders">untrusted / receive-encrypted</a></li>
+          <li><a href="#versioning">versioning modes</a></li>
+          <li><a href="#operations">watcher &amp; rescan interval</a></li>
+          <li><a href="#wsl-windows">WSL networking (NAT)</a></li>
+        </ul>
+      </div>
+    </section>
+    <section id="quiz">
+      <h2>Retrieval quiz</h2>
+      <p>Self-scored flashcards. Answer out loud before revealing. Aim for 13/15 "learned" — misses point you back to the section that teaches it. Score persists locally in this browser.</p>
+      <div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0/15 answered</div>
+      <div class="quiz-actions quiz-reset"><button id="quizReset" type="button">Reset score</button></div>
+      <div class="quiz-item" data-q="1">
+        <div class="quiz-q"><span class="qnum">Q1</span>Where is the Syncthing server, and what stands in for it?</div>
+        <div class="quiz-answer">There is none — every device runs the same program and syncs peer-to-peer; optional public discovery/relay servers only help devices find or reach each other, never hold files. (<a href="#mental-model">§1</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="2">
+        <div class="quiz-q"><span class="qnum">Q2</span>What exactly is a device ID, and why is pasting it in public chat safe?</div>
+        <div class="quiz-answer">A fingerprint of the device's self-signed TLS certificate. Knowing it grants nothing — your device only talks to IDs it has explicitly trusted, and both sides must add each other. (<a href="#devices">§4</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="3">
+        <div class="quiz-q"><span class="qnum">Q3</span>Which ports matter, and what must you open for two devices on the same LAN?</div>
+        <div class="quiz-answer">22000 TCP+UDP (sync), 21027 UDP (local discovery), 8384 (GUI, localhost). On a LAN: nothing — local discovery plus direct connections just work. (<a href="#devices">§4</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="4">
+        <div class="quiz-q"><span class="qnum">Q4</span>What does the <code>.stfolder</code> marker protect you from?</div>
+        <div class="quiz-answer">Syncing an unmounted/vanished disk as mass deletion — if the marker is missing, the folder stops with an error instead of propagating emptiness. (<a href="#devices">§4</a>, <a href="#troubleshooting">§15</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="5">
+        <div class="quiz-q"><span class="qnum">Q5</span>Folder type is a property of what — the folder, or something else? Give the four types.</div>
+        <div class="quiz-answer">Of each <em>device's</em> participation. Send-receive, send-only (Override button), receive-only (Revert button), receive-encrypted. (<a href="#folders">§5</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="6">
+        <div class="quiz-q"><span class="qnum">Q6</span>Decode: <code>todo.sync-conflict-20260806-113158-RLEX6CH.md</code> — whose content is inside, whose ID is in the name?</div>
+        <div class="quiz-answer">Inside: the <em>losing</em> (older-modified) version. The ID names the device whose change <em>won</em> the original filename. Conflict copies sync to all devices. (<a href="#conflicts">§8</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="7">
+        <div class="quiz-q"><span class="qnum">Q7</span>Does <code>.stignore</code> sync between devices? What follows from that?</div>
+        <div class="quiz-answer">Never. Ignoring is per-device, so junk filters must be added on every member — and retiring already-synced files means ignoring on all devices <em>before</em> deleting locally on each, or you leave zombie copies. (<a href="#ignores">§7</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="8">
+        <div class="quiz-q"><span class="qnum">Q8</span>What do <code>(?d)</code> and a leading <code>/</code> mean in an ignore pattern, and which rule decides between overlapping patterns?</div>
+        <div class="quiz-answer"><code>(?d)</code>: deletable — may be removed if blocking a directory deletion (use for OS junk). Leading <code>/</code>: match at folder root only. First matching pattern top-to-bottom wins. (<a href="#ignores">§7</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="9">
+        <div class="quiz-q"><span class="qnum">Q9</span>Versioning is enabled on your Mac. You mangle a note <em>on the Mac</em> and save. Is the old version in <code>.stversions</code>?</div>
+        <div class="quiz-answer">No — versioning archives only changes <em>received from other devices</em>. Local edits are never versioned; that's why it complements rather than replaces backups. (<a href="#versioning">§9</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="10">
+        <div class="quiz-q"><span class="qnum">Q10</span>Why does this guide recommend converging edits through the Mac rather than pure any-to-any habits?</div>
+        <div class="quiz-answer">The iPhone syncs only in brief foreground/background windows; a most-on device that's awake during those windows shrinks the conflict gap and acts as de-facto hub until an always-on node exists. (<a href="#topology">§10</a>, <a href="#ios">§11</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="11">
+        <div class="quiz-q"><span class="qnum">Q11</span>When does Möbius Sync actually sync?</div>
+        <div class="quiz-answer">While the app is open, briefly after closing, and in occasional iOS-granted background slots — roughly 1–2 h of activity per day once established. Design habits around foreground time. (<a href="#ios">§11</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="12">
+        <div class="quiz-q"><span class="qnum">Q12</span>Why must WSL Syncthing not watch folders under <code>/mnt/c</code>?</div>
+        <div class="quiz-answer">Windows-side changes generate no inotify events across the 9p boundary (plus it's slow), so sync degrades to the hourly rescan. Files in NTFS → native Windows Syncthing; files in ext4 → WSL Syncthing. (<a href="#wsl-windows">§12</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="13">
+        <div class="quiz-q"><span class="qnum">Q13</span>Your Mac runs Syncthing 2.1.3, the phone's engine is 1.28. Problem?</div>
+        <div class="quiz-answer">No — the sync protocol (BEP) is unchanged across v1/v2; v2's changes are local (SQLite DB, structured logs, CLI flags, 6-month deleted-item retention). (<a href="#install">§3</a>, <a href="#operations">§13</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="14">
+        <div class="quiz-q"><span class="qnum">Q14</span>A machine dies. What three files resurrect its Syncthing identity, and what happens without them?</div>
+        <div class="quiz-answer"><code>key.pem</code>, <code>cert.pem</code>, <code>config.xml</code> from the config dir. Without them the reinstall is a brand-new device ID that every peer must re-add. (<a href="#install">§3</a>, <a href="#troubleshooting">§15</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="15">
+        <div class="quiz-q"><span class="qnum">Q15</span>Devices connect but show "Relayed" on your home LAN. Why is that bad and what do you check?</div>
+        <div class="quiz-answer">Relay = slow last-resort path (priority 50 vs 10 for LAN). Check local discovery is on and UDP 21027 isn't blocked; same subnet; fallback: static <code>tcp://ip:22000</code> address. (<a href="#devices">§4</a>, <a href="#troubleshooting">§15</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+    </section>
+
+    <section id="sources">
+      <h2>Sources</h2>
+      <p class="mini">Checked with syncthing v2.1.3 "Hafnium Hornet" (Homebrew, macOS) · Möbius Sync 1.28.0 · 2026-08-06. All lab transcripts in this guide are real output from a throwaway two-instance cluster on that Mac. External links require network; the guide itself works offline.</p>
+      <ul class="source-list">
+        <li><a href="https://docs.syncthing.net/" target="_blank" rel="noopener">Syncthing documentation</a> — the canonical reference; best used as the follow-up for any section here.</li>
+        <li><a href="https://docs.syncthing.net/intro/getting-started.html" target="_blank" rel="noopener">Getting Started</a> — best for re-walking first-run pairing with the GUI screenshots this text-only guide omits.</li>
+        <li><a href="https://docs.syncthing.net/users/foldertypes.html" target="_blank" rel="noopener">Folder Types</a> — best for the exact semantics of Override/Revert before pressing either red button.</li>
+        <li><a href="https://docs.syncthing.net/users/ignoring.html" target="_blank" rel="noopener">Ignoring Files</a> — best for full pattern grammar and edge cases beyond §7's table.</li>
+        <li><a href="https://docs.syncthing.net/users/versioning.html" target="_blank" rel="noopener">Versioning</a> — best for staggered-mode interval details and external-command templates.</li>
+        <li><a href="https://docs.syncthing.net/users/firewall.html" target="_blank" rel="noopener">Firewall Setup</a> — best for port-forwarding and ufw/firewalld one-liners per platform.</li>
+        <li><a href="https://docs.syncthing.net/users/autostart.html" target="_blank" rel="noopener">Autostart</a> — best for systemd/launchd/Task Scheduler recipes when provisioning a new machine.</li>
+        <li><a href="https://docs.syncthing.net/dev/rest.html" target="_blank" rel="noopener">REST API</a> — best for scripting; every GUI action maps to an endpoint here.</li>
+        <li><a href="https://apt.syncthing.net/" target="_blank" rel="noopener">apt.syncthing.net</a> — best for the current Debian/Ubuntu repo lines (channels: stable-v2, candidate).</li>
+        <li><a href="https://github.com/syncthing/syncthing/releases" target="_blank" rel="noopener">Syncthing releases</a> — best for what changed before upgrading; v2.0.0 notes explain the SQLite/CLI breaks.</li>
+        <li><a href="https://mobiussync.com/faq/" target="_blank" rel="noopener">Möbius Sync FAQ</a> — best for iOS background-sync reality, photo export, and external-folder warnings.</li>
+        <li><a href="https://forum.syncthing.net/" target="_blank" rel="noopener">Syncthing Forum</a> — best for symptom-searching odd behavior; the developers answer there.</li>
+      </ul>
+      <p class="print-only">Printed from the single-file Syncthing Field Guide · verified 2026-08-06 with syncthing v2.1.3.</p>
+    </section>
+</main>
+</div>
+<script>
+(function () {
+  'use strict';
+
+  // Theme toggle: auto → dark → light, persisted per guide.
+  const themeKey = 'syncthing-guide-theme';
+  const toggle = document.getElementById('themeToggle');
+  const root = document.documentElement;
+  const modes = ['auto', 'dark', 'light'];
+  const labels = { auto: '◐ Auto', dark: '● Dark', light: '○ Light' };
+  let mode = 'auto';
+  try { mode = localStorage.getItem(themeKey) || 'auto'; } catch (_) {}
+  function applyTheme() {
+    root.classList.remove('dark', 'light');
+    if (mode !== 'auto') root.classList.add(mode);
+    toggle.textContent = labels[mode];
+    try { localStorage.setItem(themeKey, mode); } catch (_) {}
+  }
+  toggle.addEventListener('click', () => {
+    mode = modes[(modes.indexOf(mode) + 1) % modes.length];
+    applyTheme();
+  });
+  applyTheme();
+
+  // Mobile TOC toggle (button is display:none on desktop).
+  const tocToggle = document.getElementById('tocToggle');
+  const sidebar = document.querySelector('.sidebar');
+  function setToc(open) {
+    sidebar.classList.toggle('open', open);
+    tocToggle.setAttribute('aria-expanded', String(open));
+  }
+  tocToggle.addEventListener('click', () => setToc(!sidebar.classList.contains('open')));
+  document.querySelectorAll('#toc a').forEach(a => a.addEventListener('click', () => setToc(false)));
+
+  // Copy button on every <pre>.
+  document.querySelectorAll('pre').forEach(pre => {
+    const b = document.createElement('button');
+    b.className = 'copy'; b.type = 'button'; b.textContent = 'Copy';
+    b.addEventListener('click', () => {
+      const clone = pre.cloneNode(true);
+      clone.querySelectorAll('.copy,.out').forEach(n => n.remove());
+      const text = clone.textContent.trim();
+      const write = navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject(new Error('clipboard unavailable'));
+      write.then(() => { b.textContent = 'Copied'; })
+        .catch(() => { b.textContent = 'Copy failed'; })
+        .then(() => { setTimeout(() => { b.textContent = 'Copy'; }, 1200); });
+    });
+    pre.appendChild(b);
+  });
+
+  // Back-to-top visibility.
+  const topButton = document.getElementById('topButton');
+  addEventListener('scroll', () => {
+    topButton.classList.toggle('visible', scrollY > 900);
+  }, { passive: true });
+
+  // Scrollspy.
+  const tocLinks = [...document.querySelectorAll('#toc a')];
+  const linkForId = new Map(tocLinks.map(a => [a.getAttribute('href').slice(1), a]));
+  const observer = new IntersectionObserver(entries => {
+    const visible = entries.filter(e => e.isIntersecting).sort((a,b) => a.boundingClientRect.top - b.boundingClientRect.top);
+    if (!visible.length) return;
+    tocLinks.forEach(a => a.classList.remove('active'));
+    const link = linkForId.get(visible[0].target.id);
+    if (link) link.classList.add('active');
+  }, { rootMargin: '-10% 0px -78% 0px', threshold: 0 });
+  document.querySelectorAll('main section[id]').forEach(section => observer.observe(section));
+
+  // Cluster simulator: one file across three devices with online/offline state.
+  // Each device tracks {v, base}: v = its local version counter,
+  // base = the cluster version it last converged from (for conflict detection).
+  const dev = {
+    mac:   { name: 'Mac',    st: 'online — always awake', online: true,  v: 1, base: 1, t: 0 },
+    wsl:   { name: 'WSL',    st: 'online',                online: true,  v: 1, base: 1, t: 0 },
+    phone: { name: 'iPhone', st: 'app open',              online: true,  v: 1, base: 1, t: 0 },
+  };
+  let conflicts = [];
+  let editSeq = 0;
+  const panels = document.getElementById('simPanels');
+  const simLog = document.getElementById('simLog');
+  function names() { return Object.keys(dev); }
+  function onlineDevs() { return names().filter(k => dev[k].online); }
+  function logLine(cmd, out, cls) {
+    const p = document.createElement('div');
+    p.innerHTML = '<span class="p">· ' + cmd + '</span>';
+    simLog.appendChild(p);
+    if (out) {
+      const o = document.createElement('div');
+      o.className = cls || 'o';
+      o.textContent = out;
+      simLog.appendChild(o);
+    }
+    simLog.scrollTop = simLog.scrollHeight;
+  }
+  function converge() {
+    const on = onlineDevs();
+    if (on.length < 2) return;
+    const top = Math.max(...on.map(k => dev[k].v));
+    // diverged = edited since it last converged with the cluster
+    const diverged = on.filter(k => dev[k].v > dev[k].base);
+    const maxOther = k => Math.max(...on.filter(n => n !== k).map(n => dev[n].v));
+    const isConflict = diverged.length >= 2 ||
+      (diverged.length === 1 && maxOther(diverged[0]) > dev[diverged[0]].base);
+    if (isConflict) {
+      const topHolder = on.reduce((a, b) => dev[a].v >= dev[b].v ? a : b);
+      const parts = [...new Set([...diverged, topHolder])];
+      const winner = parts.reduce((a, b) => dev[a].t >= dev[b].t ? a : b);
+      const losers = parts.filter(k => k !== winner);
+      const newV = top + 1;
+      on.forEach(k => { dev[k].v = newV; dev[k].base = newV; });
+      const cf = 'todo.sync-conflict-…-' + dev[winner].name.toUpperCase().slice(0, 7);
+      conflicts.push(cf);
+      logLine('reconnect → conflict!', dev[winner].name + "'s (most recent) edit keeps todo.md; " +
+        losers.map(k => dev[k].name).join('+') + "'s edit preserved as " + cf, 'add');
+      render();
+      return;
+    }
+    on.forEach(k => { dev[k].v = top; dev[k].base = top; });
+  }
+  function render() {
+    panels.textContent = '';
+    names().forEach(k => {
+      const d = dev[k];
+      const panel = document.createElement('div');
+      panel.className = 'sim-panel' + (d.online ? '' : ' offline');
+      const on = onlineDevs();
+      const top = Math.max(...names().map(n => dev[n].v));
+      const drift = d.v < top;
+      let fileHtml = '<div class="sim-file' + (drift ? ' drift' : '') + '"><span>todo.md</span><span class="v">v' + d.v + '</span></div>';
+      conflicts.forEach(cf => {
+        if (d.online) fileHtml += '<div class="sim-file conflict"><span>' + cf + '</span><span class="v">⚠</span></div>';
+      });
+      panel.innerHTML = '<h4>' + d.name + '</h4><p class="st">' + d.st + '</p>' + fileHtml;
+      panels.appendChild(panel);
+    });
+  }
+  function edit(k) {
+    const d = dev[k];
+    d.v = d.v + 1;
+    d.t = ++editSeq;
+    logLine('edit todo.md on ' + d.name, d.name + ' now at v' + d.v + (d.online ? '' : ' (offline — cluster does not know yet)'));
+    converge(); render();
+  }
+  const acts = {
+    editMac() { edit('mac'); },
+    editWsl() { if (!dev.wsl.online) { logLine('edit on WSL', 'WSL is offline — editing its local (possibly stale) copy'); } edit('wsl'); },
+    editPhone() { if (!dev.phone.online) { logLine('edit on iPhone', 'app closed — editing the local copy; sync waits for the app to open'); } edit('phone'); },
+    togglePhone() {
+      dev.phone.online = !dev.phone.online;
+      dev.phone.st = dev.phone.online ? 'app open' : 'app closed — no sync';
+      logLine(dev.phone.online ? 'open Möbius' : 'close Möbius', dev.phone.online ? 'iPhone reconnects and catches up' : 'iPhone stops syncing');
+      if (dev.phone.online) converge();
+      render();
+    },
+    toggleWsl() {
+      dev.wsl.online = !dev.wsl.online;
+      dev.wsl.st = dev.wsl.online ? 'online' : 'offline (WSL shut down)';
+      logLine(dev.wsl.online ? 'start WSL' : 'stop WSL', dev.wsl.online ? 'WSL reconnects and catches up' : 'WSL leaves the cluster');
+      if (dev.wsl.online) converge();
+      render();
+    },
+    reset() {
+      names().forEach(k => { dev[k].online = true; dev[k].v = 1; dev[k].base = 1; dev[k].t = 0; });
+      editSeq = 0;
+      dev.mac.st = 'online — always awake'; dev.wsl.st = 'online'; dev.phone.st = 'app open';
+      conflicts = [];
+      simLog.textContent = '';
+      logLine('reset', 'all devices online at v1 — try closing the iPhone app, then edit on Mac AND iPhone');
+      render();
+    },
+  };
+  document.querySelectorAll('.sim-buttons button').forEach(b => {
+    b.addEventListener('click', () => { acts[b.dataset.act](); });
+  });
+  acts.reset();
+
+  // Retrieval quiz with locally persisted score.
+  const quizKey = 'syncthing-guide-quiz-v1';
+  let quizState = {};
+  try { quizState = JSON.parse(localStorage.getItem(quizKey) || '{}'); } catch (_) { quizState = {}; }
+  const quizItems = [...document.querySelectorAll('.quiz-item')];
+  const quizScore = document.getElementById('quizScore');
+  function updateQuiz() {
+    let got = 0, missed = 0;
+    quizItems.forEach(item => {
+      const state = quizState[item.dataset.q];
+      item.classList.toggle('correct', state === 'got');
+      item.classList.toggle('missed', state === 'missed');
+      if (state === 'got') got++;
+      if (state === 'missed') missed++;
+    });
+    quizScore.textContent = 'Score: ' + got + ' learned · ' + missed + ' review · ' + (got + missed) + '/' + quizItems.length + ' answered';
+    try { localStorage.setItem(quizKey, JSON.stringify(quizState)); } catch (_) {}
+  }
+  function setAnswerOpen(item, open) {
+    const answer = item.querySelector('.quiz-answer');
+    const reveal = item.querySelector('.reveal');
+    answer.classList.toggle('open', open);
+    reveal.textContent = open ? 'Hide' : 'Reveal';
+    reveal.setAttribute('aria-expanded', String(open));
+  }
+  quizItems.forEach(item => {
+    const answer = item.querySelector('.quiz-answer');
+    const reveal = item.querySelector('.reveal');
+    reveal.setAttribute('aria-expanded', 'false');
+    reveal.addEventListener('click', () => setAnswerOpen(item, !answer.classList.contains('open')));
+    item.querySelector('.got').addEventListener('click', () => { quizState[item.dataset.q] = 'got'; updateQuiz(); });
+    item.querySelector('.missed').addEventListener('click', () => { quizState[item.dataset.q] = 'missed'; setAnswerOpen(item, true); updateQuiz(); });
+  });
+  document.getElementById('quizReset').addEventListener('click', () => {
+    quizState = {};
+    quizItems.forEach(item => setAnswerOpen(item, false));
+    updateQuiz();
+  });
+  updateQuiz();
+})();
+</script>
+</body>
+</html>

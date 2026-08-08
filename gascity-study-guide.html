@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gas City Mastery Guide</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏭</text></svg>">
+<style>
+  :root {
+    --bg: #f9f8f6;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink2: #52514e;
+    --muted: #898781;
+    --line: #e1dfd8;
+    --hairline: rgba(11,11,11,0.10);
+    --accent: #b45309;
+    --s1: #2a78d6;  /* blue — config / structure (city.toml, packs) */
+    --s2: #1baf7a;  /* green — agents / sessions */
+    --s3: #7a4dc9;  /* violet — work / beads / formulas */
+    --s4: #eb6834;  /* orange — events / automation / control */
+    --s1-wash: rgba(42,120,214,0.10);
+    --s2-wash: rgba(27,175,122,0.10);
+    --s3-wash: rgba(122,77,201,0.10);
+    --s4-wash: rgba(235,104,52,0.10);
+    --accent-wash: rgba(180,83,9,0.10);
+    --good: #006300;
+    --warn-bg: rgba(250,178,25,0.12);
+    --code-bg: #f0efec;
+    --lab-bg: rgba(180,83,9,0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101112;
+      --surface: #1a1b1c;
+      --ink: #f4f2ee;
+      --ink2: #c3c2b7;
+      --muted: #8f8d86;
+      --line: #2c2c2a;
+      --hairline: rgba(255,255,255,0.10);
+      --accent: #f59e0b;
+      --s1: #4a90e2; --s2: #17a56f; --s3: #9d7be0; --s4: #e86a3c;
+      --s1-wash: rgba(74,144,226,0.14);
+      --s2-wash: rgba(23,165,111,0.16);
+      --s3-wash: rgba(157,123,224,0.14);
+      --s4-wash: rgba(232,106,60,0.14);
+      --accent-wash: rgba(245,158,11,0.12);
+      --good: #0ca30c;
+      --warn-bg: rgba(250,178,25,0.10);
+      --code-bg: #242526;
+      --lab-bg: rgba(245,158,11,0.07);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f9f8f6; --surface: #fcfcfb; --ink: #0b0b0b; --ink2: #52514e;
+    --muted: #898781; --line: #e1dfd8; --hairline: rgba(11,11,11,0.10);
+    --accent: #b45309;
+    --s1: #2a78d6; --s2: #1baf7a; --s3: #7a4dc9; --s4: #eb6834;
+    --s1-wash: rgba(42,120,214,0.10); --s2-wash: rgba(27,175,122,0.10);
+    --s3-wash: rgba(122,77,201,0.10); --s4-wash: rgba(235,104,52,0.10);
+    --accent-wash: rgba(180,83,9,0.10);
+    --good: #006300; --warn-bg: rgba(250,178,25,0.12);
+    --code-bg: #f0efec; --lab-bg: rgba(180,83,9,0.06);
+  }
+  :root[data-theme="dark"] {
+    --bg: #101112; --surface: #1a1b1c; --ink: #f4f2ee; --ink2: #c3c2b7;
+    --muted: #8f8d86; --line: #2c2c2a; --hairline: rgba(255,255,255,0.10);
+    --accent: #f59e0b;
+    --s1: #4a90e2; --s2: #17a56f; --s3: #9d7be0; --s4: #e86a3c;
+    --s1-wash: rgba(74,144,226,0.14); --s2-wash: rgba(23,165,111,0.16);
+    --s3-wash: rgba(157,123,224,0.14); --s4-wash: rgba(232,106,60,0.14);
+    --accent-wash: rgba(245,158,11,0.12);
+    --good: #0ca30c; --warn-bg: rgba(250,178,25,0.10);
+    --code-bg: #242526; --lab-bg: rgba(245,158,11,0.07);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg); color: var(--ink);
+    line-height: 1.6; font-size: 16px;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ---- layout ---- */
+  .layout { display: flex; max-width: 1280px; margin: 0 auto; }
+  nav.toc {
+    position: sticky; top: 0; align-self: flex-start;
+    width: 240px; flex-shrink: 0; height: 100vh; overflow-y: auto;
+    padding: 24px 8px 24px 20px; border-right: 1px solid var(--line);
+  }
+  nav.toc .brand { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+  nav.toc .brand-sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+  nav.toc .part {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--muted); margin: 14px 0 3px; padding-left: 10px; font-weight: 700;
+  }
+  nav.toc a {
+    display: block; padding: 5px 10px; border-radius: 6px;
+    color: var(--ink2); font-size: 13.5px; margin-bottom: 1px;
+  }
+  nav.toc a:hover { background: var(--accent-wash); text-decoration: none; }
+  nav.toc a.active { background: var(--accent-wash); color: var(--accent); font-weight: 600; }
+  main { flex: 1; min-width: 0; padding: 32px 40px 80px; }
+
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    nav.toc {
+      position: static; width: 100%; height: auto;
+      border-right: none; border-bottom: 1px solid var(--line);
+      display: flex; flex-wrap: wrap; gap: 2px; padding: 12px 16px;
+    }
+    nav.toc .brand, nav.toc .brand-sub, nav.toc .part { width: 100%; }
+    main { padding: 24px 16px 60px; }
+  }
+  @media print {
+    nav.toc, .theme-toggle { display: none !important; }
+    .answer { display: block !important; }
+    section { break-inside: avoid-page; }
+  }
+
+  .theme-toggle {
+    position: fixed; top: 14px; right: 16px; z-index: 10;
+    background: var(--surface); border: 1px solid var(--line); color: var(--ink2);
+    border-radius: 20px; padding: 5px 14px; font-size: 13px; cursor: pointer;
+    font-family: inherit;
+  }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ---- typography ---- */
+  h1 { font-size: 34px; line-height: 1.2; letter-spacing: -0.5px; }
+  h2 {
+    font-size: 24px; margin: 56px 0 12px; padding-top: 16px;
+    border-top: 1px solid var(--line); letter-spacing: -0.3px;
+  }
+  h3 { font-size: 17px; margin: 28px 0 8px; }
+  p { margin: 0 0 12px; color: var(--ink2); }
+  p strong, li strong { color: var(--ink); }
+  ul, ol { margin: 0 0 14px 22px; color: var(--ink2); }
+  li { margin-bottom: 5px; }
+
+  .lede { font-size: 18px; color: var(--ink2); max-width: 62ch; }
+  .fact-date { font-size: 12.5px; color: var(--muted); margin: 10px 0 0; }
+
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.88em; background: var(--code-bg);
+    padding: 1px 5px; border-radius: 4px; color: var(--ink);
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line);
+    border-radius: 8px; padding: 14px 16px; overflow-x: auto;
+    margin: 0 0 16px; line-height: 1.5;
+  }
+  pre code { background: none; padding: 0; font-size: 13px; }
+
+  /* ---- components ---- */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 6px; }
+  .chip {
+    font-size: 12.5px; padding: 4px 12px; border-radius: 14px;
+    background: var(--accent-wash); color: var(--ink2);
+    border: 1px solid var(--hairline);
+  }
+  .card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; padding: 18px 20px; margin: 0 0 16px;
+  }
+  .card h3 { margin-top: 0; }
+  .concept {
+    background: var(--surface); border: 1px solid var(--line);
+    border-left: 3px solid var(--s3);
+    border-radius: 10px; padding: 14px 18px; margin: 0 0 12px;
+  }
+  .concept .term { font-weight: 700; color: var(--ink); }
+  .concept p { margin-bottom: 0; font-size: 15px; }
+  .callout {
+    border-left: 3px solid var(--accent); background: var(--accent-wash);
+    border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 0 0 16px;
+    font-size: 15px; color: var(--ink2);
+  }
+  .callout.warn { border-left-color: #c98500; background: var(--warn-bg); }
+  .callout p:last-child { margin-bottom: 0; }
+  .gt-note {
+    border-left: 3px solid var(--s2); background: var(--s2-wash);
+    border-radius: 0 8px 8px 0; padding: 10px 16px; margin: 0 0 16px;
+    font-size: 14px; color: var(--ink2);
+  }
+  .gt-note::before {
+    content: "GAS TOWN NOTE"; display: block; font-size: 10.5px;
+    letter-spacing: 0.8px; font-weight: 700; color: var(--s2); margin-bottom: 3px;
+  }
+  .gt-note p:last-child { margin-bottom: 0; }
+
+  .lab {
+    background: var(--lab-bg); border: 1px solid var(--line);
+    border-left: 4px solid var(--accent);
+    border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 20px 0 22px;
+  }
+  .lab .lab-title { font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+  .lab .lab-title::before {
+    content: "LAB"; background: var(--accent); color: var(--bg);
+    font-size: 10.5px; letter-spacing: 1px; font-weight: 800;
+    border-radius: 4px; padding: 2px 7px; margin-right: 10px; vertical-align: 1px;
+  }
+  .lab pre { background: var(--code-bg); }
+  .lab .expect { font-size: 13px; color: var(--muted); margin: -8px 0 12px; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--line); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; background: var(--surface); }
+  th {
+    text-align: left; padding: 9px 14px; color: var(--muted);
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--line); white-space: nowrap;
+  }
+  td { padding: 8px 14px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink2); }
+  tr:last-child td { border-bottom: none; }
+  td:first-child { color: var(--ink); font-weight: 500; }
+
+  .src { font-size: 12px; color: var(--muted); }
+  .src a { color: var(--muted); text-decoration: underline; text-decoration-color: var(--hairline); }
+  .src a:hover { color: var(--accent); }
+  .sources-block {
+    font-size: 13px; color: var(--muted); margin: 14px 0 0;
+    padding-top: 8px; border-top: 1px dashed var(--line);
+  }
+
+  figure { margin: 20px 0 24px; }
+  figure svg { width: 100%; height: auto; display: block; }
+  figcaption { font-size: 13px; color: var(--muted); margin-top: 8px; }
+
+  .step-list { counter-reset: step; list-style: none; margin-left: 0; }
+  .step-list li {
+    counter-increment: step; position: relative;
+    padding-left: 42px; margin-bottom: 12px;
+  }
+  .step-list li::before {
+    content: counter(step); position: absolute; left: 0; top: 1px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent-wash); color: var(--accent);
+    font-weight: 700; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--hairline);
+  }
+
+  /* ---- quiz ---- */
+  .quiz-score {
+    position: sticky; top: 8px; z-index: 5; display: inline-block;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 20px; padding: 6px 16px; font-size: 14px; margin-bottom: 16px;
+  }
+  .quiz-item {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; padding: 16px 20px; margin-bottom: 12px;
+  }
+  .quiz-q { font-weight: 600; color: var(--ink); margin-bottom: 10px; }
+  .quiz-q .qnum { color: var(--muted); font-weight: 700; margin-right: 8px; }
+  .answer { display: none; padding: 10px 14px; background: var(--code-bg); border-radius: 8px; margin-bottom: 10px; color: var(--ink2); font-size: 15px; }
+  .answer.shown { display: block; }
+  .quiz-item button {
+    font-family: inherit; font-size: 13.5px; cursor: pointer;
+    border-radius: 7px; padding: 6px 14px; margin-right: 8px;
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink2);
+  }
+  .quiz-item button:hover { border-color: var(--accent); color: var(--accent); }
+  .quiz-item button.reveal { background: var(--accent-wash); color: var(--accent); border-color: transparent; font-weight: 600; }
+  .quiz-item button.got { display: none; }
+  .quiz-item button.missed { display: none; }
+  .quiz-item.revealed button.reveal { display: none; }
+  .quiz-item.revealed button.got, .quiz-item.revealed button.missed { display: inline-block; }
+  .quiz-item.scored button { display: none !important; }
+  .quiz-item .verdict { font-size: 13px; font-weight: 600; display: none; }
+  .quiz-item.scored .verdict { display: inline; }
+
+  footer {
+    margin-top: 60px; padding-top: 16px; border-top: 1px solid var(--line);
+    font-size: 13px; color: var(--muted);
+  }
+
+  /* diagram text */
+  svg text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .d-title { font-size: 13px; font-weight: 700; fill: var(--ink); }
+  .d-label { font-size: 12px; fill: var(--ink); font-weight: 600; }
+  .d-sub { font-size: 11px; fill: var(--ink2); }
+  .d-mut { font-size: 10.5px; fill: var(--muted); }
+  .d-code { font-size: 10.5px; fill: var(--ink2); font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .d-line { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+  .d-box { stroke-width: 1.4; rx: 8; }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle">◐ Theme</button>
+
+<div class="layout">
+<nav class="toc" id="toc">
+  <div class="brand">Gas City Mastery Guide</div>
+  <div class="brand-sub">study handbook · July 2026</div>
+  <div class="part">Part I · Big picture</div>
+  <a href="#s1">1 · What is Gas City</a>
+  <a href="#s2">2 · The mental model</a>
+  <div class="part">Part II · Operator + lab</div>
+  <a href="#s3">3 · Install &amp; first city</a>
+  <a href="#s4">4 · city.toml anatomy</a>
+  <a href="#s5">5 · Work routing</a>
+  <a href="#s6">6 · Runtime providers</a>
+  <a href="#s7">7 · Rigs, packs &amp; overrides</a>
+  <div class="part">Part III · Internals</div>
+  <a href="#s8">8 · The reconcile loop</a>
+  <a href="#s9">9 · Code tour</a>
+  <div class="part">Part IV · Context</div>
+  <a href="#s10">10 · Gas Town → Gas City</a>
+  <a href="#s11">11 · Quiz, glossary &amp; sources</a>
+</nav>
+
+<main>
+
+<!-- ============ 1. WHAT IS GAS CITY ============ -->
+<section id="s1">
+  <h1>Gas City</h1>
+  <p class="lede" style="margin-top:8px">
+    “Composable orchestration infrastructure for multi-agent coding workflows.”
+    An open-source <strong>Go SDK for building your own multi-agent system</strong>: you declare a
+    <em>city</em> of AI coding agents in TOML, and a controller keeps reality matching that
+    declaration — starting and stopping sessions, routing work, running scheduled automation —
+    while every unit of work lives as a durable, queryable record called a <em>bead</em>.
+  </p>
+  <div class="chips">
+    <span class="chip">Go · MIT</span>
+    <span class="chip">Declarative city.toml</span>
+    <span class="chip">Beads-backed work tracking</span>
+    <span class="chip">6 session backends, tmux → k8s</span>
+    <span class="chip">Any CLI agent (claude, codex, gemini…)</span>
+    <span class="chip">Extracted from Gas Town</span>
+  </div>
+  <p class="fact-date">All facts verified against the linked sources on 2026-07-09/10, at gascity ≈ v1.3.0 (<code>main</code> branch docs). The project moves fast — trust the <a href="https://github.com/gastownhall/gascity/tree/main/docs">live docs</a> over this page for anything newer.</p>
+
+  <h3>The idea: orchestration as infrastructure</h3>
+  <p>
+    Every serious multi-agent setup ends up rebuilding the same machinery: something to start and
+    supervise agent processes, something to track work that outlives any one session, something to
+    let agents message each other, something to run jobs on a schedule and restart what breaks.
+    Gas City extracts exactly that machinery from Gas Town — Steve Yegge's 20-to-30-agent
+    “coding factory” — into a <strong>primitive-first SDK</strong>. The primitives (sessions, beads,
+    events, packs, formulas) are generic; every behavior, including all of Gas Town's famous roles,
+    is just configuration layered on top. The engdocs state the design goal plainly: <em>“The same
+    SDK can express Gas Town, Ralph, or any other pack”</em> — zero hardcoded roles.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/README.md">README</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/nine-concepts.md">nine-concepts</a>]</span>
+  </p>
+  <p>
+    Concretely, the README's feature list is the whole story in five bullets: declarative city
+    configuration via <code>city.toml</code>; work routing with Beads-backed tracking, formulas,
+    molecules, waits and mail; runtime providers from tmux to Kubernetes; a controller/supervisor
+    loop that reconciles desired state to running state; and packs, overrides, and rig-scoped
+    orchestration for multi-project setups.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/README.md">README</a>]</span>
+  </p>
+
+  <h3>Where it came from</h3>
+  <p>
+    Gas Town launched in January 2026 as Yegge's opinionated “industrialized coding factory manned by
+    superintelligent robot chimps”: seven fixed worker roles, merge queues, patrol loops, operational
+    complexity he compared to Kubernetes. Gas City v1.0 — built by <strong>Julian Knutsen and
+    Chris Sells</strong>, announced April 2026 — deconstructs that application into composable packs.
+    Two ideas from the announcement shape everything: full observability with git-versioned audit
+    trails (Dolt) turning “dark factories” into <em>light factories</em>, and pool-first reliability —
+    <em>“any agent can go temporarily insane, at any time, and make a bad call.”</em> The human's role
+    shifts to <em>“shepherds, tending flocks of agents which do the ground-level work.”</em>
+    <span class="src">[<a href="https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04">Welcome to Gas Town</a> · <a href="https://steveyegge.spicytakes.org/post/2026-04-24-welcome-to-gas-city-57f564bb3607">Welcome to Gas City</a>]</span>
+  </p>
+  <div class="gt-note">
+    <p>Used Gas Town? This guide assumes nothing from it — but <a href="#s10">section 10</a> maps every
+    Town role, command, and habit onto Gas City primitives, and green notes like this one flag the
+    ancestry as we go.</p>
+  </div>
+
+  <h3>Vital statistics</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Fact</th><th>Value</th></tr>
+    <tr><td>What</td><td>“Composable orchestration infrastructure for multi-agent coding workflows” — an orchestration-builder SDK, not a hosted product</td></tr>
+    <tr><td>Builders</td><td>Julian Knutsen &amp; Chris Sells; announced by Steve Yegge, April 2026</td></tr>
+    <tr><td>Language</td><td>Go ≈92%, TypeScript ≈6%, Shell — repo <code>gastownhall/gascity</code>, MIT license</td></tr>
+    <tr><td>Required tools</td><td><code>tmux</code>, <code>git</code>, <code>jq</code>, <code>pgrep</code>, <code>lsof</code></td></tr>
+    <tr><td>Optional tools</td><td><code>dolt</code> + <code>bd</code> (Beads store), <code>gh</code> (GitHub gates), agent CLIs (<code>claude</code>, <code>codex</code>, <code>gemini</code>…) per provider</td></tr>
+    <tr><td>Session backends</td><td>tmux (default <em>and</em> required fallback), subprocess, exec, ACP, Kubernetes, herdr</td></tr>
+    <tr><td>Docs</td><td><code>docs/</code> user docs (Mintlify) · <code>engdocs/</code> contributor architecture docs</td></tr>
+  </table></div>
+  <p class="sources-block">Sources:
+    <a href="https://github.com/gastownhall/gascity">repo</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/main/README.md">README</a> ·
+    <a href="https://steveyegge.spicytakes.org/post/2026-04-24-welcome-to-gas-city-57f564bb3607">Yegge announcement</a> ·
+    <a href="https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04">Gas Town origin post</a>
+  </p>
+</section>
+
+<!-- ============ 2. MENTAL MODEL ============ -->
+<section id="s2">
+  <h2>2 · The mental model</h2>
+  <p>
+    Three sentences carry the whole system. <strong>You declare what should exist</strong> — agents,
+    projects, methods, schedules — in <code>city.toml</code> and the packs it imports.
+    <strong>A controller daemon makes reality match</strong>, reconciling running sessions against
+    that declaration on every tick. <strong>All state lives in beads</strong> — “everything is a bead:
+    tasks, mail, molecules, convoys, and epics” — so work survives any crash, and agents <em>pull</em>
+    work instead of being pushed to.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/glossary.md">glossary</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/life-of-a-bead.md">life-of-a-bead</a>]</span>
+  </p>
+
+  <div class="concept" style="border-left-color: var(--s1)">
+    <span class="term">City</span> — “the local (root) pack rooted at the deployment directory.”
+    A directory with <code>city.toml</code> plus <code>.gc/</code> runtime state. Crucially,
+    <em>“the City is a pack”</em>: the same configuration unit as everything else, just the root one.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a>]</span>
+  </div>
+  <div class="concept" style="border-left-color: var(--s1)">
+    <span class="term">Rig</span> — “an external project (usually a git repo) registered with the
+    city.” Each rig gets its own bead namespace (ID prefix), its own agent scope, and its own hooks —
+    so one city can orchestrate many codebases without cross-talk.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a>]</span>
+  </div>
+  <div class="concept" style="border-left-color: var(--s2)">
+    <span class="term">Agent → session</span> — an agent is “<em>who</em> does the work — a worker a
+    pack defines as a prompt plus a scope and a provider”; <em>configuration, not code</em>. When it runs, it becomes a
+    <strong>session</strong>: a live process the platform manages. Pools scale between
+    <code>min_active_sessions</code> and <code>max_active_sessions</code>. “The SDK manages session
+    lifecycle. The prompt defines agent behavior.”
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/nine-concepts.md">nine-concepts</a>]</span>
+  </div>
+  <div class="concept" style="border-left-color: var(--s3)">
+    <span class="term">Bead</span> — “one unit with an ID, title, status, and type,” moving
+    <code>open → in_progress → closed</code>. The universal substrate: tasks, mail messages, sessions,
+    and convoys are all beads differentiated only by type. Stored durably (Dolt-backed <code>bd</code>
+    by default), which is why a crashed agent's work is resumable.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a>]</span>
+  </div>
+  <div class="concept" style="border-left-color: var(--s3)">
+    <span class="term">Formula → molecule</span> — a formula is “<em>how</em> a job gets done — a
+    reusable, written-down method”: a TOML file of steps and dependencies. Applying (“cooking”) it materializes
+    beads that outlive the file; the instantiated result — one root bead plus step beads — is a
+    <strong>molecule</strong>.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/glossary.md">glossary</a>]</span>
+  </div>
+  <div class="concept" style="border-left-color: var(--s1)">
+    <span class="term">Pack</span> — “the unit of configuration — declares agents, formulas, orders”
+    via <code>pack.toml</code>. Packs compose through named imports, so shared behavior (like the
+    entire Gas Town role set) ships as a reusable directory instead of copied files.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a>]</span>
+  </div>
+  <div class="concept" style="border-left-color: var(--s4)">
+    <span class="term">Controller &amp; supervisor</span> — two different things. The
+    <strong>controller</strong> is “the long-running daemon that drives all SDK infrastructure”
+    inside one city: the reconcile loop. The <strong>supervisor</strong> is machine-wide — a “typed
+    HTTP + SSE control plane” that cities register with; it serves the REST API and the dashboard.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/glossary.md">glossary</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/index.md">reference</a>]</span>
+  </div>
+
+  <figure>
+  <svg id="svg-city-map" viewBox="0 0 960 640" role="img" aria-label="Map of a Gas City deployment: machine-wide supervisor above a city containing controller, pack config, agents, bead store, and two rigs">
+    <defs>
+      <marker id="arrA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/>
+      </marker>
+    </defs>
+    <!-- supervisor -->
+    <rect x="40" y="16" width="880" height="66" fill="var(--s4-wash)" stroke="var(--s4)" class="d-box"/>
+    <text x="60" y="42" class="d-label">Machine-wide supervisor</text>
+    <text x="60" y="60" class="d-sub">typed HTTP + SSE control plane · REST API + dashboard (127.0.0.1:8372) · every city on this machine registers here</text>
+    <text x="880" y="42" text-anchor="end" class="d-code">gc supervisor · gc cities</text>
+    <line x1="480" y1="82" x2="480" y2="118" class="d-line" marker-end="url(#arrA)"/>
+    <!-- city boundary -->
+    <rect x="40" y="122" width="880" height="428" fill="none" stroke="var(--accent)" stroke-width="1.6" rx="12"/>
+    <text x="60" y="150" class="d-title">City — the root pack  (~/bright-lights)</text>
+    <text x="60" y="167" class="d-sub">city.toml + .gc/ runtime state · started with gc start</text>
+    <!-- controller -->
+    <rect x="66" y="190" width="216" height="118" fill="var(--s4-wash)" stroke="var(--s4)" class="d-box"/>
+    <text x="80" y="214" class="d-label">Controller (daemon)</text>
+    <text x="80" y="233" class="d-sub">reconcile loop, every tick:</text>
+    <text x="80" y="249" class="d-sub">desired vs running sessions,</text>
+    <text x="80" y="265" class="d-sub">order triggers, health patrol,</text>
+    <text x="80" y="281" class="d-sub">wisp cleanup</text>
+    <!-- config -->
+    <rect x="66" y="340" width="216" height="112" fill="var(--s1-wash)" stroke="var(--s1)" class="d-box"/>
+    <text x="80" y="364" class="d-label">Pack config = desired state</text>
+    <text x="80" y="383" class="d-sub">city.toml + imported packs:</text>
+    <text x="80" y="399" class="d-sub">agents, formulas, orders,</text>
+    <text x="80" y="415" class="d-sub">providers, rigs</text>
+    <text x="80" y="437" class="d-code">gc config explain</text>
+    <line x1="174" y1="340" x2="174" y2="312" class="d-line" marker-end="url(#arrA)"/>
+    <!-- agents -->
+    <rect x="340" y="190" width="256" height="160" fill="var(--s2-wash)" stroke="var(--s2)" class="d-box"/>
+    <text x="354" y="214" class="d-label">Agents → live sessions</text>
+    <rect x="354" y="228" width="228" height="30" fill="var(--surface)" stroke="var(--s2)" class="d-box"/>
+    <text x="366" y="248" class="d-code">mayor — coordinator (tmux)</text>
+    <rect x="354" y="264" width="228" height="30" fill="var(--surface)" stroke="var(--s2)" class="d-box"/>
+    <text x="366" y="284" class="d-code">polecat pool — ×1…N workers</text>
+    <text x="354" y="326" class="d-sub">behavior = pack-supplied prompt;</text>
+    <text x="354" y="341" class="d-sub">pools scale min…max sessions</text>
+    <line x1="282" y1="249" x2="340" y2="249" class="d-line" marker-end="url(#arrA)"/>
+    <text x="311" y="240" text-anchor="middle" class="d-mut">start·stop</text>
+    <!-- beads -->
+    <rect x="340" y="384" width="256" height="126" fill="var(--s3-wash)" stroke="var(--s3)" class="d-box"/>
+    <text x="354" y="408" class="d-label">Bead store (work)</text>
+    <text x="354" y="427" class="d-sub">tasks · mail · convoys · sessions —</text>
+    <text x="354" y="443" class="d-sub">“everything is a bead”</text>
+    <text x="354" y="459" class="d-sub">Dolt-backed bd by default</text>
+    <text x="354" y="481" class="d-code">bd ready · gc sling · gc mail</text>
+    <line x1="468" y1="384" x2="468" y2="350" class="d-line" marker-end="url(#arrA)"/>
+    <text x="478" y="372" class="d-mut">agents pull work (gc hook)</text>
+    <!-- rigs -->
+    <rect x="640" y="190" width="256" height="150" fill="var(--surface)" stroke="var(--s1)" class="d-box"/>
+    <text x="654" y="214" class="d-label">Rig: hello-world</text>
+    <text x="654" y="233" class="d-sub">external git repo, registered</text>
+    <text x="654" y="249" class="d-sub">with gc rig add · own bead</text>
+    <text x="654" y="265" class="d-sub">namespace (prefix) · own</text>
+    <text x="654" y="281" class="d-sub">agent scope + hooks</text>
+    <text x="654" y="322" class="d-code">gc sling claude "task…"</text>
+    <rect x="640" y="384" width="256" height="126" fill="var(--surface)" stroke="var(--s1)" class="d-box"/>
+    <text x="654" y="408" class="d-label">Rig: another-project</text>
+    <text x="654" y="427" class="d-sub">one city orchestrates many</text>
+    <text x="654" y="443" class="d-sub">projects; per-rig overrides</text>
+    <text x="654" y="459" class="d-sub">refine imported agents</text>
+    <line x1="640" y1="447" x2="596" y2="447" class="d-line" marker-end="url(#arrA)"/>
+    <line x1="640" y1="265" x2="596" y2="265" class="d-line" marker-end="url(#arrA)"/>
+    <text x="618" y="256" text-anchor="middle" class="d-mut">work</text>
+    <!-- legend -->
+    <rect x="66" y="576" width="14" height="14" fill="var(--s1-wash)" stroke="var(--s1)" rx="3"/>
+    <text x="88" y="588" class="d-sub">config / structure</text>
+    <rect x="230" y="576" width="14" height="14" fill="var(--s2-wash)" stroke="var(--s2)" rx="3"/>
+    <text x="252" y="588" class="d-sub">agents / sessions</text>
+    <rect x="396" y="576" width="14" height="14" fill="var(--s3-wash)" stroke="var(--s3)" rx="3"/>
+    <text x="418" y="588" class="d-sub">work / beads</text>
+    <rect x="536" y="576" width="14" height="14" fill="var(--s4-wash)" stroke="var(--s4)" rx="3"/>
+    <text x="558" y="588" class="d-sub">control / automation</text>
+  </svg>
+  <figcaption>One machine, one supervisor; each city declares its agents and rigs in config, the
+  controller reconciles sessions to match, and all work flows through the bead store.</figcaption>
+  </figure>
+
+  <div class="callout">
+    <p><strong>The load-bearing trick is the bead.</strong> Because sessions, mail, and batches are
+    all just typed beads in one durable store, every other feature — routing, messaging, monitoring,
+    crash recovery — is a query. Keep that in mind and the rest of this guide is details.</p>
+  </div>
+  <p class="sources-block">Sources:
+    <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/nine-concepts.md">nine-concepts</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/glossary.md">engdocs glossary</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/dashboard.md">dashboard</a>
+  </p>
+</section>
+
+<!-- ============ 3. INSTALL & FIRST CITY ============ -->
+<section id="s3">
+  <h2>3 · Install &amp; first city</h2>
+  <p>
+    Labs in this guide were written against gascity ≈ v1.3.0 docs (fetched 2026-07-09/10) on macOS
+    with Homebrew. Homebrew installs all runtime dependencies for you (tmux, jq, dolt, bd…); the
+    manual dependency table only matters for direct-download or source builds.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/installation.md">installation</a>]</span>
+  </p>
+
+  <div class="lab">
+    <div class="lab-title">Lab 1 — Install and verify</div>
+    <pre><code>brew install gascity
+gc version</code></pre>
+    <p class="expect">Expect: a version string. Homebrew pulls the runtime dependencies automatically.</p>
+    <p>Upgrades later: <code>brew update &amp;&amp; brew upgrade gascity &amp;&amp; gc service restart</code>.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/installation.md">installation</a>]</span></p>
+  </div>
+
+  <div class="callout warn">
+    <p><strong>zsh users:</strong> Oh My Zsh's git plugin aliases <code>gc</code> to
+    <code>git commit</code>. Check with <code>command gc version</code>; fix permanently by adding
+    <code>unalias gc 2&gt;/dev/null</code> to <code>~/.zshrc</code>.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/installation.md">installation</a>]</span></p>
+  </div>
+
+  <div class="lab">
+    <div class="lab-title">Lab 2 — Boot your first city and look around</div>
+    <pre><code>gc init ~/bright-lights
+cd ~/bright-lights
+gc status
+gc dashboard</code></pre>
+    <p class="expect">Expect: <code>gc init</code> “bootstraps the city directory, registers it with
+    the supervisor, and starts the orchestrator” — the city is live immediately, no separate start
+    step. <code>gc status</code> shows the city-wide overview; <code>gc dashboard</code> opens the
+    supervisor's web UI (typically <code>http://127.0.0.1:8372/</code>) with agents, beads, mail,
+    formula runs, and store health.</p>
+    <p>Useful from anywhere: <code>gc cities</code> lists every city registered with the machine-wide
+    supervisor; <code>gc stop</code> stops all agent sessions in a city; <code>gc start</code> starts
+    a city under the supervisor again.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/quickstart.md">quickstart</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/dashboard.md">dashboard</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/cli.md">CLI</a>]</span></p>
+  </div>
+
+  <p class="sources-block">Sources:
+    <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/installation.md">installation</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/quickstart.md">quickstart</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/dashboard.md">dashboard</a>
+  </p>
+</section>
+
+<!-- ============ 4. CITY.TOML ============ -->
+<section id="s4">
+  <h2>4 · city.toml anatomy</h2>
+  <p>
+    Everything section 2 called “desired state” is written here. Only <code>[workspace]</code> is
+    required; a useful minimal city is four blocks. Below, the documented minimal example with the
+    fields you'll touch first, annotated.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/config.md">config reference</a>]</span>
+  </p>
+  <pre><code># ── required: city-level metadata ─────────────────────────────
+[workspace]
+name = "my-city"
+
+# ── how to launch an agent CLI (a named preset) ───────────────
+[providers.claude]
+command = "claude"
+args = ["chat", "--no-interactive", "--agent", "gascity"]
+
+# ── a configured worker; behavior comes from its prompt ───────
+[[agent]]
+name = "polecat"
+provider = "claude"
+# scope = "rig"                 # where it may load: "city" | "rig"
+# min_active_sessions = 1      # pool floor…
+# max_active_sessions = 3      # …and ceiling
+# wake_mode = "resume"         # or "fresh" per wake
+# drain_timeout = "5m"         # default grace on shutdown
+
+# ── an external project this city orchestrates ────────────────
+[[rigs]]
+name = "myrig"
+path = "/path/to/rig"
+# prefix = "mr"                # bead-ID namespace for this rig</code></pre>
+
+  <h3>The rest of the schema, by neighborhood</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Section</th><th>What it configures</th></tr>
+    <tr><td><code>[imports]</code>, <code>[defaults]</code>, <code>[patches]</code></td><td>Pack composition: named pack imports, city-level defaults, targeted post-merge patches (never recursive)</td></tr>
+    <tr><td><code>[beads]</code></td><td>Work store backend: <code>bd</code> (Dolt, default), <code>file</code>, or <code>exec:&lt;script&gt;</code></td></tr>
+    <tr><td><code>[session]</code></td><td>Session provider: <code>tmux</code> (default), <code>k8s</code>, <code>acp</code>, <code>subprocess</code>, <code>exec:&lt;script&gt;</code></td></tr>
+    <tr><td><code>[mail]</code>, <code>[events]</code></td><td>Mail backend (beadmail default; retention TTL for read messages) · event log (file-backed JSONL with rotation)</td></tr>
+    <tr><td><code>[daemon]</code></td><td>Controller: patrol interval, restart thresholds, session circuit breaker, formula-v2 enablement</td></tr>
+    <tr><td><code>[orders]</code>, <code>[convergence]</code></td><td>Order skip list + timeout caps · convergence loop limits (max_per_agent 2, max_total 10)</td></tr>
+    <tr><td><code>[api]</code>, <code>[[webhook]]</code>, <code>[[service]]</code></td><td>HTTP API (port 9443, mutation controls, auth keys) · inbound webhooks (default-closed) · workspace-owned services</td></tr>
+    <tr><td><code>[upstreams]</code>, <code>[agent_defaults]</code>, <code>[[pricing]]</code></td><td>Model-endpoint presets · fallback agent settings · per-model cost overrides</td></tr>
+    <tr><td><code>[github]</code>, <code>[dolt]</code>, <code>[doctor]</code>, <code>[maintenance]</code></td><td>PR monitors with repair routing · Dolt server tuning · health thresholds · store maintenance cadence</td></tr>
+  </table></div>
+
+  <div class="callout">
+    <p><strong>Never guess what your config resolved to.</strong> <code>gc config show</code> dumps
+    the fully resolved city configuration as TOML; <code>gc config explain</code> adds provenance —
+    which pack or layer each value came from. These two commands make section 7's layering rules
+    observable.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/cli.md">CLI</a>]</span></p>
+  </div>
+  <p>
+    Templates: fields like <code>work_dir</code>, <code>session_setup</code>, <code>on_boot</code>,
+    and <code>work_query</code> accept placeholders — <code>{{.Session}}</code>,
+    <code>{{.Agent}}</code>, <code>{{.Rig}}</code>, <code>{{.RigRoot}}</code>,
+    <code>{{.CityRoot}}</code>, <code>{{.WorkDir}}</code> and friends — resolved per session.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/config.md">config reference</a>]</span>
+  </p>
+  <p class="sources-block">Sources:
+    <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/config.md">config reference (city.toml schema)</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/cli.md">CLI reference</a>
+  </p>
+</section>
+
+<!-- ============ 5. WORK ROUTING ============ -->
+<section id="s5">
+  <h2>5 · Work routing: beads, formulas, molecules, waits &amp; mail</h2>
+  <p>
+    Gas City is a <strong>pull system</strong>. Nothing pushes a task into an agent's prompt;
+    work is written into the bead store, and each agent's hook query finds what's addressed to it.
+    The docs put the contract in capitals: <em>“If you find work on your hook, YOU RUN IT”</em> —
+    the run-what-you-find rule.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/life-of-a-bead.md">life-of-a-bead</a>]</span>
+  </p>
+
+  <figure>
+  <svg id="svg-bead-flow" viewBox="0 0 960 470" role="img" aria-label="Bead lifecycle: a formula cooks into a molecule of beads, agents pull open beads via hook, work moves through in_progress to closed, gated by needs edges, waits, and mail">
+    <defs>
+      <marker id="arrB" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/>
+      </marker>
+    </defs>
+    <!-- formula file -->
+    <rect x="30" y="40" width="200" height="96" fill="var(--s1-wash)" stroke="var(--s1)" class="d-box"/>
+    <text x="44" y="64" class="d-label">Formula (TOML file)</text>
+    <text x="44" y="83" class="d-sub">the written-down method:</text>
+    <text x="44" y="99" class="d-sub">steps, vars, needs edges</text>
+    <text x="44" y="121" class="d-code">feature.formula.toml</text>
+    <!-- cook -->
+    <line x1="230" y1="88" x2="300" y2="88" class="d-line" marker-end="url(#arrB)"/>
+    <text x="265" y="78" text-anchor="middle" class="d-mut">cook</text>
+    <text x="130" y="162" text-anchor="middle" class="d-code">gc formula cook</text>
+    <text x="130" y="178" text-anchor="middle" class="d-code">gc sling --formula</text>
+    <!-- molecule -->
+    <rect x="300" y="30" width="250" height="180" fill="var(--s3-wash)" stroke="var(--s3)" class="d-box"/>
+    <text x="314" y="54" class="d-label">Molecule (materialized beads)</text>
+    <rect x="314" y="66" width="222" height="26" fill="var(--surface)" stroke="var(--s3)" class="d-box"/>
+    <text x="326" y="84" class="d-code">root bead — the run</text>
+    <rect x="314" y="100" width="104" height="26" fill="var(--surface)" stroke="var(--s3)" class="d-box"/>
+    <text x="326" y="118" class="d-code">design</text>
+    <rect x="432" y="100" width="104" height="26" fill="var(--surface)" stroke="var(--s3)" class="d-box"/>
+    <text x="444" y="118" class="d-code">implement</text>
+    <line x1="418" y1="113" x2="432" y2="113" class="d-line" marker-end="url(#arrB)"/>
+    <text x="314" y="152" class="d-sub">steps outlive the file; state</text>
+    <text x="314" y="168" class="d-sub">persists in the store</text>
+    <text x="314" y="194" class="d-mut">ephemeral run = “wisp” (auto-GC'd)</text>
+    <!-- states -->
+    <rect x="620" y="40" width="110" height="44" fill="var(--s3-wash)" stroke="var(--s3)" class="d-box"/>
+    <text x="675" y="67" text-anchor="middle" class="d-label">open</text>
+    <rect x="620" y="130" width="110" height="44" fill="var(--s3-wash)" stroke="var(--s3)" class="d-box"/>
+    <text x="675" y="157" text-anchor="middle" class="d-label">in_progress</text>
+    <rect x="620" y="220" width="110" height="44" fill="var(--surface)" stroke="var(--muted)" class="d-box"/>
+    <text x="675" y="247" text-anchor="middle" class="d-label">closed</text>
+    <line x1="550" y1="88" x2="620" y2="62" class="d-line" marker-end="url(#arrB)"/>
+    <line x1="675" y1="84" x2="675" y2="130" class="d-line" marker-end="url(#arrB)"/>
+    <text x="686" y="112" class="d-mut">claim</text>
+    <line x1="675" y1="174" x2="675" y2="220" class="d-line" marker-end="url(#arrB)"/>
+    <text x="686" y="202" class="d-mut">bd close</text>
+    <!-- agent -->
+    <rect x="790" y="80" width="150" height="110" fill="var(--s2-wash)" stroke="var(--s2)" class="d-box"/>
+    <text x="804" y="104" class="d-label">Agent session</text>
+    <text x="804" y="123" class="d-sub">polls its hook,</text>
+    <text x="804" y="139" class="d-sub">runs what it finds,</text>
+    <text x="804" y="155" class="d-sub">closes the bead</text>
+    <text x="804" y="177" class="d-code">gc hook</text>
+    <line x1="790" y1="120" x2="736" y2="72" class="d-line" marker-end="url(#arrB)"/>
+    <text x="785" y="60" text-anchor="middle" class="d-mut">pull: bd ready</text>
+    <!-- gates -->
+    <rect x="30" y="280" width="910" height="120" fill="none" stroke="var(--s4)" stroke-dasharray="5 4" class="d-box"/>
+    <text x="46" y="306" class="d-label">Gates — what makes a step “ready”</text>
+    <text x="46" y="330" class="d-sub">• needs edges: a step lists step IDs that must close first; ready steps run in parallel</text>
+    <text x="46" y="350" class="d-sub">• waits: durable session waits — a session blocks on a condition without dying (gc wait)</text>
+    <text x="46" y="370" class="d-sub">• mail: message beads to a session alias or human (gc mail send / check / inbox / read)</text>
+    <text x="46" y="390" class="d-sub">• orders: trigger (cooldown · cron · condition · event · manual) + formula = scheduled automation</text>
+    <line x1="485" y1="280" x2="485" y2="248" class="d-line" marker-end="url(#arrB)"/>
+    <!-- legend -->
+    <text x="620" y="440" class="d-sub">colors: </text>
+    <rect x="668" y="429" width="12" height="12" fill="var(--s1-wash)" stroke="var(--s1)" rx="3"/>
+    <text x="686" y="440" class="d-sub">config</text>
+    <rect x="736" y="429" width="12" height="12" fill="var(--s3-wash)" stroke="var(--s3)" rx="3"/>
+    <text x="754" y="440" class="d-sub">work</text>
+    <rect x="796" y="429" width="12" height="12" fill="var(--s2-wash)" stroke="var(--s2)" rx="3"/>
+    <text x="814" y="440" class="d-sub">agents</text>
+    <rect x="874" y="429" width="12" height="12" fill="var(--s4-wash)" stroke="var(--s4)" rx="3"/>
+    <text x="892" y="440" class="d-sub">automation</text>
+  </svg>
+  <figcaption>A formula cooks into a molecule of durable beads; agents pull ready beads, and gates
+  (dependencies, waits, mail, orders) decide readiness.</figcaption>
+  </figure>
+
+  <h3>The primitives, one by one</h3>
+  <p>
+    <strong>Sling</strong> is the everyday verb: <code>gc sling &lt;target&gt; "&lt;task&gt;"</code>
+    creates a bead and routes it — to a fixed agent by setting its assignee, to a pool by labeling it
+    <code>pool:&lt;name&gt;</code>, and with <code>--formula</code> it cooks and routes in one motion.
+    Pool agents then claim with <code>bd update &lt;id&gt; --claim</code>.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/quickstart.md">quickstart</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/life-of-a-bead.md">life-of-a-bead</a>]</span>
+  </p>
+  <p>
+    <strong>Formulas</strong> go through three stages: TOML file → in-memory recipe (flattened steps
+    plus dependency edges) → materialized beads, independent of the file. “Work persists, so whoever
+    picks it up next finds the same state.” Preview with <code>gc formula show</code>, materialize
+    without routing via <code>gc formula cook</code>, detect drift with
+    <code>gc formula version-check</code>.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/guides/understanding-formulas.md">understanding-formulas</a>]</span>
+  </p>
+  <pre><code>formula = "feature-flow"
+[vars]
+feature = "the feature"
+
+[[steps]]
+id = "design"
+title = "Design {{feature}}"
+
+[[steps]]
+id = "implement"
+needs = ["design"]        # readiness gate: runs when design closes</code></pre>
+  <p>
+    <strong>Molecules and wisps.</strong> A molecule is “a formula instantiated at runtime: one root
+    bead plus zero or more provider-managed step beads.” A <em>wisp</em> is an ephemeral molecule —
+    created by <code>gc sling</code> or order dispatch, auto-closed and garbage-collected on a TTL.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/glossary.md">glossary</a>]</span>
+  </p>
+  <p>
+    <strong>Convoys</strong> group related beads into a tracked batch (“a container bead that groups
+    related issues”), with blocking <code>needs</code> edges between members; when all children close,
+    the convoy auto-closes. <strong>Orders</strong> automate dispatch: a trigger — cooldown, cron,
+    condition, event, or manual — paired with a formula (<code>gc order list</code>,
+    <code>gc order run</code>).
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/glossary.md">glossary</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/life-of-a-bead.md">life-of-a-bead</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/cli.md">CLI</a>]</span>
+  </p>
+  <p>
+    <strong>Mail</strong> is messaging built from beads: a message is a bead with
+    <code>Type="message"</code>, sender in <code>From</code>, recipient as assignee; your inbox is
+    “the set of open, unread message beads assigned to a recipient.” Reading adds a
+    <code>read</code> label but keeps the bead open; archiving closes it. Threads are labels
+    (<code>thread:&lt;id&gt;</code>). <strong>Nudges</strong> are the opposite trade-off: text sent
+    straight into a session to wake or redirect it — fire-and-forget, no persistence, lost if the
+    session isn't running. <strong>Waits</strong> are durable session waits — a session blocks on a
+    condition and survives it (<code>gc wait</code> inspects them).
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/messaging.md">messaging</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/session.md">session</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/cli.md">CLI</a>]</span>
+  </p>
+
+  <div class="lab">
+    <div class="lab-title">Lab 3 — Route your first bead</div>
+    <pre><code># a toy project to orchestrate
+mkdir ~/hello-world && cd ~/hello-world && git init && cd -
+
+# register it with the city, then sling work at an agent
+gc rig add ~/hello-world
+cd ~/hello-world
+gc sling claude "Create a script that prints hello world"
+
+# watch the bead move open → in_progress → closed
+bd show &lt;bead-id&gt; --watch
+
+# and see the same activity as events
+gc events</code></pre>
+    <p class="expect">Expect: <code>gc rig add</code> gives the rig its own beads database, hooks,
+    and routing context. <code>gc sling</code> prints the created bead's ID; a session starts and
+    the task is delivered. <code>--watch</code> live-updates the status line.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/quickstart.md">quickstart</a>]</span></p>
+  </div>
+
+  <div class="gt-note">
+    <p>Gas Town's convoys survive intact — “convoys stay bead-backed grouping and lineage; the
+    implementation boundary moved.” <code>gc sling</code> now creates convoy structure while routing.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/coming-from-gastown.md">coming-from-gastown</a>]</span></p>
+  </div>
+  <p class="sources-block">Sources:
+    <a href="https://github.com/gastownhall/gascity/blob/main/docs/guides/understanding-formulas.md">understanding-formulas</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/life-of-a-bead.md">life-of-a-bead</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/messaging.md">messaging</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/glossary.md">glossary</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/cli.md">CLI reference</a>
+  </p>
+</section>
+
+<!-- ============ 6. PROVIDERS ============ -->
+<section id="s6">
+  <h2>6 · Runtime providers</h2>
+  <p>
+    Agents don't care where they run. The <code>[session]</code> block picks a backend; every backend
+    implements the same provider contract, so the controller's logic — and your config — stays
+    identical from a laptop tmux pane to a Kubernetes pod. One rule to remember: <em>“tmux is the
+    default session backend and the fallback, so it stays required even if you run agents on another
+    backend.”</em>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/config.md">config reference</a> · <a href="https://github.com/gastownhall/gascity/blob/main/README.md">README</a>]</span>
+  </p>
+
+  <figure>
+  <svg id="svg-provider-stack" viewBox="0 0 960 330" role="img" aria-label="Provider stack: controller talks to one runtime.Provider interface; tmux, subprocess, exec, ACP, Kubernetes, and herdr implement it">
+    <defs>
+      <marker id="arrC" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/>
+      </marker>
+    </defs>
+    <rect x="280" y="20" width="400" height="52" fill="var(--s4-wash)" stroke="var(--s4)" class="d-box"/>
+    <text x="480" y="42" text-anchor="middle" class="d-label">Controller — reconcile, dispatch, patrol</text>
+    <text x="480" y="60" text-anchor="middle" class="d-sub">never talks to tmux/k8s directly</text>
+    <line x1="480" y1="72" x2="480" y2="104" class="d-line" marker-end="url(#arrC)"/>
+    <rect x="180" y="108" width="600" height="76" fill="var(--s1-wash)" stroke="var(--s1)" class="d-box"/>
+    <text x="480" y="132" text-anchor="middle" class="d-label">runtime.Provider — one interface</text>
+    <text x="480" y="152" text-anchor="middle" class="d-code">Start · Stop · Interrupt · IsRunning · ListRunning · Peek</text>
+    <text x="480" y="170" text-anchor="middle" class="d-code">Attach · Nudge · SendKeys · Get/SetMeta · CopyTo · RunLive</text>
+    <g>
+      <line x1="250" y1="184" x2="120" y2="222" class="d-line" marker-end="url(#arrC)"/>
+      <line x1="360" y1="184" x2="300" y2="222" class="d-line" marker-end="url(#arrC)"/>
+      <line x1="450" y1="184" x2="440" y2="222" class="d-line" marker-end="url(#arrC)"/>
+      <line x1="540" y1="184" x2="580" y2="222" class="d-line" marker-end="url(#arrC)"/>
+      <line x1="640" y1="184" x2="720" y2="222" class="d-line" marker-end="url(#arrC)"/>
+      <line x1="730" y1="184" x2="856" y2="222" class="d-line" marker-end="url(#arrC)"/>
+    </g>
+    <rect x="46" y="226" width="148" height="66" fill="var(--s2-wash)" stroke="var(--s2)" class="d-box"/>
+    <text x="120" y="250" text-anchor="middle" class="d-label">tmux</text>
+    <text x="120" y="268" text-anchor="middle" class="d-sub">default + fallback,</text>
+    <text x="120" y="283" text-anchor="middle" class="d-sub">interactive panes</text>
+    <rect x="226" y="226" width="148" height="66" fill="var(--s2-wash)" stroke="var(--s2)" class="d-box"/>
+    <text x="300" y="250" text-anchor="middle" class="d-label">subprocess</text>
+    <text x="300" y="268" text-anchor="middle" class="d-sub">non-interactive</text>
+    <text x="300" y="283" text-anchor="middle" class="d-sub">local processes</text>
+    <rect x="406" y="226" width="148" height="66" fill="var(--s2-wash)" stroke="var(--s2)" class="d-box"/>
+    <text x="480" y="250" text-anchor="middle" class="d-label">exec:&lt;script&gt;</text>
+    <text x="480" y="268" text-anchor="middle" class="d-sub">script-backed,</text>
+    <text x="480" y="283" text-anchor="middle" class="d-sub">documented contract</text>
+    <rect x="586" y="226" width="148" height="66" fill="var(--s2-wash)" stroke="var(--s2)" class="d-box"/>
+    <text x="660" y="250" text-anchor="middle" class="d-label">ACP</text>
+    <text x="660" y="268" text-anchor="middle" class="d-sub">Agent Client Protocol</text>
+    <text x="660" y="283" text-anchor="middle" class="d-sub">(acp/auto/hybrid routing)</text>
+    <rect x="766" y="226" width="82" height="66" fill="var(--s2-wash)" stroke="var(--s2)" class="d-box"/>
+    <text x="807" y="250" text-anchor="middle" class="d-label">k8s</text>
+    <text x="807" y="268" text-anchor="middle" class="d-sub">cluster</text>
+    <text x="807" y="283" text-anchor="middle" class="d-sub">scale</text>
+    <rect x="862" y="226" width="82" height="66" fill="var(--s2-wash)" stroke="var(--s2)" class="d-box"/>
+    <text x="903" y="250" text-anchor="middle" class="d-label">herdr</text>
+    <text x="903" y="268" text-anchor="middle" class="d-sub">agent-focused</text>
+    <text x="903" y="283" text-anchor="middle" class="d-sub">workspaces</text>
+  </svg>
+  <figcaption>One interface, six backends. Optional capabilities (idle-wait, immediate nudge,
+  interaction) are extension interfaces a backend may add.</figcaption>
+  </figure>
+
+  <div class="table-wrap"><table>
+    <tr><th>Backend</th><th>Mechanism</th><th>Reach for it when…</th></tr>
+    <tr><td>tmux</td><td>Sessions as tmux panes</td><td>Default. Local, interactive, attachable — and the required fallback for everything else</td></tr>
+    <tr><td>subprocess</td><td>Plain local processes</td><td>Non-interactive agents that need no terminal</td></tr>
+    <tr><td>exec:&lt;script&gt;</td><td>Your script implements the session contract</td><td>Custom environments — the escape hatch (contract in reference/exec-session-provider.md)</td></tr>
+    <tr><td>ACP</td><td>Agent Client Protocol; acp/auto/hybrid routing layers</td><td>Editor/protocol-native agents rather than terminal CLIs</td></tr>
+    <tr><td>k8s</td><td>Sessions in Kubernetes</td><td>Scaling beyond one machine</td></tr>
+    <tr><td>herdr</td><td>Shared herdr session-server per city, workspace/tab hierarchy</td><td>Many agents, cleaner organization than raw tmux — purpose-built for AI agent fleets</td></tr>
+  </table></div>
+
+  <div class="callout">
+    <p><strong>Piloting a new backend, the documented way:</strong> switch the city, pin the critical
+    agent back to tmux, widen adoption only after stability.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/herdr-provider.md">herdr-provider</a>]</span></p>
+    <pre style="margin-top:10px"><code>[session]
+provider = "herdr"
+
+[[patches.agent]]
+name = "mayor"
+session = "tmux"   # keep the orchestrator on the proven backend</code></pre>
+  </div>
+  <p class="sources-block">Sources:
+    <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/config.md">config reference</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/herdr-provider.md">herdr-provider</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/session.md">session architecture</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/main/README.md">README</a>
+  </p>
+</section>
+
+<!-- ============ 7. MULTI-PROJECT ============ -->
+<section id="s7">
+  <h2>7 · Multi-project: rigs, packs &amp; overrides</h2>
+  <p>
+    One city, many codebases, shared behavior — this is where Gas City earns the “composable” in its
+    tagline. Three mechanisms do the work: <strong>rigs</strong> isolate projects,
+    <strong>packs</strong> share configuration, and <strong>overrides/patches</strong> specialize it
+    per place.
+  </p>
+  <h3>Rigs: project isolation</h3>
+  <p>
+    Registering a repo (<code>gc rig add</code>) gives it its own beads database, hook installation,
+    and routing context; the rig's <code>prefix</code> namespaces its bead IDs so queries never leak
+    across projects. Rig config can set its own <code>formulas_dir</code>, <code>formula_vars</code>,
+    session caps, and default sling targets.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/quickstart.md">quickstart</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/config.md">config reference</a>]</span>
+  </p>
+  <h3>Packs: shared behavior via named imports</h3>
+  <p>
+    “A pack is a directory with a <code>pack.toml</code> file” — agents in <code>agents/</code>,
+    formulas in <code>formulas/</code>, plus prompts, orders, commands, skills. Imports are
+    <em>named bindings</em>, and the binding qualifies every imported agent name: import a pack as
+    <code>gascity</code> and you address its planner as <code>gascity.planner</code>, never bare
+    <code>planner</code>. Imports live at city level, or under a <code>[[rigs]]</code> entry — which
+    stamps the rig's identity onto the imported agents.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/guides/understanding-packs.md">understanding-packs</a>]</span>
+  </p>
+  <h3>The layering order (memorize the last line)</h3>
+  <pre><code>city.toml + city pack
+  → imported packs (+ pack-level patches)
+  → city-level imports → city-level patches
+  → rig-level imports (stamp rig agents) → rig overrides
+  → pack globals
+  → city agent defaults</code></pre>
+  <p>
+    “Later layers win for replacement-style fields. Defaults run last but <em>only fill blanks</em>,
+    so they never override an explicit value from an earlier layer.” Session-cap precedence runs
+    agent &gt; rig &gt; workspace; an agent's <code>scope</code> field (<code>city</code>,
+    <code>rig</code>, or omitted for both) says <em>where a definition may load</em> — “it does not
+    name a particular rig.”
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/guides/understanding-packs.md">understanding-packs</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/config.md">config reference</a>]</span>
+  </p>
+
+  <div class="lab">
+    <div class="lab-title">Lab 4 — Second rig, and watch the layers resolve</div>
+    <pre><code>mkdir ~/second-project && cd ~/second-project && git init && cd -
+gc rig add ~/second-project
+
+gc rig                 # both rigs listed
+gc config explain      # every resolved value, with which layer set it</code></pre>
+    <p class="expect">Expect: the new rig appears with its own prefix and beads store;
+    <code>gc config explain</code> shows provenance per value — the layering chain above, made
+    visible.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/quickstart.md">quickstart</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/cli.md">CLI</a>]</span></p>
+  </div>
+
+  <div class="gt-note">
+    <p>The deepest habit to unlearn from Gas Town: <em>“do not port code or prompts that assume
+    directory path implies who the agent is.”</em> Identity is explicit config now — <code>dir</code>
+    is scope, not selfhood.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/coming-from-gastown.md">coming-from-gastown</a>]</span></p>
+  </div>
+  <p class="sources-block">Sources:
+    <a href="https://github.com/gastownhall/gascity/blob/main/docs/guides/understanding-packs.md">understanding-packs</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/config.md">config reference</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/quickstart.md">quickstart</a>
+  </p>
+</section>
+
+<!-- ============ 8. RECONCILE LOOP ============ -->
+<section id="s8">
+  <h2>8 · The reconcile loop</h2>
+  <p>
+    Kubernetes users will feel at home: the controller is a <strong>declarative convergence
+    engine</strong>. Desired state comes from <code>city.toml</code> parsed with includes and
+    patches; observed state comes from <code>Provider.ListRunning()</code> plus session metadata;
+    <code>reconcileSessionBeads()</code> continuously repairs the divergence. The whole cycle lives
+    in <code>controllerLoop()</code> and runs every <code>patrol_interval</code> (default 30s).
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/controller.md">controller</a>]</span>
+  </p>
+
+  <figure>
+  <svg id="svg-reconcile-loop" viewBox="0 0 960 480" role="img" aria-label="Reconcile cycle: desired state from city.toml and observed state from providers feed a five-step controller tick that repairs divergence and emits events">
+    <defs>
+      <marker id="arrD" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/>
+      </marker>
+    </defs>
+    <!-- inputs -->
+    <rect x="30" y="40" width="240" height="104" fill="var(--s1-wash)" stroke="var(--s1)" class="d-box"/>
+    <text x="44" y="64" class="d-label">Desired state</text>
+    <text x="44" y="84" class="d-sub">city.toml + includes + patches</text>
+    <text x="44" y="100" class="d-sub">watched via fsnotify → atomic</text>
+    <text x="44" y="116" class="d-sub">dirty flag, debounced;</text>
+    <text x="44" y="132" class="d-code">ConfigFingerprint() detects drift</text>
+    <rect x="30" y="330" width="240" height="104" fill="var(--s2-wash)" stroke="var(--s2)" class="d-box"/>
+    <text x="44" y="354" class="d-label">Observed state</text>
+    <text x="44" y="374" class="d-sub">Provider.ListRunning()</text>
+    <text x="44" y="390" class="d-sub">+ session metadata + session</text>
+    <text x="44" y="406" class="d-sub">beads in the work store</text>
+    <!-- tick box -->
+    <rect x="330" y="30" width="410" height="420" fill="var(--s4-wash)" stroke="var(--s4)" class="d-box"/>
+    <text x="344" y="56" class="d-label">controllerLoop() — one tick, every patrol_interval (30s)</text>
+    <rect x="350" y="72" width="370" height="56" fill="var(--surface)" stroke="var(--s1)" class="d-box"/>
+    <text x="364" y="94" class="d-sub">1 · config changed? tryReloadConfig() re-parses</text>
+    <text x="364" y="112" class="d-sub">    city.toml with includes and patches</text>
+    <rect x="350" y="140" width="370" height="56" fill="var(--surface)" stroke="var(--s2)" class="d-box"/>
+    <text x="364" y="162" class="d-sub">2 · re-evaluate desired agent set; pools via</text>
+    <text x="364" y="180" class="d-sub">    evaluatePool() check commands, parallel goroutines</text>
+    <rect x="350" y="208" width="370" height="56" fill="var(--surface)" stroke="var(--s4)" class="d-box"/>
+    <text x="364" y="230" class="d-sub">3 · reconcile: “make session beads and running</text>
+    <text x="364" y="248" class="d-sub">    sessions match the desired list”</text>
+    <rect x="350" y="276" width="370" height="56" fill="var(--surface)" stroke="var(--s3)" class="d-box"/>
+    <text x="364" y="298" class="d-sub">4 · wisp GC: delete closed molecules older than</text>
+    <text x="364" y="316" class="d-sub">    wisp_ttl (if enabled)</text>
+    <rect x="350" y="344" width="370" height="56" fill="var(--surface)" stroke="var(--s4)" class="d-box"/>
+    <text x="364" y="366" class="d-sub">5 · evaluate order triggers; dispatch non-manual</text>
+    <text x="364" y="384" class="d-sub">    orders (cooldown · cron · condition · event)</text>
+    <line x1="270" y1="92" x2="330" y2="92" class="d-line" marker-end="url(#arrD)"/>
+    <line x1="270" y1="382" x2="330" y2="382" class="d-line" marker-end="url(#arrD)"/>
+    <!-- outputs -->
+    <rect x="790" y="120" width="150" height="100" fill="var(--s2-wash)" stroke="var(--s2)" class="d-box"/>
+    <text x="804" y="144" class="d-label">Actions</text>
+    <text x="804" y="164" class="d-sub">start sessions,</text>
+    <text x="804" y="180" class="d-sub">interrupt → wait →</text>
+    <text x="804" y="196" class="d-sub">force-kill, restart</text>
+    <rect x="790" y="260" width="150" height="100" fill="var(--s3-wash)" stroke="var(--s3)" class="d-box"/>
+    <text x="804" y="284" class="d-label">Events</text>
+    <text x="804" y="304" class="d-sub">append-only JSONL,</text>
+    <text x="804" y="320" class="d-sub">monotonic sequence;</text>
+    <text x="804" y="336" class="d-code">gc events</text>
+    <line x1="740" y1="170" x2="790" y2="170" class="d-line" marker-end="url(#arrD)"/>
+    <line x1="740" y1="310" x2="790" y2="310" class="d-line" marker-end="url(#arrD)"/>
+  </svg>
+  <figcaption>Each tick: reload config if dirty, recompute the desired agent set, converge sessions,
+  collect garbage, run automation — then observe the results as events.</figcaption>
+  </figure>
+
+  <h3>Failure handling</h3>
+  <ul>
+    <li><strong>Graceful termination is two-pass:</strong> “(1) send Interrupt (Ctrl-C) to all
+    sessions, (2) wait shutdown_timeout, (3) force-kill survivors via Stop().”</li>
+    <li><strong>Crash loops hit a breaker:</strong> the crash tracker quarantines agents using a
+    sliding window — “max_restarts within restart_window” — so a broken agent can't consume
+    resources forever.</li>
+    <li><strong>Health patrol is just an order:</strong> “probe sessions… compare thresholds…
+    publish stalls… restart with backoff” — remediation composed from the same primitives as any
+    other automation.</li>
+  </ul>
+  <p class="src" style="margin-top:-6px">[<a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/controller.md">controller</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/nine-concepts.md">nine-concepts</a>]</p>
+
+  <h3>Above the loop: the supervisor</h3>
+  <p>
+    The machine-wide supervisor exposes the “typed HTTP + SSE control plane” (OpenAPI-documented)
+    that the dashboard and <code>gc events</code> consume. Its API defaults to loopback with mutation
+    controls and auth keys in <code>[api]</code>; the event log is file-backed JSONL with rotation
+    (<code>gc events rotate</code>).
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/index.md">reference index</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/config.md">config reference</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/cli.md">CLI</a>]</span>
+  </p>
+  <p class="sources-block">Sources:
+    <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/controller.md">engdocs controller</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/nine-concepts.md">nine-concepts</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/index.md">reference index</a>
+  </p>
+</section>
+
+<!-- ============ 9. CODE TOUR ============ -->
+<section id="s9">
+  <h2>9 · Code tour</h2>
+  <p>
+    The repo splits cleanly: <code>cmd/gc/</code> holds the CLI <em>and</em> the controller;
+    <code>internal/</code> holds 97 focused packages implementing the primitives; <code>docs/</code>
+    is the user manual and <code>engdocs/</code> the contributor manual. Start reading with three
+    engdocs files: <code>nine-concepts.md</code> (the layering), <code>life-of-a-bead.md</code>
+    (the data flow), <code>controller.md</code> (the loop).
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/tree/main/internal">internal/</a> · <a href="https://github.com/gastownhall/gascity/tree/main/engdocs/architecture">engdocs/architecture</a>]</span>
+  </p>
+
+  <figure>
+  <svg id="svg-repo-map" viewBox="0 0 960 430" role="img" aria-label="Repository map: cmd/gc CLI and controller files, internal packages grouped by primitive, docs and engdocs trees">
+    <rect x="30" y="24" width="290" height="180" fill="var(--s4-wash)" stroke="var(--s4)" class="d-box"/>
+    <text x="44" y="48" class="d-label">cmd/gc/ — CLI + controller</text>
+    <text x="44" y="72" class="d-code">controller.go · city_runtime.go</text>
+    <text x="44" y="90" class="d-code">session_reconciler.go</text>
+    <text x="44" y="108" class="d-code">crash_tracker.go · idle_tracker.go</text>
+    <text x="44" y="126" class="d-code">wisp_gc.go · order_dispatch.go</text>
+    <text x="44" y="152" class="d-sub">every gc subcommand handler</text>
+    <text x="44" y="170" class="d-sub">lives beside the daemon it drives</text>
+    <rect x="30" y="228" width="290" height="80" fill="var(--s1-wash)" stroke="var(--s1)" class="d-box"/>
+    <text x="44" y="252" class="d-label">docs/ — user manual (Mintlify)</text>
+    <text x="44" y="272" class="d-sub">getting-started · guides · tutorials ·</text>
+    <text x="44" y="288" class="d-sub">reference (schemas, OpenAPI) · runbooks</text>
+    <rect x="30" y="322" width="290" height="80" fill="var(--s1-wash)" stroke="var(--s1)" class="d-box"/>
+    <text x="44" y="346" class="d-label">engdocs/ — contributor manual</text>
+    <text x="44" y="366" class="d-sub">architecture/ (20 docs: controller,</text>
+    <text x="44" y="382" class="d-sub">nine-concepts, glossary, invariants…)</text>
+    <rect x="350" y="24" width="590" height="378" fill="var(--surface)" stroke="var(--line)" class="d-box"/>
+    <text x="366" y="48" class="d-label">internal/ — 97 packages; the ones that matter first</text>
+    <rect x="366" y="64" width="270" height="70" fill="var(--s2-wash)" stroke="var(--s2)" class="d-box"/>
+    <text x="380" y="86" class="d-label">sessions</text>
+    <text x="380" y="104" class="d-code">runtime (Provider iface) · session</text>
+    <text x="380" y="120" class="d-code">(waits.go) · agent · agentutil</text>
+    <rect x="654" y="64" width="270" height="70" fill="var(--s3-wash)" stroke="var(--s3)" class="d-box"/>
+    <text x="668" y="86" class="d-label">work</text>
+    <text x="668" y="104" class="d-code">beads · molecule · materialize ·</text>
+    <text x="668" y="120" class="d-code">formula · convoy · mail</text>
+    <rect x="366" y="148" width="270" height="70" fill="var(--s1-wash)" stroke="var(--s1)" class="d-box"/>
+    <text x="380" y="170" class="d-label">config &amp; packs</text>
+    <text x="380" y="188" class="d-code">config · configedit · packman ·</text>
+    <text x="380" y="204" class="d-code">packregistry · builtinpacks · overlay</text>
+    <rect x="654" y="148" width="270" height="70" fill="var(--s4-wash)" stroke="var(--s4)" class="d-box"/>
+    <text x="668" y="170" class="d-label">routing &amp; automation</text>
+    <text x="668" y="188" class="d-code">sling · dispatch · graphroute · graphv2 ·</text>
+    <text x="668" y="204" class="d-code">orders · orderdispatch · orderdiscovery</text>
+    <rect x="366" y="232" width="270" height="70" fill="var(--s4-wash)" stroke="var(--s4)" class="d-box"/>
+    <text x="380" y="254" class="d-label">control plane</text>
+    <text x="380" y="272" class="d-code">supervisor · api · events · eventfeed ·</text>
+    <text x="380" y="288" class="d-code">convergence · doctor · storehealth</text>
+    <rect x="654" y="232" width="270" height="70" fill="var(--surface)" stroke="var(--muted)" class="d-box"/>
+    <text x="668" y="254" class="d-label">integration &amp; misc</text>
+    <text x="668" y="272" class="d-code">githubmonitor · webhook{match,sink,verify}</text>
+    <text x="668" y="288" class="d-code">extmsg · telemetry · pricing · nudgequeue</text>
+    <text x="366" y="330" class="d-sub">Reading path for the reconcile loop:</text>
+    <text x="366" y="350" class="d-code">internal/config  →  cmd/gc/controller.go  →  cmd/gc/session_reconciler.go</text>
+    <text x="366" y="368" class="d-code">→  internal/runtime  →  internal/beads</text>
+  </svg>
+  <figcaption>Orient by primitive, not by alphabet: sessions (green), work (violet), config (blue),
+  control/automation (orange).</figcaption>
+  </figure>
+
+  <h3>Details worth knowing before you patch anything</h3>
+  <ul>
+    <li><strong>Provider contract:</strong> lifecycle (<code>Start/Stop/Interrupt</code>),
+    observation (<code>IsRunning</code>, <code>ListRunning</code>, <code>Peek</code>,
+    <code>GetLastActivity</code>…), interaction (<code>Attach/Nudge/SendKeys</code>), metadata, and
+    staging (<code>CopyTo/RunLive</code>). Optional extensions: <code>InteractionProvider</code>,
+    <code>IdleWaitProvider</code>, <code>ImmediateNudgeProvider</code>. Rules: <code>Stop</code> is
+    idempotent; <code>ProcessAlive</code> returns true on empty process lists.</li>
+    <li><strong>Session identity:</strong> <code>agent.SessionNameFor()</code> is “the single source
+    of truth for runtime session naming”; beacons (startup ID strings) let restarted sessions be
+    recognized and adopted after crashes.</li>
+    <li><strong>Store implementations:</strong> <code>BdStore</code> (Dolt-backed, production),
+    <code>FileStore</code>, <code>MemStore</code>, and an exec store — all behind the same CRUD +
+    parent-child + dependencies + labels + query contract.</li>
+    <li><strong>The invariant that bites:</strong> “Only non-nil fields in UpdateOpts are applied.
+    Labels append, never replace.”</li>
+  </ul>
+  <p class="src" style="margin-top:-6px">[<a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/session.md">session</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/nine-concepts.md">nine-concepts</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/life-of-a-bead.md">life-of-a-bead</a>]</p>
+  <p class="sources-block">Sources:
+    <a href="https://github.com/gastownhall/gascity/tree/main/internal">internal/ tree</a> ·
+    <a href="https://github.com/gastownhall/gascity/tree/main/engdocs/architecture">engdocs/architecture tree</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/session.md">session.md</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/controller.md">controller.md</a>
+  </p>
+</section>
+
+<!-- ============ 10. MIGRATION ============ -->
+<section id="s10">
+  <h2>10 · Gas Town → Gas City</h2>
+  <p>
+    The migration doc's core instruction: don't import Gas Town's surface area — <em>“re-express the
+    intent in Gas City's primitives.”</em> The deepest change is ownership: the orchestrator now
+    “owns reconciling desired→running sessions, session scaling, order evaluation, health patrol” —
+    duties Gas Town distributed across role agents. Roles didn't die; they became configuration, and
+    ship today as the <strong>Gastown pack</strong> (mayor, polecat, witness, refinery, deacon, boot).
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/coming-from-gastown.md">coming-from-gastown</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/gastown-command-map.md">command map</a>]</span>
+  </p>
+
+  <h3>Roles &amp; concepts</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Gas Town</th><th>Gas City</th><th>What changed</th></tr>
+    <tr><td>Mayor — “planner/coordinator; the human's point of contact”</td><td>“Configured agent + coordinating prompt”</td><td>A role is a prompt now, not platform code</td></tr>
+    <tr><td>Deacon (watchdog)</td><td>“Orchestrator health patrol + config thresholds”</td><td>The platform absorbed the watchdog duty</td></tr>
+    <tr><td>Witness (lifecycle observer)</td><td>“Events + waits, formulas, session scale config”</td><td>Observation decomposed into primitives</td></tr>
+    <tr><td>Refinery (post-processing)</td><td>“Configured agent + a formula or order post-processing step”</td><td>A pipeline step, not a standing role</td></tr>
+    <tr><td>Polecat (on-demand worker)</td><td>“Scalable/transient agent config (a pool)”</td><td>min/max_active_sessions replace role spawning</td></tr>
+    <tr><td>Crew (persistent workers)</td><td>“Persistent named agent config”</td><td>Same idea, declared in TOML</td></tr>
+    <tr><td>Dog (integration relay)</td><td>“Core-pack exec orders”, optional agent wrapper</td><td>Shell work no longer needs an agent session</td></tr>
+    <tr><td>Plugins</td><td>Orders — exec order (shell/orchestrator-side) or formula order (agent-driven)</td><td>One automation model: trigger + formula</td></tr>
+    <tr><td>Convoys</td><td>Convoys — still bead-backed grouping and lineage</td><td>“The implementation boundary moved”; gc sling creates convoy structure while routing</td></tr>
+    <tr><td>Beads</td><td>Beads</td><td>Unchanged substrate — now literally everything (mail, sessions) is one</td></tr>
+    <tr><td>~/gt/… role homes, path-derived identity</td><td>City dir + city.toml + .gc/; agents in agents/&lt;name&gt;/ with explicit dir</td><td>“Directory path implies who the agent is” is gone — identity is explicit config</td></tr>
+  </table></div>
+
+  <h3>Muscle-memory table (most-typed commands)</h3>
+  <div class="table-wrap"><table>
+    <tr><th>gt</th><th>gc / bd</th></tr>
+    <tr><td><code>gt install</code> · <code>gt up</code> / <code>gt down</code></td><td><code>gc init</code> · <code>gc start</code> / <code>gc stop</code></td></tr>
+    <tr><td><code>gt daemon</code> · <code>gt status</code> · <code>gt dashboard</code></td><td><code>gc supervisor</code> · <code>gc status</code> · <code>gc dashboard</code></td></tr>
+    <tr><td><code>gt sling</code> · <code>gt convoy</code> · <code>gt hook</code> · <code>gt ready</code></td><td><code>gc sling</code> · <code>gc convoy</code> · <code>gc hook</code> · <code>bd ready</code></td></tr>
+    <tr><td><code>gt mol</code> · <code>gt formula</code></td><td><code>gc formula cook</code> / <code>bd mol …</code> · <code>gc formula list/show/cook</code>, <code>gc sling --formula</code></td></tr>
+    <tr><td><code>gt gate</code> · <code>gt park</code> · <code>gt resume</code></td><td><code>gc wait</code> / formula <code>[steps.gate]</code> · <code>gc wait</code> · <code>gc wait ready</code>, <code>gc session wake</code>, <code>gc mail check</code></td></tr>
+    <tr><td><code>gt mail</code> · <code>gt nudge</code> · <code>gt peek</code></td><td><code>gc mail</code> · <code>gc session nudge</code> · <code>gc session peek</code></td></tr>
+    <tr><td><code>gt plugin</code></td><td><code>gc order</code></td></tr>
+    <tr><td><code>gt session at mayor/</code> · <code>gt send mayor "task"</code></td><td><code>gc session attach mayor</code> · <code>gc sling mayor "&lt;description&gt;"</code></td></tr>
+    <tr><td><code>gt activity</code> / <code>gt feed</code> / <code>gt trail</code> / <code>gt log</code></td><td><code>gc events</code> (+ <code>gc session peek/logs</code>, <code>gc supervisor logs</code>)</td></tr>
+    <tr><td><code>gt bead</code> / <code>gt cat</code> / <code>gt show</code> / <code>gt close</code></td><td>mostly plain <code>bd</code> (<code>bd close</code> etc.)</td></tr>
+  </table></div>
+  <p>
+    Dropped without direct equivalent — usually on purpose: <code>gt broadcast</code>,
+    <code>gt notify</code>, <code>gt dnd</code>, <code>gt escalate</code>, <code>gt whoami</code>,
+    <code>gt checkpoint</code>, <code>gt patrol</code>, <code>gt costs</code>, <code>gt seance</code>,
+    <code>gt mq</code> (merge queue), <code>gt callbacks</code>, <code>gt issue</code>. Hardcoded role
+    types, path-derived config, and helper agents for shell work are explicitly gone.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/gastown-command-map.md">command map</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/coming-from-gastown.md">coming-from-gastown</a>]</span>
+  </p>
+  <div class="callout warn">
+    <p><strong>Documented migration mistakes:</strong> importing Town's surface area instead of
+    re-expressing intent · inventing new hardcoded roles instead of configuring agents · duplicating
+    state outside beads when metadata suffices · assuming directory layout enforces architecture.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/coming-from-gastown.md">coming-from-gastown</a>]</span></p>
+  </div>
+  <p class="sources-block">Sources:
+    <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/coming-from-gastown.md">coming-from-gastown</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/gastown-command-map.md">gastown-command-map</a>
+  </p>
+</section>
+
+<!-- ============ 11. QUIZ, GLOSSARY, SOURCES ============ -->
+<section id="s11">
+  <h2>11 · Quiz, glossary &amp; sources</h2>
+  <p>Eighteen questions, weighted toward the mental model and work routing. Reveal, then score
+  yourself honestly — 14+ is mastery.</p>
+  <div class="quiz-score" id="quizScore">Score: 0 / 0 answered (18 total)</div>
+
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q1</span>What is the universal substrate of Gas City, and name three different things that are “all just” instances of it?</div>
+    <div class="answer">The <strong>bead</strong> — “one unit with an ID, title, status, and type.” Tasks, mail messages, sessions, convoys, and epics are all beads differentiated only by type. (§2)</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q2</span>City vs rig — define both in one line each.</div>
+    <div class="answer">City: “the local (root) pack rooted at the deployment directory” — city.toml + .gc/ state. Rig: “an external project (usually a git repo) registered with the city,” with its own bead namespace (prefix), agent scope, and hooks. (§2, §7)</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q3</span>What's the difference between an agent and a session, and how do pools scale?</div>
+    <div class="answer">An agent is <em>configuration</em> — “a worker a pack defines as a prompt plus a scope and a provider.” A session is the live process when it runs. Pools scale between <code>min_active_sessions</code> and <code>max_active_sessions</code>. (§2)</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q4</span>Controller vs supervisor — who does what, and at which scope?</div>
+    <div class="answer">Controller: per-city long-running daemon that drives the reconcile loop. Supervisor: machine-wide “typed HTTP + SSE control plane” that cities register with; serves the REST API and dashboard (127.0.0.1:8372). (§2, §8)</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q5</span>Explain “the City is a pack” and why it matters.</div>
+    <div class="answer">The city itself is just the root pack — the same configuration unit (pack.toml-style: agents, formulas, orders) as everything it imports. So composition is uniform: one load order, one override model, from root to leaf. (§2, §7)</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q6</span>Chain the three terms: formula, molecule, wisp.</div>
+    <div class="answer">Formula: the reusable TOML-written method. Molecule: “a formula instantiated at runtime — one root bead plus step beads.” Wisp: an <em>ephemeral</em> molecule (from gc sling or order dispatch) that auto-closes and gets garbage-collected on TTL. (§5)</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q7</span>How does work reach an agent? Name the rule (in caps in the docs).</div>
+    <div class="answer">Pull, never push: <code>gc hook</code> runs the agent's work_query (<code>bd ready --assignee=…</code>, or pool label + <code>--claim</code>). The rule: “If you find work on your hook, YOU RUN IT” — run-what-you-find. (§5)</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q8</span>Mail vs nudge — durability, delivery, and when each is right.</div>
+    <div class="answer">Mail = message beads (Type="message") in the store: durable, inbox = open unread beads assigned to you; reading labels it, archiving closes it. Nudge = text fired straight into a session: no persistence, no retry, lost if the session is down. Mail for work handoffs; nudge to wake or redirect. (§5)</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q9</span>A formula goes through three stages between file and running work — name them.</div>
+    <div class="answer">TOML file → in-memory recipe (flattened steps + dependency edges) → materialized beads that outlive the file. “Work persists, so whoever picks it up next finds the same state.” (§5)</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q10</span>What makes a formula step “ready,” and what runs when several are?</div>
+    <div class="answer">Its <code>needs</code> list — the step IDs that must complete first. The orchestrator gates each step on its dependencies and runs all ready steps in parallel. (§5)</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q11</span>Your config isn't behaving. Which two commands show what actually resolved, and what does the second add?</div>
+    <div class="answer"><code>gc config show</code> (fully resolved TOML) and <code>gc config explain</code> — which adds provenance: the pack/layer each value came from. (§4)</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q12</span>You run everything on Kubernetes. Why must tmux still be installed?</div>
+    <div class="answer">“tmux is the default session backend <em>and</em> the fallback, so it stays required even if you run agents on another backend.” (§6)</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q13</span>What three things does <code>gc init</code> do, and what do you have afterwards?</div>
+    <div class="answer">It “bootstraps the city directory, registers it with the supervisor, and starts the orchestrator” — the city is operational immediately, no separate start step. (§3)</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q14</span>List the five things a controller tick does, in order.</div>
+    <div class="answer">1 reload config if changed (tryReloadConfig) · 2 re-evaluate the desired agent set (pools via evaluatePool, parallel) · 3 reconcile — make session beads and running sessions match the desired list · 4 wisp GC past TTL · 5 evaluate order triggers and dispatch non-manual orders. Default tick: every 30s (patrol_interval). (§8)</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q15</span>Describe graceful agent termination, and the guard against crash loops.</div>
+    <div class="answer">Two-pass: send Interrupt (Ctrl-C) to all sessions → wait shutdown_timeout → force-kill survivors via Stop(). Crash tracker quarantines with a sliding window: max_restarts within restart_window. (§8)</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q16</span>Where do “desired” and “observed” state each come from in the reconcile loop?</div>
+    <div class="answer">Desired: city.toml parsed with includes and patches (fsnotify + ConfigFingerprint detect drift). Observed: <code>Provider.ListRunning()</code> plus session metadata. <code>reconcileSessionBeads()</code> repairs the divergence. (§8)</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q17</span>Gas Town's Deacon watched for stuck agents. Where did that job go?</div>
+    <div class="answer">Into the platform: “orchestrator health patrol + config thresholds” — probe sessions, compare thresholds, publish stalls, restart with backoff. Health patrol is just an order, not a role. (§10, §8)</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q18</span>You'd have written a Gas Town plugin. What do you build in Gas City, and what are the two flavors?</div>
+    <div class="answer">An <strong>order</strong> — a trigger (cooldown, cron, condition, event, or manual) paired with work: an <em>exec order</em> for shell/orchestrator-side logic, a <em>formula order</em> for agent-driven work. (§10, §5)</div>
+  </div>
+
+  <h3>Glossary</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Term</th><th>Meaning</th><th>Gas Town ancestor</th></tr>
+    <tr><td>Bead</td><td>One unit of work — ID, title, status, type; open → in_progress → closed</td><td>Bead (unchanged)</td></tr>
+    <tr><td>City</td><td>The root pack at the deployment directory; city.toml + .gc/ state</td><td>The Town</td></tr>
+    <tr><td>Rig</td><td>External project registered with the city; own bead namespace + hooks</td><td>Rig</td></tr>
+    <tr><td>Agent</td><td>Worker a pack defines: prompt + scope + provider; config, not code</td><td>Role (mayor, crew…)</td></tr>
+    <tr><td>Session</td><td>A running agent — live process managed by a provider</td><td>—</td></tr>
+    <tr><td>Pool</td><td>Agent scaling between min/max active sessions</td><td>Polecats</td></tr>
+    <tr><td>Formula</td><td>Reusable TOML method: steps, vars, needs edges</td><td>gt formula</td></tr>
+    <tr><td>Molecule</td><td>Formula instantiated at runtime: root bead + step beads</td><td>gt mol</td></tr>
+    <tr><td>Wisp</td><td>Ephemeral molecule; auto-closes, garbage-collected on TTL</td><td>—</td></tr>
+    <tr><td>Convoy</td><td>Container bead grouping related work as a tracked batch</td><td>Convoy</td></tr>
+    <tr><td>Epic</td><td>Ordinary bead type for tracking; not a first-class container</td><td>—</td></tr>
+    <tr><td>Order</td><td>Trigger (cooldown/cron/condition/event/manual) + formula or script</td><td>Plugin</td></tr>
+    <tr><td>Event</td><td>Immutable append-only record with monotonic sequence; replayable</td><td>gt feed/activity</td></tr>
+    <tr><td>Mail</td><td>Message beads; inbox = open unread beads assigned to you</td><td>gt mail</td></tr>
+    <tr><td>Nudge</td><td>Fire-and-forget text into a session to wake or redirect it</td><td>gt nudge</td></tr>
+    <tr><td>Wait</td><td>Durable session wait — block on a condition, survive it (gc wait)</td><td>gt gate / gt park</td></tr>
+    <tr><td>Pack</td><td>The unit of configuration: pack.toml + agents, formulas, orders</td><td>—</td></tr>
+    <tr><td>Sling</td><td>Create + route work in one motion (gc sling, --formula to cook too)</td><td>gt sling / gt send</td></tr>
+    <tr><td>Controller</td><td>Per-city daemon driving the reconcile loop</td><td>(distributed across roles)</td></tr>
+    <tr><td>Supervisor</td><td>Machine-wide HTTP+SSE control plane; dashboard + API</td><td>gt daemon</td></tr>
+    <tr><td>Health patrol</td><td>Probe → thresholds → stalls → restart with backoff; just an order</td><td>Deacon</td></tr>
+  </table></div>
+
+  <h3>Sources</h3>
+  <p>Everything above traces to these. All sources fetched 2026-07-09/10, from the <code>main</code> branch (gascity ≈ v1.3.0).</p>
+  <h3 style="font-size:15px">Official — user docs</h3>
+  <ul>
+    <li><a href="https://github.com/gastownhall/gascity">github.com/gastownhall/gascity</a> — repo · <a href="https://github.com/gastownhall/gascity/blob/main/README.md">README</a></li>
+    <li>Getting started: <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/installation.md">installation</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/quickstart.md">quickstart</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/dashboard.md">dashboard</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/coming-from-gastown.md">coming-from-gastown</a></li>
+    <li>Guides: <a href="https://github.com/gastownhall/gascity/blob/main/docs/guides/understanding-formulas.md">understanding-formulas</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/guides/understanding-packs.md">understanding-packs</a></li>
+    <li>Reference: <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/config.md">config (city.toml schema)</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/cli.md">cli</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/gastown-command-map.md">gastown-command-map</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/herdr-provider.md">herdr-provider</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/index.md">reference index</a></li>
+  </ul>
+  <h3 style="font-size:15px">Official — contributor architecture (engdocs)</h3>
+  <ul>
+    <li><a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/nine-concepts.md">nine-concepts</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/controller.md">controller</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/life-of-a-bead.md">life-of-a-bead</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/glossary.md">glossary</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/messaging.md">messaging</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/session.md">session</a></li>
+  </ul>
+  <h3 style="font-size:15px">Lineage</h3>
+  <ul>
+    <li><a href="https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04">Yegge — “Welcome to Gas Town”</a> (Jan 2026) · <a href="https://steveyegge.spicytakes.org/post/2026-04-24-welcome-to-gas-city-57f564bb3607">Yegge — “Welcome to Gas City”</a> (Apr 2026)</li>
+  </ul>
+  <footer>
+    Compiled 2026-07-10 by Claude Code for Paul. Facts verified against the sources above on
+    2026-07-09/10 at gascity ≈ v1.3.0; the project moves fast — trust the
+    <a href="https://github.com/gastownhall/gascity/tree/main/docs">live docs</a> for anything newer.
+  </footer>
+</section>
+
+</main>
+</div>
+
+<script>
+  // theme toggle (persists)
+  const root = document.documentElement;
+  const savedTheme = localStorage.getItem('gc-guide-theme');
+  if (savedTheme) root.dataset.theme = savedTheme;
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+    const cur = root.dataset.theme || (dark ? 'dark' : 'light');
+    root.dataset.theme = cur === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('gc-guide-theme', root.dataset.theme);
+  });
+
+  // scrollspy
+  const links = [...document.querySelectorAll('nav.toc a')];
+  const sections = links.map(a => document.querySelector(a.hash));
+  const spy = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.toggle('active', l.hash === '#' + e.target.id));
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => s && spy.observe(s));
+
+  // quiz
+  let answered = 0, correct = 0;
+  const quizCards = document.querySelectorAll('.quiz-item');
+  const total = quizCards.length;
+  const score = document.getElementById('quizScore');
+  quizCards.forEach(card => {
+    const ans = card.querySelector('.answer');
+    const reveal = document.createElement('button');
+    reveal.textContent = 'Reveal answer';
+    reveal.className = 'reveal';
+    const got = document.createElement('button');
+    got.textContent = '✓ Got it';
+    got.className = 'got';
+    const missed = document.createElement('button');
+    missed.textContent = '✗ Missed';
+    missed.className = 'missed';
+    const verdict = document.createElement('span');
+    verdict.className = 'verdict';
+    card.append(reveal, got, missed, verdict);
+    reveal.addEventListener('click', () => {
+      ans.classList.add('shown');
+      card.classList.add('revealed');
+    });
+    const scoreIt = ok => {
+      answered++; if (ok) correct++;
+      card.classList.add('scored');
+      verdict.textContent = ok ? '✓ got it' : '✗ review this one';
+      verdict.style.color = ok ? 'var(--good)' : 'var(--s4)';
+      if (score) score.textContent = `Score: ${correct} / ${answered} answered (${total} total)` +
+        (answered === total ? (correct >= 14 ? ' — mastery. 🏆' : ' — reread & retry.') : '');
+    };
+    got.addEventListener('click', () => scoreIt(true));
+    missed.addEventListener('click', () => scoreIt(false));
+  });
+</script>
+</body>
+</html>
