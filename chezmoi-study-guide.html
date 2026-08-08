@@ -1,0 +1,1296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="A practical, hands-on study guide for chezmoi: manage your dotfiles across machines with one versioned source of truth, templates, scripts, and KeePassXC secrets.">
+<title>chezmoi Field Guide — Your Home Directory, Declared Once</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23170a10'/><path d='M50 20 22 44v34h20V56h16v22h20V44z' fill='none' stroke='%23ff7eb0' stroke-width='7' stroke-linejoin='round'/><circle cx='50' cy='47' r='5' fill='%23ffd166'/></svg>">
+<style>
+  /* Palette: raspberry/plum — deliberately distinct from sibling guides
+     (cmux blue, gascity amber, gastown teal, git-workflows cobalt,
+      lazygit green, sqlite violet, fzf teal/coral). No hex outside this block. */
+  :root {
+    --bg: #faf5f7; --surface: #ffffff; --surface-2: #f2e7ec; --ink: #26141c;
+    --ink-2: #57404b; --muted: #86707a; --line: #ddc7d1; --hairline: rgba(38,20,28,.1);
+    --rose: #a4195a; --rose-strong: #841145; --rose-wash: rgba(164,25,90,.09);
+    --plum: #6f42a8; --plum-wash: rgba(111,66,168,.10); --gold: #8d6500;
+    --gold-wash: rgba(141,101,0,.11); --blue: #1465a0; --blue-wash: rgba(20,101,160,.10);
+    --danger: #b3261e; --danger-wash: rgba(179,38,30,.10); --terminal: #1a0d14;
+    --terminal-2: #271420; --terminal-ink: #f5e4ec; --terminal-muted: #a2848f;
+    --terminal-rose: #ff8bb8; --terminal-gold: #ffd166; --code-bg: #f0e2e9;
+    --shadow: 0 18px 50px rgba(56,20,38,.10); --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #150a10; --surface: #1e1118; --surface-2: #2a1a22; --ink: #f8ecf1;
+      --ink-2: #d3bcc6; --muted: #9c828d; --muted: #9b828e; --line: #452e3a; --hairline: rgba(255,255,255,.10);
+      --rose: #ff8bb8; --rose-strong: #ffadcd; --rose-wash: rgba(255,139,184,.12);
+      --plum: #c5a1f2; --plum-wash: rgba(197,161,242,.12); --gold: #e4bd55;
+      --gold-wash: rgba(228,189,85,.13); --blue: #79bdea; --blue-wash: rgba(121,189,234,.12);
+      --danger: #ff8a7e; --danger-wash: rgba(255,138,126,.12); --terminal: #120810;
+      --terminal-2: #1e1019; --terminal-ink: #f5e4ec; --terminal-muted: #a2848f;
+      --terminal-rose: #ff8bb8; --terminal-gold: #ffd166; --code-bg: #2c1c25;
+      --shadow: 0 18px 50px rgba(0,0,0,.30);
+    }
+  }
+  :root.dark {
+    --bg:#150a10;--surface:#1e1118;--surface-2:#2a1a22;--ink:#f8ecf1;--ink-2:#d3bcc6;
+    --muted:#9b828e;--line:#452e3a;--hairline:rgba(255,255,255,.10);--rose:#ff8bb8;
+    --rose-strong:#ffadcd;--rose-wash:rgba(255,139,184,.12);--plum:#c5a1f2;
+    --plum-wash:rgba(197,161,242,.12);--gold:#e4bd55;--gold-wash:rgba(228,189,85,.13);
+    --blue:#79bdea;--blue-wash:rgba(121,189,234,.12);--danger:#ff8a7e;
+    --danger-wash:rgba(255,138,126,.12);--terminal:#120810;--terminal-2:#1e1019;
+    --terminal-ink:#f5e4ec;--terminal-muted:#a2848f;--terminal-rose:#ff8bb8;
+    --terminal-gold:#ffd166;--code-bg:#2c1c25;--shadow:0 18px 50px rgba(0,0,0,.30)
+  }
+  :root.light {
+    --bg:#faf5f7;--surface:#fff;--surface-2:#f2e7ec;--ink:#26141c;--ink-2:#57404b;
+    --muted:#86707a;--line:#ddc7d1;--hairline:rgba(38,20,28,.1);--rose:#a4195a;
+    --rose-strong:#841145;--rose-wash:rgba(164,25,90,.09);--plum:#6f42a8;
+    --plum-wash:rgba(111,66,168,.10);--gold:#8d6500;--gold-wash:rgba(141,101,0,.11);
+    --blue:#1465a0;--blue-wash:rgba(20,101,160,.10);--danger:#b3261e;
+    --danger-wash:rgba(179,38,30,.10);--terminal:#1a0d14;--terminal-2:#271420;
+    --terminal-ink:#f5e4ec;--terminal-muted:#a2848f;--terminal-rose:#ff8bb8;
+    --terminal-gold:#ffd166;--code-bg:#f0e2e9;--shadow:0 18px 50px rgba(56,20,38,.10)
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 16px; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.65 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  a { color: var(--rose-strong); text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  button,input { font: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+  .skip { position: fixed; left: 12px; top: -80px; z-index: 100; padding: 8px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+  .skip:focus { top: 12px; }
+  .layout { display: flex; max-width: 1440px; margin: 0 auto; }
+  .sidebar { position: sticky; top: 0; align-self: flex-start; width: 272px; height: 100vh; flex: 0 0 auto; overflow-y: auto; padding: 23px 16px 30px 20px; border-right: 1px solid var(--line); background: color-mix(in srgb,var(--bg) 92%,transparent); }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 850; letter-spacing: -.02em; }
+  .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: #fff; background: var(--rose); font: 900 17px/1 ui-monospace,monospace; }
+  :root.dark .brand-mark { color: #2b0517; }
+  @media (prefers-color-scheme: dark) { :root:not(.light) .brand-mark { color: #2b0517; } }
+  .brand-sub { margin: 5px 0 14px 44px; color: var(--muted); font-size: 11px; }
+  .toc-group { margin: 16px 8px 4px; color: var(--muted); font-size: 10px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+  .sidebar nav a { display: block; margin: 1px 0; padding: 5px 8px; border-radius: 7px; color: var(--ink-2); font-size: 12.5px; text-decoration: none; }
+  .sidebar nav a:hover,.sidebar nav a.active { color: var(--rose-strong); background: var(--rose-wash); }
+  .sidebar nav a.active { font-weight: 780; }
+  main { min-width: 0; flex: 1; padding: 42px 54px 110px; }
+  .theme-toggle,.top-button { position: fixed; z-index: 30; right: 16px; border: 1px solid var(--line); color: var(--ink-2); background: var(--surface); border-radius: 999px; box-shadow: var(--shadow); }
+  .theme-toggle { top: 14px; padding: 6px 13px; }
+  .top-button { bottom: 16px; padding: 7px 12px; opacity: 0; pointer-events: none; transform: translateY(8px); transition: .2s; text-decoration: none; }
+  .top-button.visible { opacity: 1; pointer-events: auto; transform: none; }
+  .hero { position: relative; padding: 20px 0 36px; }
+  .hero::after { content:""; display:block; height:1px; margin-top:34px; background:linear-gradient(90deg,var(--rose),var(--plum),transparent 80%); }
+  .eyebrow { color: var(--plum); font-size: 11px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+  h1 { max-width: 900px; margin: 7px 0 13px; font-size: clamp(40px,6vw,72px); line-height: .98; letter-spacing: -.055em; }
+  .hero .accent { color: var(--rose-strong); }
+  .subtitle { max-width: 70ch; margin: 0 0 19px; color: var(--ink-2); font-size: 19px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge { padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink-2); background: var(--surface); font-size: 11px; }
+  section { max-width: 980px; }
+  h2 { margin: 67px 0 16px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 30px; line-height: 1.18; letter-spacing: -.035em; }
+  h3 { margin: 32px 0 9px; font-size: 19px; line-height: 1.28; letter-spacing: -.01em; }
+  h4 { margin: 22px 0 8px; font-size: 15px; }
+  p { max-width: 78ch; margin: 0 0 14px; color: var(--ink-2); }
+  ul,ol { margin: 0 0 17px 23px; padding: 0; }
+  li { margin: 5px 0; color: var(--ink-2); }
+  strong { color: var(--ink); }
+  .lede { max-width: 72ch; font-size: 18px; }
+  code,kbd { font-family: ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace; font-size: .88em; }
+  code { padding: 1px 5px; border-radius: 5px; color: var(--ink); background: var(--code-bg); }
+  :not(pre) > code { overflow-wrap: anywhere; }
+  kbd { display:inline-block; min-width:1.7em; padding:1px 6px; text-align:center; white-space:nowrap; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-bottom-width:2px; border-radius:5px; line-height:1.45; }
+  pre { position:relative; margin:0 0 18px; padding:18px 20px; overflow-x:auto; border:1px solid #4a2e3c; border-radius:12px; color:var(--terminal-ink); background:var(--terminal); line-height:1.55; }
+  pre code { padding:0; color:inherit; background:none; font-size:13px; }
+  .copy { position:absolute; top:8px; right:8px; padding:3px 8px; border:1px solid rgba(255,255,255,.17); border-radius:6px; color:var(--terminal-ink); background:rgba(255,255,255,.07); font-size:11px; }
+  .copy:hover { background:rgba(255,255,255,.14); }
+  .comment { color:var(--terminal-muted); } .cmd { color:var(--terminal-rose); } .arg { color:var(--terminal-gold); }
+  .out { color:var(--terminal-muted); }
+  .callout { margin:17px 0; padding:14px 17px; border-left:4px solid var(--rose); border-radius:0 10px 10px 0; color:var(--ink-2); background:var(--rose-wash); }
+  .callout strong:first-child { display:block; margin-bottom:3px; }
+  .callout.warn { border-color:var(--gold); background:var(--gold-wash); }
+  .callout.danger { border-color:var(--danger); background:var(--danger-wash); }
+  .callout.blue { border-color:var(--blue); background:var(--blue-wash); }
+  .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:17px 0; }
+  .grid.three { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .card { padding:17px; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:0 3px 15px var(--hairline); }
+  .card h3,.card h4 { margin-top:0; }
+  .card p:last-child,.callout p:last-child { margin-bottom:0; }
+  .mini { color:var(--muted); font-size:12px; }
+  .sources-line { margin:20px 0 0; color:var(--muted); font-size:12px; }
+  .table-wrap { margin:14px 0 22px; overflow-x:auto; border:1px solid var(--line); border-radius:12px; }
+  table { width:100%; border-collapse:collapse; background:var(--surface); font-size:13.5px; }
+  th { color:var(--ink); background:var(--surface-2); font-size:11px; letter-spacing:.04em; text-transform:uppercase; }
+  th,td { padding:10px 12px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+  tr:last-child td { border-bottom:0; }
+  td { color:var(--ink-2); }
+  .lab { margin:23px 0; padding:21px; border:1px solid var(--line); border-radius:14px; background:linear-gradient(145deg,var(--surface),var(--blue-wash)); }
+  .lab-head { display:flex; justify-content:space-between; gap:14px; align-items:start; margin-bottom:9px; }
+  .lab-title { color:var(--blue); font-weight:850; font-size:18px; }
+  .lab-time { flex:0 0 auto; padding:3px 8px; color:var(--muted); background:var(--surface); border:1px solid var(--line); border-radius:99px; font-size:11px; }
+  .check { list-style:none; margin-left:0; }
+  .check li { position:relative; padding-left:25px; }
+  .check li::before { content:"□"; position:absolute; left:1px; color:var(--blue); font-weight:900; }
+  details { margin:11px 0; border:1px solid var(--line); border-radius:10px; background:var(--surface); }
+  summary { padding:11px 14px; cursor:pointer; color:var(--ink); font-weight:750; }
+  details > :not(summary) { margin-left:14px; margin-right:14px; }
+  details > :last-child { margin-bottom:14px; }
+  .sim { margin:20px 0; overflow:hidden; border:1px solid #4a2e3c; border-radius:14px; background:var(--terminal); color:var(--terminal-ink); box-shadow:var(--shadow); }
+  .sim-head { display:flex; justify-content:space-between; gap:10px; padding:9px 13px; color:var(--terminal-muted); background:var(--terminal-2); border-bottom:1px solid #4a2e3c; font:11px ui-monospace,monospace; }
+  .sim-panels { display:grid; grid-template-columns:1fr 1fr; gap:0; }
+  .sim-panel { padding:12px 14px; border-right:1px solid #4a2e3c; min-height:150px; }
+  .sim-panel:last-child { border-right:0; }
+  .sim-panel h4 { margin:0 0 8px; color:var(--terminal-rose); font:700 12px ui-monospace,monospace; }
+  .sim-file { display:flex; justify-content:space-between; gap:8px; padding:4px 6px; border-radius:5px; font:12.5px/1.5 ui-monospace,monospace; }
+  .sim-file .v { color:var(--terminal-gold); }
+  .sim-file.drift { background:rgba(255,139,184,.13); }
+  .sim-buttons { display:flex; flex-wrap:wrap; gap:7px; padding:11px 13px; border-top:1px solid #4a2e3c; background:var(--terminal-2); }
+  .sim-buttons button { padding:4px 11px; border:1px solid rgba(255,255,255,.2); border-radius:99px; color:var(--terminal-ink); background:rgba(255,255,255,.06); font:12px ui-monospace,monospace; }
+  .sim-buttons button:hover { background:rgba(255,255,255,.14); }
+  .sim-log { max-height:190px; overflow-y:auto; padding:11px 14px; border-top:1px solid #4a2e3c; font:12.5px/1.55 ui-monospace,monospace; }
+  .sim-log .p { color:var(--terminal-rose); }
+  .sim-log .o { color:var(--terminal-muted); }
+  .sim-log .add { color:var(--terminal-gold); }
+  .step { display:grid; grid-template-columns:42px 1fr; gap:13px; margin:18px 0; }
+  .step-num { display:grid; place-items:center; width:38px; height:38px; border-radius:12px; color:#fff; background:var(--rose); font-weight:900; }
+  :root.dark .step-num { color:#2b0517; }
+  @media (prefers-color-scheme: dark) { :root:not(.light) .step-num { color:#2b0517; } }
+  .step h3 { margin:4px 0 8px; }
+  .pill { display:inline-block; margin:2px 3px 2px 0; padding:2px 8px; border-radius:99px; color:var(--ink-2); background:var(--surface-2); font-size:11px; }
+  .source-list li { margin-bottom:8px; }
+  .diagram { margin:22px 0 10px; }
+  .diagram svg { display:block; width:100%; height:auto; }
+  .diagram figcaption { margin-top:7px; color:var(--muted); font-size:12px; }
+  .d-box { fill:var(--surface); stroke:var(--line); stroke-width:1.5; }
+  .d-hot { stroke:var(--rose); }
+  .d-inner { fill:var(--surface-2); stroke:var(--hairline); }
+  .d-title { fill:var(--rose-strong); font:750 15px ui-monospace,monospace; }
+  .d-text { fill:var(--ink-2); font:12px system-ui,sans-serif; }
+  .d-label { fill:var(--plum); font:700 11px ui-monospace,monospace; }
+  .d-mono { fill:var(--muted); font:11px ui-monospace,monospace; }
+  .d-arrow { stroke:var(--plum); stroke-width:2; fill:none; }
+  .d-arrow2 { stroke:var(--rose); stroke-width:2; fill:none; }
+  .d-dash { stroke-dasharray:5 5; }
+  .d-arrhead { fill:var(--plum); }
+  .d-arrhead2 { fill:var(--rose); }
+  .glossary dt { margin-top:14px; color:var(--ink); font-weight:800; }
+  .glossary dd { margin:3px 0 0 0; color:var(--ink-2); max-width:78ch; }
+  .index-cols { columns:3; column-gap:28px; margin:15px 0; }
+  .index-cols li { break-inside:avoid; margin:3px 0; font-size:13.5px; list-style:none; }
+  .index-cols ul { margin:0; }
+  .index-letter { margin:10px 0 4px; color:var(--rose-strong); font-weight:900; font-size:13px; letter-spacing:.08em; }
+  .quiz-score { margin:6px 0 15px; padding:8px 12px; border:1px solid var(--line); border-radius:9px; color:var(--ink-2); background:var(--surface); font-size:13px; }
+  .quiz-item { margin:12px 0; padding:14px 16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
+  .quiz-q { color:var(--ink); font-weight:750; }
+  .quiz-q .qnum { margin-right:8px; color:var(--plum); font:800 12px ui-monospace,monospace; }
+  .quiz-answer { display:none; padding:9px 0 2px; color:var(--ink-2); }
+  .quiz-answer.open { display:block; }
+  .quiz-actions { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
+  .quiz-actions button { padding:4px 11px; border:1px solid var(--line); border-radius:99px; color:var(--ink-2); background:var(--surface-2); font-size:12px; }
+  .quiz-actions button:hover { color:var(--rose-strong); border-color:var(--rose); }
+  .quiz-item.correct { border-color:var(--rose); background:var(--rose-wash); }
+  .quiz-item.missed { border-color:var(--gold); background:var(--gold-wash); }
+  .print-only { display:none; }
+  @media (max-width:1000px) {
+    .sidebar { width:235px; } main { padding:38px 30px 100px; } .grid.three { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .index-cols { columns:2; }
+  }
+  @media (max-width:760px) {
+    .layout { display:block; } .sidebar { position:relative; width:auto; height:auto; padding:15px; border-right:0; border-bottom:1px solid var(--line); }
+    .brand-sub,.sidebar nav { display:none; }
+    main { padding:25px 17px 80px; } .theme-toggle { top:10px; } .grid,.grid.three { grid-template-columns:minmax(0,1fr); }
+    .sim-panels { grid-template-columns:1fr; } .sim-panel { border-right:0; border-bottom:1px solid #4a2e3c; }
+    .lab-head { display:block; } .lab-time { display:inline-block; margin-top:5px; }
+    .index-cols { columns:1; }
+  }
+  @media print {
+    :root { --bg:#fff;--surface:#fff;--surface-2:#f3f0f2;--ink:#111;--ink-2:#333;--muted:#666;--line:#bbb; }
+    body { font-size:10.5pt; } .sidebar,.theme-toggle,.top-button,.copy,.sim,.quiz-actions { display:none!important; }
+    .quiz-answer { display:block; }
+    details { border:0; } details > * { display:block; }
+    main { padding:0; } .print-only { display:block; } h2 { break-after:avoid; margin-top:30px; } pre,.card,.lab,table,.quiz-item { break-inside:avoid; }
+    a { color:#111; text-decoration:none; } a[href^="http"]::after { content:" (" attr(href) ")"; font-size:8pt; word-break:break-all; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#content">Skip to guide</a>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle color theme">◐ Theme</button>
+<a class="top-button" id="topButton" href="#top" aria-label="Back to top">↑ Top</a>
+<div class="layout" id="top">
+  <aside class="sidebar" aria-label="Guide navigation">
+    <div class="brand"><span class="brand-mark">~/</span><span>chezmoi field guide</span></div>
+    <div class="brand-sub">dotfiles, declared once</div>
+    <nav id="toc">
+      <div class="toc-group">Foundations</div>
+      <a href="#mental-model">1 · Mental model</a>
+      <a href="#prereqs">2 · Prerequisite floor</a>
+      <a href="#install">3 · Install &amp; verify</a>
+      <a href="#simulator">4 · State-flow simulator</a>
+      <div class="toc-group">Daily work</div>
+      <a href="#adopt">5 · Adopt your dotfiles</a>
+      <a href="#attributes">6 · The attribute grammar</a>
+      <a href="#templates">7 · Templates &amp; machines</a>
+      <a href="#git-layer">8 · Git layer &amp; sync</a>
+      <a href="#scripts">9 · Scripts &amp; automation</a>
+      <a href="#secrets">10 · Secrets: KeePassXC &amp; age</a>
+      <a href="#externals">11 · External dependencies</a>
+      <div class="toc-group">Prove it</div>
+      <a href="#capstone">12 · Capstone: finish adoption</a>
+      <a href="#troubleshooting">13 · Troubleshooting</a>
+      <a href="#cheatsheet">14 · Cheat sheet</a>
+      <div class="toc-group">Reference</div>
+      <a href="#glossary">Glossary</a>
+      <a href="#index">Index</a>
+      <a href="#quiz">Retrieval quiz</a>
+      <a href="#sources">Sources</a>
+    </nav>
+  </aside>
+
+  <main id="content">
+    <header class="hero">
+      <div class="eyebrow">Dotfiles manager · user guide + hands-on labs</div>
+      <h1>Your home directory,<br><span class="accent">declared once.</span></h1>
+      <p class="subtitle">chezmoi generates every machine's dotfiles from one versioned source of truth — templated per machine, secrets pulled from KeePassXC at apply time, never symlinked.</p>
+      <div class="badges">
+        <span class="badge">Checked with chezmoi v2.72.0 · 2026-08-06</span>
+        <span class="badge">macOS (Homebrew) · applies to Linux</span>
+        <span class="badge">Single file · works offline</span>
+        <span class="badge">Labs + simulator · KeePassXC 2.7.12 &amp; age 1.3.1 verified</span>
+      </div>
+    </header>
+
+    <section id="mental-model">
+      <h2>1 · Mental model: a compiler for your home directory</h2>
+      <p class="lede">chezmoi is not a smarter symlink farm. It is a build system whose input is a versioned <em>source directory</em>, whose build step merges templates with machine-specific data, and whose output is real files in your home directory. Once you see <code>apply</code> as compilation, every command falls into place.</p>
+      <p>Three states exist at all times, and every chezmoi command is a movement between them:</p>
+      <ul>
+        <li>The <strong><a href="#g-source-state">source state</a></strong> — what your dotfiles repo declares. Lives in <code>~/.local/share/chezmoi</code> as a git repository.</li>
+        <li>The <strong><a href="#g-target-state">target state</a></strong> — the desired result, computed by rendering templates with your machine's data. It exists only in memory.</li>
+        <li>The <strong><a href="#g-destination-state">destination state</a></strong> — what is actually sitting in <code>~</code> right now.</li>
+      </ul>
+      <figure class="diagram">
+        <svg viewBox="0 0 960 340" role="img" aria-labelledby="stateDiagramTitle">
+          <title id="stateDiagramTitle">chezmoi's three states: the source directory (a git repo) plus machine data feed the computed target state; apply writes the target state into the home directory; diff and status compare target with destination; add and re-add pull files from the home directory back into the source directory.</title>
+          <defs>
+            <marker id="arrP" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" class="d-arrhead"/>
+            </marker>
+            <marker id="arrR" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" class="d-arrhead2"/>
+            </marker>
+          </defs>
+          <rect x="20" y="60" width="250" height="150" rx="14" class="d-box d-hot"/>
+          <text x="145" y="88" text-anchor="middle" class="d-title">source state</text>
+          <text x="145" y="108" text-anchor="middle" class="d-mono">~/.local/share/chezmoi (git)</text>
+          <rect x="40" y="120" width="210" height="76" rx="8" class="d-inner"/>
+          <text x="52" y="139" class="d-mono">dot_zshrc</text>
+          <text x="52" y="156" class="d-mono">dot_gitconfig.tmpl</text>
+          <text x="52" y="173" class="d-mono">private_dot_netrc</text>
+          <text x="52" y="190" class="d-mono">run_once_setup.sh</text>
+          <rect x="20" y="240" width="250" height="66" rx="12" class="d-box"/>
+          <text x="145" y="266" text-anchor="middle" class="d-title">data</text>
+          <text x="145" y="286" text-anchor="middle" class="d-text">config [data] · .chezmoidata · secrets</text>
+          <rect x="380" y="98" width="210" height="86" rx="14" class="d-box"/>
+          <text x="485" y="128" text-anchor="middle" class="d-title">target state</text>
+          <text x="485" y="149" text-anchor="middle" class="d-text">templates rendered,</text>
+          <text x="485" y="166" text-anchor="middle" class="d-text">attributes resolved · in memory</text>
+          <rect x="700" y="60" width="240" height="150" rx="14" class="d-box"/>
+          <text x="820" y="88" text-anchor="middle" class="d-title">destination</text>
+          <text x="820" y="108" text-anchor="middle" class="d-mono">~ (your real files)</text>
+          <rect x="720" y="120" width="200" height="76" rx="8" class="d-inner"/>
+          <text x="732" y="139" class="d-mono">.zshrc</text>
+          <text x="732" y="156" class="d-mono">.gitconfig</text>
+          <text x="732" y="173" class="d-mono">.netrc (600)</text>
+          <text x="732" y="190" class="d-mono">(scripts already ran)</text>
+          <line x1="272" y1="128" x2="376" y2="128" class="d-arrow" marker-end="url(#arrP)"/>
+          <text x="322" y="115" text-anchor="middle" class="d-label">render</text>
+          <line x1="200" y1="238" x2="400" y2="188" class="d-arrow d-dash" marker-end="url(#arrP)"/>
+          <line x1="592" y1="128" x2="696" y2="128" class="d-arrow" marker-end="url(#arrP)"/>
+          <text x="644" y="115" text-anchor="middle" class="d-label">apply</text>
+          <path d="M700 240 C 560 300, 380 300, 274 218" class="d-arrow2 d-dash" marker-end="url(#arrR)"/>
+          <text x="487" y="303" text-anchor="middle" class="d-label">add · re-add (pull real files into source)</text>
+          <line x1="590" y1="180" x2="700" y2="215" class="d-arrow d-dash" marker-end="url(#arrP)"/>
+          <text x="660" y="185" text-anchor="middle" class="d-label">diff · status</text>
+        </svg>
+        <figcaption>Every command is a movement between states: <code>apply</code> writes target → destination, <code>add</code>/<code>re-add</code> pull destination → source, <code>diff</code>/<code>status</code> compare without writing.</figcaption>
+      </figure>
+      <div class="grid three">
+        <div class="card"><h3>Declare</h3><p>Edit the source state — filenames encode metadata (<code>dot_</code>, <code>private_</code>), templates encode differences between machines.</p></div>
+        <div class="card"><h3>Preview</h3><p><code>chezmoi diff</code> shows exactly what <code>apply</code> would change. You always get to look before anything is written.</p></div>
+        <div class="card"><h3>Converge</h3><p><code>chezmoi apply</code> makes the destination match the target state — files, permissions, symlinks, and scripts, in a defined order.</p></div>
+      </div>
+      <div class="callout"><strong>Key idea: real files, not symlinks</strong>chezmoi writes ordinary files into <code>~</code>. Nothing at runtime points back into the repo. That is what makes encrypted files, per-machine templates, and private permissions possible — a symlink cannot be a rendered template. The tradeoff is honest: your edit is not live until <code>apply</code>. The docs' answer for people who want immediacy is <code>chezmoi edit --watch</code>.</div>
+      <h3>The wrong question: "which dotfiles manager is best?"</h3>
+      <p>The right question is what problem you actually have. If your dotfiles are identical everywhere and contain no secrets, a bare git repo works. The moment you have two machines that differ, or one secret, the comparison changes:</p>
+      <div class="table-wrap"><table><thead><tr><th>Approach</th><th>Mechanism</th><th>Per-machine differences</th><th>Secrets</th><th>Where it breaks</th></tr></thead><tbody>
+        <tr><td><strong>chezmoi</strong></td><td>Generate real files from versioned source</td><td>Templates, per-machine data, <code>.chezmoiignore</code></td><td>Password-manager functions, age/gpg encryption</td><td>Extra concept load: attributes, templates, two-step edit→apply</td></tr>
+        <tr><td>Bare git repo in <code>$HOME</code></td><td>Track files in place</td><td>Branches per machine (merge pain grows forever)</td><td>None — plaintext or manual hacks</td><td>One accidental <code>git clean</code> away from disaster; no metadata</td></tr>
+        <tr><td>GNU Stow</td><td>Symlink farm from a packages dir</td><td>Separate packages per machine, manual</td><td>None</td><td>Symlinks break tools that resolve paths; no templating; no perms control</td></tr>
+        <tr><td>yadm</td><td>Git wrapper + alternates + templates</td><td>Alternate files per OS/host</td><td>Built-in encryption</td><td>Still edits live files in <code>~</code>; no dry-run compile step</td></tr>
+      </tbody></table></div>
+      <p><strong>Recommendation:</strong> you already track machine-specific differences (a Mac and, sooner or later, a Linux box), and you want KeePassXC-backed secrets. That is exactly chezmoi's home territory. Commit to it fully — a half-adopted chezmoi (your current state) gives you the concept overhead with none of the payoff.</p>
+      <p class="sources-line">Sources: <a href="https://www.chezmoi.io/user-guide/frequently-asked-questions/design/" target="_blank" rel="noopener">chezmoi design FAQ</a> · <a href="https://www.chezmoi.io/why-use-chezmoi/" target="_blank" rel="noopener">why use chezmoi</a></p>
+    </section>
+
+    <section id="prereqs">
+      <h2>2 · Prerequisite floor</h2>
+      <p class="lede">chezmoi leans on three things you mostly have already. Check yourself honestly — gaps here surface later as mysterious template errors and git confusion, not as clear failures.</p>
+      <div class="grid three">
+        <div class="card"><h3>Git — hard</h3><p>You must be able to commit, push, pull, and read a diff. chezmoi's source directory <em>is</em> a git repo; <code>chezmoi update</code> is literally <code>git pull</code> + <code>apply</code>. You do not need rebase fluency.</p></div>
+        <div class="card"><h3>Shell — hard</h3><p>Comfortable editing <code>.zshrc</code>, understanding <code>$PATH</code>, file permissions (<code>chmod 600</code>), and what a symlink is.</p></div>
+        <div class="card"><h3>Go templates — just-in-time</h3><p>Not required up front. §7 teaches the four constructs that cover 95% of real dotfiles: <code>{{ .var }}</code>, <code>if/else</code>, <code>eq</code>, and comments. Learn them there.</p></div>
+      </div>
+      <h3>Self-assessment</h3>
+      <ul class="check">
+        <li>Can you explain what <code>git status</code> vs <code>git diff</code> shows? (If not: any git primer before §8.)</li>
+        <li>Do you know why <code>~/.netrc</code> should be mode 600 while <code>~/.zshrc</code> need not be?</li>
+        <li>Can you predict what <code>ls -l</code> shows for a symlink?</li>
+        <li>Have you used <code>mktemp -d</code>? (Labs use it constantly to stay disposable.)</li>
+      </ul>
+      <p>Three or more boxes checked: proceed. Fewer: still proceed — the labs are sandboxed so mistakes are free — but expect to look things up.</p>
+    </section>
+
+    <section id="install">
+      <h2>3 · Install, verify, and build a safe sandbox</h2>
+      <p class="lede">One habit carries this entire guide: chezmoi accepts <code>--source</code> and <code>--destination</code> flags, so you can run a complete, fully isolated chezmoi playground in a throwaway directory. Your real dotfiles never enter the picture until you decide they should.</p>
+      <pre><code><span class="cmd">brew</span> install chezmoi
+<span class="cmd">chezmoi</span> --version
+<span class="out">chezmoi version v2.72.0, commit Homebrew, built at 2026-08-02T18:45:49Z, built by Homebrew</span></code></pre>
+      <p>On a machine without Homebrew, the official one-liner installs the latest binary (and §8 shows the variant that bootstraps your whole setup in the same breath):</p>
+      <pre><code><span class="cmd">sh</span> -c <span class="arg">"$(curl -fsLS https://get.chezmoi.io)"</span></code></pre>
+      <div class="lab">
+        <div class="lab-head"><div class="lab-title">Lab 1 · Build the sandbox you will reuse all guide</div><span class="lab-time">5 min · local only · touches nothing real</span></div>
+        <p>Create an isolated lab directory and a wrapper script <code>cz</code> that pins chezmoi to it. Every later lab uses <code>cz</code>; your real home directory and real source directory are untouched.</p>
+        <pre><code><span class="cmd">LAB</span>=$(mktemp -d /tmp/chezmoi-lab.XXXX)
+<span class="cmd">mkdir</span> -p $LAB/src $LAB/home $LAB/cfg
+<span class="cmd">cat</span> &gt; $LAB/cz &lt;&lt;EOF
+#!/bin/sh
+exec chezmoi --source $LAB/src --destination $LAB/home --config $LAB/cfg/chezmoi.toml "\$@"
+EOF
+<span class="cmd">chmod</span> +x $LAB/cz
+$LAB/<span class="cmd">cz</span> init
+<span class="cmd">ls</span> -la $LAB/src
+<span class="out">drwxr-xr-x  .git        # init created an empty git repo — that IS the source state</span></code></pre>
+        <ul class="check">
+          <li><code>init</code> with no argument creates an empty source repo. (With a repo URL it clones instead — §8.)</li>
+          <li>Run <code>$LAB/cz doctor</code>. Expect a table of <code>ok</code> rows: version, latest-version, config-file, source-dir "is a git working tree (clean)". <code>doctor</code> is your first stop whenever anything misbehaves.</li>
+          <li>Nothing outside <code>$LAB</code> changed. Verify with <code>chezmoi source-path</code> (no flags) — it still points at your real <code>~/.local/share/chezmoi</code>.</li>
+        </ul>
+      </div>
+      <div class="callout blue"><strong>Why sandbox first when you already have a real source dir?</strong>You are mid-adoption: your real source directory already tracks <code>dot_zshrc</code>, <code>dot_gitconfig</code>, and a fully-copied <code>dot_oh-my-zsh</code>. The fastest route to finishing that adoption confidently is drilling each mechanism where breakage is free, then executing the capstone (§12) against the real thing.</div>
+      <p class="sources-line">Sources: <a href="https://www.chezmoi.io/install/" target="_blank" rel="noopener">install</a> · <a href="https://www.chezmoi.io/reference/command-line-flags/" target="_blank" rel="noopener">command-line flags</a></p>
+    </section>
+
+    <section id="simulator">
+      <h2>4 · State-flow simulator</h2>
+      <p>Before touching more commands, internalize the loop. This simulator models two files across the source and destination states. Click commands; watch versions converge and diverge. <span class="mini">Simplified on purpose: real chezmoi tracks a third record — the last state it wrote — which is how <code>status</code> tells "you edited the source" (<code>&nbsp;M</code>) from "someone edited the real file too" (<code>MM</code>). The simulator models that as well.</span></p>
+      <div class="sim" id="simBox">
+        <div class="sim-head"><span>chezmoi · state-flow practice</span><span>v1 = version counters, not file contents</span></div>
+        <div class="sim-panels">
+          <div class="sim-panel"><h4>source · ~/.local/share/chezmoi</h4><div id="simSrc"></div></div>
+          <div class="sim-panel"><h4>destination · ~</h4><div id="simHome"></div></div>
+        </div>
+        <div class="sim-buttons" role="group" aria-label="Simulated chezmoi commands">
+          <button type="button" data-act="edit">chezmoi edit .zshrc</button>
+          <button type="button" data-act="hand">vim ~/.zshrc (by hand)</button>
+          <button type="button" data-act="status">chezmoi status</button>
+          <button type="button" data-act="diff">chezmoi diff</button>
+          <button type="button" data-act="apply">chezmoi apply</button>
+          <button type="button" data-act="readd">chezmoi re-add</button>
+          <button type="button" data-act="reset">reset</button>
+        </div>
+        <div class="sim-log" id="simLog" aria-live="polite"></div>
+      </div>
+      <ul class="check">
+        <li>Press <em>edit</em> then <em>status</em>: <code>&nbsp;M .zshrc</code> — source moved ahead, destination stale.</li>
+        <li>Press <em>apply</em>: versions converge, status goes clean.</li>
+        <li>Press <em>vim by hand</em> then <em>status</em>: <code>MM</code> would appear only after the source also moves — try <em>edit</em> too, then decide: <em>apply</em> (source wins) or <em>re-add</em> (your hand edit wins). That decision is the whole daily discipline.</li>
+      </ul>
+    </section>
+
+    <section id="adopt">
+      <h2>5 · Adopt your dotfiles: the daily loop</h2>
+      <p class="lede">Four commands are the whole daily workflow: <code>add</code> to bring a file under management, <code>edit</code> to change it, <code>diff</code> to preview, <code>apply</code> to converge. Everything else is refinement.</p>
+      <h3>Your CLI instincts, translated</h3>
+      <div class="table-wrap"><table><thead><tr><th>Old instinct</th><th>chezmoi move</th><th>Why it is better</th></tr></thead><tbody>
+        <tr><td><code>vim ~/.zshrc</code></td><td><code>chezmoi edit --apply ~/.zshrc</code></td><td>Edits the source copy, applies on quit. The change is captured for every machine, not just this one.</td></tr>
+        <tr><td><code>cp .zshrc backups/</code></td><td><code>chezmoi add ~/.zshrc</code> + git commit</td><td>Versioned history with diffs, not timestamped copies.</td></tr>
+        <tr><td>"what did I change?"</td><td><code>chezmoi diff</code> / <code>chezmoi status</code></td><td>Compares desired vs actual state, including permissions — not just contents.</td></tr>
+        <tr><td>scp configs to new machine</td><td><code>chezmoi init --apply $GITHUB_USERNAME</code></td><td>One command reproduces the whole home directory, templates resolved for that machine.</td></tr>
+        <tr><td>edited the real file directly (habit)</td><td><code>chezmoi re-add</code></td><td>Pulls your hand edit back into the source instead of losing it at next apply.</td></tr>
+      </tbody></table></div>
+      <div class="lab">
+        <div class="lab-head"><div class="lab-title">Lab 2 · Run the add → edit → diff → apply loop</div><span class="lab-time">8 min · sandbox from Lab 1</span></div>
+        <pre><code><span class="comment"># A fake dotfile in the sandbox "home"</span>
+<span class="cmd">printf</span> 'export EDITOR=vim\nalias ll="ls -la"\n' &gt; $LAB/home/.zshrc
+$LAB/<span class="cmd">cz</span> add $LAB/home/.zshrc
+<span class="cmd">ls</span> $LAB/src
+<span class="out">dot_zshrc                # leading dot became the dot_ prefix</span>
+$LAB/<span class="cmd">cz</span> managed
+<span class="out">.zshrc</span></code></pre>
+        <p>Now change the <em>source</em> copy (this is what <code>chezmoi edit</code> does under the hood — it opens the source file in <code>$EDITOR</code>):</p>
+        <pre><code><span class="cmd">printf</span> 'export EDITOR=nvim\nalias ll="ls -la"\n' &gt; $LAB/src/dot_zshrc
+$LAB/<span class="cmd">cz</span> status
+<span class="out"> M .zshrc</span>
+$LAB/<span class="cmd">cz</span> diff
+<span class="out">--- a/.zshrc
++++ b/.zshrc
+@@ -1,2 +1,2 @@
+-export EDITOR=vim
++export EDITOR=nvim
+ alias ll="ls -la"</span>
+$LAB/<span class="cmd">cz</span> apply -v
+<span class="cmd">cat</span> $LAB/home/.zshrc
+<span class="out">export EDITOR=nvim
+alias ll="ls -la"</span></code></pre>
+        <ul class="check">
+          <li><code>status</code> after apply prints nothing — clean means converged.</li>
+          <li>Now edit the <em>destination</em> by hand: <code>echo 'alias gs="git status"' &gt;&gt; $LAB/home/.zshrc</code>, then run <code>status</code>. Expect <code>MM .zshrc</code> once the source has also changed, or a single right-column <code>M</code> when only the real file moved.</li>
+          <li>Run <code>$LAB/cz re-add</code>. Status is clean again and <code>grep gs $LAB/src/dot_zshrc</code> finds your alias — the hand edit was captured, not clobbered.</li>
+        </ul>
+      </div>
+      <h3>The edit ergonomics you will actually use</h3>
+      <ul>
+        <li><code>chezmoi edit ~/.zshrc</code> — edit the source copy; apply separately.</li>
+        <li><code>chezmoi edit --apply ~/.zshrc</code> — apply automatically when you quit the editor. <strong>Recommended default.</strong></li>
+        <li><code>chezmoi edit --watch ~/.zshrc</code> — apply on every save. Closest to editing the live file.</li>
+        <li><code>chezmoi cd</code> — open a subshell in the source directory for git work or bulk edits. Exit returns you home.</li>
+        <li><code>chezmoi forget ~/.hushlogin</code> — stop managing a file (source entry removed, real file left in place). <code>chezmoi destroy</code> deletes both — almost never what you want.</li>
+      </ul>
+      <div class="callout warn"><strong>Misconception: "chezmoi add copies my file into a config database"</strong>It copies the file into a plain git repo with an encoded filename, nothing more. <code>chezmoi source-path ~/.zshrc</code> prints exactly where; you can open that file with any editor. There is no database for file contents — only a small state boltdb for script bookkeeping (§9).</div>
+      <p class="sources-line">Sources: <a href="https://www.chezmoi.io/user-guide/daily-operations/" target="_blank" rel="noopener">daily operations</a> · <a href="https://www.chezmoi.io/user-guide/command-overview/" target="_blank" rel="noopener">command overview</a></p>
+    </section>
+
+    <section id="attributes">
+      <h2>6 · The attribute grammar: filenames as declarations</h2>
+      <p class="lede">chezmoi stores metadata where git can version it: in the filename. <code>private_dot_netrc</code> is not a naming convention — it is a small declarative language. Read the prefixes off and you know the target path, permissions, and type without opening the file.</p>
+      <figure class="diagram">
+        <svg viewBox="0 0 960 250" role="img" aria-labelledby="attrDiagramTitle">
+          <title id="attrDiagramTitle">Anatomy of the source filename private_dot_config/private_gh-token.tmpl: the private prefix removes group and world permissions, dot becomes a leading dot, and the .tmpl suffix renders the contents as a template, producing ~/.config/gh-token with mode 600.</title>
+          <rect x="20" y="30" width="920" height="60" rx="12" class="d-box d-hot"/>
+          <text x="60" y="68" class="d-title" font-size="20">private_</text>
+          <text x="168" y="68" class="d-title" font-size="20">executable_</text>
+          <text x="318" y="68" class="d-title" font-size="20">dot_</text>
+          <text x="384" y="68" class="d-title" font-size="20">local/bin/deploy</text>
+          <text x="600" y="68" class="d-title" font-size="20">.tmpl</text>
+          <line x1="95" y1="95" x2="95" y2="135" class="d-arrow" marker-end="url(#arrP)"/>
+          <line x1="235" y1="95" x2="235" y2="135" class="d-arrow" marker-end="url(#arrP)"/>
+          <line x1="340" y1="95" x2="340" y2="135" class="d-arrow" marker-end="url(#arrP)"/>
+          <line x1="625" y1="95" x2="625" y2="135" class="d-arrow" marker-end="url(#arrP)"/>
+          <text x="95" y="155" text-anchor="middle" class="d-label">strip group+world perms</text>
+          <text x="235" y="175" text-anchor="middle" class="d-label">add +x</text>
+          <text x="340" y="155" text-anchor="middle" class="d-label">leading “.”</text>
+          <text x="625" y="155" text-anchor="middle" class="d-label">render as template</text>
+          <rect x="280" y="185" width="400" height="45" rx="10" class="d-box"/>
+          <text x="480" y="213" text-anchor="middle" class="d-mono" font-size="14">→  ~/.local/bin/deploy   mode 700, rendered</text>
+        </svg>
+        <figcaption>Attributes compose left to right and vanish from the target name. The same grammar covers directories.</figcaption>
+      </figure>
+      <div class="table-wrap"><table><thead><tr><th>Prefix</th><th>Declares</th><th>Verified behavior (v2.72.0)</th></tr></thead><tbody>
+        <tr><td><code>dot_</code></td><td>Target name starts with <code>.</code></td><td><code>dot_zshrc</code> → <code>.zshrc</code></td></tr>
+        <tr><td><code>private_</code></td><td>Strip group/world permissions</td><td><code>private_dot_netrc</code> applied as <code>-rw-------</code> (600) — seen in the apply diff as <code>new file mode 100600</code></td></tr>
+        <tr><td><code>executable_</code></td><td>Add execute bit</td><td>Applied as <code>-rwxr-xr-x</code></td></tr>
+        <tr><td><code>readonly_</code></td><td>Strip write permissions</td><td>Combine: <code>private_readonly_</code> → 400</td></tr>
+        <tr><td><code>symlink_</code></td><td>Target is a symlink; file contents are the link destination</td><td><code>symlink_dot_theme.conf.tmpl</code> containing a path template produced <code>.theme.conf → /Users/you/…</code></td></tr>
+        <tr><td><code>create_</code></td><td>Create with these contents only if absent; never overwrite after</td><td>Hand-edited the applied file, re-ran apply: edit survived, status stayed clean</td></tr>
+        <tr><td><code>modify_</code></td><td>Contents are a script that transforms the existing file (stdin → stdout)</td><td>For files partly owned by other software</td></tr>
+        <tr><td><code>empty_</code></td><td>Keep the file even when empty</td><td>Zero-byte files are otherwise removed from the target state</td></tr>
+        <tr><td><code>exact_</code> (dirs)</td><td>Delete anything in the directory chezmoi does not manage</td><td>Use for config dirs that must contain nothing stray</td></tr>
+        <tr><td><code>remove_</code></td><td>Remove the target if present</td><td>Declarative deletion</td></tr>
+        <tr><td><code>encrypted_</code></td><td>Contents are encrypted in the source (§10)</td><td><code>encrypted_dot_secret-key.age</code></td></tr>
+        <tr><td><code>literal_</code> / <code>.literal</code></td><td>Stop attribute parsing</td><td>For real files whose names begin with <code>dot_</code> etc.</td></tr>
+        <tr><td><code>.tmpl</code> (suffix)</td><td>Render contents as a Go template (§7)</td><td><code>dot_gitconfig.tmpl</code></td></tr>
+      </tbody></table></div>
+      <p>Change attributes with <code>chezmoi chattr</code> rather than renaming by hand — it renames the source file for you and understands stacking order:</p>
+      <pre><code>$LAB/<span class="cmd">cz</span> chattr private $LAB/home/.zshrc     <span class="comment"># dot_zshrc → private_dot_zshrc</span>
+$LAB/<span class="cmd">cz</span> chattr noprivate $LAB/home/.zshrc   <span class="comment"># and back</span>
+$LAB/<span class="cmd">cz</span> chattr +template $LAB/home/.gitconfig  <span class="comment"># append .tmpl</span></code></pre>
+      <div class="lab">
+        <div class="lab-head"><div class="lab-title">Lab 3 · Watch attributes become permissions</div><span class="lab-time">7 min · sandbox</span></div>
+        <pre><code><span class="cmd">printf</span> 'secret-ish config\n' &gt; $LAB/src/private_dot_netrc
+$LAB/<span class="cmd">cz</span> apply -v
+<span class="out">diff --git a/.netrc b/.netrc
+new file mode 100600          # ← private_ became 600 before your eyes</span>
+<span class="cmd">ls</span> -l $LAB/home/.netrc
+<span class="out">-rw-------  .netrc</span>
+
+<span class="comment"># A create_ file: applied once, then hands off</span>
+<span class="cmd">printf</span> 'default content\n' &gt; $LAB/src/create_dot_hushlogin
+$LAB/<span class="cmd">cz</span> apply
+<span class="cmd">echo</span> "edited-by-user" &gt; $LAB/home/.hushlogin
+$LAB/<span class="cmd">cz</span> apply &amp;&amp; <span class="cmd">cat</span> $LAB/home/.hushlogin
+<span class="out">edited-by-user                # create_ never clobbers an existing file</span></code></pre>
+        <ul class="check">
+          <li>Add an <code>executable_hello</code> script under <code>$LAB/src/dot_local/bin/</code> and apply; expect <code>-rwxr-xr-x</code> on <code>~/.local/bin/hello</code>.</li>
+          <li>Try creating <em>both</em> <code>dot_config</code> and <code>private_dot_config</code> directories in the source, then apply. Expect, honestly: <code>chezmoi: .config: inconsistent state</code> — two source entries map to one target. One target, one source entry; put attributes on that single entry. Delete one to fix it.</li>
+        </ul>
+      </div>
+      <div class="callout danger"><strong>The clobber guard</strong>If a managed file changes (or disappears) in the destination out-of-band, the next <code>apply</code> stops and asks before overwriting — in a script or CI that surfaces as <code>could not open a new TTY</code>. <code>chezmoi apply --force</code> overrides; <code>chezmoi re-add</code> keeps the out-of-band edit instead. Decide, don't reflexively force.</div>
+      <p class="sources-line">Sources: <a href="https://www.chezmoi.io/reference/source-state-attributes/" target="_blank" rel="noopener">source state attributes</a> · <a href="https://www.chezmoi.io/reference/commands/chattr/" target="_blank" rel="noopener">chattr</a></p>
+    </section>
+
+    <section id="templates">
+      <h2>7 · Templates &amp; machine differences</h2>
+      <p class="lede">Templates are why chezmoi beats copying files around: one source file, many rendered results. The engine is Go's <code>text/template</code>; the data is a merged dictionary you can inspect at any time with <code>chezmoi data</code>.</p>
+      <h3>Where data comes from (all merged)</h3>
+      <ul>
+        <li><strong>Built-ins</strong> — <code>.chezmoi.os</code> (<code>"darwin"</code>/<code>"linux"</code>), <code>.chezmoi.arch</code>, <code>.chezmoi.hostname</code>, <code>.chezmoi.homeDir</code>, and friends.</li>
+        <li><strong>Your config file</strong> — <code>~/.config/chezmoi/chezmoi.toml</code>, <code>[data]</code> section. Per-machine, <em>not</em> in the repo. This is the escape hatch for anything machine-specific.</li>
+        <li><strong><code>.chezmoidata.toml</code></strong> (or .yaml/.json) in the source root — shared data, versioned in the repo.</li>
+        <li><strong>Secret functions</strong> — <code>keepassxc</code> and friends fetch at render time (§10).</li>
+      </ul>
+      <pre><code><span class="comment"># dot_gitconfig.tmpl — one file, correct on every machine</span>
+[user]
+    email = {{ .email }}
+[core]
+    editor = {{ if eq .chezmoi.os "darwin" }}nvim{{ else }}vim{{ end }}</code></pre>
+      <div class="lab">
+        <div class="lab-head"><div class="lab-title">Lab 4 · Render, inspect, and conditionally ignore</div><span class="lab-time">10 min · sandbox</span></div>
+        <pre><code><span class="cmd">cat</span> &gt; $LAB/cfg/chezmoi.toml &lt;&lt;'EOF'
+[data]
+  email = "you@example.com"
+  machine = "sandbox"
+EOF
+<span class="cmd">cat</span> &gt; $LAB/src/.chezmoidata.toml &lt;&lt;'EOF'
+[colors]
+  theme = "cobalt"
+EOF
+<span class="comment"># write dot_gitconfig.tmpl as above, plus one line using .machine and .colors.theme</span>
+$LAB/<span class="cmd">cz</span> data --format json | <span class="cmd">head</span>    <span class="comment"># the merged dictionary, truthfully</span>
+$LAB/<span class="cmd">cz</span> cat $LAB/home/.gitconfig       <span class="comment"># render target state WITHOUT applying</span>
+<span class="out">[user]
+    email = you@example.com
+[core]
+    editor = nvim</span>
+$LAB/<span class="cmd">cz</span> execute-template <span class="arg">'{{ .chezmoi.os }}/{{ .chezmoi.arch }}'</span>
+<span class="out">darwin/amd64</span></code></pre>
+        <p>Now the per-OS ignore. <code>.chezmoiignore</code> is itself a template, and the logic is inverted — you ignore <em>unless</em> the condition holds:</p>
+        <pre><code><span class="cmd">cat</span> &gt; $LAB/src/.chezmoiignore &lt;&lt;'EOF'
+{{ if ne .chezmoi.os "linux" }}
+.config/systemd
+{{ end }}
+EOF
+<span class="cmd">mkdir</span> -p $LAB/src/dot_config/systemd
+<span class="cmd">printf</span> 'linux only\n' &gt; $LAB/src/dot_config/systemd/unit.conf
+$LAB/<span class="cmd">cz</span> apply
+<span class="cmd">ls</span> $LAB/home/.config
+<span class="out">                              # empty on darwin — systemd/ was ignored</span></code></pre>
+        <ul class="check">
+          <li><code>chezmoi cat</code> and <code>execute-template</code> are your template debuggers. Use them before <code>apply</code>, every time you write a template.</li>
+          <li>Change <code>editor</code>'s condition to <code>eq .chezmoi.hostname "macbook"</code> and re-render — hostname-based switching works identically.</li>
+        </ul>
+      </div>
+      <h3>Patterns that scale</h3>
+      <ul>
+        <li><strong>Small differences</strong> → inline <code>{{ if }}</code> blocks in one template.</li>
+        <li><strong>Whole-file differences</strong> → <code>{{ if eq .chezmoi.os "darwin" }}{{ include ".zshrc_darwin" }}{{ end }}</code>, or ignore the file entirely per machine in <code>.chezmoiignore</code>.</li>
+        <li><strong>Shared blocks</strong> → put fragments in <code>.chezmoitemplates/</code> and pull them in with <code>{{ template "fragment" . }}</code>.</li>
+        <li><strong>Machine identity</strong> → prefer a <code>work = true/false</code> flag in each machine's config <code>[data]</code> over hostname string-matching; hostnames change, roles don't.</li>
+      </ul>
+      <div class="callout warn"><strong>Misconception: templates run when the shell reads the file</strong>Templates render at <code>apply</code> time, once. The rendered <code>.zshrc</code> is plain text; there is no chezmoi at shell startup. If data changes, nothing updates until the next apply. Corollary from the sandbox: <code>.chezmoi.homeDir</code> is the OS user's home, not the <code>--destination</code> override — in sandbox templates, prefer <code>.chezmoi.destDir</code> if you mean the destination.</div>
+      <p class="sources-line">Sources: <a href="https://www.chezmoi.io/user-guide/manage-machine-to-machine-differences/" target="_blank" rel="noopener">machine-to-machine differences</a> · <a href="https://www.chezmoi.io/user-guide/templating/" target="_blank" rel="noopener">templating</a> · <a href="https://www.chezmoi.io/reference/templates/variables/" target="_blank" rel="noopener">template variables</a></p>
+    </section>
+
+    <section id="git-layer">
+      <h2>8 · The git layer and multi-machine sync</h2>
+      <p class="lede">chezmoi does not reinvent sync. The source directory is a git repo; GitHub (or any remote) is the transport; <code>chezmoi update</code> is <code>git pull --autostash --rebase</code> followed by <code>apply</code>. If you can push and pull, you can sync machines.</p>
+      <figure class="diagram">
+        <svg viewBox="0 0 960 300" role="img" aria-labelledby="syncDiagramTitle">
+          <title id="syncDiagramTitle">Multi-machine topology: a dotfiles repository on GitHub in the center; machine A pushes changes with chezmoi cd plus git push; machine B bootstraps with chezmoi init --apply and stays current with chezmoi update, which pulls and applies; each machine keeps its own config file with local data that never leaves the machine.</title>
+          <rect x="370" y="20" width="220" height="70" rx="14" class="d-box d-hot"/>
+          <text x="480" y="50" text-anchor="middle" class="d-title">github.com/you/dotfiles</text>
+          <text x="480" y="72" text-anchor="middle" class="d-text">the only thing machines share</text>
+          <rect x="60" y="170" width="290" height="105" rx="14" class="d-box"/>
+          <text x="205" y="198" text-anchor="middle" class="d-title">machine A (Mac)</text>
+          <text x="205" y="220" text-anchor="middle" class="d-mono">~/.local/share/chezmoi + ~</text>
+          <text x="205" y="240" text-anchor="middle" class="d-text">config: [data] work = false</text>
+          <text x="205" y="259" text-anchor="middle" class="d-text">(local only, never pushed)</text>
+          <rect x="610" y="170" width="290" height="105" rx="14" class="d-box"/>
+          <text x="755" y="198" text-anchor="middle" class="d-title">machine B (Linux)</text>
+          <text x="755" y="220" text-anchor="middle" class="d-mono">bootstrap: init --apply you</text>
+          <text x="755" y="240" text-anchor="middle" class="d-text">config generated by</text>
+          <text x="755" y="259" text-anchor="middle" class="d-mono">.chezmoi.toml.tmpl prompts</text>
+          <line x1="255" y1="168" x2="395" y2="94" class="d-arrow2" marker-end="url(#arrR)"/>
+          <text x="290" y="118" text-anchor="middle" class="d-label">chezmoi cd; git push</text>
+          <line x1="565" y1="94" x2="700" y2="168" class="d-arrow" marker-end="url(#arrP)"/>
+          <text x="680" y="118" text-anchor="middle" class="d-label">chezmoi update</text>
+          <line x1="425" y1="94" x2="290" y2="168" class="d-arrow d-dash" marker-end="url(#arrP)"/>
+          <text x="315" y="150" text-anchor="middle" class="d-label">update</text>
+        </svg>
+        <figcaption>Machines share only the repo. Per-machine identity lives in each machine's config file, generated at <code>init</code> by <code>.chezmoi.toml.tmpl</code>.</figcaption>
+      </figure>
+      <h3>Publishing (machine A, once)</h3>
+      <pre><code><span class="cmd">chezmoi</span> cd                       <span class="comment"># subshell inside the source repo</span>
+<span class="cmd">git</span> remote add origin git@github.com:$GITHUB_USERNAME/dotfiles.git
+<span class="cmd">git</span> push -u origin main
+<span class="cmd">exit</span></code></pre>
+      <p>Dotfiles with secrets-via-KeePassXC contain no secret material (§10), but a <strong>private repo</strong> is still the sane default — your shell history habits, hostnames, and internal paths are nobody's business.</p>
+      <h3>Bootstrapping (machine B, any time)</h3>
+      <pre><code><span class="comment"># chezmoi already installed:</span>
+<span class="cmd">chezmoi</span> init --apply $GITHUB_USERNAME          <span class="comment"># expands to your dotfiles repo</span>
+
+<span class="comment"># bare metal — install AND converge in one line:</span>
+<span class="cmd">sh</span> -c <span class="arg">"$(curl -fsLS https://get.chezmoi.io)"</span> -- init --apply $GITHUB_USERNAME</code></pre>
+      <h3>Ask once per machine: <code>.chezmoi.toml.tmpl</code></h3>
+      <p>A file named <code>.chezmoi.toml.tmpl</code> in the source root is special: <code>chezmoi init</code> renders it <em>to create the machine's config file</em>. Prompt functions make bootstrap interactive exactly once:</p>
+      <pre><code><span class="comment"># .chezmoi.toml.tmpl (in the repo)</span>
+{{ $email := promptString "email" -}}
+{{ $work := promptBool "is this a work machine" -}}
+[data]
+  email = {{ $email | quote }}
+  work = {{ $work }}</code></pre>
+      <div class="callout blue"><strong>Prefer <code>promptStringOnce</code></strong>It reuses the existing answer when you re-run <code>chezmoi init</code> after changing the template, instead of asking again. When the config template changes upstream, chezmoi warns: <code>config file template has changed, run chezmoi init to regenerate config file</code> — that warning is routine, not an error.</div>
+      <div class="lab">
+        <div class="lab-head"><div class="lab-title">Lab 5 · Two machines on one laptop</div><span class="lab-time">15 min · sandbox + a bare repo as a stand-in for GitHub</span></div>
+        <p>No GitHub account is touched: a local bare repo plays the remote perfectly.</p>
+        <pre><code><span class="comment"># Publish machine A (your Lab 1-4 sandbox)</span>
+<span class="cmd">cd</span> $LAB/src
+<span class="cmd">git</span> add -A &amp;&amp; <span class="cmd">git</span> commit -m "dotfiles v1"
+<span class="cmd">git</span> init --bare $LAB/origin.git
+<span class="cmd">git</span> remote add origin $LAB/origin.git &amp;&amp; <span class="cmd">git</span> push origin HEAD:main
+
+<span class="comment"># "Machine B": fresh source + home + config</span>
+<span class="cmd">mkdir</span> -p $LAB/home2 $LAB/cfg2
+<span class="cmd">chezmoi</span> --source $LAB/src2 --destination $LAB/home2 \
+        --config $LAB/cfg2/chezmoi.toml init $LAB/origin.git
+<span class="out">Cloning into '…/src2'... done.</span>
+<span class="comment"># give machine B its own data, then converge</span>
+<span class="cmd">printf</span> '[data]\n  email = "you@example.com"\n  machine = "machine2"\n' &gt; $LAB/cfg2/chezmoi.toml
+<span class="cmd">chezmoi</span> --source $LAB/src2 --destination $LAB/home2 --config $LAB/cfg2/chezmoi.toml apply
+<span class="out">[script] installing packages (runs once)     # scripts fire fresh per machine (§9)</span>
+<span class="cmd">ls</span> -A $LAB/home2
+<span class="out">.config .gitconfig .local .netrc .theme.conf .zshrc</span></code></pre>
+        <p>Round-trip a change:</p>
+        <pre><code><span class="comment"># A: change, commit, push</span>
+<span class="cmd">printf</span> 'alias reload="exec zsh"\n' &gt;&gt; $LAB/src/dot_zshrc
+<span class="cmd">cd</span> $LAB/src &amp;&amp; <span class="cmd">git</span> commit -am "add reload alias" &amp;&amp; <span class="cmd">git</span> push origin HEAD:main
+
+<span class="comment"># B: one command pulls AND applies</span>
+<span class="cmd">chezmoi</span> --source $LAB/src2 --destination $LAB/home2 --config $LAB/cfg2/chezmoi.toml update -v
+<span class="out">Fast-forward  dot_zshrc | 1 +
++alias reload="exec zsh"</span></code></pre>
+        <ul class="check">
+          <li><code>tail -1 $LAB/home2/.zshrc</code> shows the new alias — pushed on A, live on B, one command each side.</li>
+          <li>Cautious variant when you don't trust the incoming change: <code>chezmoi git pull -- --autostash --rebase</code>, then <code>chezmoi diff</code>, then <code>apply</code>.</li>
+        </ul>
+      </div>
+      <h3>Frictionless commits</h3>
+      <p>If committing every tweak feels like ceremony, let chezmoi do it:</p>
+      <pre><code><span class="comment"># in your config file</span>
+[git]
+    autoCommit = true     <span class="comment"># commit after each source change</span>
+    autoPush = true       <span class="comment"># …and push (implies autoCommit)</span></code></pre>
+      <p><strong>Recommendation:</strong> <code>autoCommit</code> yes, <code>autoPush</code> no. Auto-generated commit messages are a fair price for never forgetting to commit; auto-push removes your last review point before other machines can pull a mistake.</p>
+      <p class="sources-line">Sources: <a href="https://www.chezmoi.io/user-guide/setup/" target="_blank" rel="noopener">setup</a> · <a href="https://www.chezmoi.io/user-guide/daily-operations/" target="_blank" rel="noopener">daily operations</a> · <a href="https://www.chezmoi.io/reference/special-files/chezmoi-format-tmpl/" target="_blank" rel="noopener">.chezmoi.$FORMAT.tmpl</a></p>
+    </section>
+
+    <section id="scripts">
+      <h2>9 · Scripts &amp; automation: the run_ family</h2>
+      <p class="lede">Dotfiles describe files; machines also need <em>actions</em> — install packages, set macOS defaults, build a font cache. chezmoi models actions as scripts in the source state whose filename declares when they run.</p>
+      <div class="table-wrap"><table><thead><tr><th>Name pattern</th><th>Runs</th><th>Use for</th></tr></thead><tbody>
+        <tr><td><code>run_once_*.sh</code></td><td>Once per unique <em>contents</em>, ever (per machine)</td><td>Package installs, one-time setup</td></tr>
+        <tr><td><code>run_onchange_*.sh</code></td><td>Whenever its <em>rendered contents</em> change</td><td>"Reload X when its config changes"</td></tr>
+        <tr><td><code>run_*.sh</code></td><td>Every apply</td><td>Rare — keep idempotent and fast</td></tr>
+        <tr><td><code>run_before_*</code> / <code>run_after_*</code></td><td>Before / after files are updated</td><td>Ordering around the file pass</td></tr>
+      </tbody></table></div>
+      <p>Apply order is fixed and worth memorizing: <strong><code>run_before_</code> scripts (alphabetical) → files and directories (alphabetical by target name) → <code>run_after_</code> scripts (alphabetical)</strong>. Scripts without before/after run in the file pass, interleaved alphabetically.</p>
+      <div class="lab">
+        <div class="lab-head"><div class="lab-title">Lab 6 · once vs onchange, proven</div><span class="lab-time">8 min · sandbox</span></div>
+        <pre><code><span class="cmd">cat</span> &gt; $LAB/src/run_once_install-packages.sh &lt;&lt;'EOF'
+#!/bin/sh
+echo "[script] installing packages (runs once)"
+EOF
+<span class="cmd">cat</span> &gt; $LAB/src/run_onchange_reload-config.sh.tmpl &lt;&lt;'EOF'
+#!/bin/sh
+# hash of .gitconfig: {{ include "dot_gitconfig.tmpl" | sha256sum }}
+echo "[script] config changed, reloading"
+EOF
+$LAB/<span class="cmd">cz</span> apply
+<span class="out">[script] installing packages (runs once)
+[script] config changed, reloading</span>
+$LAB/<span class="cmd">cz</span> apply
+<span class="out">                                  # silence — both satisfied</span>
+<span class="cmd">printf</span> '# comment\n' &gt;&gt; $LAB/src/dot_gitconfig.tmpl
+$LAB/<span class="cmd">cz</span> apply
+<span class="out">[script] config changed, reloading   # hash line changed → onchange fired</span></code></pre>
+        <ul class="check">
+          <li>The <code>sha256sum</code> comment is the canonical trick: embedding a hash of another file makes "run when that file changes" out of "run when <em>I</em> change".</li>
+          <li>Peek at the bookkeeping: <code>$LAB/cz state dump</code> — script hashes live under <code>scriptState</code> in a small boltdb. Delete state (<code>chezmoi state delete-bucket --bucket=scriptState</code>) and once-scripts run again. That is the whole mechanism; nothing hidden.</li>
+        </ul>
+      </div>
+      <h3>Real-world script patterns for your goals</h3>
+      <pre><code><span class="comment"># run_onchange_darwin-defaults.sh.tmpl — macOS settings as code</span>
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/sh
+defaults write com.apple.dock autohide -bool true
+killall Dock
+{{ end -}}</code></pre>
+      <pre><code><span class="comment"># run_onchange_install-packages.sh.tmpl — Brewfile-driven, re-runs when the list changes</span>
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/sh
+# Brewfile hash: {{ include "Brewfile" | sha256sum }}
+brew bundle --file=- &lt;&lt;'BREWS'
+brew "fzf"
+brew "lazygit"
+brew "age"
+BREWS
+{{ end -}}</code></pre>
+      <div class="callout warn"><strong>Scripts run with your privileges, from your repo</strong>Anything you merge into the dotfiles repo executes on every machine at next apply. Review script diffs before <code>chezmoi update</code> on sensitive machines (<code>chezmoi git pull</code> + <code>chezmoi diff</code> first), and keep scripts idempotent — apply may run them at surprising times (fresh machines run every <code>run_once_</code> in one burst, as Lab 5 showed).</div>
+      <p class="sources-line">Sources: <a href="https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/" target="_blank" rel="noopener">use scripts to perform actions</a> · <a href="https://www.chezmoi.io/reference/application-order/" target="_blank" rel="noopener">application order</a> · <a href="https://www.chezmoi.io/reference/commands/state/" target="_blank" rel="noopener">state</a></p>
+    </section>
+
+    <section id="secrets">
+      <h2>10 · Secrets: KeePassXC first, age for files</h2>
+      <p class="lede">The rule with no exceptions: secret material never enters the git repo. chezmoi offers two clean mechanisms — <em>reference</em> secrets from a password manager at render time, or <em>encrypt</em> whole files in the source. You want both: KeePassXC for values, age for the occasional whole secret file.</p>
+      <h3>KeePassXC: values at render time</h3>
+      <p>chezmoi shells out to <code>keepassxc-cli show</code> and exposes entries to templates. Configure once:</p>
+      <pre><code><span class="comment"># ~/.config/chezmoi/chezmoi.toml</span>
+[keepassxc]
+    database = "/Users/you/secrets.kdbx"</code></pre>
+      <pre><code><span class="comment"># dot_config/private_gh-token.tmpl — the repo stores only this reference</span>
+GITHUB_TOKEN={{ (keepassxc "github-token").Password }}
+USER={{ (keepassxc "github-token").UserName }}</code></pre>
+      <p>Three template functions cover the entry surface: <code>keepassxc "title"</code> returns the entry (fields via <code>.UserName</code>, <code>.Password</code>, <code>.URL</code>, <code>.Notes</code>), <code>keepassxcAttribute "title" "attr"</code> reads one attribute (including custom ones), <code>keepassxcAttachment "title" "name"</code> reads a file attachment.</p>
+      <div class="callout"><strong>Prompt and cache behavior, verified</strong>chezmoi prompts for the database password on the terminal (<code>/dev/tty</code> — not stdin, which is why headless scripts fail with <code>could not open a new TTY</code>), then caches the unlock for the rest of that single chezmoi run. One apply, one prompt, regardless of how many templates reference entries. Set <code>prompt = false</code> plus <code>args = ["--no-password", …]</code> only for databases that genuinely have no password, e.g. key-file-protected ones.</div>
+      <div class="lab">
+        <div class="lab-head"><div class="lab-title">Lab 7 · A throwaway vault, end to end</div><span class="lab-time">12 min · sandbox · throwaway .kdbx, key-file protected so it never prompts</span></div>
+        <pre><code><span class="comment"># Throwaway database (key file instead of password → non-interactive labs)</span>
+<span class="cmd">head</span> -c 64 /dev/urandom &gt; $LAB/kdbx-keyfile
+<span class="cmd">keepassxc-cli</span> db-create -k $LAB/kdbx-keyfile $LAB/secrets.kdbx
+<span class="out">Successfully created new database.</span>
+<span class="cmd">printf</span> 'ghp_sandboxtoken123\n' | <span class="cmd">keepassxc-cli</span> add --no-password -k $LAB/kdbx-keyfile \
+    -u you -p $LAB/secrets.kdbx github-token
+<span class="out">Successfully added entry github-token.</span>
+
+<span class="comment"># Wire it into the sandbox config</span>
+<span class="cmd">cat</span> &gt;&gt; $LAB/cfg/chezmoi.toml &lt;&lt;EOF
+[keepassxc]
+    database = "$LAB/secrets.kdbx"
+    args = ["--no-password", "--key-file", "$LAB/kdbx-keyfile"]
+    prompt = false
+EOF
+$LAB/<span class="cmd">cz</span> execute-template <span class="arg">'{{ (keepassxc "github-token").UserName }}'</span>
+<span class="out">you</span>
+
+<span class="comment"># The private_ + .tmpl combination: rendered secret, 600 perms</span>
+<span class="cmd">mkdir</span> -p $LAB/src/dot_config
+<span class="cmd">printf</span> 'GITHUB_TOKEN={{ (keepassxc "github-token").Password }}\n' \
+    &gt; $LAB/src/dot_config/private_gh-token.tmpl
+$LAB/<span class="cmd">cz</span> apply -v
+<span class="out">new file mode 100600
++GITHUB_TOKEN=ghp_sandboxtoken123</span></code></pre>
+        <ul class="check">
+          <li><code>grep -r ghp_ $LAB/src</code> finds nothing — the repo holds a reference, the vault holds the value, only the rendered target holds plaintext (at 600).</li>
+          <li>On your real setup you'll keep the password prompt (skip <code>prompt = false</code>); expect exactly one prompt per apply.</li>
+        </ul>
+      </div>
+      <h3>age: whole encrypted files in the repo</h3>
+      <p>For things that <em>are</em> files — an SSH key, a kubeconfig — encrypt them into the source state. chezmoi bundles age encrypt/decrypt, but <strong>not</strong> key generation: install the real thing (<code>brew install age</code>, tested v1.3.1) for <code>age-keygen</code>.</p>
+      <pre><code><span class="cmd">age-keygen</span> -o ~/.config/chezmoi/key.txt
+<span class="out">Public key: age1uank7kslpm8kerxu2ndalukp7mceu7l4mqmugfls5k5th8fzyp6qmlaa9k</span></code></pre>
+      <pre><code><span class="comment"># chezmoi.toml — encryption MUST be top-level, ABOVE any [section]</span>
+encryption = "age"
+
+[age]
+    identity = "~/.config/chezmoi/key.txt"
+    recipient = "age1uank7kslpm8kerxu2ndalukp7mceu7l4mqmugfls5k5th8fzyp6qmlaa9k"</code></pre>
+      <pre><code><span class="cmd">chezmoi</span> add --encrypt ~/.secret-key
+<span class="cmd">ls</span> ~/.local/share/chezmoi
+<span class="out">encrypted_dot_secret-key.age</span>
+<span class="cmd">head</span> -1 ~/.local/share/chezmoi/encrypted_dot_secret-key.age
+<span class="out">-----BEGIN AGE ENCRYPTED FILE-----</span>
+<span class="cmd">chezmoi</span> cat ~/.secret-key          <span class="comment"># decrypts on demand, on the fly</span></code></pre>
+      <div class="callout danger"><strong>Two footguns, both hit live while testing this guide</strong>
+      <p>1 · TOML ordering: appending <code>encryption = "age"</code> <em>below</em> an existing <code>[keepassxc]</code> section silently makes it <code>keepassxc.encryption</code>. chezmoi then warns <code>'encryption' not set, using age configuration. Check if 'encryption' is correctly set as the top-level key</code> and fails with <code>no recipients specified</code>. Top-level keys go above the first <code>[section]</code> — always.</p>
+      <p>2 · The <code>[age]</code> <code>recipient</code> accepts native <code>age1…</code> keys only. An ssh-ed25519 public key is rejected with <code>malformed recipient … mixed case</code>, even though standalone age supports ssh recipients. Generate a real age key.</p></div>
+      <p>The age identity file is now your recovery keystone: without it, encrypted files in the repo are noise. Store a copy of <code>key.txt</code> in KeePassXC (as an attachment) — the vault guards the key, the key guards the files.</p>
+      <div class="callout warn"><strong><code>--encrypt</code> does not imply <code>private_</code></strong>Verified: a file added with <code>--encrypt</code> came back mode 644 after apply. Encryption protects the <em>repo</em> copy; permissions protect the <em>rendered</em> copy. For key material, you want <code>encrypted_private_</code> — run <code>chezmoi chattr private</code> on it after adding.</div>
+      <p class="sources-line">Sources: <a href="https://www.chezmoi.io/user-guide/password-managers/keepassxc/" target="_blank" rel="noopener">KeePassXC integration</a> · <a href="https://www.chezmoi.io/user-guide/encryption/age/" target="_blank" rel="noopener">age encryption</a> · <a href="https://www.chezmoi.io/reference/templates/keepassxc-functions/" target="_blank" rel="noopener">keepassxc template functions</a></p>
+    </section>
+
+    <section id="externals">
+      <h2>11 · External dependencies: stop vendoring other people's code</h2>
+      <p class="lede">Right now your source repo contains a full copy of oh-my-zsh as tracked files. That is vendoring: upstream updates never arrive, and hundreds of files that aren't yours pollute every diff. <code>.chezmoiexternal</code> declares "fetch this from there" instead.</p>
+      <pre><code><span class="comment"># .chezmoiexternal.toml (in the source root)</span>
+[".oh-my-zsh"]
+    type = "archive"
+    url = "https://github.com/ohmyzsh/ohmyzsh/archive/master.tar.gz"
+    exact = true
+    stripComponents = 1
+    refreshPeriod = "168h"     <span class="comment"># re-check upstream weekly</span></code></pre>
+      <p>Three types cover practice: <code>file</code> (single file), <code>archive</code> (unpacked tarball/zip), <code>git-repo</code> (cloned/pulled). <code>refreshPeriod</code> controls how often chezmoi re-downloads; between refreshes, applies use the cache and work offline. <code>exact = true</code> keeps the unpacked tree pristine.</p>
+      <p>Verified in the sandbox with a single-file external:</p>
+      <pre><code>[".local/share/fzf-license"]
+    type = "file"
+    url = "https://raw.githubusercontent.com/junegunn/fzf/master/LICENSE"
+    refreshPeriod = "168h"
+<span class="comment"># → chezmoi apply downloaded it; `chezmoi managed` now lists it</span></code></pre>
+      <div class="callout blue"><strong>Externals vs scripts</strong>Could a <code>run_once_</code> script <code>git clone</code> oh-my-zsh? Yes — but then chezmoi doesn't manage the result: no <code>managed</code> listing, no <code>exact</code> cleanup, no refresh policy. Prefer externals for content, scripts for actions.</div>
+      <p class="sources-line">Sources: <a href="https://www.chezmoi.io/user-guide/include-files-from-elsewhere/" target="_blank" rel="noopener">include files from elsewhere</a> · <a href="https://www.chezmoi.io/reference/special-files/chezmoiexternal-format/" target="_blank" rel="noopener">.chezmoiexternal reference</a></p>
+    </section>
+
+    <section id="capstone">
+      <h2>12 · Capstone: finish your real adoption</h2>
+      <p class="lede">Everything above was rehearsal. This is the performance: take your stalled real setup — <code>dot_zshrc</code>, <code>dot_zshrc.d</code>, <code>dot_gitconfig</code>, <code>dot_gitignore_global</code>, and a vendored <code>dot_oh-my-zsh</code> — to a complete, published, secrets-aware, second-machine-ready system. Work top to bottom; each phase ends with a verifiable checkpoint.</p>
+      <div class="callout warn"><strong>Safety rails for the real thing</strong>Before each phase run <code>chezmoi diff</code> and read it. chezmoi never touches a file <code>apply</code> didn't list, and the clobber guard (§6) asks before overwriting drifted files. First move below is a git commit — your rollback point for the source; your live dotfiles are only changed by applies you previewed.</div>
+      <div class="step"><div class="step-num">0</div><div>
+        <h3>Baseline and commit</h3>
+        <p><code>chezmoi doctor</code> — all rows ok. <code>chezmoi cd</code>, <code>git add -A && git commit -m "baseline before completing adoption"</code>. Then <code>chezmoi status</code>: any <code>M</code> rows are drift between your source and reality. Resolve each deliberately — <code>re-add</code> if the live file is right, <code>apply</code> if the source is right.</p>
+      </div></div>
+      <div class="step"><div class="step-num">1</div><div>
+        <h3>Complete the inventory</h3>
+        <p>Adopt what's missing. Candidates worth checking: <code>chezmoi add ~/.zprofile ~/.config/git ~/.ssh/config</code> (config only — never keys unencrypted), <code>~/.config/lazygit</code>, fzf setup, anything you'd hate to reconstruct. Mark sensitive ones: <code>chezmoi chattr private ~/.ssh/config</code>. Checkpoint: <code>chezmoi managed</code> reads like a complete list of "my setup".</p>
+      </div></div>
+      <div class="step"><div class="step-num">2</div><div>
+        <h3>Replace vendored oh-my-zsh with an external</h3>
+        <p><code>chezmoi forget ~/.oh-my-zsh</code> (source entries removed; live directory untouched), but keep your customizations: <code>chezmoi add ~/.oh-my-zsh/custom</code> selectively, or better, move custom bits into <code>~/.zshrc.d</code>. Then declare the external as in §11 and <code>chezmoi apply</code>. Checkpoint: repo diff shrinks by hundreds of files; a stray <code>.DS_Store</code> in custom/ stops being "managed". Add <code>.DS_Store</code> to <code>.chezmoiignore</code> while you're there.</p>
+      </div></div>
+      <div class="step"><div class="step-num">3</div><div>
+        <h3>Templatize for machine two</h3>
+        <p>Convert <code>dot_gitconfig</code> → <code>dot_gitconfig.tmpl</code> (<code>chezmoi chattr +template</code>): email from <code>{{ .email }}</code>, editor per OS. Write <code>.chezmoi.toml.tmpl</code> with <code>promptStringOnce</code> for email and <code>promptBool</code> for work-machine. Checkpoint: <code>chezmoi cat ~/.gitconfig</code> renders correctly; <code>chezmoi init</code> regenerates your config without changing answers.</p>
+      </div></div>
+      <div class="step"><div class="step-num">4</div><div>
+        <h3>Wire KeePassXC</h3>
+        <p>Add the <code>[keepassxc]</code> stanza pointing at your real vault. Move one real secret (a token in some rc file today) into the vault, replace it with a <code>{{ (keepassxc "…").Password }}</code> reference in a <code>private_*.tmpl</code>, apply, verify with <code>grep</code> that the plaintext exists nowhere in the source. Checkpoint: one prompt per apply; <code>grep -r</code> for the secret in <code>$(chezmoi source-path)</code> comes back empty.</p>
+      </div></div>
+      <div class="step"><div class="step-num">5</div><div>
+        <h3>Publish</h3>
+        <p>Create a <strong>private</strong> GitHub repo <code>dotfiles</code>. <code>chezmoi cd; git remote add origin git@github.com:you/dotfiles.git; git push -u origin main</code>. Checkpoint: repo browsable, zero secrets in it (search the repo for a known token fragment to prove it).</p>
+      </div></div>
+      <div class="step"><div class="step-num">6</div><div>
+        <h3>Bootstrap "machine two" — without owning one</h3>
+        <p>Dress rehearsal via the sandbox flags, against the <em>real</em> published repo: <code>chezmoi --source $(mktemp -d) --destination $(mktemp -d) --config $(mktemp -d)/chezmoi.toml init --apply git@github.com:you/dotfiles.git</code>. Watch it prompt (your <code>.chezmoi.toml.tmpl</code>), fetch the external, run <code>run_once_</code> scripts, render templates. Checkpoint: the throwaway "home" is a faithful clone of your setup. When a real second machine arrives, it's the one-liner from §8.</p>
+      </div></div>
+      <div class="callout"><strong>Done means</strong><code>chezmoi status</code> clean · <code>managed</code> complete · oh-my-zsh external · gitconfig templated · one secret via KeePassXC · repo private on GitHub · sandbox bootstrap succeeds end-to-end. That is full adoption — the stalled phase is over.</div>
+    </section>
+
+    <section id="troubleshooting">
+      <h2>13 · Troubleshooting</h2>
+      <p class="lede">Every symptom below was either reproduced while building this guide or is a documented failure mode. Start with <code>chezmoi doctor</code>; it catches config, git, and tool problems in one table.</p>
+      <div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead><tbody>
+        <tr><td><code>chezmoi: .config: inconsistent state (…dot_config, …private_dot_config)</code></td><td>Two source entries map to the same target</td><td>Keep one source entry; express attributes on it alone. Delete or merge the other.</td></tr>
+        <tr><td><code>'encryption' not set, using age configuration…</code> then <code>no recipients specified</code></td><td><code>encryption = "age"</code> placed below a <code>[section]</code> in TOML — it became that section's key</td><td>Move it above the first section header (top level)</td></tr>
+        <tr><td><code>malformed recipient "ssh-ed25519 …": mixed case</code></td><td>ssh public key given as age recipient; chezmoi's <code>[age]</code> config takes native keys only</td><td><code>brew install age</code>, <code>age-keygen -o key.txt</code>, use the <code>age1…</code> key</td></tr>
+        <tr><td><code>could not open a new TTY</code> during apply/template</td><td>A prompt (KeePassXC unlock, clobber confirm) with no terminal attached</td><td>Run interactively; or key-file db + <code>prompt = false</code>; or <code>apply --force</code> if it's the overwrite confirm and you mean it</td></tr>
+        <tr><td>Apply stops asking about a file you edited or deleted by hand</td><td>Clobber guard: destination changed since chezmoi last wrote it</td><td><code>chezmoi re-add</code> to keep the edit, <code>apply --force</code> to discard it</td></tr>
+        <tr><td><code>config file template has changed, run chezmoi init to regenerate</code></td><td><code>.chezmoi.toml.tmpl</code> in the repo is newer than your generated config</td><td>Run <code>chezmoi init</code> (answers survive with <code>promptStringOnce</code>)</td></tr>
+        <tr><td>Template error <code>map has no entry for key "email"</code></td><td>Template references data this machine's config doesn't define</td><td>Add it to <code>[data]</code>, or guard with <code>{{ if hasKey . "email" }}</code>, or move the prompt into <code>.chezmoi.toml.tmpl</code></td></tr>
+        <tr><td><code>run_once_</code> script never re-runs after you fixed it</td><td>"Once" is keyed on contents hash in the persistent state — the failed run recorded success? No: only successful runs record. If it ran successfully once, same contents won't re-run</td><td>Change the script contents, or <code>chezmoi state delete-bucket --bucket=scriptState</code> to reset all once-state</td></tr>
+        <tr><td>Ignored file still appears</td><td><code>.chezmoiignore</code> logic inverted — patterns name what to <em>ignore</em>, conditions choose when</td><td><code>chezmoi execute-template &lt; .chezmoiignore</code> to see the rendered pattern list for this machine</td></tr>
+        <tr><td>Secret rendered world-readable</td><td><code>--encrypt</code> or <code>.tmpl</code> without <code>private_</code></td><td><code>chezmoi chattr private &lt;target&gt;</code>; verify with <code>ls -l</code></td></tr>
+        <tr><td>Edits to <code>~/.zshrc</code> keep vanishing</td><td>You edit the destination; apply rewrites from source</td><td>Retrain the hand: <code>chezmoi edit --apply ~/.zshrc</code>; recover past edits with <code>re-add</code> before the next apply</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="cheatsheet">
+      <h2>14 · Cheat sheet</h2>
+      <div class="grid">
+        <div class="card"><h4>Daily loop</h4>
+<pre><code><span class="cmd">chezmoi</span> add ~/.zshrc
+<span class="cmd">chezmoi</span> edit --apply ~/.zshrc
+<span class="cmd">chezmoi</span> diff
+<span class="cmd">chezmoi</span> apply -v
+<span class="cmd">chezmoi</span> status
+<span class="cmd">chezmoi</span> re-add
+<span class="cmd">chezmoi</span> cd</code></pre></div>
+        <div class="card"><h4>Sync</h4>
+<pre><code><span class="cmd">chezmoi</span> update            <span class="comment"># pull + apply</span>
+<span class="cmd">chezmoi</span> git pull -- --autostash --rebase
+<span class="cmd">chezmoi</span> diff              <span class="comment"># then apply</span>
+<span class="cmd">chezmoi</span> init --apply $GITHUB_USERNAME
+<span class="cmd">sh</span> -c <span class="arg">"$(curl -fsLS get.chezmoi.io)"</span> -- init --apply you</code></pre></div>
+        <div class="card"><h4>Inspect</h4>
+<pre><code><span class="cmd">chezmoi</span> managed
+<span class="cmd">chezmoi</span> source-path ~/.zshrc
+<span class="cmd">chezmoi</span> cat ~/.gitconfig
+<span class="cmd">chezmoi</span> data --format json
+<span class="cmd">chezmoi</span> execute-template <span class="arg">'{{ .chezmoi.os }}'</span>
+<span class="cmd">chezmoi</span> doctor
+<span class="cmd">chezmoi</span> state dump</code></pre></div>
+        <div class="card"><h4>Attributes (source filename)</h4>
+<p><span class="pill">dot_ → leading .</span><span class="pill">private_ → 600</span><span class="pill">executable_ → +x</span><span class="pill">symlink_</span><span class="pill">create_ once</span><span class="pill">modify_ script</span><span class="pill">exact_ dirs</span><span class="pill">encrypted_</span><span class="pill">.tmpl render</span></p>
+<pre><code><span class="cmd">chezmoi</span> chattr private,+template ~/.gitconfig</code></pre></div>
+        <div class="card"><h4>Universal starting pattern</h4>
+<pre><code><span class="comment"># bring a machine from zero to yours</span>
+<span class="cmd">sh</span> -c <span class="arg">"$(curl -fsLS get.chezmoi.io)"</span> \
+  -- init --apply $GITHUB_USERNAME</code></pre>
+<p class="mini">Everything this guide builds funnels into making that one line safe to run anywhere.</p></div>
+        <div class="card"><h4>Secrets</h4>
+<pre><code>{{ (keepassxc "entry").Password }}
+{{ keepassxcAttribute "entry" "attr" }}
+<span class="cmd">chezmoi</span> add --encrypt ~/.secret-key
+<span class="cmd">age-keygen</span> -o key.txt</code></pre>
+<p class="mini"><code>encryption = "age"</code> top-level; <code>private_</code> is separate from encryption.</p></div>
+      </div>
+    </section>
+
+    <section id="glossary">
+      <h2>Glossary</h2>
+      <dl class="glossary">
+        <dt id="g-source-state">source state</dt><dd>The declared truth: the contents of the source directory, attribute-encoded filenames and all. What you version and share. (<a href="#mental-model">§1</a>)</dd>
+        <dt id="g-source-directory">source directory</dt><dd><code>~/.local/share/chezmoi</code> — a normal git repository holding the source state. <code>chezmoi cd</code> drops you into it. (<a href="#adopt">§5</a>)</dd>
+        <dt id="g-target-state">target state</dt><dd>The computed desired result: templates rendered with data, attributes resolved to permissions and types. Exists in memory during a run. (<a href="#mental-model">§1</a>)</dd>
+        <dt id="g-destination-state">destination state</dt><dd>What is actually in the destination directory (usually <code>~</code>) right now. <code>apply</code> converges it toward the target state. (<a href="#mental-model">§1</a>)</dd>
+        <dt id="g-attribute">attribute</dt><dd>A filename prefix/suffix in the source state (<code>private_</code>, <code>dot_</code>, <code>.tmpl</code>…) declaring metadata git can't store natively. (<a href="#attributes">§6</a>)</dd>
+        <dt id="g-config-file">config file</dt><dd><code>~/.config/chezmoi/chezmoi.toml</code> — per-machine, never in the repo. Holds <code>[data]</code>, secrets backends, git automation, encryption settings. (<a href="#templates">§7</a>)</dd>
+        <dt id="g-config-template">.chezmoi.toml.tmpl</dt><dd>Special repo file rendered by <code>chezmoi init</code> to <em>generate</em> the config file, typically via prompt functions. The bridge between shared repo and per-machine data. (<a href="#git-layer">§8</a>)</dd>
+        <dt id="g-data">template data</dt><dd>The merged dictionary visible to templates: built-in <code>.chezmoi.*</code> values + config <code>[data]</code> + <code>.chezmoidata.*</code> + secret functions. Inspect with <code>chezmoi data</code>. (<a href="#templates">§7</a>)</dd>
+        <dt id="g-external">external</dt><dd>Content fetched from a URL at apply time (<code>file</code>, <code>archive</code>, <code>git-repo</code>) declared in <code>.chezmoiexternal.toml</code>, cached per <code>refreshPeriod</code>. (<a href="#externals">§11</a>)</dd>
+        <dt id="g-persistent-state">persistent state</dt><dd>A small boltdb (not the git repo) where chezmoi records script hashes and last-written file states — the memory behind <code>run_once_</code> and the clobber guard. <code>chezmoi state dump</code> shows it. (<a href="#scripts">§9</a>)</dd>
+        <dt id="g-clobber">clobber guard</dt><dd>Apply-time confirmation when a managed destination file changed out-of-band since chezmoi last wrote it. Resolved by <code>re-add</code> (keep) or <code>--force</code> (discard). (<a href="#attributes">§6</a>)</dd>
+        <dt id="g-script">script (run_)</dt><dd>A source-state entry executed rather than written: <code>run_once_</code> (per unique contents), <code>run_onchange_</code> (when rendered contents change), with <code>before_</code>/<code>after_</code> ordering around the file pass. (<a href="#scripts">§9</a>)</dd>
+        <dt id="g-adopt">adoption</dt><dd>Bringing existing real files under management with <code>chezmoi add</code> — as opposed to authoring files in the source first. Your current, half-finished journey. (<a href="#adopt">§5</a>, <a href="#capstone">§12</a>)</dd>
+      </dl>
+    </section>
+
+    <section id="index">
+      <h2>Index</h2>
+      <p class="mini">Commands, files, flags, and concepts → the section that teaches them.</p>
+      <div class="index-cols">
+        <div class="index-letter">A</div>
+        <ul>
+          <li><a href="#adopt">add</a> · <a href="#secrets">add --encrypt</a></li>
+          <li><a href="#templates">.chezmoi.os / .arch / .hostname</a></li>
+          <li><a href="#mental-model">apply</a> · <a href="#attributes">apply --force</a></li>
+          <li><a href="#scripts">application order</a></li>
+          <li><a href="#secrets">age · age-keygen</a></li>
+          <li><a href="#git-layer">autoCommit · autoPush</a></li>
+        </ul>
+        <div class="index-letter">C</div>
+        <ul>
+          <li><a href="#templates">cat (render preview)</a></li>
+          <li><a href="#adopt">cd (source subshell)</a></li>
+          <li><a href="#attributes">chattr</a></li>
+          <li><a href="#templates">.chezmoidata</a></li>
+          <li><a href="#externals">.chezmoiexternal</a></li>
+          <li><a href="#templates">.chezmoiignore</a></li>
+          <li><a href="#git-layer">.chezmoi.toml.tmpl</a></li>
+          <li><a href="#templates">.chezmoitemplates</a></li>
+          <li><a href="#attributes">clobber guard</a></li>
+          <li><a href="#templates">config file · [data]</a></li>
+          <li><a href="#attributes">create_</a></li>
+        </ul>
+        <div class="index-letter">D</div>
+        <ul>
+          <li><a href="#adopt">diff</a> · <a href="#templates">data</a></li>
+          <li><a href="#install">doctor</a></li>
+          <li><a href="#attributes">dot_</a></li>
+          <li><a href="#adopt">destroy (vs forget)</a></li>
+        </ul>
+        <div class="index-letter">E</div>
+        <ul>
+          <li><a href="#adopt">edit · edit --apply · edit --watch</a></li>
+          <li><a href="#secrets">encrypted_ · encryption =</a></li>
+          <li><a href="#attributes">empty_ · exact_ · executable_</a></li>
+          <li><a href="#templates">execute-template</a></li>
+          <li><a href="#externals">externals: file / archive / git-repo</a></li>
+        </ul>
+        <div class="index-letter">F–I</div>
+        <ul>
+          <li><a href="#adopt">forget</a></li>
+          <li><a href="#git-layer">git passthrough</a></li>
+          <li><a href="#install">get.chezmoi.io one-liner</a></li>
+          <li><a href="#git-layer">init · init --apply</a></li>
+          <li><a href="#attributes">inconsistent state error</a></li>
+        </ul>
+        <div class="index-letter">K–M</div>
+        <ul>
+          <li><a href="#secrets">keepassxc function</a></li>
+          <li><a href="#secrets">keepassxcAttribute · keepassxcAttachment</a></li>
+          <li><a href="#secrets">key-file database</a></li>
+          <li><a href="#adopt">managed</a></li>
+          <li><a href="#attributes">modify_</a></li>
+        </ul>
+        <div class="index-letter">O–R</div>
+        <ul>
+          <li><a href="#externals">oh-my-zsh as external</a></li>
+          <li><a href="#attributes">private_</a></li>
+          <li><a href="#git-layer">promptString · promptBool · promptStringOnce</a></li>
+          <li><a href="#adopt">re-add</a></li>
+          <li><a href="#attributes">readonly_ · remove_</a></li>
+          <li><a href="#externals">refreshPeriod</a></li>
+          <li><a href="#scripts">run_once_ · run_onchange_ · run_before_ · run_after_</a></li>
+        </ul>
+        <div class="index-letter">S</div>
+        <ul>
+          <li><a href="#install">sandbox (--source/--destination)</a></li>
+          <li><a href="#scripts">sha256sum hash trick</a></li>
+          <li><a href="#adopt">source-path</a></li>
+          <li><a href="#scripts">state · scriptState · state delete-bucket</a></li>
+          <li><a href="#adopt">status ( M vs MM)</a></li>
+          <li><a href="#attributes">symlink_</a></li>
+        </ul>
+        <div class="index-letter">T–U</div>
+        <ul>
+          <li><a href="#templates">templates · .tmpl</a></li>
+          <li><a href="#secrets">TOML top-level key footgun</a></li>
+          <li><a href="#git-layer">update</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="quiz">
+      <h2>Retrieval quiz</h2>
+      <p>Flashcard style: answer out loud first, then reveal. Aim for 12/14 before calling the guide done; anything marked Review, reread its section the next day.</p>
+      <div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0/14 answered</div>
+
+      <div class="quiz-item" data-q="1">
+        <div class="quiz-q"><span class="qnum">Q1</span>Name the three states, and which two of them <code>chezmoi diff</code> compares.</div>
+        <div class="quiz-answer">Source state (declared, in the repo), target state (computed desired result), destination state (what's really in <code>~</code>). <code>diff</code> compares target vs destination. (<a href="#mental-model">§1</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="2">
+        <div class="quiz-q"><span class="qnum">Q2</span>Why does chezmoi write real files instead of symlinking into the repo?</div>
+        <div class="quiz-answer">A symlink can't be a rendered template, an encrypted file, or carry different permissions than the repo copy. Real files enable templates, encryption, and <code>private_</code>; the cost is that edits aren't live until apply. (<a href="#mental-model">§1</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="3">
+        <div class="quiz-q"><span class="qnum">Q3</span>What target does <code>private_executable_dot_local/bin/deploy.tmpl</code> produce, with what properties?</div>
+        <div class="quiz-answer"><code>~/.local/bin/deploy</code>… careful — <code>dot_local</code> is the directory attribute; the file itself renders as a template, gets mode 700 (private strips group/world, executable adds +x). (<a href="#attributes">§6</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="4">
+        <div class="quiz-q"><span class="qnum">Q4</span>You edited <code>~/.zshrc</code> directly (old habit). What does <code>status</code> show, and what are your two exits?</div>
+        <div class="quiz-answer">A right-column <code>M</code> (destination differs from target; <code>MM</code> once the source has moved too). Exits: <code>chezmoi re-add</code> to capture your edit into the source, or <code>chezmoi apply</code> (answering/forcing the clobber guard) to discard it. (<a href="#adopt">§5</a>, <a href="#attributes">§6</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="5">
+        <div class="quiz-q"><span class="qnum">Q5</span>What happens the second time you apply a <code>create_</code> file whose target you've since edited?</div>
+        <div class="quiz-answer">Nothing. <code>create_</code> means "ensure exists with these contents if absent" — it never overwrites, and status stays clean. Verified in the sandbox. (<a href="#attributes">§6</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="6">
+        <div class="quiz-q"><span class="qnum">Q6</span>Both <code>dot_config</code> and <code>private_dot_config</code> exist in your source. What happens at apply?</div>
+        <div class="quiz-answer">Hard error: <code>chezmoi: .config: inconsistent state</code> — two source entries map to one target. One target = one source entry carrying all its attributes. (<a href="#attributes">§6</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="7">
+        <div class="quiz-q"><span class="qnum">Q7</span>When do templates render — and what does that mean when <code>[data]</code> changes?</div>
+        <div class="quiz-answer">At apply (or <code>cat</code>/<code>execute-template</code>) time, never at shell startup. Rendered files are plain text; a data change does nothing until the next apply. (<a href="#templates">§7</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="8">
+        <div class="quiz-q"><span class="qnum">Q8</span>Why is <code>.chezmoiignore</code> logic called "inverted", and how do you debug it?</div>
+        <div class="quiz-answer">Patterns name what to <em>ignore</em>, so conditions usually read "ignore unless this machine matches" (<code>if ne .chezmoi.os "linux"</code>). Debug by rendering it: <code>chezmoi execute-template &lt; .chezmoiignore</code>. (<a href="#templates">§7</a>, <a href="#troubleshooting">§13</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="9">
+        <div class="quiz-q"><span class="qnum">Q9</span>What exactly does <code>chezmoi update</code> run?</div>
+        <div class="quiz-answer"><code>git pull --autostash --rebase</code> in the source directory, then <code>chezmoi apply</code>. The cautious alternative: <code>chezmoi git pull</code>, <code>chezmoi diff</code>, then apply. (<a href="#git-layer">§8</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="10">
+        <div class="quiz-q"><span class="qnum">Q10</span>What makes <code>.chezmoi.toml.tmpl</code> special, and which prompt function avoids re-asking on re-init?</div>
+        <div class="quiz-answer"><code>chezmoi init</code> renders it to generate the machine's config file — it's how one shared repo produces per-machine data. <code>promptStringOnce</code> reuses previous answers. (<a href="#git-layer">§8</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="11">
+        <div class="quiz-q"><span class="qnum">Q11</span>How do you make a script re-run when <em>another file</em> changes?</div>
+        <div class="quiz-answer">Name it <code>run_onchange_</code> and embed the other file's hash in a comment: <code>{{ include "dot_gitconfig.tmpl" | sha256sum }}</code>. Contents change → hash changes → script fires. Verified live. (<a href="#scripts">§9</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="12">
+        <div class="quiz-q"><span class="qnum">Q12</span>How many KeePassXC password prompts does one apply with five secret references cost, and why?</div>
+        <div class="quiz-answer">One. chezmoi prompts on the TTY once and caches the unlock for the duration of that run. (Headless runs fail with <code>could not open a new TTY</code> unless the db is key-file protected with <code>prompt = false</code>.) (<a href="#secrets">§10</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="13">
+        <div class="quiz-q"><span class="qnum">Q13</span>Your encrypted SSH key applied as mode 644. What went wrong?</div>
+        <div class="quiz-answer">Nothing "went wrong" — <code>--encrypt</code> protects only the repo copy and does not imply <code>private_</code>. Fix: <code>chezmoi chattr private</code> so the source entry is <code>encrypted_private_…</code>. (<a href="#secrets">§10</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="14">
+        <div class="quiz-q"><span class="qnum">Q14</span>Why is <code>.chezmoiexternal</code> better than keeping oh-my-zsh as tracked files or cloning it in a <code>run_once_</code> script?</div>
+        <div class="quiz-answer">Tracked files = frozen vendored copy polluting every diff; a script clone isn't managed at all (no <code>managed</code>, no <code>exact</code> cleanup, no refresh). An external is managed content with an update policy (<code>refreshPeriod</code>), cached for offline applies. (<a href="#externals">§11</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+    </section>
+
+    <section id="sources">
+      <h2>Sources</h2>
+      <p>Checked against chezmoi <strong>v2.72.0</strong> (Homebrew) on macOS, <strong>2026-08-06</strong>, with keepassxc-cli 2.7.12 and age v1.3.1. Every transcript in this guide is real output from a sandboxed run of those versions; drift notes record where behavior surprised. External links need network; the guide itself works offline.</p>
+      <ul class="source-list">
+        <li><a href="https://www.chezmoi.io/quick-start/" target="_blank" rel="noopener">Quick start</a> — the official 10-minute loop; best as a warm-up before §5.</li>
+        <li><a href="https://www.chezmoi.io/user-guide/setup/" target="_blank" rel="noopener">Setup</a> — publishing to GitHub and bootstrapping new machines; pairs with §8.</li>
+        <li><a href="https://www.chezmoi.io/user-guide/daily-operations/" target="_blank" rel="noopener">Daily operations</a> — edit/update/autoCommit reference; pairs with §5 and §8.</li>
+        <li><a href="https://www.chezmoi.io/user-guide/manage-machine-to-machine-differences/" target="_blank" rel="noopener">Machine-to-machine differences</a> — the templating cookbook behind §7.</li>
+        <li><a href="https://www.chezmoi.io/reference/source-state-attributes/" target="_blank" rel="noopener">Source state attributes</a> — the complete attribute table; the authority behind §6.</li>
+        <li><a href="https://www.chezmoi.io/reference/application-order/" target="_blank" rel="noopener">Application order</a> — exact apply sequencing; behind §9.</li>
+        <li><a href="https://www.chezmoi.io/user-guide/password-managers/keepassxc/" target="_blank" rel="noopener">KeePassXC integration</a> — config keys and template functions; behind §10.</li>
+        <li><a href="https://www.chezmoi.io/user-guide/encryption/age/" target="_blank" rel="noopener">age encryption</a> — full encryption setup including passphrase mode; behind §10.</li>
+        <li><a href="https://www.chezmoi.io/user-guide/include-files-from-elsewhere/" target="_blank" rel="noopener">Include files from elsewhere</a> — externals cookbook (oh-my-zsh is its lead example); behind §11.</li>
+        <li><a href="https://www.chezmoi.io/user-guide/frequently-asked-questions/design/" target="_blank" rel="noopener">Design FAQ</a> — why no symlinks, one source of truth; behind §1.</li>
+        <li><a href="https://github.com/twpayne/chezmoi/releases" target="_blank" rel="noopener">Releases</a> — v2.72.0 (2026-08-02) confirmed latest at check date; trust the changelog over this page as versions move.</li>
+        <li><code>chezmoi help</code> and <code>man chezmoi</code> — exact flag semantics for your installed binary.</li>
+      </ul>
+      <p class="mini">Compiled 2026-08-06 by Claude Code for Paul. Facts verified against the sources and live sandbox runs on that date.</p>
+      <p class="print-only">Printed from the local chezmoi field guide.</p>
+    </section>
+  </main>
+</div>
+<script>
+(() => {
+  'use strict';
+
+  // Theme: system by default, explicit choice persisted.
+  const root = document.documentElement;
+  const themeButton = document.getElementById('themeToggle');
+  const storedTheme = localStorage.getItem('chezmoi-guide-theme');
+  if (storedTheme === 'light' || storedTheme === 'dark') root.classList.add(storedTheme);
+  themeButton.addEventListener('click', () => {
+    const darkNow = root.classList.contains('dark') || (!root.classList.contains('light') && matchMedia('(prefers-color-scheme: dark)').matches);
+    root.classList.remove('light', 'dark');
+    const next = darkNow ? 'light' : 'dark';
+    root.classList.add(next);
+    localStorage.setItem('chezmoi-guide-theme', next);
+  });
+
+  // Copy buttons for every command block.
+  document.querySelectorAll('pre').forEach(pre => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'copy';
+    button.textContent = 'Copy';
+    button.setAttribute('aria-label', 'Copy command');
+    button.addEventListener('click', async () => {
+      const code = pre.querySelector('code');
+      try {
+        await navigator.clipboard.writeText(code ? code.innerText : pre.innerText);
+        button.textContent = 'Copied';
+        setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+      } catch (_) {
+        button.textContent = 'Select text';
+      }
+    });
+    pre.appendChild(button);
+  });
+
+  // Back-to-top.
+  const topButton = document.getElementById('topButton');
+  addEventListener('scroll', () => {
+    topButton.classList.toggle('visible', scrollY > 650);
+  }, { passive: true });
+
+  // Active section observer.
+  const tocLinks = [...document.querySelectorAll('#toc a')];
+  const linkForId = new Map(tocLinks.map(a => [a.getAttribute('href').slice(1), a]));
+  const observer = new IntersectionObserver(entries => {
+    const visible = entries.filter(e => e.isIntersecting).sort((a,b) => a.boundingClientRect.top - b.boundingClientRect.top);
+    if (!visible.length) return;
+    tocLinks.forEach(a => a.classList.remove('active'));
+    const link = linkForId.get(visible[0].target.id);
+    if (link) link.classList.add('active');
+  }, { rootMargin: '-10% 0px -78% 0px', threshold: 0 });
+  document.querySelectorAll('main section[id]').forEach(section => observer.observe(section));
+
+  // State-flow simulator: version counters for src / home / lastWritten.
+  const simFiles = [
+    { name: '.zshrc',     src: 1, home: 1, written: 1 },
+    { name: '.gitconfig', src: 1, home: 1, written: 1 },
+  ];
+  const simSrc = document.getElementById('simSrc');
+  const simHome = document.getElementById('simHome');
+  const simLog = document.getElementById('simLog');
+  const srcName = n => n === '.zshrc' ? 'dot_zshrc' : 'dot_gitconfig.tmpl';
+  function simRender() {
+    simSrc.textContent = ''; simHome.textContent = '';
+    simFiles.forEach(f => {
+      const s = document.createElement('div');
+      s.className = 'sim-file' + (f.src !== f.home ? ' drift' : '');
+      s.innerHTML = `<span>${srcName(f.name)}</span><span class="v">v${f.src}</span>`;
+      simSrc.appendChild(s);
+      const h = document.createElement('div');
+      h.className = 'sim-file' + (f.src !== f.home ? ' drift' : '');
+      h.innerHTML = `<span>${f.name}</span><span class="v">v${f.home}</span>`;
+      simHome.appendChild(h);
+    });
+  }
+  function logLine(cmd, out) {
+    const p = document.createElement('div');
+    p.innerHTML = `<span class="p">$ ${cmd}</span>`;
+    simLog.appendChild(p);
+    if (out) {
+      const o = document.createElement('div');
+      o.className = 'o';
+      o.textContent = out;
+      simLog.appendChild(o);
+    }
+    simLog.scrollTop = simLog.scrollHeight;
+  }
+  const acts = {
+    edit() {
+      const f = simFiles[0]; f.src++;
+      logLine('chezmoi edit .zshrc', `${srcName(f.name)} → v${f.src} (source moved; home still v${f.home})`);
+    },
+    hand() {
+      const f = simFiles[0]; f.home++;
+      logLine('vim ~/.zshrc', `.zshrc → v${f.home} (destination edited behind chezmoi's back)`);
+    },
+    status() {
+      const lines = simFiles
+        .filter(f => f.src !== f.home || f.home !== f.written)
+        .map(f => `${f.home !== f.written ? 'M' : ' '}${f.src !== f.home ? 'M' : ' '} ${f.name}`);
+      logLine('chezmoi status', lines.length ? lines.join('\n') : '(clean — all states converged)');
+    },
+    diff() {
+      const lines = simFiles.filter(f => f.src !== f.home)
+        .map(f => `--- a/${f.name} (v${f.home})\n+++ b/${f.name} (v${f.src})`);
+      logLine('chezmoi diff', lines.length ? lines.join('\n') : '(no differences — target = destination)');
+    },
+    apply() {
+      let changed = 0;
+      simFiles.forEach(f => { if (f.home !== f.src) { f.home = f.src; changed++; } f.written = f.src; });
+      logLine('chezmoi apply', changed ? `${changed} file(s) written — destination now matches target` : 'nothing to do');
+    },
+    readd() {
+      let changed = 0;
+      simFiles.forEach(f => { if (f.src !== f.home) { f.src = f.home; changed++; } f.written = f.home; });
+      logLine('chezmoi re-add', changed ? `${changed} file(s) pulled back into the source state` : 'nothing to re-add');
+    },
+    reset() {
+      simFiles.forEach(f => { f.src = 1; f.home = 1; f.written = 1; });
+      simLog.textContent = '';
+      logLine('reset', 'both files back to v1 everywhere');
+    },
+  };
+  document.querySelectorAll('.sim-buttons button').forEach(b => {
+    b.addEventListener('click', () => { acts[b.dataset.act](); simRender(); });
+  });
+  simRender();
+  logLine('chezmoi status', '(clean — try "chezmoi edit .zshrc")');
+
+  // Retrieval quiz with locally persisted score.
+  const quizKey = 'chezmoi-guide-quiz-v1';
+  let quizState = {};
+  try { quizState = JSON.parse(localStorage.getItem(quizKey) || '{}'); } catch (_) { quizState = {}; }
+  const quizItems = [...document.querySelectorAll('.quiz-item')];
+  const quizScore = document.getElementById('quizScore');
+  function updateQuiz() {
+    let got = 0, missed = 0;
+    quizItems.forEach(item => {
+      const state = quizState[item.dataset.q];
+      item.classList.toggle('correct', state === 'got');
+      item.classList.toggle('missed', state === 'missed');
+      if (state === 'got') got++;
+      if (state === 'missed') missed++;
+    });
+    quizScore.textContent = `Score: ${got} learned · ${missed} review · ${got + missed}/${quizItems.length} answered`;
+    try { localStorage.setItem(quizKey, JSON.stringify(quizState)); } catch (_) {}
+  }
+  quizItems.forEach(item => {
+    const answer = item.querySelector('.quiz-answer');
+    item.querySelector('.reveal').addEventListener('click', buttonEvent => {
+      answer.classList.toggle('open');
+      buttonEvent.currentTarget.textContent = answer.classList.contains('open') ? 'Hide' : 'Reveal';
+    });
+    item.querySelector('.got').addEventListener('click', () => { quizState[item.dataset.q] = 'got'; updateQuiz(); });
+    item.querySelector('.missed').addEventListener('click', () => { quizState[item.dataset.q] = 'missed'; answer.classList.add('open'); updateQuiz(); });
+  });
+  updateQuiz();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Claude Code / superpowers working state — session transcripts, task briefs,
+# review diffs. Useful locally, noise (and PII) in a public repo.
+continue.md
+.superpowers/
+docs/superpowers/
+
+# Tool markers
+.gastown-ignore
+
+# Node — the UI audit script in guide-ui-review.md needs playwright; install it
+# in a scratch directory, but ignore it here in case it lands in the repo.
+node_modules/
+package-lock.json
+
+# caveman-compress keeps a human-readable backup beside each compressed file
+*.original.md
+
+# Editor / scratch
+*.swp
+*~
+.vscode/
+.idea/

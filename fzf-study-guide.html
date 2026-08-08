@@ -1,0 +1,1091 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="A practical, detailed guide and hands-on tutorial for fzf, the command-line fuzzy finder.">
+<title>fzf Field Guide — Find Anything, Build Anything</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230b1720'/><path d='M18 26h64M18 50h44M18 74h28' stroke='%234de1c1' stroke-width='9' stroke-linecap='round'/><circle cx='76' cy='69' r='12' fill='none' stroke='%23ff8b66' stroke-width='7'/><path d='m85 78 9 9' stroke='%23ff8b66' stroke-width='7' stroke-linecap='round'/></svg>">
+<style>
+  :root {
+    --bg: #f3f7f7; --surface: #ffffff; --surface-2: #e9f1f1; --ink: #11252b;
+    --ink-2: #40575d; --muted: #6d8186; --line: #ccdadd; --hairline: rgba(17,37,43,.1);
+    --teal: #007d70; --teal-strong: #005f56; --teal-wash: rgba(0,125,112,.10);
+    --coral: #bf4f2d; --coral-wash: rgba(191,79,45,.11); --gold: #8d6500;
+    --gold-wash: rgba(141,101,0,.11); --blue: #1668a4; --blue-wash: rgba(22,104,164,.10);
+    --danger: #b3261e; --danger-wash: rgba(179,38,30,.10); --terminal: #08171d;
+    --terminal-2: #10262d; --terminal-ink: #d7f5ee; --terminal-muted: #7ea49f;
+    --terminal-teal: #4de1c1; --terminal-coral: #ff9b78; --code-bg: #e5eeee;
+    --shadow: 0 18px 50px rgba(18,51,59,.10); --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #091319; --surface: #101e24; --surface-2: #172a31; --ink: #edf8f6;
+      --ink-2: #b8cfcc; --muted: #809c99; --line: #294047; --hairline: rgba(255,255,255,.10);
+      --teal: #4de1c1; --teal-strong: #80efd7; --teal-wash: rgba(77,225,193,.12);
+      --coral: #ff9b78; --coral-wash: rgba(255,155,120,.13); --gold: #e4bd55;
+      --gold-wash: rgba(228,189,85,.13); --blue: #72bff0; --blue-wash: rgba(114,191,240,.12);
+      --danger: #ff8a7e; --danger-wash: rgba(255,138,126,.12); --terminal: #050e12;
+      --terminal-2: #0c1c22; --terminal-ink: #d7f5ee; --terminal-muted: #7ea49f;
+      --terminal-teal: #4de1c1; --terminal-coral: #ff9b78; --code-bg: #182a30;
+      --shadow: 0 18px 50px rgba(0,0,0,.28);
+    }
+  }
+  :root.dark {
+    --bg:#091319;--surface:#101e24;--surface-2:#172a31;--ink:#edf8f6;--ink-2:#b8cfcc;
+    --muted:#809c99;--line:#294047;--hairline:rgba(255,255,255,.10);--teal:#4de1c1;
+    --teal-strong:#80efd7;--teal-wash:rgba(77,225,193,.12);--coral:#ff9b78;
+    --coral-wash:rgba(255,155,120,.13);--gold:#e4bd55;--gold-wash:rgba(228,189,85,.13);
+    --blue:#72bff0;--blue-wash:rgba(114,191,240,.12);--danger:#ff8a7e;
+    --danger-wash:rgba(255,138,126,.12);--terminal:#050e12;--terminal-2:#0c1c22;
+    --terminal-ink:#d7f5ee;--terminal-muted:#7ea49f;--terminal-teal:#4de1c1;
+    --terminal-coral:#ff9b78;--code-bg:#182a30;--shadow:0 18px 50px rgba(0,0,0,.28)
+  }
+  :root.light {
+    --bg:#f3f7f7;--surface:#fff;--surface-2:#e9f1f1;--ink:#11252b;--ink-2:#40575d;
+    --muted:#6d8186;--line:#ccdadd;--hairline:rgba(17,37,43,.1);--teal:#007d70;
+    --teal-strong:#005f56;--teal-wash:rgba(0,125,112,.10);--coral:#bf4f2d;
+    --coral-wash:rgba(191,79,45,.11);--gold:#8d6500;--gold-wash:rgba(141,101,0,.11);
+    --blue:#1668a4;--blue-wash:rgba(22,104,164,.10);--danger:#b3261e;
+    --danger-wash:rgba(179,38,30,.10);--terminal:#08171d;--terminal-2:#10262d;
+    --terminal-ink:#d7f5ee;--terminal-muted:#7ea49f;--terminal-teal:#4de1c1;
+    --terminal-coral:#ff9b78;--code-bg:#e5eeee;--shadow:0 18px 50px rgba(18,51,59,.10)
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 16px; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.65 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  a { color: var(--teal-strong); text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  button,input { font: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+  .skip { position: fixed; left: 12px; top: -80px; z-index: 100; padding: 8px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+  .skip:focus { top: 12px; }
+  .layout { display: flex; max-width: 1440px; margin: 0 auto; }
+  .sidebar { position: sticky; top: 0; align-self: flex-start; width: 275px; height: 100vh; flex: 0 0 auto; overflow-y: auto; padding: 23px 16px 30px 20px; border-right: 1px solid var(--line); background: color-mix(in srgb,var(--bg) 92%,transparent); }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 850; letter-spacing: -.02em; }
+  .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: #061517; background: var(--teal); font: 900 20px/1 ui-monospace,monospace; }
+  .brand-sub { margin: 5px 0 14px 44px; color: var(--muted); font-size: 11px; }
+  .find-doc { width: 100%; padding: 8px 10px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 9px; }
+  .find-doc::placeholder { color: var(--muted); }
+  .toc-group { margin: 16px 8px 4px; color: var(--muted); font-size: 10px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+  .sidebar nav a { display: block; margin: 1px 0; padding: 5px 8px; border-radius: 7px; color: var(--ink-2); font-size: 12.5px; text-decoration: none; }
+  .sidebar nav a:hover,.sidebar nav a.active { color: var(--teal-strong); background: var(--teal-wash); }
+  .sidebar nav a.active { font-weight: 780; }
+  .sidebar nav a.hidden { display: none; }
+  .progress-track { height: 4px; margin: 18px 0 7px; overflow: hidden; border-radius: 99px; background: var(--surface-2); }
+  .progress-fill { width: 0; height: 100%; background: linear-gradient(90deg,var(--teal),var(--coral)); }
+  .progress-label { color: var(--muted); font-size: 10px; }
+  main { min-width: 0; flex: 1; padding: 42px 54px 110px; }
+  .theme-toggle,.top-button { position: fixed; z-index: 30; right: 16px; border: 1px solid var(--line); color: var(--ink-2); background: var(--surface); border-radius: 999px; box-shadow: var(--shadow); }
+  .theme-toggle { top: 14px; padding: 6px 13px; }
+  .top-button { bottom: 16px; padding: 7px 12px; opacity: 0; pointer-events: none; transform: translateY(8px); transition: .2s; text-decoration: none; }
+  .top-button.visible { opacity: 1; pointer-events: auto; transform: none; }
+  .hero { position: relative; padding: 20px 0 36px; }
+  .hero::after { content:""; display:block; height:1px; margin-top:34px; background:linear-gradient(90deg,var(--teal),var(--coral),transparent 80%); }
+  .eyebrow { color: var(--coral); font-size: 11px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+  h1 { max-width: 880px; margin: 7px 0 13px; font-size: clamp(40px,6vw,72px); line-height: .98; letter-spacing: -.055em; }
+  .hero .accent { color: var(--teal-strong); }
+  .subtitle { max-width: 70ch; margin: 0 0 19px; color: var(--ink-2); font-size: 19px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge { padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink-2); background: var(--surface); font-size: 11px; }
+  .hero-flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; max-width: 850px; margin-top: 27px; }
+  .flow-node { padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: 0 3px 14px var(--hairline); }
+  .flow-node b { display:block; color:var(--teal-strong); font:800 12px ui-monospace,monospace; }
+  .flow-node span { color:var(--muted); font-size:12px; }
+  .flow-arrow { padding: 0 10px; color: var(--coral); font-size: 22px; }
+  section { max-width: 980px; }
+  h2 { margin: 67px 0 16px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 30px; line-height: 1.18; letter-spacing: -.035em; }
+  h3 { margin: 32px 0 9px; font-size: 19px; line-height: 1.28; letter-spacing: -.01em; }
+  h4 { margin: 22px 0 8px; font-size: 15px; }
+  p { max-width: 78ch; margin: 0 0 14px; color: var(--ink-2); }
+  ul,ol { margin: 0 0 17px 23px; padding: 0; }
+  li { margin: 5px 0; color: var(--ink-2); }
+  strong { color: var(--ink); }
+  .lede { max-width: 72ch; font-size: 18px; }
+  code,kbd { font-family: ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace; font-size: .88em; }
+  code { padding: 1px 5px; border-radius: 5px; color: var(--ink); background: var(--code-bg); }
+  kbd { display:inline-block; min-width:1.7em; padding:1px 6px; text-align:center; white-space:nowrap; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-bottom-width:2px; border-radius:5px; line-height:1.45; }
+  pre { position:relative; margin:0 0 18px; padding:18px 20px; overflow-x:auto; border:1px solid #294149; border-radius:12px; color:var(--terminal-ink); background:var(--terminal); line-height:1.55; }
+  pre code { padding:0; color:inherit; background:none; font-size:13px; }
+  .copy { position:absolute; top:8px; right:8px; padding:3px 8px; border:1px solid rgba(255,255,255,.17); border-radius:6px; color:var(--terminal-ink); background:rgba(255,255,255,.07); font-size:11px; }
+  .copy:hover { background:rgba(255,255,255,.14); }
+  .comment { color:var(--terminal-muted); } .cmd { color:var(--terminal-teal); } .arg { color:var(--terminal-coral); }
+  .callout { margin:17px 0; padding:14px 17px; border-left:4px solid var(--teal); border-radius:0 10px 10px 0; color:var(--ink-2); background:var(--teal-wash); }
+  .callout strong:first-child { display:block; margin-bottom:3px; }
+  .callout.warn { border-color:var(--gold); background:var(--gold-wash); }
+  .callout.danger { border-color:var(--danger); background:var(--danger-wash); }
+  .callout.blue { border-color:var(--blue); background:var(--blue-wash); }
+  .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:17px 0; }
+  .grid.three { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .card { padding:17px; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:0 3px 15px var(--hairline); }
+  .card h3,.card h4 { margin-top:0; }
+  .card p:last-child,.callout p:last-child { margin-bottom:0; }
+  .mini { color:var(--muted); font-size:12px; }
+  .table-wrap { margin:14px 0 22px; overflow-x:auto; border:1px solid var(--line); border-radius:12px; }
+  table { width:100%; border-collapse:collapse; background:var(--surface); font-size:13.5px; }
+  th { color:var(--ink); background:var(--surface-2); font-size:11px; letter-spacing:.04em; text-transform:uppercase; }
+  th,td { padding:10px 12px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+  tr:last-child td { border-bottom:0; }
+  td { color:var(--ink-2); }
+  .lab { margin:23px 0; padding:21px; border:1px solid var(--line); border-radius:14px; background:linear-gradient(145deg,var(--surface),var(--blue-wash)); }
+  .lab-head { display:flex; justify-content:space-between; gap:14px; align-items:start; margin-bottom:9px; }
+  .lab-title { color:var(--blue); font-weight:850; font-size:18px; }
+  .lab-time { flex:0 0 auto; padding:3px 8px; color:var(--muted); background:var(--surface); border:1px solid var(--line); border-radius:99px; font-size:11px; }
+  .check { list-style:none; margin-left:0; }
+  .check li { position:relative; padding-left:25px; }
+  .check li::before { content:"□"; position:absolute; left:1px; color:var(--blue); font-weight:900; }
+  details { margin:11px 0; border:1px solid var(--line); border-radius:10px; background:var(--surface); }
+  summary { padding:11px 14px; cursor:pointer; color:var(--ink); font-weight:750; }
+  details > :not(summary) { margin-left:14px; margin-right:14px; }
+  details > :last-child { margin-bottom:14px; }
+  .syntax { display:grid; grid-template-columns:130px 1fr; gap:8px 14px; margin:15px 0; }
+  .syntax > div { padding:9px 11px; border-bottom:1px solid var(--line); color:var(--ink-2); }
+  .syntax .token { color:var(--coral); background:var(--coral-wash); border:0; border-radius:8px; font:700 14px ui-monospace,monospace; }
+  .term { margin:19px 0; overflow:hidden; border:1px solid #294149; border-radius:14px; background:var(--terminal); color:var(--terminal-ink); box-shadow:var(--shadow); }
+  .term-bar { display:flex; justify-content:space-between; padding:9px 13px; border-bottom:1px solid #294149; color:var(--terminal-muted); background:var(--terminal-2); font:11px ui-monospace,monospace; }
+  .term-body { padding:15px; font:13px/1.6 ui-monospace,monospace; }
+  .term .prompt { color:var(--terminal-teal); } .term .match { color:var(--terminal-coral); font-weight:800; } .term .dim { color:var(--terminal-muted); }
+  .sim { margin:20px 0; overflow:hidden; border:1px solid #294149; border-radius:14px; background:var(--terminal); color:var(--terminal-ink); box-shadow:var(--shadow); }
+  .sim-head { display:flex; justify-content:space-between; gap:10px; padding:9px 13px; color:var(--terminal-muted); background:var(--terminal-2); border-bottom:1px solid #294149; font:11px ui-monospace,monospace; }
+  .sim-query { display:flex; align-items:center; gap:9px; padding:13px 15px; border-bottom:1px solid #294149; }
+  .sim-query label { color:var(--terminal-teal); font:700 14px ui-monospace,monospace; }
+  .sim-query input { width:100%; border:0; outline:0; color:var(--terminal-ink); background:transparent; font:14px ui-monospace,monospace; }
+  .sim-list { min-height:240px; padding:8px; }
+  .sim-row { display:grid; grid-template-columns:24px 1fr auto; gap:8px; padding:5px 8px; border-radius:5px; font:13px/1.45 ui-monospace,monospace; }
+  .sim-row.current { color:#061517; background:var(--terminal-teal); }
+  .sim-row .mark { color:var(--terminal-coral); } .sim-row.current .mark { color:#60301f; }
+  .sim-score { opacity:.55; font-size:11px; }
+  .sim-empty { padding:50px 10px; color:var(--terminal-muted); text-align:center; font:13px ui-monospace,monospace; }
+  .sim-foot { padding:8px 13px; border-top:1px solid #294149; color:var(--terminal-muted); font:11px ui-monospace,monospace; }
+  .keyline { display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin:7px 0; color:var(--ink-2); }
+  .step { display:grid; grid-template-columns:42px 1fr; gap:13px; margin:18px 0; }
+  .step-num { display:grid; place-items:center; width:38px; height:38px; border-radius:12px; color:#061517; background:var(--teal); font-weight:900; }
+  .step h3 { margin:4px 0 8px; }
+  .pill { display:inline-block; margin:2px 3px 2px 0; padding:2px 8px; border-radius:99px; color:var(--ink-2); background:var(--surface-2); font-size:11px; }
+  .source-list li { margin-bottom:8px; }
+  .diagram { margin:22px 0 10px; }
+  .diagram svg { display:block; width:100%; height:auto; }
+  .diagram figcaption { margin-top:7px; color:var(--muted); font-size:12px; }
+  .d-box { fill:var(--surface); stroke:var(--line); stroke-width:1.5; }
+  .d-fzf { stroke:var(--teal); }
+  .d-inner { fill:var(--surface-2); stroke:var(--hairline); }
+  .d-title { fill:var(--teal-strong); font:750 15px ui-monospace,monospace; }
+  .d-text { fill:var(--ink-2); font:12px system-ui,sans-serif; }
+  .d-label { fill:var(--coral); font:700 11px ui-monospace,monospace; }
+  .d-mono { fill:var(--muted); font:11px ui-monospace,monospace; }
+  .d-arrow { stroke:var(--coral); stroke-width:2; fill:none; }
+  .d-dash { stroke-dasharray:5 5; }
+  .d-arrhead { fill:var(--coral); }
+  .d-row { fill:var(--line); }
+  .d-rowsel { fill:var(--teal); }
+  .quiz-score { margin:6px 0 15px; padding:8px 12px; border:1px solid var(--line); border-radius:9px; color:var(--ink-2); background:var(--surface); font-size:13px; }
+  .quiz-item { margin:12px 0; padding:14px 16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
+  .quiz-q { color:var(--ink); font-weight:750; }
+  .quiz-q .qnum { margin-right:8px; color:var(--coral); font:800 12px ui-monospace,monospace; }
+  .quiz-answer { display:none; padding:9px 0 2px; color:var(--ink-2); }
+  .quiz-answer.open { display:block; }
+  .quiz-actions { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
+  .quiz-actions button { padding:4px 11px; border:1px solid var(--line); border-radius:99px; color:var(--ink-2); background:var(--surface-2); font-size:12px; }
+  .quiz-actions button:hover { color:var(--teal-strong); border-color:var(--teal); }
+  .quiz-item.correct { border-color:var(--teal); background:var(--teal-wash); }
+  .quiz-item.missed { border-color:var(--gold); background:var(--gold-wash); }
+  .print-only { display:none; }
+  @media (max-width:1000px) {
+    .sidebar { width:235px; } main { padding:38px 30px 100px; } .grid.three { grid-template-columns:1fr 1fr; }
+  }
+  @media (max-width:760px) {
+    .layout { display:block; } .sidebar { position:relative; width:auto; height:auto; padding:15px; border-right:0; border-bottom:1px solid var(--line); }
+    .brand-sub,.find-doc,.sidebar nav,.progress-track,.progress-label { display:none; }
+    main { padding:25px 17px 80px; } .theme-toggle { top:10px; } .grid,.grid.three { grid-template-columns:1fr; }
+    .hero-flow { grid-template-columns:1fr; gap:7px; } .flow-arrow { transform:rotate(90deg); text-align:center; }
+    .syntax { grid-template-columns:1fr; gap:3px; } .syntax > div { border-bottom:0; } .syntax .token { margin-top:8px; }
+    .lab-head { display:block; } .lab-time { display:inline-block; margin-top:5px; }
+  }
+  @media print {
+    :root { --bg:#fff;--surface:#fff;--surface-2:#f3f5f5;--ink:#111;--ink-2:#333;--muted:#666;--line:#bbb; }
+    body { font-size:10.5pt; } .sidebar,.theme-toggle,.top-button,.copy,.sim,.quiz-actions { display:none!important; }
+    .quiz-answer { display:block; }
+    main { padding:0; } .print-only { display:block; } h2 { break-after:avoid; margin-top:30px; } pre,.card,.lab,table,.quiz-item { break-inside:avoid; }
+    a { color:#111; text-decoration:none; } a[href^="http"]::after { content:" (" attr(href) ")"; font-size:8pt; word-break:break-all; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#content">Skip to guide</a>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle color theme">◐ Theme</button>
+<a class="top-button" id="topButton" href="#top" aria-label="Back to top">↑ Top</a>
+<div class="layout" id="top">
+  <aside class="sidebar" aria-label="Guide navigation">
+    <div class="brand"><span class="brand-mark">›_</span><span>fzf field guide</span></div>
+    <div class="brand-sub">interactive filtering, composed</div>
+    <input class="find-doc" id="tocFilter" type="search" placeholder="Filter topics…" aria-label="Filter table of contents">
+    <nav id="toc">
+      <div class="toc-group">Start</div>
+      <a href="#mental-model">Mental model</a>
+      <a href="#install">Install &amp; integrate</a>
+      <a href="#tutorial">25-minute tutorial</a>
+      <a href="#simulator">Practice simulator</a>
+      <div class="toc-group">Core language</div>
+      <a href="#matching">Query grammar</a>
+      <a href="#keys">Keys &amp; selection</a>
+      <a href="#input-output">Input/output contract</a>
+      <a href="#fields">Fields &amp; placeholders</a>
+      <a href="#preview">Preview windows</a>
+      <a href="#layout-style">Layout &amp; appearance</a>
+      <div class="toc-group">Build workflows</div>
+      <a href="#bindings">Bindings &amp; actions</a>
+      <a href="#reload">Reload &amp; events</a>
+      <a href="#shell">Shell integration</a>
+      <a href="#configuration">Configuration</a>
+      <a href="#recipes">Practical recipes</a>
+      <div class="toc-group">Operate well</div>
+      <a href="#safety">Safety &amp; portability</a>
+      <a href="#performance">Performance</a>
+      <a href="#troubleshooting">Troubleshooting</a>
+      <a href="#exercises">Exercises</a>
+      <a href="#quiz">Retrieval quiz</a>
+      <a href="#cheatsheet">Cheat sheet</a>
+      <a href="#sources">Sources</a>
+    </nav>
+    <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-label" id="progressLabel">0% through guide</div>
+  </aside>
+
+  <main id="content">
+    <header class="hero">
+      <div class="eyebrow">Command-line fuzzy finder · user guide + tutorial</div>
+      <h1>Find anything.<br><span class="accent">Compose everything.</span></h1>
+      <p class="subtitle">fzf turns any stream of text into an interactive choice. Learn its small core, then use previews, field extraction, actions, and reloads to build fast terminal interfaces from ordinary Unix commands.</p>
+      <div class="badges">
+        <span class="badge">Offline-friendly · one HTML file</span>
+        <span class="badge">Beginner → advanced</span>
+        <span class="badge">Examples: Bash/Zsh on macOS &amp; Linux</span>
+        <span class="badge">Checked with fzf 0.74.2 · 2026-08-06</span>
+      </div>
+      <div class="hero-flow" aria-label="fzf data flow">
+        <div class="flow-node"><b>producer</b><span>find · rg · git · ps</span></div><div class="flow-arrow">→</div>
+        <div class="flow-node"><b>fzf</b><span>filter · inspect · select</span></div><div class="flow-arrow">→</div>
+        <div class="flow-node"><b>consumer</b><span>editor · cd · kill · script</span></div>
+      </div>
+    </header>
+
+    <section id="mental-model">
+      <h2>1. Mental model: interactive filter, not file finder</h2>
+      <p class="lede">fzf reads candidate records, lets a person narrow and select them, then writes accepted records. It does not inherently know what a file, process, branch, container, or command is. That ignorance makes it reusable.</p>
+      <pre><code><span class="cmd">producer</span> | <span class="cmd">fzf</span> [options] | <span class="cmd">consumer</span>
+
+<span class="cmd">printf</span> '%s\n' alpha beta gamma | <span class="cmd">fzf</span>
+<span class="cmd">git</span> branch --format='%(refname:short)' | <span class="cmd">fzf</span> | <span class="cmd">xargs</span> git switch</code></pre>
+      <figure class="diagram">
+        <svg viewBox="0 0 880 330" role="img" aria-labelledby="flowDiagramTitle">
+          <title id="flowDiagramTitle">Data flow: a producer writes records to fzf via stdin; inside fzf the query filters a match list while a preview command inspects the current item; accepted records leave via stdout to a consumer; reload can restart the producer; cancelling emits nothing and exits 130.</title>
+          <defs>
+            <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" class="d-arrhead"/>
+            </marker>
+          </defs>
+          <rect x="20" y="90" width="190" height="115" rx="12" class="d-box"/>
+          <text x="115" y="120" text-anchor="middle" class="d-title">producer</text>
+          <text x="115" y="143" text-anchor="middle" class="d-text">fd · rg · git · ps</text>
+          <text x="115" y="162" text-anchor="middle" class="d-text">one record per line</text>
+          <text x="115" y="181" text-anchor="middle" class="d-text">(NUL with --read0)</text>
+          <line x1="212" y1="147" x2="300" y2="147" class="d-arrow" marker-end="url(#arr)"/>
+          <text x="256" y="133" text-anchor="middle" class="d-label">stdin</text>
+          <rect x="305" y="30" width="290" height="235" rx="14" class="d-box d-fzf"/>
+          <text x="450" y="58" text-anchor="middle" class="d-title">fzf</text>
+          <rect x="325" y="70" width="250" height="26" rx="6" class="d-inner"/>
+          <text x="336" y="88" class="d-mono">› query · fuzzy + exact + !not</text>
+          <rect x="325" y="106" width="118" height="116" rx="6" class="d-inner"/>
+          <text x="336" y="123" class="d-mono">matches</text>
+          <rect x="334" y="132" width="98" height="10" rx="3" class="d-rowsel"/>
+          <rect x="334" y="149" width="86" height="10" rx="3" class="d-row"/>
+          <rect x="334" y="166" width="93" height="10" rx="3" class="d-row"/>
+          <rect x="334" y="183" width="78" height="10" rx="3" class="d-row"/>
+          <rect x="334" y="200" width="88" height="10" rx="3" class="d-row"/>
+          <rect x="457" y="106" width="118" height="116" rx="6" class="d-inner"/>
+          <text x="468" y="123" class="d-mono">preview {}</text>
+          <rect x="468" y="134" width="96" height="8" rx="3" class="d-row"/>
+          <rect x="468" y="149" width="88" height="8" rx="3" class="d-row"/>
+          <rect x="468" y="164" width="94" height="8" rx="3" class="d-row"/>
+          <rect x="468" y="179" width="72" height="8" rx="3" class="d-row"/>
+          <rect x="468" y="194" width="90" height="8" rx="3" class="d-row"/>
+          <text x="450" y="248" text-anchor="middle" class="d-text">--bind KEY:ACTION · execute · become · reload</text>
+          <line x1="597" y1="147" x2="685" y2="147" class="d-arrow" marker-end="url(#arr)"/>
+          <text x="641" y="133" text-anchor="middle" class="d-label">stdout</text>
+          <rect x="690" y="90" width="170" height="115" rx="12" class="d-box"/>
+          <text x="775" y="120" text-anchor="middle" class="d-title">consumer</text>
+          <text x="775" y="143" text-anchor="middle" class="d-text">$EDITOR · cd · kill</text>
+          <text x="775" y="162" text-anchor="middle" class="d-text">receives accepted</text>
+          <text x="775" y="181" text-anchor="middle" class="d-text">records only</text>
+          <path d="M330 265 C 250 305, 150 290, 112 210" class="d-arrow d-dash" marker-end="url(#arr)"/>
+          <text x="240" y="308" text-anchor="middle" class="d-label">reload(cmd) restarts producer</text>
+          <text x="640" y="290" text-anchor="middle" class="d-text">Esc / Ctrl-C → no output, exit status 130</text>
+        </svg>
+        <figcaption>fzf sits between producer and consumer: it never interprets records, only filters, previews, and emits them.</figcaption>
+      </figure>
+      <div class="grid three">
+        <div class="card"><h3>1 · Feed</h3><p>Pipe newline-delimited items into standard input. With terminal input, fzf uses its built-in directory walker or <code>FZF_DEFAULT_COMMAND</code>.</p></div>
+        <div class="card"><h3>2 · Find</h3><p>Type a query. fzf ranks fuzzy matches, supports exact/anchored/negative terms, and can select one or many items.</p></div>
+        <div class="card"><h3>3 · Emit</h3><p><kbd>Enter</kbd> prints accepted records to standard output. Cancel produces no record and exit status <code>130</code>.</p></div>
+      </div>
+      <div class="callout"><strong>Central design question</strong>Before adding options, ask: “What is one candidate record, what should user see, and what exact value should downstream command receive?” Most fzf design follows from that answer.</div>
+      <h3>Three layers worth separating</h3>
+      <div class="table-wrap"><table><thead><tr><th>Layer</th><th>Purpose</th><th>Typical tools/options</th></tr></thead><tbody>
+        <tr><td><strong>Source</strong></td><td>Generate complete candidate set</td><td><code>fd</code>, <code>find</code>, <code>rg</code>, <code>git</code>, <code>ps</code>, SQL/JSON tools</td></tr>
+        <tr><td><strong>Interface</strong></td><td>Search, rank, preview, select</td><td><code>fzf</code>, <code>--multi</code>, <code>--preview</code>, <code>--bind</code></td></tr>
+        <tr><td><strong>Effect</strong></td><td>Use accepted value</td><td>command substitution, loop, <code>while read</code>, <code>become(...)</code></td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="install">
+      <h2>2. Install and enable shell integration</h2>
+      <p>Prefer current package from official release channel or package manager. Distribution repositories can lag, so compare <code>fzf --version</code> when an option from this guide is missing.</p>
+      <div class="grid">
+        <div class="card"><h3>macOS</h3><pre><code><span class="cmd">brew</span> install fzf
+<span class="cmd">fzf</span> --version</code></pre></div>
+        <div class="card"><h3>Linux</h3><pre><code><span class="comment"># Debian/Ubuntu package</span>
+<span class="cmd">sudo</span> apt install fzf
+
+<span class="comment"># Or follow official binary/git install</span></code></pre></div>
+      </div>
+      <h3>Shell setup</h3>
+      <p>Modern fzf binaries embed integration scripts. Add one line to shell startup file, then start a new shell.</p>
+      <div class="table-wrap"><table><thead><tr><th>Shell</th><th>Startup line</th><th>Provides</th></tr></thead><tbody>
+        <tr><td>Zsh</td><td><code>source &lt;(fzf --zsh)</code></td><td><kbd>Ctrl</kbd>+<kbd>T</kbd>, <kbd>Ctrl</kbd>+<kbd>R</kbd>, <kbd>Alt</kbd>+<kbd>C</kbd>, completion</td></tr>
+        <tr><td>Bash</td><td><code>eval "$(fzf --bash)"</code></td><td>Key bindings and fuzzy completion</td></tr>
+        <tr><td>Fish</td><td><code>fzf --fish | source</code></td><td>Key bindings</td></tr>
+        <tr><td>Nushell</td><td><code>fzf --nushell</code> prints integration script</td><td>Follow emitted-script instructions for installed version</td></tr>
+      </tbody></table></div>
+      <pre><code><span class="comment"># ~/.zshrc</span>
+source &lt;(<span class="cmd">fzf</span> --zsh)
+
+<span class="comment"># Reload now</span>
+<span class="cmd">exec</span> zsh</code></pre>
+      <div class="callout warn"><strong>Order matters</strong>Set <code>FZF_CTRL_T_COMMAND</code>, <code>FZF_ALT_C_COMMAND</code>, and integration-specific <code>*_OPTS</code> before sourcing integration. Empty command variables disable corresponding bindings.</div>
+      <h3>Quick health check</h3>
+      <pre><code><span class="cmd">printf</span> '%s\n' red green blue | <span class="cmd">fzf</span> --height=40% --border
+<span class="comment"># type: gr   → press Enter   → terminal prints: green</span></code></pre>
+    </section>
+
+    <section id="tutorial">
+      <h2>3. Tutorial: from list to file launcher in 25 minutes</h2>
+      <p class="lede">Work inside any small project directory. Commands inspect or open files; none modify project content unless editor saves changes.</p>
+
+      <div class="lab">
+        <div class="lab-head"><div class="lab-title">Lab 1 · Feel fuzzy ranking</div><span class="lab-time">3 min</span></div>
+        <p>Run candidate list, type <code>gsg</code>, move with arrows or <kbd>Ctrl</kbd>+<kbd>J</kbd>/<kbd>Ctrl</kbd>+<kbd>K</kbd>, accept one.</p>
+        <pre><code><span class="cmd">printf</span> '%s\n' git-status-guide.md getting-started.md glossary.md release-notes.md | <span class="cmd">fzf</span></code></pre>
+        <ul class="check"><li>Observe non-contiguous letters can match.</li><li>Try uppercase letter; smart-case makes query case-sensitive.</li><li>Press <kbd>Esc</kbd>; observe no output.</li></ul>
+      </div>
+
+      <div class="lab">
+        <div class="lab-head"><div class="lab-title">Lab 2 · Select a real file</div><span class="lab-time">4 min</span></div>
+        <p>Running bare <code>fzf</code> on terminal input invokes built-in walker. Hidden files appear; directories named <code>.git</code> and <code>node_modules</code> are skipped by default.</p>
+        <pre><code><span class="cmd">fzf</span> --height=70% --layout=reverse --border --prompt='file › '
+
+<span class="comment"># Explicit source with fd (if installed)</span>
+<span class="cmd">fd</span> --type f --hidden --exclude .git | <span class="cmd">fzf</span> --scheme=path</code></pre>
+        <p>Why explicit source? Reproducible scope, easy exclusions, clear ownership of traversal.</p>
+      </div>
+
+      <div class="lab">
+        <div class="lab-head"><div class="lab-title">Lab 3 · Add a preview</div><span class="lab-time">5 min</span></div>
+        <pre><code><span class="cmd">fzf</span> --preview 'sed -n "1,200p" {}' \
+  --preview-window='right,60%,wrap' \
+  --bind='ctrl-/:toggle-preview'
+
+<span class="comment"># Better colorized preview when bat exists</span>
+<span class="cmd">fzf</span> --preview 'bat --color=always --style=numbers --line-range=:300 -- {}' \
+  --preview-window='right,60%,border-left'</code></pre>
+        <ul class="check"><li><code>{}</code> becomes shell-quoted current item.</li><li><code>--</code> tells command later arguments are filenames, not flags—use it where tool supports it (bat does; macOS BSD sed does not, hence no <code>--</code> above).</li><li>Preview changes as focus moves; keep preview command fast and bounded.</li></ul>
+      </div>
+
+      <div class="lab">
+        <div class="lab-head"><div class="lab-title">Lab 4 · Open safely after acceptance</div><span class="lab-time">4 min</span></div>
+        <pre><code><span class="comment"># Shell receives one selected path</span>
+file=$(<span class="cmd">fzf</span>) || exit
+<span class="cmd">${EDITOR:-vi}</span> -- "$file"
+
+<span class="comment"># Or replace fzf directly; no parsing round-trip</span>
+<span class="cmd">fzf</span> --bind='enter:become(${EDITOR:-vi} -- {})'</code></pre>
+        <div class="callout blue"><strong><code>execute</code> vs <code>become</code></strong><code>execute(...)</code> runs command and returns to fzf. <code>become(...)</code> replaces fzf process; natural for final “open this” action.</div>
+      </div>
+
+      <div class="lab">
+        <div class="lab-head"><div class="lab-title">Lab 5 · Search inside files, then open exact line</div><span class="lab-time">7 min</span></div>
+        <p>Here ripgrep searches contents; fzf supplies secondary interactive ranking. Records have <code>path:line:column:text</code> fields.</p>
+        <pre><code><span class="cmd">rg</span> --column --line-number --no-heading --color=always --smart-case . |
+  <span class="cmd">fzf</span> --ansi --delimiter=: \
+    --preview 'bat --color=always --highlight-line {2} --line-range=:500 -- {1}' \
+    --preview-window='right,60%,+{2}/2' \
+    --bind='enter:become(${EDITOR:-vi} +{2} -- {1})'</code></pre>
+        <ul class="check"><li><code>--ansi</code> interprets color codes without matching them.</li><li><code>--delimiter=:</code> enables field placeholders.</li><li><code>{1}</code> is path; <code>{2}</code> is line number.</li><li>Preview offset <code>+{2}/2</code> places matching line near middle.</li></ul>
+      </div>
+
+      <div class="lab">
+        <div class="lab-head"><div class="lab-title">Lab 6 · Multi-select and inspect output</div><span class="lab-time">2 min</span></div>
+        <pre><code><span class="cmd">printf</span> '%s\n' alpha beta gamma delta | <span class="cmd">fzf</span> --multi
+<span class="comment"># Tab marks and moves down; Shift-Tab marks and moves up.</span>
+<span class="comment"># Enter prints marked rows, or current row when nothing marked.</span></code></pre>
+      </div>
+      <div class="callout"><strong>Tutorial milestone</strong>You now understand complete pipeline: source records → interactive query → preview current record → accept one/many → use exact emitted value.</div>
+    </section>
+
+    <section id="simulator">
+      <h2>4. Practice simulator</h2>
+      <p>Browser approximation builds muscle memory without launching terminal. Type fragments; use <kbd>↑</kbd>/<kbd>↓</kbd>, <kbd>Tab</kbd>, and <kbd>Enter</kbd>. Scoring intentionally simplified; real fzf ranking is richer.</p>
+      <div class="sim" id="simulatorBox">
+        <div class="sim-head"><span>fzf · practice dataset</span><span id="simCount">10/10</span></div>
+        <div class="sim-query"><label for="simInput">›</label><input id="simInput" autocomplete="off" spellcheck="false" placeholder="try: cfg, src app, !test…"></div>
+        <div class="sim-list" id="simList" role="listbox" aria-label="Simulated fzf results"></div>
+        <div class="sim-foot"><span>↑↓ move · Tab select · Enter accept · Esc clear</span> <span id="simAccepted"></span></div>
+      </div>
+    </section>
+
+    <section id="matching">
+      <h2>5. Query grammar: fuzzy, exact, anchored, negative, OR</h2>
+      <p>Default extended search splits query on unescaped spaces. Terms on same side of <code>|</code> combine with AND; bar separates alternatives. Smart-case is case-insensitive until query contains uppercase.</p>
+      <div class="syntax">
+        <div class="token">sbtrkt</div><div><strong>Fuzzy.</strong> Characters appear in order, not necessarily adjacent.</div>
+        <div class="token">'wild</div><div><strong>Exact substring.</strong> Leading apostrophe disables fuzzy matching for term.</div>
+        <div class="token">'foo'</div><div><strong>Exact boundary.</strong> Quotes on both ends require word boundaries; underscore also counts as boundary.</div>
+        <div class="token">^music</div><div><strong>Prefix.</strong> Line begins with <code>music</code>.</div>
+        <div class="token">.mp3$</div><div><strong>Suffix.</strong> Line ends with <code>.mp3</code>.</div>
+        <div class="token">!remix</div><div><strong>Negation.</strong> Exclude exact substring match.</div>
+        <div class="token">!^draft</div><div><strong>Negative prefix.</strong> Exclude lines beginning with <code>draft</code>.</div>
+        <div class="token">foo\ bar</div><div><strong>Literal space.</strong> Backslash escapes term separator.</div>
+        <div class="token">go$ | rs$</div><div><strong>OR.</strong> Match suffix <code>go</code> or <code>rs</code>.</div>
+      </div>
+      <div class="term"><div class="term-bar"><span>extended query anatomy</span><span>AND + OR + NOT</span></div><div class="term-body"><span class="prompt">› </span>'api ^src !test .ts$ | .tsx$<br><br><span class="dim">meaning:</span> exact “api” <span class="match">AND</span> begins “src” <span class="match">AND NOT</span> “test” <span class="match">AND</span> ends “.ts” <span class="match">OR</span> ends “.tsx”</div></div>
+      <div class="callout warn"><strong>Shell quoting vs fzf query syntax</strong>When supplying initial query with <code>--query</code>, quote for shell first. Example: <code>fzf --query='^src !test .ts$'</code>. Interactive input itself is not shell-expanded.</div>
+      <h3>Scoring and schemes</h3>
+      <ul>
+        <li><code>--scheme=default</code>: general scoring.</li>
+        <li><code>--scheme=path</code>: rewards matches after path separators and prioritizes filename portion.</li>
+        <li><code>--scheme=history</code>: preserves chronological importance using input order.</li>
+        <li><code>--tiebreak=CRI[,..]</code>: order for tied scores—<code>length</code> (default), <code>chunk</code>, <code>pathname</code>, <code>begin</code>, <code>end</code>, <code>index</code>; <code>index</code> is implicitly appended last.</li>
+        <li><code>--exact</code>: exact becomes default; leading apostrophe switches a term back to fuzzy.</li>
+        <li><code>--no-sort</code>: retain source order while filtering; useful for logs and pre-ranked sources.</li>
+      </ul>
+      <p class="mini">Automatic choice: when input comes from terminal (built-in walker or <code>FZF_DEFAULT_COMMAND</code>) and no <code>reload</code>/<code>transform</code> is bound to <code>start</code>, fzf picks <code>path</code> scheme by itself; piped input gets <code>default</code>. Explicit <code>--scheme</code> overrides.</p>
+    </section>
+
+    <section id="keys">
+      <h2>6. Navigation, editing, and selection</h2>
+      <div class="grid">
+        <div class="card"><h3>Move</h3><div class="keyline"><kbd>↑</kbd>/<kbd>Ctrl K</kbd> up</div><div class="keyline"><kbd>↓</kbd>/<kbd>Ctrl J</kbd> down</div><div class="keyline"><kbd>PgUp</kbd>/<kbd>PgDn</kbd> pages</div><div class="keyline"><kbd>Ctrl P</kbd>/<kbd>Ctrl N</kbd> up/down synonyms; with <code>--history</code> they navigate fzf query history instead</div></div>
+        <div class="card"><h3>Edit query</h3><div class="keyline"><kbd>Ctrl A</kbd>/<kbd>Home</kbd> beginning</div><div class="keyline"><kbd>Ctrl E</kbd>/<kbd>End</kbd> end</div><div class="keyline"><kbd>Alt B</kbd>/<kbd>Alt F</kbd> word</div><div class="keyline"><kbd>Ctrl W</kbd> delete word</div><div class="keyline"><kbd>Ctrl U</kbd> clear before cursor</div></div>
+        <div class="card"><h3>Select</h3><div class="keyline"><kbd>Enter</kbd> accept</div><div class="keyline"><kbd>Tab</kbd> toggle + move down</div><div class="keyline"><kbd>Shift Tab</kbd> toggle + move up</div><div class="keyline"><kbd>Esc</kbd>/<kbd>Ctrl C</kbd> abort</div></div>
+        <div class="card"><h3>Preview</h3><div class="keyline"><kbd>Shift ↑</kbd>/<kbd>Shift ↓</kbd> scroll preview</div><div class="keyline">Custom bind commonly uses <kbd>Ctrl /</kbd> to toggle or rotate preview</div></div>
+      </div>
+      <p><code>--multi</code> enables unlimited selection; <code>--multi=3</code> caps it. If nothing marked, accepting returns current item. Output order follows selected item order as managed by fzf, not necessarily current visual rank—test before relying on ordering.</p>
+    </section>
+
+    <section id="input-output">
+      <h2>7. Input/output contract and exit status</h2>
+      <div class="table-wrap"><table><thead><tr><th>Status</th><th>Meaning</th><th>Shell implication</th></tr></thead><tbody>
+        <tr><td><code>0</code></td><td>Normal acceptance</td><td>Use emitted records</td></tr>
+        <tr><td><code>1</code></td><td>No match—accepting with zero matches, or <code>--filter</code>/<code>--exit-0</code> finding nothing</td><td>Often normal branch</td></tr>
+        <tr><td><code>2</code></td><td>fzf error</td><td>Inspect command/options</td></tr>
+        <tr><td><code>126</code>/<code>127</code></td><td><code>become</code> permission/command error</td><td>Check executable and permissions</td></tr>
+        <tr><td><code>130</code></td><td>Interrupted via Esc/Ctrl-C</td><td>Treat as user cancellation</td></tr>
+      </tbody></table></div>
+      <h3>Capture without losing cancel semantics</h3>
+      <pre><code><span class="comment"># Correct: only act when accepted</span>
+if choice=$(<span class="cmd">printf</span> '%s\n' one two three | <span class="cmd">fzf</span>); then
+  <span class="cmd">printf</span> 'selected: %s\n' "$choice"
+else
+  <span class="cmd">printf</span> 'cancelled\n' &gt;&amp;2
+fi</code></pre>
+      <h3>Machine-friendly modes</h3>
+      <ul>
+        <li><code>--filter=QUERY</code>: print matching items and exit; useful for tests/scripts, no interactive UI.</li>
+        <li><code>--select-1</code>: auto-select if initial result has exactly one match.</li>
+        <li><code>--exit-0</code>: exit if initial result has no match.</li>
+        <li><code>--print-query</code>: first output record is query, then selections.</li>
+        <li><code>--expect=ctrl-e,ctrl-v</code>: first output record identifies accept key; remaining records are choices.</li>
+        <li><code>--read0 --print0</code>: NUL-delimited input/output for arbitrary filenames.</li>
+      </ul>
+      <div class="callout danger"><strong>Newline is valid inside Unix filenames</strong>Plain line-based pipelines cannot represent every path. Use NUL-delimited producers/consumers for rigorous filename safety, or constrain domain explicitly.</div>
+      <pre><code><span class="comment"># GNU/BSD find emits NULs; loop consumes NULs</span>
+<span class="cmd">find</span> . -type f -print0 |
+  <span class="cmd">fzf</span> --read0 --print0 --multi |
+  <span class="cmd">while</span> IFS= read -r -d '' path; do
+    <span class="cmd">printf</span> 'picked: %q\n' "$path"
+  done</code></pre>
+    </section>
+
+    <section id="fields">
+      <h2>8. Fields, display transforms, accepted values, placeholders</h2>
+      <p>Structured lines often contain machine ID plus human label. fzf can search/display selected fields while preserving or transforming emitted value.</p>
+      <div class="table-wrap"><table><thead><tr><th>Option</th><th>Controls</th><th>Example</th></tr></thead><tbody>
+        <tr><td><code>--delimiter=REGEX</code></td><td>How fields are split</td><td><code>--delimiter='\t'</code></td></tr>
+        <tr><td><code>--nth=EXPR</code></td><td>Fields searched</td><td><code>--nth=2..</code></td></tr>
+        <tr><td><code>--with-nth=EXPR</code></td><td>Fields displayed</td><td><code>--with-nth=2,3</code></td></tr>
+        <tr><td><code>--accept-nth=EXPR</code></td><td>Fields printed on acceptance</td><td><code>--accept-nth=1</code></td></tr>
+      </tbody></table></div>
+      <pre><code><span class="comment"># input: id TAB name TAB environment</span>
+<span class="cmd">printf</span> '42\tPayments API\tprod\n17\tDocs site\tstaging\n' |
+  <span class="cmd">fzf</span> --delimiter=$'\t' --with-nth=2,3 --accept-nth=1</code></pre>
+      <h3>Field expressions</h3>
+      <p><span class="pill">1 first</span><span class="pill">-1 last</span><span class="pill">2.. from second</span><span class="pill">..-2 through second-last</span><span class="pill">3..5 range</span><span class="pill">.. all</span></p>
+      <h3>Command placeholders</h3>
+      <div class="table-wrap"><table><thead><tr><th>Placeholder</th><th>Expansion</th><th>Use</th></tr></thead><tbody>
+        <tr><td><code>{}</code></td><td>Current item, shell-quoted</td><td><code>--preview 'file -- {}'</code></td></tr>
+        <tr><td><code>{+}</code></td><td>All selected items, individually quoted; current if none</td><td><code>execute(${EDITOR:-vi} -- {+})</code></td></tr>
+        <tr><td><code>{1}</code>, <code>{2..}</code>, <code>{-1}</code></td><td>Fields from original record</td><td>Path/line parsing</td></tr>
+        <tr><td><code>{q}</code></td><td>Current query, quoted; accepts field expressions like <code>{q:1}</code></td><td>Dynamic ripgrep reload</td></tr>
+        <tr><td><code>{n}</code></td><td>Zero-based current item index; <code>{+n}</code> for all selected</td><td>Index-aware actions</td></tr>
+        <tr><td><code>{f}</code>, <code>{+f}</code></td><td><code>f</code> flag writes values to temporary file, expands to its path</td><td>Selections too large for ARG_MAX</td></tr>
+      </tbody></table></div>
+      <div class="callout warn"><strong>Original vs displayed fields</strong>Preview placeholders extract from original input line, even after <code>--with-nth</code> changes presentation. With both <code>--nth</code> and <code>--with-nth</code>, search field expressions apply to transformed display.</div>
+    </section>
+
+    <section id="preview">
+      <h2>9. Preview windows: context without commitment</h2>
+      <p>Preview command executes whenever focus changes. It receives placeholders and size variables such as <code>$FZF_PREVIEW_LINES</code> and <code>$FZF_PREVIEW_COLUMNS</code>.</p>
+      <pre><code><span class="cmd">fzf</span> --preview 'bat --color=always --style=plain -- {}' \
+  --preview-window='right,55%,wrap,border-left' \
+  --preview-label=' file preview ' \
+  --bind='ctrl-/:change-preview-window(right,55%|down,45%|hidden|)'</code></pre>
+      <div class="grid">
+        <div class="card"><h3>Placement</h3><p><code>right</code>, <code>left</code>, <code>up</code>, <code>down</code>, or <code>next</code>; add size like <code>60%</code>.</p></div>
+        <div class="card"><h3>Behavior</h3><p><code>wrap</code>, <code>follow</code>, <code>hidden</code>, <code>cycle</code>, <code>border-left</code>.</p></div>
+        <div class="card"><h3>Responsive threshold</h3><p>Alternative layouts can switch below size threshold. Useful for wide terminal vs narrow pane.</p></div>
+        <div class="card"><h3>Fixed header</h3><p><code>~3</code> keeps top three preview lines fixed while body scrolls.</p></div>
+      </div>
+      <h3>Preview the right kind of object</h3>
+      <pre><code><span class="comment"># Directory: tree; file: bat</span>
+<span class="cmd">fzf</span> --preview '
+  if [ -d {} ]; then
+    tree -C -L 2 -- {}
+  else
+    bat --color=always --style=numbers --line-range=:300 -- {}
+  fi
+'</code></pre>
+      <div class="callout"><strong>Latency budget</strong>Focus event can fire many times per second. Prefer cached metadata, bounded output, and commands that start quickly. Slow preview makes entire interface feel slow.</div>
+    </section>
+
+    <section id="layout-style">
+      <h2>10. Layout and appearance</h2>
+      <p>Good presentation communicates scope, available actions, and current mode. fzf can run full-screen, occupy terminal height, or open as a floating pane.</p>
+      <div class="table-wrap"><table><thead><tr><th>Control</th><th>Purpose</th><th>Example</th></tr></thead><tbody>
+        <tr><td><code>--height=70%</code></td><td>Inline finder below cursor; <code>~</code> can adapt height to result count</td><td><code>--height='~60%'</code></td></tr>
+        <tr><td><code>--popup</code>/<code>--tmux</code></td><td>Floating pane in tmux 3.3+ or Zellij 0.44+</td><td><code>--popup=center,80%,60%</code></td></tr>
+        <tr><td><code>--layout</code></td><td>Result direction and prompt position</td><td><code>--layout=reverse</code></td></tr>
+        <tr><td><code>--style</code></td><td>Coherent preset</td><td><code>--style=full:rounded</code></td></tr>
+        <tr><td>Borders/labels</td><td>Separate list, input, header, footer, preview</td><td><code>--input-label=' query '</code></td></tr>
+        <tr><td><code>--header</code>/<code>--footer</code></td><td>Instructions and action hints</td><td><code>--footer='Enter open · Esc cancel'</code></td></tr>
+        <tr><td><code>--ghost</code></td><td>Hint shown in empty query</td><td><code>--ghost='type to filter'</code></td></tr>
+        <tr><td><code>--wrap</code>/<code>--gap</code></td><td>Long or multi-line record readability</td><td><code>--wrap=word --gap</code></td></tr>
+        <tr><td><code>--freeze-left/right</code></td><td>Pin structured fields during horizontal scroll</td><td><code>--freeze-left=2</code></td></tr>
+        <tr><td><code>--color</code></td><td>Base scheme and named color overrides</td><td><code>--color='dark,hl:#ff9b78'</code></td></tr>
+      </tbody></table></div>
+      <pre><code><span class="cmd">fzf</span> --height='~70%' --layout=reverse --style='full:rounded' \
+  --input-label=' query ' --list-label=' matches ' \
+  --preview-label=' preview ' --ghost='type to filter' \
+  --footer='Enter accept · Tab select · Esc cancel'</code></pre>
+      <h3>Raw mode and list fidelity</h3>
+      <p><code>--raw</code> keeps non-matching items visible with a distinct gutter; matching items remain navigable as matches. <code>--no-sort</code> retains input order, while <code>--tac</code> reverses it. These controls help dashboards/logs where surrounding records and source order carry meaning.</p>
+      <div class="callout"><strong>Design rule</strong>Header/footer should explain nonstandard keys and dangerous effects. Labels should name data or mode. Decoration should not conceal selected value or match state.</div>
+    </section>
+
+    <section id="bindings">
+      <h2>11. Bindings and actions: turn selector into interface</h2>
+      <p>Binding shape: <code>KEY:ACTION</code>. Separate bindings with comma; chain actions with <code>+</code>. Quote whole argument for shell.</p>
+      <pre><code><span class="cmd">fzf</span> --multi \
+  --bind='ctrl-a:select-all,ctrl-d:deselect-all' \
+  --bind='ctrl-/:toggle-preview' \
+  --bind='alt-enter:execute(${EDITOR:-vi} -- {})' \
+  --bind='enter:become(${EDITOR:-vi} -- {})'</code></pre>
+      <div class="table-wrap"><table><thead><tr><th>Action family</th><th>Representative actions</th><th>Intent</th></tr></thead><tbody>
+        <tr><td>Finish</td><td><code>accept</code>, <code>abort</code>, <code>become(...)</code></td><td>Exit or replace process</td></tr>
+        <tr><td>Selection</td><td><code>toggle</code>, <code>select-all</code>, <code>deselect-all</code></td><td>Manage multi-selection</td></tr>
+        <tr><td>Process</td><td><code>execute(...)</code>, <code>execute-silent(...)</code></td><td>Run effect, optionally return</td></tr>
+        <tr><td>View</td><td><code>toggle-preview</code>, <code>change-preview-window(...)</code></td><td>Change layout/context</td></tr>
+        <tr><td>Query</td><td><code>clear-query</code>, <code>change-query(...)</code>, <code>replace-query</code></td><td>Manipulate search</td></tr>
+        <tr><td>Data</td><td><code>reload(...)</code>, <code>reload-sync(...)</code></td><td>Replace candidate stream</td></tr>
+        <tr><td>Presentation</td><td><code>change-prompt(...)</code>, <code>transform-header(...)</code></td><td>Reflect mode/state</td></tr>
+      </tbody></table></div>
+      <h3>Action delimiters</h3>
+      <p>Parentheses are readable: <code>execute(vim {})</code>. If command contains parentheses, choose paired delimiter unlikely to conflict: <code>execute[cmd]</code>, <code>execute{cmd}</code>, <code>execute~cmd~</code>. Colon form consumes rest of binding and must be last.</p>
+      <h3>Choose effect semantics deliberately</h3>
+      <ul>
+        <li><code>execute(...)</code>: visible interactive command; fzf returns afterward.</li>
+        <li><code>execute-silent(...)</code>: no alternate-screen switch; best for quick invisible effect. Still blocks unless command backgrounds itself.</li>
+        <li><code>become(...)</code>: replaces fzf, simplest final launcher, preserves exit behavior better than parsing text through <code>xargs</code>.</li>
+      </ul>
+    </section>
+
+    <section id="reload">
+      <h2>12. Dynamic data: reloads, events, transforms</h2>
+      <p><code>reload(...)</code> swaps candidates while fzf stays open. Events trigger actions from state changes. Together they create live process pickers, search launchers, log viewers, and dashboards.</p>
+      <h3>Manual process refresh</h3>
+      <pre><code><span class="cmd">ps</span> -ef |
+  <span class="cmd">fzf</span> --header-lines=1 --layout=reverse --track --id-nth=2 \
+    --header='Ctrl-R refreshes · Enter prints process row' \
+    --bind='ctrl-r:reload(ps -ef)'</code></pre>
+      <h3>Interactive ripgrep launcher</h3>
+      <pre><code>RG='rg --column --line-number --no-heading --color=always --smart-case'
+<span class="cmd">fzf</span> --ansi --disabled --query='' \
+  --bind="start,change:reload:$RG {q} || true" \
+  --delimiter=: \
+  --preview='bat --color=always --highlight-line {2} -- {1}' \
+  --preview-window='right,60%,+{2}/2' \
+  --bind='enter:become(${EDITOR:-vi} +{2} -- {1})'</code></pre>
+      <div class="callout warn"><strong>Why <code>--disabled</code>?</strong>ripgrep owns content search. fzf passes query to ripgrep through <code>{q}</code> and displays returned records without applying second fuzzy filter. Add key binding to toggle into fzf-only filtering when desired.</div>
+      <h3>Useful events</h3>
+      <div class="table-wrap"><table><thead><tr><th>Event</th><th>When</th><th>Typical use</th></tr></thead><tbody>
+        <tr><td><code>start</code></td><td>Once at launch</td><td>Initial reload or layout state</td></tr>
+        <tr><td><code>load</code></td><td>Input stream completes</td><td>Change “Loading” prompt</td></tr>
+        <tr><td><code>change</code></td><td>Query changes</td><td>Reload search results</td></tr>
+        <tr><td><code>result</code>/<code>result-final</code></td><td>Filtering snapshot/final result ready</td><td>Count-driven state</td></tr>
+        <tr><td><code>focus</code></td><td>Current row changes</td><td>Dynamic labels; keep command fast</td></tr>
+        <tr><td><code>one</code>/<code>zero</code></td><td>One/no match</td><td>Auto-accept or fallback reload</td></tr>
+        <tr><td><code>every(N)</code></td><td>Timer interval</td><td>Periodic refresh, idle UI</td></tr>
+      </tbody></table></div>
+      <p><code>reload-sync</code> keeps old list until replacement command completes. <code>--track --id-nth=FIELD</code> helps retain focus across reloads by stable identity.</p>
+      <h3>External control with <code>--listen</code></h3>
+      <p>fzf can accept actions over local HTTP or Unix domain socket. This enables another process to send <code>up</code>, <code>reload(...)</code>, or composed actions while interface runs.</p>
+      <pre><code><span class="comment"># Terminal 1: local Unix socket (path must end in .sock)</span>
+<span class="comment"># --no-tmux keeps fzf inline even if your defaults enable --popup/--tmux</span>
+<span class="cmd">fzf</span> --listen=/tmp/my-picker.sock --no-tmux
+
+<span class="comment"># Terminal 2: send harmless navigation action</span>
+<span class="cmd">curl</span> --unix-socket /tmp/my-picker.sock http -d 'down'</code></pre>
+      <div class="callout danger"><strong>Control endpoint is privileged UI input</strong>Keep listener local. Set <code>FZF_API_KEY</code> when TCP endpoint needs protection. Safe listener blocks remote-process actions; <code>--listen-unsafe</code> permits them and should not face untrusted clients.</div>
+    </section>
+
+    <section id="shell">
+      <h2>13. Built-in shell integration</h2>
+      <div class="grid three">
+        <div class="card"><h3><kbd>Ctrl T</kbd></h3><p>Paste selected file paths into current command line. Configure source with <code>FZF_CTRL_T_COMMAND</code> and UI with <code>FZF_CTRL_T_OPTS</code>.</p></div>
+        <div class="card"><h3><kbd>Ctrl R</kbd></h3><p>Search shell command history. Configure interface with <code>FZF_CTRL_R_OPTS</code>. Recent versions can expose raw/history behavior.</p></div>
+        <div class="card"><h3><kbd>Alt C</kbd></h3><p>Select directory and change into it. Configure source with <code>FZF_ALT_C_COMMAND</code> and UI with <code>FZF_ALT_C_OPTS</code>.</p></div>
+      </div>
+      <h3>Fuzzy completion</h3>
+      <p>In Bash/Zsh integration, type trigger (default <code>**</code>) then <kbd>Tab</kbd> in supported contexts:</p>
+      <pre><code><span class="cmd">vim</span> **&lt;Tab&gt;        <span class="comment"># files/directories</span>
+<span class="cmd">cd</span> **&lt;Tab&gt;          <span class="comment"># directories</span>
+<span class="cmd">ssh</span> **&lt;Tab&gt;         <span class="comment"># hostnames</span>
+<span class="cmd">kill</span> -9 **&lt;Tab&gt;     <span class="comment"># processes</span>
+<span class="cmd">export</span> **&lt;Tab&gt;      <span class="comment"># variables</span></code></pre>
+      <h3>Customize before sourcing</h3>
+      <pre><code><span class="comment"># ~/.zshrc, before source &lt;(fzf --zsh)</span>
+export FZF_CTRL_T_OPTS="--preview 'bat --color=always --style=numbers -- {}'"
+export FZF_ALT_C_OPTS="--preview 'tree -C -L 2 -- {}'"
+export FZF_CTRL_R_OPTS="--height=60% --layout=reverse --border"
+source &lt;(<span class="cmd">fzf</span> --zsh)</code></pre>
+    </section>
+
+    <section id="configuration">
+      <h2>14. Configuration: defaults without surprising scripts</h2>
+      <p><code>FZF_DEFAULT_OPTS</code> applies everywhere—interactive commands, scripts, plugins, shell integration. Keep universal defaults visual and conservative. Put workflow behavior in aliases/functions.</p>
+      <pre><code><span class="comment"># Safe-ish global presentation</span>
+export FZF_DEFAULT_OPTS='
+  --height=70%
+  --layout=reverse
+  --border
+  --info=inline-right
+  --cycle
+  --bind=ctrl-/:toggle-preview
+'
+
+<span class="comment"># Alternative: keep defaults in a file, parsed like FZF_DEFAULT_OPTS</span>
+export FZF_DEFAULT_OPTS_FILE="$HOME/.fzfrc"</code></pre>
+      <div class="callout warn"><strong>Avoid global behavior traps</strong>Global <code>--multi</code>, <code>--expect</code>, <code>--print-query</code>, <code>--read0</code>, custom <kbd>Enter</kbd>, or broad <code>--bind</code> can break consumers expecting ordinary output.</div>
+      <h3>Reusable function pattern</h3>
+      <pre><code><span class="comment"># Zsh/Bash: choose Git branch and switch</span>
+fbr() {
+  local branch
+  branch=$(<span class="cmd">git</span> for-each-ref --format='%(refname:short)' refs/heads |
+    <span class="cmd">fzf</span> --scheme=path --prompt='branch › ' \
+      --preview='git log --color=always --oneline --decorate -20 {}') || return
+  <span class="cmd">git</span> switch -- "$branch"
+}</code></pre>
+      <p>Function owns source, UI, cancel branch, and effect. Easier to test than dense alias; avoids global side effects.</p>
+    </section>
+
+    <section id="recipes">
+      <h2>15. Practical recipes</h2>
+      <details open><summary>Open one or many files</summary><pre><code><span class="cmd">fzf</span> --multi \
+  --preview='bat --color=always --style=numbers --line-range=:300 -- {}' \
+  --bind='enter:become(${EDITOR:-vi} -- {+})'</code></pre></details>
+      <details><summary>Change directory with preview</summary><pre><code>cdir() {
+  local dir
+  dir=$(<span class="cmd">find</span> . -type d -not -path '*/.git/*' |
+    <span class="cmd">fzf</span> --scheme=path --preview='ls -la -- {}') || return
+  <span class="cmd">cd</span> -- "$dir" || return
+}</code></pre></details>
+      <details><summary>Switch Git branch</summary><pre><code>branch=$(<span class="cmd">git</span> for-each-ref --sort=-committerdate \
+  --format='%(refname:short)\t%(committerdate:relative)\t%(subject)' refs/heads |
+  <span class="cmd">fzf</span> --delimiter=$'\t' --with-nth=1,2,3 --accept-nth=1 \
+    --preview='git log --color=always --oneline --decorate -30 {1}') || exit
+<span class="cmd">git</span> switch -- "$branch"</code></pre></details>
+      <details><summary>Browse Git commits</summary><pre><code><span class="cmd">git</span> log --color=always --format='%C(yellow)%h%Creset %C(cyan)%ad%Creset %s%C(auto)%d' --date=short |
+  <span class="cmd">fzf</span> --ansi --no-sort --scheme=history \
+    --preview='git show --color=always {1}' \
+    --bind='enter:become(git show --color=always {1} | less -R)'</code></pre></details>
+      <details><summary>Search repository text and open line</summary><pre><code><span class="cmd">rg</span> --column --line-number --no-heading --color=always --smart-case . |
+  <span class="cmd">fzf</span> --ansi --delimiter=: \
+    --preview='bat --color=always --highlight-line {2} -- {1}' \
+    --preview-window='right,60%,+{2}/2' \
+    --bind='enter:become(${EDITOR:-vi} +{2} -- {1})'</code></pre></details>
+      <details><summary>Choose process, review, then send TERM</summary><pre><code>pid=$(<span class="cmd">ps</span> -eo pid,user,%cpu,%mem,command |
+  <span class="cmd">fzf</span> --header-lines=1 --layout=reverse --prompt='process › ' \
+    --preview='ps -p {1} -o pid,ppid,user,%cpu,%mem,lstart,command' \
+    --accept-nth=1) || exit
+<span class="cmd">kill</span> -TERM "$pid"</code></pre><div class="callout danger"><strong>Review before signal</strong>Prefer <code>TERM</code>; reserve <code>KILL</code> for processes that cannot shut down cleanly. Confirm PID and owner.</div></details>
+      <details><summary>Inspect environment variable</summary><pre><code>name=$(<span class="cmd">env</span> | cut -d= -f1 | sort | <span class="cmd">fzf</span> --prompt='env › ') || exit
+<span class="cmd">printf</span> '%s=%s\n' "$name" "${!name}"  <span class="comment"># Bash indirect expansion</span></code></pre></details>
+      <details><summary>Pick Docker container</summary><pre><code>id=$(<span class="cmd">docker</span> ps --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}' |
+  <span class="cmd">fzf</span> --delimiter=$'\t' --with-nth=2.. --accept-nth=1 \
+    --preview='docker logs --tail 100 {1} 2&gt;&amp;1') || exit
+<span class="cmd">docker</span> exec -it "$id" sh</code></pre></details>
+      <details><summary>Browse recent directories from zoxide</summary><pre><code><span class="comment"># Function so cd affects your shell and `return` is valid</span>
+zd() {
+  local dir
+  dir=$(<span class="cmd">zoxide</span> query --list |
+    <span class="cmd">fzf</span> --scheme=path --preview='ls -la -- {}') || return
+  <span class="cmd">cd</span> -- "$dir" || return
+}</code></pre></details>
+      <details><summary>Use fzf as noninteractive fuzzy filter</summary><pre><code><span class="cmd">printf</span> '%s\n' src/app.ts src/app.test.ts docs/api.md |
+  <span class="cmd">fzf</span> --filter='app !test'
+<span class="comment"># suitable for assertions; exits 1 when nothing matches</span></code></pre></details>
+    </section>
+
+    <section id="safety">
+      <h2>16. Safety, quoting, and portability</h2>
+      <div class="grid">
+        <div class="card"><h3>Quote shell variables</h3><p>Use <code>"$choice"</code>, never bare <code>$choice</code>. Add <code>--</code> before path arguments where supported.</p></div>
+        <div class="card"><h3>Use placeholders</h3><p>fzf shell-quotes <code>{}</code>/<code>{+}</code>. Do not wrap placeholder in extra quotes unless exact command requires it.</p></div>
+        <div class="card"><h3>Avoid parsing display text</h3><p>Carry stable ID as field; show friendly fields; emit ID with <code>--accept-nth</code>.</p></div>
+        <div class="card"><h3>Treat preview as code</h3><p>Preview/action templates execute shell. Candidate text can be hostile; placeholder quoting limits injection, not target-command behavior.</p></div>
+      </div>
+      <h3>Common unsafe shape</h3>
+      <pre><code><span class="comment"># Fragile: word splitting, option injection, cancel ambiguity</span>
+<span class="cmd">rm</span> $(<span class="cmd">find</span> . -type f | <span class="cmd">fzf</span> --multi)
+
+<span class="comment"># Safer: NUL records + explicit loop + --</span>
+<span class="cmd">find</span> . -type f -print0 | <span class="cmd">fzf</span> --read0 --print0 --multi |
+  <span class="cmd">while</span> IFS= read -r -d '' path; do
+    <span class="cmd">printf</span> 'would remove: %q\n' "$path"  <span class="comment"># review first</span>
+  done</code></pre>
+      <div class="callout danger"><strong>Destructive actions deserve confirmation</strong>Use fzf to choose, then show exact targets and confirm outside fzf. Avoid binding destructive command directly to a single keystroke.</div>
+      <h3>Portability notes</h3>
+      <ul>
+        <li>macOS ships BSD tools; GNU-only flags may fail. <code>sed -n</code>, <code>find -print0</code>, and quoted shell loops travel better—but BSD sed rejects <code>--</code> end-of-options, so omit it there.</li>
+        <li><code>bat</code>, <code>fd</code>, <code>rg</code>, <code>tree</code>, <code>zoxide</code> are optional companions, not fzf requirements.</li>
+        <li>Action commands run through <code>$SHELL -c</code> on Unix. Script snippets needing Bash should declare Bash.</li>
+        <li>Terminal key encodings vary; some <code>Ctrl</code>/modified bindings cannot be distinguished.</li>
+      </ul>
+    </section>
+
+    <section id="performance">
+      <h2>17. Performance and large/streaming inputs</h2>
+      <ul>
+        <li><strong>Stream early.</strong> fzf begins rendering before producer finishes unless <code>--sync</code>.</li>
+        <li><strong>Let specialized search tools search.</strong> Use ripgrep for file contents; fzf for interactive narrowing.</li>
+        <li><strong>Bound infinite streams.</strong> <code>--tail=100000 --tac --no-sort --exact</code> limits memory and shows newest records first.</li>
+        <li><strong>Keep previews cheap.</strong> Limit lines; avoid repeated network/API calls on focus.</li>
+        <li><strong>Avoid unnecessary transforms.</strong> <code>--with-nth</code> retains original lines and increases memory use.</li>
+        <li><strong>Choose algorithm only with evidence.</strong> Default v2 optimizes ranking; <code>--algo=v1</code> trades optimal scoring for speed.</li>
+      </ul>
+      <pre><code><span class="comment"># Follow logs, retain latest 100k records</span>
+<span class="cmd">tail</span> -f app.log |
+  <span class="cmd">fzf</span> --tail=100000 --tac --no-sort --exact \
+    --preview-window='down,40%,follow' --preview='printf "%s\n" {}'</code></pre>
+    </section>
+
+    <section id="troubleshooting">
+      <h2>18. Troubleshooting</h2>
+      <div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr></thead><tbody>
+        <tr><td>Bare <code>fzf</code> lists unexpected files</td><td>Built-in walker scope/defaults</td><td>Pipe explicit producer or tune <code>--walker</code>, <code>--walker-root</code>, <code>--walker-skip</code>.</td></tr>
+        <tr><td>Colors show as escape codes</td><td>Colored input without ANSI parsing</td><td>Add <code>--ansi</code>.</td></tr>
+        <tr><td>Preview breaks on spaces</td><td>Manual interpolation/quoting</td><td>Use fzf placeholders and <code>--</code>.</td></tr>
+        <tr><td>Preview painfully slow</td><td>Expensive focus-triggered command</td><td>Bound output, cache results, move work to source.</td></tr>
+        <tr><td>Script acts after Esc</td><td>Ignored exit status/empty substitution</td><td>Use <code>choice=$(...) || return</code> or <code>if</code>.</td></tr>
+        <tr><td>Binding parse error</td><td>Nested delimiters/commas</td><td>Use alternate action delimiter; quote complete <code>--bind</code>.</td></tr>
+        <tr><td><kbd>Ctrl T</kbd> does nothing</td><td>Integration not loaded, variable disabled, terminal conflict</td><td>Run <code>fzf --zsh</code>/<code>--bash</code> check; inspect startup order/key mapping.</td></tr>
+        <tr><td>Option “unknown”</td><td>Older package version</td><td>Check <code>fzf --version</code>, <code>fzf --help</code>; update or use older equivalent.</td></tr>
+        <tr><td>Selected display text corrupts ID</td><td>Presentation and output conflated</td><td>Use delimiter + <code>--with-nth</code> + <code>--accept-nth</code>.</td></tr>
+        <tr><td>Reload empties list during slow query</td><td>Asynchronous <code>reload</code></td><td>Use <code>reload-sync</code> when retaining old list matters.</td></tr>
+      </tbody></table></div>
+      <h3>Debug in layers</h3>
+      <ol>
+        <li>Run producer alone. Confirm records and delimiters.</li>
+        <li>Pipe into plain <code>fzf</code>. Confirm matching/selection.</li>
+        <li>Add display/field options. Confirm accepted output using <code>| od -c</code> or <code>| sed -n l</code>.</li>
+        <li>Add preview. Replace command temporarily with <code>printf '%s\n' {}</code>.</li>
+        <li>Add bindings one at a time.</li>
+        <li>Add final effect only after inspecting exact emitted value.</li>
+      </ol>
+    </section>
+
+    <section id="exercises">
+      <h2>19. Exercises: build fluency</h2>
+      <div class="grid">
+        <div class="card"><h3>Starter · Color picker</h3><p>Feed 8 color names, select one, print sentence. Handle Esc without printing selection.</p><details><summary>One solution</summary><pre><code>if color=$(<span class="cmd">printf</span> '%s\n' red orange yellow green blue indigo violet black | <span class="cmd">fzf</span>); then
+  <span class="cmd">printf</span> 'You chose %s.\n' "$color"
+fi</code></pre></details></div>
+        <div class="card"><h3>Starter · Exact and negative</h3><p>Create path list. Query only Markdown files under docs, excluding archive.</p><details><summary>Query</summary><p><code>^docs !archive .md$</code></p></details></div>
+        <div class="card"><h3>Intermediate · ID/label split</h3><p>Create tab-separated service ID, name, status. Search name/status, display both, emit only ID.</p><details><summary>Options</summary><p><code>--delimiter=$'\t' --with-nth=2,3 --accept-nth=1</code></p></details></div>
+        <div class="card"><h3>Intermediate · Git branch switcher</h3><p>Sort by commit date, preview 20 commits, return on Esc, switch accepted branch.</p></div>
+        <div class="card"><h3>Advanced · Dual-mode search</h3><p>Start with ripgrep owning query; bind key to stop reload and enable fzf search; update prompt to show current mode.</p></div>
+        <div class="card"><h3>Advanced · Live process board</h3><p>Refresh every 2 seconds, retain cursor by PID, preview details, require explicit confirmation before signal.</p></div>
+      </div>
+      <div class="callout blue"><strong>Completion test</strong>Explain each workflow aloud as: source record → searchable/displayed fields → preview placeholders → accepted record → effect → cancel behavior. If each part is explicit, design is probably sound.</div>
+    </section>
+
+    <section id="quiz">
+      <h2>20. Retrieval quiz</h2>
+      <p>Answer aloud before revealing. Mark honestly; score persists locally in this browser.</p>
+      <div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0 answered</div>
+      <div class="quiz-item" data-q="1"><div class="quiz-q"><span class="qnum">Q1</span>Query for entries starting with <code>src</code>, excluding <code>test</code>, ending <code>.ts</code> or <code>.tsx</code>?</div><div class="quiz-answer"><code>^src !test .ts$ | .tsx$</code> — terms AND within each side of the bar; bar separates OR alternatives.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+      <div class="quiz-item" data-q="2"><div class="quiz-q"><span class="qnum">Q2</span>Difference between <code>execute(...)</code> and <code>become(...)</code>?</div><div class="quiz-answer"><code>execute</code> runs the command and returns to fzf. <code>become</code> replaces the fzf process—natural for a final “open this” action.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+      <div class="quiz-item" data-q="3"><div class="quiz-q"><span class="qnum">Q3</span>Meaning of exit statuses 0, 1, 2, 130?</div><div class="quiz-answer">0 normal acceptance · 1 no match · 2 fzf error · 130 cancelled with Esc/Ctrl-C. (126/127: <code>become</code> permission/command errors.)</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+      <div class="quiz-item" data-q="4"><div class="quiz-q"><span class="qnum">Q4</span>Tab-separated <code>id</code>/<code>name</code>/<code>status</code> rows: show name+status, emit only id—options?</div><div class="quiz-answer"><code>--delimiter=$'\t' --with-nth=2,3 --accept-nth=1</code>.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+      <div class="quiz-item" data-q="5"><div class="quiz-q"><span class="qnum">Q5</span>What do <code>{}</code>, <code>{+}</code>, and <code>{q}</code> expand to?</div><div class="quiz-answer"><code>{}</code> current item, shell-quoted. <code>{+}</code> all selected items (current if none marked). <code>{q}</code> current query.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+      <div class="quiz-item" data-q="6"><div class="quiz-q"><span class="qnum">Q6</span>Why does the interactive ripgrep launcher use <code>--disabled</code>?</div><div class="quiz-answer">ripgrep owns content search; fzf passes <code>{q}</code> to it via <code>reload</code> on <code>change</code> and must not apply a second fuzzy filter over the results.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+      <div class="quiz-item" data-q="7"><div class="quiz-q"><span class="qnum">Q7</span>Filename-safe multi-select pipeline for arbitrary paths?</div><div class="quiz-answer"><code>find . -type f -print0 | fzf --read0 --print0 --multi | while IFS= read -r -d '' path; …</code> — NUL delimiters end-to-end, review before destructive action.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+      <div class="quiz-item" data-q="8"><div class="quiz-q"><span class="qnum">Q8</span>After <code>--with-nth</code> transforms display, which line do preview placeholders read? Which do <code>--nth</code> expressions read?</div><div class="quiz-answer">Preview placeholders extract from the <strong>original</strong> input line. <code>--nth</code> search expressions apply to the <strong>transformed</strong> display line.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+      <div class="quiz-item" data-q="9"><div class="quiz-q"><span class="qnum">Q9</span>Keep the old list visible during a slow reload, and keep focus on the same logical item—how?</div><div class="quiz-answer"><code>reload-sync(...)</code> retains the old list until the new stream completes; <code>--track --id-nth=FIELD</code> retains focus by stable identity.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+      <div class="quiz-item" data-q="10"><div class="quiz-q"><span class="qnum">Q10</span>What does <code>'foo'</code> (quotes on both ends) match?</div><div class="quiz-answer">Exact occurrences of <code>foo</code> with both ends at word boundaries; underscore also counts as a boundary (unlike regex <code>\b</code>).</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+      <div class="quiz-item" data-q="11"><div class="quiz-q"><span class="qnum">Q11</span>Bound memory while following an endless log stream?</div><div class="quiz-answer"><code>--tail=N</code> caps items kept in memory; combine with <code>--tac --no-sort</code> to show newest first in source order.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+      <div class="quiz-item" data-q="12"><div class="quiz-q"><span class="qnum">Q12</span>Effect of setting <code>FZF_CTRL_T_COMMAND</code> to an empty string before sourcing integration?</div><div class="quiz-answer">Disables the <kbd>Ctrl</kbd>+<kbd>T</kbd> binding entirely (same pattern for <code>FZF_ALT_C_COMMAND</code>).</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+    </section>
+
+    <section id="cheatsheet">
+      <h2>21. One-page cheat sheet</h2>
+      <div class="grid">
+        <div class="card"><h3>Queries</h3><p><code>abc</code> fuzzy<br><code>'abc</code> exact<br><code>^abc</code> prefix<br><code>abc$</code> suffix<br><code>!abc</code> exclude<br><code>a | b</code> OR<br><code>a b</code> AND</p></div>
+        <div class="card"><h3>Core UI</h3><p><kbd>Ctrl J/K</kbd> move<br><kbd>Enter</kbd> accept<br><kbd>Tab</kbd> mark + down<br><kbd>Shift Tab</kbd> mark + up<br><kbd>Esc</kbd> cancel<br><kbd>Shift ↑/↓</kbd> preview scroll</p></div>
+        <div class="card"><h3>Fields</h3><p><code>-d</code> delimiter<br><code>--nth</code> search<br><code>--with-nth</code> display<br><code>--accept-nth</code> output<br><code>{1}</code> field<br><code>{+}</code> selections<br><code>{q}</code> query</p></div>
+        <div class="card"><h3>Build UI</h3><p><code>--preview</code> context<br><code>--bind</code> behavior<br><code>execute</code> run + return<br><code>become</code> replace<br><code>reload</code> new data<br><code>--disabled</code> selector mode</p></div>
+        <div class="card"><h3>Safe shell</h3><p>Capture status<br>Quote <code>"$value"</code><br>Use <code>--</code><br>NUL: <code>--read0 --print0</code><br>Separate display from ID</p></div>
+        <div class="card"><h3>Learn installed build</h3><p><code>fzf --version</code><br><code>fzf --help</code><br><code>fzf --man</code><br><code>man fzf</code></p></div>
+      </div>
+      <pre><code><span class="comment"># Universal starting pattern</span>
+choice=$(<span class="cmd">producer</span> | <span class="cmd">fzf</span> --prompt='choose › ' --preview='inspect {}') || exit
+<span class="cmd">consumer</span> -- "$choice"</code></pre>
+    </section>
+
+    <section id="sources">
+      <h2>22. Sources and version note</h2>
+      <p>This guide prioritizes installed fzf 0.74.2 help/man page, then official project documentation. Features differ across releases; use local <code>fzf --man</code> as authority for installed binary.</p>
+      <ul class="source-list">
+        <li><a href="https://github.com/junegunn/fzf" target="_blank" rel="noopener">Official fzf repository and README</a> — installation, shell integration, core examples.</li>
+        <li><a href="https://github.com/junegunn/fzf/blob/master/ADVANCED.md" target="_blank" rel="noopener">Official advanced examples</a> — reloads, ripgrep, previews, Git and process workflows.</li>
+        <li><a href="https://github.com/junegunn/fzf/blob/master/CHANGELOG.md" target="_blank" rel="noopener">Official changelog</a> — feature/version history.</li>
+        <li><code>fzf --help</code> and <code>fzf --man</code> — option, action, event, environment, placeholder, and exit-status semantics for local 0.74.2 binary.</li>
+      </ul>
+      <p class="mini">Guide examples target POSIX-ish shell where practical and label Bash/Zsh assumptions. Optional tools: ripgrep (<code>rg</code>), bat, fd, tree, zoxide, Git, Docker.</p>
+      <p class="print-only">Printed from local fzf field guide.</p>
+    </section>
+  </main>
+</div>
+<script>
+(() => {
+  'use strict';
+
+  // Theme: system by default, explicit choice persisted.
+  const root = document.documentElement;
+  const themeButton = document.getElementById('themeToggle');
+  const storedTheme = localStorage.getItem('fzf-guide-theme');
+  if (storedTheme === 'light' || storedTheme === 'dark') root.classList.add(storedTheme);
+  themeButton.addEventListener('click', () => {
+    const darkNow = root.classList.contains('dark') || (!root.classList.contains('light') && matchMedia('(prefers-color-scheme: dark)').matches);
+    root.classList.remove('light', 'dark');
+    const next = darkNow ? 'light' : 'dark';
+    root.classList.add(next);
+    localStorage.setItem('fzf-guide-theme', next);
+  });
+
+  // Copy buttons for every command block.
+  document.querySelectorAll('pre').forEach(pre => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'copy';
+    button.textContent = 'Copy';
+    button.setAttribute('aria-label', 'Copy command');
+    button.addEventListener('click', async () => {
+      const code = pre.querySelector('code');
+      try {
+        await navigator.clipboard.writeText(code ? code.innerText : pre.innerText);
+        button.textContent = 'Copied';
+        setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+      } catch (_) {
+        button.textContent = 'Select text';
+      }
+    });
+    pre.appendChild(button);
+  });
+
+  // Reading progress and back-to-top.
+  const fill = document.getElementById('progressFill');
+  const progressLabel = document.getElementById('progressLabel');
+  const topButton = document.getElementById('topButton');
+  const updateScroll = () => {
+    const max = document.documentElement.scrollHeight - innerHeight;
+    const pct = max > 0 ? Math.min(100, Math.max(0, scrollY / max * 100)) : 0;
+    fill.style.width = `${pct}%`;
+    progressLabel.textContent = `${Math.round(pct)}% through guide`;
+    topButton.classList.toggle('visible', scrollY > 650);
+  };
+  addEventListener('scroll', updateScroll, { passive: true });
+  updateScroll();
+
+  // Active section observer.
+  const tocLinks = [...document.querySelectorAll('#toc a')];
+  const linkForId = new Map(tocLinks.map(a => [a.getAttribute('href').slice(1), a]));
+  const observer = new IntersectionObserver(entries => {
+    const visible = entries.filter(e => e.isIntersecting).sort((a,b) => a.boundingClientRect.top - b.boundingClientRect.top);
+    if (!visible.length) return;
+    tocLinks.forEach(a => a.classList.remove('active'));
+    const link = linkForId.get(visible[0].target.id);
+    if (link) link.classList.add('active');
+  }, { rootMargin: '-10% 0px -78% 0px', threshold: 0 });
+  document.querySelectorAll('main section[id]').forEach(section => observer.observe(section));
+
+  // Filter navigation labels.
+  const tocFilter = document.getElementById('tocFilter');
+  tocFilter.addEventListener('input', () => {
+    const q = tocFilter.value.trim().toLowerCase();
+    tocLinks.forEach(a => a.classList.toggle('hidden', q && !a.textContent.toLowerCase().includes(q)));
+  });
+
+  // Lightweight fzf-like simulator. Supports fuzzy AND, !exact exclusion, simple OR.
+  const candidates = [
+    'src/app/config.ts', 'src/app/router.ts', 'src/components/SearchPanel.tsx',
+    'src/components/SearchPanel.test.tsx', 'tests/app.integration.test.ts',
+    'docs/configuration.md', 'docs/getting-started.md', 'scripts/release.sh',
+    '.github/workflows/ci.yml', 'README.md'
+  ];
+  const simInput = document.getElementById('simInput');
+  const simList = document.getElementById('simList');
+  const simCount = document.getElementById('simCount');
+  const simAccepted = document.getElementById('simAccepted');
+  let cursor = 0;
+  const selected = new Set();
+
+  function fuzzyScore(text, pattern) {
+    const smartSensitive = /[A-Z]/.test(pattern);
+    const hay = smartSensitive ? text : text.toLowerCase();
+    const needle = smartSensitive ? pattern : pattern.toLowerCase();
+    if (!needle) return 1;
+    let at = -1, score = 0, run = 0;
+    for (const ch of needle) {
+      const next = hay.indexOf(ch, at + 1);
+      if (next < 0) return 0;
+      run = next === at + 1 ? run + 1 : 0;
+      score += 20 - Math.min(next, 15) + run * 5;
+      if (next === 0 || '/-_.'.includes(hay[next - 1])) score += 12;
+      at = next;
+    }
+    return Math.max(1, score - hay.length * .08);
+  }
+  function termScore(text, raw) {
+    if (!raw) return 1;
+    const sensitive = /[A-Z]/.test(raw);
+    const hay = sensitive ? text : text.toLowerCase();
+    let term = sensitive ? raw : raw.toLowerCase();
+    const negative = term.startsWith('!');
+    if (negative) term = term.slice(1);
+    const prefix = term.startsWith('^');
+    const suffix = term.endsWith('$');
+    if (prefix) term = term.slice(1);
+    if (suffix) term = term.slice(0, -1);
+    const exact = term.startsWith("'");
+    if (exact) term = term.slice(1);
+    const boundary = exact && term.length > 1 && term.endsWith("'");
+    if (boundary) term = term.slice(0, -1);
+    let matched;
+    if (boundary) {
+      const esc = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      matched = new RegExp(`(?:^|[^A-Za-z0-9])${esc}(?:[^A-Za-z0-9]|$)`).test(hay);
+    }
+    else if (prefix && suffix) matched = hay === term;
+    else if (prefix) matched = hay.startsWith(term);
+    else if (suffix) matched = hay.endsWith(term);
+    else if (exact || negative) matched = hay.includes(term);
+    else return negative ? 1 : fuzzyScore(text, raw);
+    if (negative) return matched ? 0 : 1;
+    return matched ? 100 + term.length : 0;
+  }
+  function results() {
+    const groups = simInput.value.trim().split(/\s+\|\s+/).map(group => group.trim().split(/\s+/).filter(Boolean));
+    if (!simInput.value.trim()) return candidates.map((text,index) => ({ text,index,score:1 }));
+    return candidates.map((text,index) => {
+      let best = 0;
+      groups.forEach(terms => {
+        const scores = terms.map(term => termScore(text, term));
+        if (scores.every(Boolean)) best = Math.max(best, scores.reduce((a,b) => a + b, 0));
+      });
+      return { text,index,score:best };
+    }).filter(x => x.score > 0).sort((a,b) => b.score - a.score || a.index - b.index);
+  }
+  function render() {
+    const rows = results();
+    if (cursor >= rows.length) cursor = Math.max(0, rows.length - 1);
+    simCount.textContent = `${rows.length}/${candidates.length}`;
+    simList.textContent = '';
+    if (!rows.length) {
+      const empty = document.createElement('div'); empty.className = 'sim-empty'; empty.textContent = '0/10 · no match'; simList.appendChild(empty); return;
+    }
+    rows.forEach((row,i) => {
+      const el = document.createElement('div');
+      el.className = `sim-row${i === cursor ? ' current' : ''}`;
+      el.setAttribute('role', 'option'); el.setAttribute('aria-selected', selected.has(row.text) ? 'true' : 'false');
+      const mark = document.createElement('span'); mark.className = 'mark'; mark.textContent = selected.has(row.text) ? '┃' : (i === cursor ? '›' : ' ');
+      const name = document.createElement('span'); name.textContent = row.text;
+      const score = document.createElement('span'); score.className = 'sim-score'; score.textContent = Math.round(row.score);
+      el.append(mark,name,score);
+      el.addEventListener('click', () => { cursor = i; render(); simInput.focus(); });
+      simList.appendChild(el);
+    });
+  }
+  simInput.addEventListener('input', () => { cursor = 0; simAccepted.textContent = ''; render(); });
+  simInput.addEventListener('keydown', event => {
+    const rows = results();
+    if (event.key === 'ArrowDown' || (event.ctrlKey && event.key.toLowerCase() === 'j')) { event.preventDefault(); if (rows.length) cursor = (cursor + 1) % rows.length; render(); }
+    else if (event.key === 'ArrowUp' || (event.ctrlKey && event.key.toLowerCase() === 'k')) { event.preventDefault(); if (rows.length) cursor = (cursor - 1 + rows.length) % rows.length; render(); }
+    else if (event.key === 'Tab') { event.preventDefault(); if (rows[cursor]) { const value = rows[cursor].text; selected.has(value) ? selected.delete(value) : selected.add(value); cursor = (cursor + 1) % rows.length; render(); } }
+    else if (event.key === 'Enter') { event.preventDefault(); const accepted = selected.size ? [...selected] : (rows[cursor] ? [rows[cursor].text] : []); simAccepted.textContent = accepted.length ? `· accepted: ${accepted.join(', ')}` : '· nothing accepted'; }
+    else if (event.key === 'Escape') { event.preventDefault(); simInput.value = ''; selected.clear(); cursor = 0; simAccepted.textContent = '· cancelled'; render(); }
+  });
+  render();
+
+  // Retrieval quiz with locally persisted score.
+  const quizKey = 'fzf-guide-quiz-v1';
+  let quizState = {};
+  try { quizState = JSON.parse(localStorage.getItem(quizKey) || '{}'); } catch (_) { quizState = {}; }
+  const quizItems = [...document.querySelectorAll('.quiz-item')];
+  const quizScore = document.getElementById('quizScore');
+  function updateQuiz() {
+    let got = 0, missed = 0;
+    quizItems.forEach(item => {
+      const state = quizState[item.dataset.q];
+      item.classList.toggle('correct', state === 'got');
+      item.classList.toggle('missed', state === 'missed');
+      if (state === 'got') got++;
+      if (state === 'missed') missed++;
+    });
+    quizScore.textContent = `Score: ${got} learned · ${missed} review · ${got + missed}/${quizItems.length} answered`;
+    try { localStorage.setItem(quizKey, JSON.stringify(quizState)); } catch (_) {}
+  }
+  quizItems.forEach(item => {
+    const answer = item.querySelector('.quiz-answer');
+    item.querySelector('.reveal').addEventListener('click', buttonEvent => {
+      answer.classList.toggle('open');
+      buttonEvent.currentTarget.textContent = answer.classList.contains('open') ? 'Hide' : 'Reveal';
+    });
+    item.querySelector('.got').addEventListener('click', () => { quizState[item.dataset.q] = 'got'; updateQuiz(); });
+    item.querySelector('.missed').addEventListener('click', () => { quizState[item.dataset.q] = 'missed'; answer.classList.add('open'); updateQuiz(); });
+  });
+  updateQuiz();
+})();
+</script>
+</body>
+</html>

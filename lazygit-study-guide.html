@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<title>Lazygit: Daily Git Without Losing the Plot</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
+<style>
+  :root {
+    --bg: #f4f7f4;
+    --surface: #ffffff;
+    --surface2: #edf3ee;
+    --ink: #142019;
+    --ink2: #405149;
+    --muted: #708078;
+    --line: #d5dfd8;
+    --hairline: rgba(20,32,25,.11);
+    --accent: #087f5b;
+    --accent-strong: #056246;
+    --accent-wash: rgba(8,127,91,.10);
+    --blue: #2269a8;
+    --blue-wash: rgba(34,105,168,.10);
+    --amber: #9a6500;
+    --amber-wash: rgba(154,101,0,.11);
+    --rose: #a63d54;
+    --rose-wash: rgba(166,61,84,.10);
+    --danger: #b42318;
+    --danger-wash: rgba(180,35,24,.10);
+    --code-bg: #e9efea;
+    --terminal: #101a14;
+    --terminal-ink: #d9eadf;
+    --terminal-muted: #83a18f;
+    --terminal-accent: #5bd3a8;
+    --shadow: 0 8px 30px rgba(22,42,30,.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c120e;
+      --surface: #141d17;
+      --surface2: #1b2720;
+      --ink: #edf6f0;
+      --ink2: #bccbc2;
+      --muted: #87988e;
+      --line: #2a3930;
+      --hairline: rgba(255,255,255,.10);
+      --accent: #5bd3a8;
+      --accent-strong: #86e7c3;
+      --accent-wash: rgba(91,211,168,.12);
+      --blue: #72b7f0;
+      --blue-wash: rgba(114,183,240,.12);
+      --amber: #e3b04b;
+      --amber-wash: rgba(227,176,75,.13);
+      --rose: #ec8ca0;
+      --rose-wash: rgba(236,140,160,.12);
+      --danger: #ff8a7e;
+      --danger-wash: rgba(255,138,126,.13);
+      --code-bg: #1c2921;
+      --terminal: #07100a;
+      --terminal-ink: #d9eadf;
+      --terminal-muted: #83a18f;
+      --terminal-accent: #5bd3a8;
+      --shadow: 0 8px 30px rgba(0,0,0,.25);
+    }
+  }
+  :root.dark {
+    --bg: #0c120e; --surface: #141d17; --surface2: #1b2720;
+    --ink: #edf6f0; --ink2: #bccbc2; --muted: #87988e; --line: #2a3930;
+    --hairline: rgba(255,255,255,.10); --accent: #5bd3a8; --accent-strong: #86e7c3;
+    --accent-wash: rgba(91,211,168,.12); --blue: #72b7f0; --blue-wash: rgba(114,183,240,.12);
+    --amber: #e3b04b; --amber-wash: rgba(227,176,75,.13); --rose: #ec8ca0;
+    --rose-wash: rgba(236,140,160,.12); --danger: #ff8a7e;
+    --danger-wash: rgba(255,138,126,.13); --code-bg: #1c2921;
+    --terminal: #07100a; --terminal-ink: #d9eadf; --terminal-muted: #83a18f;
+    --terminal-accent: #5bd3a8; --shadow: 0 8px 30px rgba(0,0,0,.25);
+  }
+  :root.light {
+    --bg: #f4f7f4; --surface: #ffffff; --surface2: #edf3ee;
+    --ink: #142019; --ink2: #405149; --muted: #708078; --line: #d5dfd8;
+    --hairline: rgba(20,32,25,.11); --accent: #087f5b; --accent-strong: #056246;
+    --accent-wash: rgba(8,127,91,.10); --blue: #2269a8; --blue-wash: rgba(34,105,168,.10);
+    --amber: #9a6500; --amber-wash: rgba(154,101,0,.11); --rose: #a63d54;
+    --rose-wash: rgba(166,61,84,.10); --danger: #b42318;
+    --danger-wash: rgba(180,35,24,.10); --code-bg: #e9efea;
+    --terminal: #101a14; --terminal-ink: #d9eadf; --terminal-muted: #83a18f;
+    --terminal-accent: #5bd3a8; --shadow: 0 8px 30px rgba(22,42,30,.08);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.62 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  a { color: var(--accent-strong); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  button, input { font: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+  .skip-link {
+    position: fixed; left: 12px; top: -80px; z-index: 100;
+    background: var(--surface); color: var(--ink); padding: 8px 12px;
+    border: 1px solid var(--line); border-radius: 8px;
+  }
+  .skip-link:focus { top: 12px; }
+  .layout { display: flex; max-width: 1360px; margin: 0 auto; }
+  .toc {
+    position: sticky; top: 0; align-self: flex-start; width: 252px; height: 100vh;
+    overflow-y: auto; flex: 0 0 auto; padding: 24px 10px 28px 20px;
+    border-right: 1px solid var(--line);
+  }
+  .brand { font-size: 15px; font-weight: 800; letter-spacing: -.01em; }
+  .brand-sub { color: var(--muted); font-size: 12px; margin: 2px 0 16px; }
+  .toc-label {
+    color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .09em;
+    text-transform: uppercase; margin: 17px 10px 4px;
+  }
+  .toc a {
+    display: block; color: var(--ink2); text-decoration: none; font-size: 13px;
+    padding: 5px 10px; border-radius: 7px; margin: 1px 0;
+  }
+  .toc a:hover { background: var(--accent-wash); color: var(--accent-strong); }
+  .toc a.active { background: var(--accent-wash); color: var(--accent-strong); font-weight: 750; }
+  main { min-width: 0; flex: 1; padding: 38px 48px 100px; }
+  .theme-toggle {
+    position: fixed; right: 16px; top: 14px; z-index: 20; color: var(--ink2);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+    padding: 6px 13px; box-shadow: var(--shadow);
+  }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent-strong); }
+  .hero { padding: 18px 0 12px; }
+  .eyebrow { color: var(--accent-strong); font-size: 12px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+  h1 { margin: 7px 0 10px; font-size: clamp(34px, 5vw, 56px); line-height: 1.06; letter-spacing: -.045em; }
+  .subtitle { max-width: 67ch; color: var(--ink2); font-size: 19px; margin: 0 0 18px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge {
+    color: var(--ink2); background: var(--surface2); border: 1px solid var(--line);
+    border-radius: 999px; padding: 4px 10px; font-size: 12px;
+  }
+  h2 {
+    margin: 64px 0 14px; padding-top: 17px; border-top: 1px solid var(--line);
+    font-size: 26px; line-height: 1.22; letter-spacing: -.025em;
+  }
+  h3 { margin: 30px 0 9px; font-size: 18px; line-height: 1.3; }
+  h4 { margin: 20px 0 7px; font-size: 15px; }
+  p { color: var(--ink2); margin: 0 0 13px; }
+  li { color: var(--ink2); margin: 4px 0; }
+  strong { color: var(--ink); }
+  ul, ol { margin: 0 0 16px 23px; padding: 0; }
+  .lede { font-size: 18px; max-width: 68ch; }
+  code, kbd {
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: .88em;
+  }
+  code { color: var(--ink); background: var(--code-bg); padding: 1px 5px; border-radius: 5px; }
+  kbd {
+    display: inline-block; min-width: 1.7em; text-align: center; white-space: nowrap;
+    color: var(--ink); background: var(--surface); border: 1px solid var(--line);
+    border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; line-height: 1.45;
+  }
+  pre {
+    position: relative; margin: 0 0 17px; padding: 16px 18px; overflow-x: auto;
+    color: var(--terminal-ink); background: var(--terminal); border: 1px solid var(--line);
+    border-radius: 10px; line-height: 1.5;
+  }
+  pre code { color: inherit; background: none; padding: 0; font-size: 13px; }
+  .copy-btn {
+    position: absolute; right: 8px; top: 8px; border: 1px solid rgba(255,255,255,.18);
+    background: rgba(255,255,255,.08); color: var(--terminal-ink); border-radius: 6px;
+    padding: 3px 8px; font-size: 11px;
+  }
+  .copy-btn:hover { background: rgba(255,255,255,.15); }
+  .callout {
+    margin: 16px 0; padding: 13px 16px; border-left: 4px solid var(--accent);
+    border-radius: 0 9px 9px 0; background: var(--accent-wash); color: var(--ink2);
+  }
+  .callout.warn { border-color: var(--amber); background: var(--amber-wash); }
+  .callout.danger { border-color: var(--danger); background: var(--danger-wash); }
+  .callout.blue { border-color: var(--blue); background: var(--blue-wash); }
+  .callout strong:first-child { display: block; margin-bottom: 3px; }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 16px 0; }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 11px;
+    padding: 16px; box-shadow: 0 2px 10px var(--hairline);
+  }
+  .card h3, .card h4 { margin-top: 0; }
+  .card p:last-child, .callout p:last-child { margin-bottom: 0; }
+  .keyline { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 7px 0; color: var(--ink2); }
+  .arrow { color: var(--muted); }
+  .table-wrap { overflow-x: auto; margin: 13px 0 20px; border: 1px solid var(--line); border-radius: 10px; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); font-size: 14px; }
+  th { text-align: left; color: var(--ink); background: var(--surface2); font-size: 12px; letter-spacing: .02em; }
+  th, td { padding: 9px 11px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  td { color: var(--ink2); }
+  .workflow {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; margin: 18px 0;
+  }
+  .workflow > div {
+    position: relative; text-align: center; padding: 12px 8px; color: var(--ink2);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 9px; font-size: 13px;
+  }
+  .workflow strong { display: block; color: var(--accent-strong); font-size: 12px; }
+  .workflow > div:not(:last-child)::after {
+    content: "→"; position: absolute; right: -9px; top: 50%; transform: translateY(-50%);
+    z-index: 2; color: var(--muted); background: var(--bg); padding: 0 2px;
+  }
+  .lab {
+    margin: 22px 0; padding: 19px; border: 1px solid var(--line); border-radius: 12px;
+    background: linear-gradient(145deg, var(--surface), var(--blue-wash));
+  }
+  .lab-title { color: var(--blue); font-weight: 850; font-size: 17px; margin-bottom: 5px; }
+  .lab-meta { color: var(--muted); font-size: 12px; margin-bottom: 14px; }
+  .checklist { list-style: none; margin-left: 0; }
+  .checklist li { position: relative; padding-left: 25px; }
+  .checklist li::before { content: "□"; position: absolute; left: 1px; color: var(--blue); font-weight: 800; }
+  details { margin: 11px 0; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
+  summary { cursor: pointer; color: var(--ink); font-weight: 720; padding: 10px 13px; }
+  details > :not(summary) { margin-left: 13px; margin-right: 13px; }
+  details > :last-child { margin-bottom: 13px; }
+
+  .sim-shell {
+    margin: 20px 0; overflow: hidden; border: 1px solid #314438; border-radius: 12px;
+    background: var(--terminal); color: var(--terminal-ink); box-shadow: var(--shadow);
+  }
+  .sim-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 9px 12px; background: #17251c; border-bottom: 1px solid #314438;
+    color: var(--terminal-muted); font: 12px ui-monospace, monospace;
+  }
+  .sim-dots { color: #ffcc66; letter-spacing: 3px; }
+  .sim-grid { display: grid; grid-template-columns: 42% 58%; min-height: 360px; }
+  .sim-left { border-right: 1px solid #314438; }
+  .sim-panel { padding: 8px 10px; border-bottom: 1px solid #26372c; min-height: 58px; }
+  .sim-panel.focused { box-shadow: inset 0 0 0 2px var(--terminal-accent); }
+  .sim-title { color: var(--terminal-accent); font: 700 12px ui-monospace, monospace; margin-bottom: 4px; }
+  .sim-row { color: var(--terminal-muted); font: 13px/1.5 ui-monospace, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sim-row.selected { color: #07100a; background: var(--terminal-accent); }
+  .sim-row.staged::before { content: "● "; color: #85e89d; }
+  .sim-row.unstaged::before { content: "○ "; color: #ffcc66; }
+  .sim-main { padding: 13px 15px; overflow: hidden; }
+  .sim-main h4 { color: var(--terminal-accent); margin: 0 0 9px; font: 700 13px ui-monospace, monospace; }
+  .sim-main pre { border: 0; padding: 0; margin: 0; font-size: 12px; }
+  .sim-add { color: #85e89d; }
+  .sim-del { color: #ff7b72; }
+  .sim-footer {
+    display: flex; flex-wrap: wrap; gap: 7px; align-items: center; padding: 10px 12px;
+    background: #17251c; border-top: 1px solid #314438;
+  }
+  .sim-key {
+    color: var(--terminal-ink); background: #22342a; border: 1px solid #45604e;
+    border-radius: 6px; padding: 4px 8px; font: 12px ui-monospace, monospace;
+  }
+  .sim-key:hover { color: #07100a; background: var(--terminal-accent); }
+  .sim-status { margin-left: auto; color: var(--terminal-muted); font: 12px ui-monospace, monospace; }
+  .sim-editor { display: none; gap: 8px; padding: 11px 12px; border-top: 1px solid #314438; }
+  .sim-editor.open { display: flex; }
+  .sim-editor input {
+    flex: 1; min-width: 0; color: var(--terminal-ink); background: #0b160f;
+    border: 1px solid #45604e; border-radius: 6px; padding: 7px 9px;
+  }
+  .sim-editor button { color: #07100a; background: var(--terminal-accent); border: 0; border-radius: 6px; padding: 7px 10px; }
+  .sim-message { min-height: 24px; color: var(--accent-strong); font-weight: 700; }
+
+  .quiz-score {
+    position: sticky; top: 10px; z-index: 5; display: inline-block; margin: 8px 0 14px;
+    color: var(--accent-strong); background: var(--surface); border: 1px solid var(--line);
+    border-radius: 999px; padding: 6px 12px; box-shadow: var(--shadow); font-size: 13px;
+  }
+  .quiz-item { margin: 12px 0; padding: 15px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+  .quiz-q { color: var(--ink); font-weight: 700; }
+  .qnum { display: inline-block; min-width: 2.1em; color: var(--accent-strong); }
+  .quiz-answer { display: none; padding: 10px 0 2px; color: var(--ink2); }
+  .quiz-answer.open { display: block; }
+  .quiz-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+  .quiz-actions button {
+    color: var(--ink2); background: var(--surface2); border: 1px solid var(--line);
+    border-radius: 7px; padding: 5px 9px; font-size: 12px;
+  }
+  .quiz-actions button:hover { color: var(--accent-strong); border-color: var(--accent); }
+  .quiz-item.correct { border-color: var(--accent); background: var(--accent-wash); }
+  .quiz-item.missed { border-color: var(--amber); background: var(--amber-wash); }
+  .glossary { display: grid; grid-template-columns: 150px 1fr; gap: 0; border-top: 1px solid var(--line); }
+  .glossary dt, .glossary dd { margin: 0; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+  .glossary dt { color: var(--ink); font-weight: 750; }
+  .glossary dd { color: var(--ink2); }
+  .tiny { color: var(--muted); font-size: 12px; }
+  .danger-text { color: var(--danger); font-weight: 750; }
+
+  @media (max-width: 940px) {
+    .layout { display: block; }
+    .toc {
+      position: static; width: auto; height: auto; border-right: 0; border-bottom: 1px solid var(--line);
+      display: flex; flex-wrap: wrap; gap: 2px; padding: 14px 16px;
+    }
+    .brand, .brand-sub, .toc-label { width: 100%; }
+    .toc-label { margin-top: 8px; }
+    .toc a { font-size: 12px; padding: 4px 7px; }
+    main { padding: 28px 18px 80px; }
+    .workflow { grid-template-columns: 1fr; }
+    .workflow > div:not(:last-child)::after { content: "↓"; right: 50%; top: auto; bottom: -16px; transform: translateX(50%); }
+  }
+  @media (max-width: 680px) {
+    .grid { grid-template-columns: 1fr; }
+    .sim-grid { grid-template-columns: 1fr; }
+    .sim-left { border-right: 0; border-bottom: 1px solid #314438; }
+    .sim-main { min-height: 220px; }
+    .glossary { grid-template-columns: 1fr; }
+    .glossary dt { border-bottom: 0; padding-bottom: 0; }
+    .theme-toggle { position: absolute; }
+  }
+  @media print {
+    :root { color-scheme: light; }
+    body { background: #fff; color: #111; font-size: 11pt; }
+    .toc, .theme-toggle, .skip-link, .copy-btn, .sim-footer, .sim-editor, .quiz-actions { display: none !important; }
+    main { padding: 0; max-width: none; }
+    a { color: #111; text-decoration: none; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 8pt; overflow-wrap: anywhere; }
+    h2 { break-before: page; }
+    h2:first-of-type { break-before: auto; }
+    h3, .card, .lab, .callout, table, .quiz-item { break-inside: avoid; }
+    details > *:not(summary) { display: block !important; }
+    .quiz-answer { display: block !important; }
+    .sim-shell { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to guide</a>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light and dark theme">Theme: auto</button>
+<div class="layout">
+<nav class="toc" aria-label="Guide contents">
+  <div class="brand">Lazygit</div>
+  <div class="brand-sub">Daily-driver study guide</div>
+  <div class="toc-label">Start</div>
+  <a href="#orientation">1 · Orientation</a>
+  <a href="#install">2 · Install &amp; launch</a>
+  <a href="#model">3 · Mental model</a>
+  <a href="#navigation">4 · Navigation</a>
+  <div class="toc-label">Daily loop</div>
+  <a href="#daily">5 · Daily workflow</a>
+  <a href="#staging">6 · Precise staging</a>
+  <a href="#commits">7 · Commits &amp; fixups</a>
+  <a href="#branches">8 · Branches &amp; remotes</a>
+  <a href="#stash">9 · Stash</a>
+  <div class="toc-label">Advanced</div>
+  <a href="#conflicts">10 · Conflicts</a>
+  <a href="#rebase">11 · Rewrite history</a>
+  <a href="#recovery">12 · Recovery</a>
+  <a href="#bisect">13 · Bisect</a>
+  <a href="#worktrees">14 · Worktrees</a>
+  <a href="#submodules">15 · Submodules &amp; tags</a>
+  <div class="toc-label">Practice &amp; reference</div>
+  <a href="#labs">16 · Real-repo labs</a>
+  <a href="#troubleshooting">17 · Troubleshooting</a>
+  <a href="#reference">18 · Full reference</a>
+  <a href="#cheatsheet">19 · Cheat sheet</a>
+  <a href="#quiz">20 · Quiz &amp; sources</a>
+</nav>
+
+<main id="content">
+<header class="hero">
+  <div class="eyebrow">For fluent command-line Git users</div>
+  <h1>Daily Git,<br>without losing the plot.</h1>
+  <p class="subtitle">Replace repetitive CLI choreography with a visual feedback loop—while keeping the Git model you already trust. Learn defaults first, inspect every operation, keep the CLI as an escape hatch.</p>
+  <div class="badges">
+    <span class="badge">lazygit 0.63.0</span>
+    <span class="badge">macOS + Linux</span>
+    <span class="badge">single-file / offline</span>
+    <span class="badge">default keybindings</span>
+    <span class="badge">labs + simulator</span>
+  </div>
+</header>
+
+<section id="orientation">
+  <h2>1 · Orientation: keep the model, replace the choreography</h2>
+  <p class="lede">Lazygit is not another version-control system. It is a terminal UI that continuously renders Git state and attaches context-sensitive actions to whatever you select.</p>
+  <div class="grid">
+    <div class="card">
+      <h3>What changes</h3>
+      <p>You stop composing routine commands and flags. Select a file, branch, commit, stash, tag, remote, submodule, or worktree; then invoke an action.</p>
+    </div>
+    <div class="card">
+      <h3>What stays</h3>
+      <p>Index, working tree, refs, upstreams, reflog, merge/rebase state, and remote effects remain ordinary Git. Your CLI knowledge becomes the safety model.</p>
+    </div>
+  </div>
+  <div class="callout blue">
+    <strong>Best migration strategy</strong>
+    Use lazygit for inspect → stage → commit → sync. Keep CLI for scripted, rare, or carefully parameterized operations. Press <kbd>@</kbd> to inspect commands lazygit ran; press <kbd>:</kbd> to run a shell command without leaving.
+  </div>
+  <h3>Translation layer</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>CLI instinct</th><th>Lazygit move</th><th>Why better here</th></tr></thead>
+    <tbody>
+      <tr><td><code>git status</code> + <code>git diff</code></td><td>Files panel + main diff</td><td>State and diff remain visible while acting.</td></tr>
+      <tr><td><code>git add -p</code></td><td><kbd>Enter</kbd>, then stage hunks/lines with <kbd>Space</kbd></td><td>Patch boundaries and staged/unstaged sides stay visible.</td></tr>
+      <tr><td><code>git log --graph …</code></td><td>Commits panel; enlarge with <kbd>+</kbd></td><td>Navigate graph and act on selected commits.</td></tr>
+      <tr><td><code>git rebase -i</code></td><td><kbd>i</kbd> in Commits</td><td>Reorder and mark todos directly; no todo-file editing.</td></tr>
+      <tr><td><code>git reflog</code> recovery</td><td><kbd>z</kbd>/<kbd>Z</kbd>, then inspect reflog if needed</td><td>Common ref/commit actions become stepwise undo/redo.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="install">
+  <h2>2 · Install, verify, launch</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>macOS or Linux with Homebrew</h3>
+      <pre><code>brew install lazygit
+lazygit --version</code></pre>
+    </div>
+    <div class="card">
+      <h3>Common Linux packages</h3>
+      <pre><code># Arch
+sudo pacman -S lazygit
+
+# Fedora family via COPR
+sudo dnf copr enable dejan/lazygit
+sudo dnf install lazygit
+
+# Debian 13+ / Ubuntu 25.10+
+sudo apt install lazygit</code></pre>
+    </div>
+  </div>
+  <p>Distribution packages can lag. For current binary instructions, use the official README linked in Sources. Verify exact behavior with your installed version and <kbd>?</kbd>.</p>
+  <h3>Launch from any repository</h3>
+  <pre><code>cd path/to/repository
+lazygit
+
+# Optional shell alias
+alias lg='lazygit'</code></pre>
+  <div class="callout warn">
+    <strong>Terminal compatibility after 0.62</strong>
+    Rich key combinations require modern terminal protocols. Ghostty, kitty, WezTerm, foot, Konsole, Alacritty, and iTerm2 have good support. Terminal.app lacks newer protocol support. In tmux 3.2+, enable extended keys if modified bindings—especially commit-editor submit—do not arrive.
+  </div>
+  <h3>Three checks before trusting daily use</h3>
+  <ol>
+    <li>Open a clean disposable repository and press <kbd>?</kbd> in Files, Branches, and Commits.</li>
+    <li>Press <kbd>@</kbd>, expose command log, then stage and unstage a harmless file.</li>
+    <li>Confirm external editor opens with <kbd>e</kbd> and commit-editor submission works: <kbd>⌘ Enter</kbd> on macOS, <kbd>Ctrl Enter</kbd> on Linux; <kbd>Ctrl S</kbd> is alternate.</li>
+  </ol>
+</section>
+
+<section id="model">
+  <h2>3 · Mental model: selection + context + preview</h2>
+  <p>Most mistakes come from remembering a key but forgetting its panel. Same key can mean different operations. Read focused panel border, selected row, main preview, and footer together.</p>
+  <div class="workflow" aria-label="Lazygit interaction loop">
+    <div><strong>1 · Focus</strong>Choose panel</div>
+    <div><strong>2 · Select</strong>Choose object</div>
+    <div><strong>3 · Inspect</strong>Read preview</div>
+    <div><strong>4 · Act</strong>Press key</div>
+    <div><strong>5 · Verify</strong>Watch state change</div>
+  </div>
+  <div class="grid">
+    <div class="card"><h3>Status</h3><p>Repository identity and recent repositories. <kbd>Enter</kbd> changes repo; <kbd>a</kbd>/<kbd>A</kbd> cycles all-branch logs.</p></div>
+    <div class="card"><h3>Files</h3><p>Working tree + index. Stage, discard, ignore, stash, fetch, commit, and enter patch staging.</p></div>
+    <div class="card"><h3>Branches</h3><p>Local branches plus tabs for remotes, tags, and worktrees. Checkout, create, rebase, merge, upstream, PR.</p></div>
+    <div class="card"><h3>Commits</h3><p>Selected branch history. Rewrite, fixup, cherry-pick, revert, reset, bisect, tag, compare.</p></div>
+    <div class="card"><h3>Stash</h3><p>Apply, pop, inspect, rename, drop, or create branch/worktree from a stash.</p></div>
+    <div class="card"><h3>Main</h3><p>Diff, graph, staging, patch builder, or conflict resolver. <kbd>0</kbd> focuses it; <kbd>Esc</kbd> returns.</p></div>
+  </div>
+  <div class="callout">
+    <strong>Footer is live documentation</strong>
+    Footer shows common actions for current context. <kbd>?</kbd> opens complete context menu. Guide teaches stable defaults; UI remains source of truth for installed build.
+  </div>
+</section>
+
+<section id="navigation">
+  <h2>4 · Navigation: 12 keys before everything else</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Intent</th><th>Keys</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Move selection</td><td><kbd>j</kbd>/<kbd>k</kbd> or arrows</td><td>Within focused list.</td></tr>
+      <tr><td>Move between panels</td><td><kbd>h</kbd>/<kbd>l</kbd>, arrows, <kbd>Tab</kbd>/<kbd>Shift Tab</kbd></td><td>Direction follows visible layout.</td></tr>
+      <tr><td>Jump to side panel</td><td><kbd>1</kbd>…<kbd>5</kbd></td><td>Numbers correspond to visible panel labels.</td></tr>
+      <tr><td>Focus main view</td><td><kbd>0</kbd></td><td>Diff, graph, staging, or conflict content.</td></tr>
+      <tr><td>Enter / return</td><td><kbd>Enter</kbd> / <kbd>Esc</kbd></td><td>Drill into selected object, then back out.</td></tr>
+      <tr><td>Next / previous tab</td><td><kbd>]</kbd> / <kbd>[</kbd></td><td>Branches → Remotes → Tags → Worktrees, depending layout.</td></tr>
+      <tr><td>Search/filter</td><td><kbd>/</kbd>, then <kbd>n</kbd>/<kbd>N</kbd></td><td>Some views filter; others highlight matches.</td></tr>
+      <tr><td>Resize main</td><td><kbd>+</kbd> / <kbd>_</kbd></td><td>Normal, half, fullscreen modes.</td></tr>
+      <tr><td>Help / cancel / quit</td><td><kbd>?</kbd> / <kbd>Esc</kbd> / <kbd>q</kbd></td><td>Use Esc before q when uncertain.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>In-page simulator: daily commit loop</h3>
+  <p>Bounded model, not full lazygit. Practice panel focus, file staging, committing, and pushing. Click screen, then use keyboard; buttons provide touch/mouse alternative.</p>
+  <div class="sim-message" id="simMessage" aria-live="polite">Goal: stage both files, commit, then push.</div>
+  <div class="sim-shell" id="simulator" tabindex="0" aria-label="Interactive lazygit daily workflow simulator">
+    <div class="sim-bar"><span class="sim-dots">● ● ●</span><span>demo-repo — lazygit simulator</span><span>main ↑0</span></div>
+    <div class="sim-grid">
+      <div class="sim-left">
+        <div class="sim-panel" data-panel="status"><div class="sim-title">1 Status</div><div class="sim-row">demo-repo / main</div></div>
+        <div class="sim-panel focused" data-panel="files"><div class="sim-title">2 Files</div><div id="simFiles"></div></div>
+        <div class="sim-panel" data-panel="branches"><div class="sim-title">3 Local branches</div><div class="sim-row selected">* main</div><div class="sim-row">feature/sidebar</div></div>
+        <div class="sim-panel" data-panel="commits"><div class="sim-title">4 Commits</div><div id="simCommits"></div></div>
+        <div class="sim-panel" data-panel="stash"><div class="sim-title">5 Stash</div><div class="sim-row">(empty)</div></div>
+      </div>
+      <div class="sim-main" id="simMain"><h4>Unstaged changes — src/app.js</h4><pre><span class="sim-del">- const mode = 'old';</span>
+<span class="sim-add">+ const mode = 'daily-driver';</span></pre></div>
+    </div>
+    <div class="sim-footer" aria-label="Simulator controls">
+      <button class="sim-key" type="button" data-sim-key="h">h panel</button>
+      <button class="sim-key" type="button" data-sim-key="l">l panel</button>
+      <button class="sim-key" type="button" data-sim-key="j">j down</button>
+      <button class="sim-key" type="button" data-sim-key="k">k up</button>
+      <button class="sim-key" type="button" data-sim-key=" ">space stage</button>
+      <button class="sim-key" type="button" data-sim-key="c">c commit</button>
+      <button class="sim-key" type="button" data-sim-key="P">P push</button>
+      <button class="sim-key" type="button" data-sim-key="?">? help</button>
+      <button class="sim-key" type="button" data-sim-key="reset">reset</button>
+      <span class="sim-status" id="simStatus">2 Files · 0 staged · clean remote</span>
+    </div>
+    <div class="sim-editor" id="simEditor">
+      <input id="simCommitMessage" type="text" maxlength="72" placeholder="Commit message" aria-label="Simulated commit message">
+      <button id="simCommitButton" type="button">Commit</button>
+    </div>
+  </div>
+  <details><summary>Simulator key map</summary><p><kbd>h</kbd>/<kbd>l</kbd> or <kbd>1</kbd>…<kbd>5</kbd>: focus panel. <kbd>j</kbd>/<kbd>k</kbd>: select file. <kbd>Space</kbd>: stage. <kbd>c</kbd>: open commit editor when anything staged. <kbd>Enter</kbd>: submit simulator commit. <kbd>P</kbd>: push unpushed commit. <kbd>?</kbd>: contextual hint.</p></details>
+</section>
+
+<section id="daily">
+  <h2>5 · Daily workflow: inspect → stage → commit → sync</h2>
+  <p class="lede">Default loop fits in Files panel plus global push/pull. Resist speed until state transitions feel obvious.</p>
+  <div class="workflow">
+    <div><strong>Inspect</strong><kbd>2</kbd>, <kbd>j</kbd>/<kbd>k</kbd></div>
+    <div><strong>Stage</strong><kbd>Space</kbd> or <kbd>Enter</kbd></div>
+    <div><strong>Commit</strong><kbd>c</kbd></div>
+    <div><strong>Pull</strong><kbd>p</kbd></div>
+    <div><strong>Push</strong><kbd>P</kbd></div>
+  </div>
+  <h3>Routine, with verification</h3>
+  <ol>
+    <li>Focus Files. Review every changed path and main diff.</li>
+    <li>Stage whole files with <kbd>Space</kbd>; enter a file with <kbd>Enter</kbd> for hunk/line control.</li>
+    <li>Use <kbd>Tab</kbd> in staging view to compare staged and unstaged halves.</li>
+    <li>Press <kbd>c</kbd>. Write subject; use description only when useful. Submit.</li>
+    <li>Focus Commits. Verify new commit contents with <kbd>Enter</kbd>.</li>
+    <li>Pull using <kbd>p</kbd>, handle any integration, then push using <kbd>P</kbd>.</li>
+    <li>Verify upstream indicator and Files cleanliness. If unclear, inspect <kbd>@</kbd>.</li>
+  </ol>
+  <div class="callout warn"><strong>Case matters</strong><kbd>p</kbd> pulls. <kbd>P</kbd> pushes. <kbd>f</kbd> in Files fetches. Fetch updates remote-tracking refs; pull integrates upstream into current branch; push changes remote state.</div>
+  <h3>Range-select repeated objects</h3>
+  <p>Press <kbd>v</kbd>, expand with arrows, then invoke supported action. Or hold Shift with up/down for non-sticky range selection. Useful for multiple files, commits, and cherry-picks.</p>
+</section>
+
+<section id="staging">
+  <h2>6 · Precise staging: index as a designed commit</h2>
+  <p>Whole-file staging is one <kbd>Space</kbd>. For mixed concerns, select file and press <kbd>Enter</kbd>.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Staging context</th><th>Key</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td>Files</td><td><kbd>Space</kbd></td><td>Toggle entire selected file staged.</td></tr>
+      <tr><td>Files</td><td><kbd>a</kbd></td><td>Toggle all files staged/unstaged.</td></tr>
+      <tr><td>Files</td><td><kbd>Enter</kbd></td><td>Enter staging view for selected file.</td></tr>
+      <tr><td>Staging main</td><td><kbd>h</kbd>/<kbd>l</kbd></td><td>Previous/next hunk.</td></tr>
+      <tr><td>Staging main</td><td><kbd>Space</kbd></td><td>Toggle selected line(s) or hunk staged.</td></tr>
+      <tr><td>Staging main</td><td><kbd>a</kbd></td><td>Toggle line-selection vs hunk-selection mode.</td></tr>
+      <tr><td>Staging main</td><td><kbd>v</kbd></td><td>Start range selection.</td></tr>
+      <tr><td>Staging main</td><td><kbd>Tab</kbd></td><td>Switch staged/unstaged view.</td></tr>
+      <tr><td>Staging main</td><td><kbd>E</kbd></td><td>Edit selected hunk in external editor.</td></tr>
+      <tr><td>Staging main</td><td><kbd>d</kbd></td><td>Discard unstaged selection; unstage staged selection.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout danger"><strong>Discard is not symmetric</strong>Unstaging preserves working-tree content. Discarding unstaged content destroys it. Lazygit's reflog undo does not restore working-tree edits. Read confirmation and selected side.</div>
+  <h3>Commit-design recipe</h3>
+  <ol>
+    <li>Enter first mixed file; stage only lines belonging to one intent.</li>
+    <li>Repeat across files. Use Files status marks and staged preview to audit index.</li>
+    <li>Commit. Remaining edits stay unstaged for next commit.</li>
+    <li>Use <kbd>@</kbd> once to connect UI action with underlying <code>git apply</code>/<code>git add</code> behavior.</li>
+  </ol>
+</section>
+
+<section id="commits">
+  <h2>7 · Commits: amend, fixup, and review-friendly cleanup</h2>
+  <div class="grid">
+    <div class="card"><h3>Last commit</h3><p>Stage corrections, then <kbd>A</kbd> in Files. Equivalent intent: <code>git commit --amend</code>. Avoid after others depend on published hash unless coordinated.</p></div>
+    <div class="card"><h3>Older commit</h3><p>Stage corrections, select target in Commits, press <kbd>A</kbd>. Lazygit runs an interactive rebase to amend selected commit.</p></div>
+    <div class="card"><h3>Review-visible fixup</h3><p>Stage corrections, select target commit, press <kbd>F</kbd>. Creates <code>fixup!</code> or <code>amend!</code> commit so reviewer sees delta.</p></div>
+    <div class="card"><h3>Autosquash before merge</h3><p>Select first commit of branch, press <kbd>S</kbd>. Applies fixup commits above selection.</p></div>
+  </div>
+  <h3>Find target commit automatically</h3>
+  <div class="keyline"><kbd>2</kbd><span class="arrow">→</span> stage related correction <span class="arrow">→</span><kbd>Ctrl F</kbd><span class="arrow">→</span> target appears in Commits <span class="arrow">→</span><kbd>F</kbd> or <kbd>A</kbd></div>
+  <p><kbd>Ctrl F</kbd> analyzes blame/base information. Stage one concern first; mixed modifications can map to multiple base commits.</p>
+  <h3>Commit-editor submit</h3>
+  <p>Simple subject prompt submits with <kbd>Enter</kbd>. Multiline commit editor uses <kbd>⌘ Enter</kbd> on macOS or <kbd>Ctrl Enter</kbd> on Linux; <kbd>Ctrl S</kbd> alternate. Terminal/multiplexer must forward modified Enter.</p>
+</section>
+
+<section id="branches">
+  <h2>8 · Branches, remotes, and pull requests</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Task</th><th>Context + key</th><th>Guardrail</th></tr></thead>
+    <tbody>
+      <tr><td>Create branch</td><td>Branches: <kbd>n</kbd></td><td>Confirm selected starting point/current branch.</td></tr>
+      <tr><td>Checkout selected</td><td>Branches: <kbd>Space</kbd></td><td>Dirty changes may travel or block checkout.</td></tr>
+      <tr><td>Previous branch</td><td>Branches: <kbd>-</kbd></td><td>Equivalent intent to <code>git switch -</code>.</td></tr>
+      <tr><td>Checkout by name</td><td>Branches: <kbd>c</kbd></td><td>Useful with many branches; input <code>-</code> means previous.</td></tr>
+      <tr><td>Rename</td><td>Branches: <kbd>R</kbd></td><td>Published remote branch is separate state.</td></tr>
+      <tr><td>Delete</td><td>Branches: <kbd>d</kbd></td><td>Menu distinguishes local and remote deletion.</td></tr>
+      <tr><td>Merge selected into current</td><td>Branches: <kbd>M</kbd></td><td>Read current vs selected branch twice.</td></tr>
+      <tr><td>Rebase current onto selected</td><td>Branches: <kbd>r</kbd></td><td>Rewrites current branch commits.</td></tr>
+      <tr><td>Upstream actions</td><td>Branches: <kbd>u</kbd></td><td>Set/unset/reset-to-upstream menu.</td></tr>
+      <tr><td>Move accidental commits</td><td>Branches/Commits: <kbd>N</kbd></td><td>Moves unpushed commits to new branch.</td></tr>
+      <tr><td>Fetch</td><td>Files or Remotes: <kbd>f</kbd></td><td>Does not integrate current branch.</td></tr>
+      <tr><td>Pull / push</td><td>Global: <kbd>p</kbd> / <kbd>P</kbd></td><td>May prompt to configure upstream.</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Remote tabs and PRs</h3>
+  <p>Use <kbd>[</kbd>/<kbd>]</kbd> to reach Remote branches/Remotes tabs. Remote checkout with <kbd>Space</kbd> can create tracking local branch or detached HEAD. Remotes panel supports add <kbd>n</kbd>, edit <kbd>e</kbd>, remove <kbd>d</kbd>, fetch <kbd>f</kbd>, add fork <kbd>F</kbd>.</p>
+  <p>For GitHub, install/authenticate <code>gh</code>. Branches can show PR state. Use <kbd>o</kbd> to create PR, <kbd>O</kbd> for creation options, <kbd>G</kbd> to open existing PR, <kbd>Ctrl Y</kbd> to copy URL.</p>
+  <div class="callout warn"><strong>Force checkout is destructive</strong><kbd>F</kbd> in Local branches discards local changes before checkout. Uppercase action, confirmation, and exact panel matter.</div>
+</section>
+
+<section id="stash">
+  <h2>9 · Stash: temporary shelf, not mystery storage</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Task</th><th>Key</th><th>Semantics</th></tr></thead>
+    <tbody>
+      <tr><td>Stash all quickly</td><td>Files: <kbd>s</kbd></td><td>Creates stash entry.</td></tr>
+      <tr><td>Choose stash variation</td><td>Files: <kbd>S</kbd></td><td>Menu includes all/staged/unstaged variants.</td></tr>
+      <tr><td>Inspect stash files</td><td>Stash: <kbd>Enter</kbd></td><td>Preview before applying.</td></tr>
+      <tr><td>Apply, retain entry</td><td>Stash: <kbd>Space</kbd></td><td>Like <code>git stash apply</code>.</td></tr>
+      <tr><td>Pop, remove on success</td><td>Stash: <kbd>g</kbd></td><td>Like <code>git stash pop</code>.</td></tr>
+      <tr><td>Create branch from stash</td><td>Stash: <kbd>n</kbd></td><td>Branches from stash base and applies content.</td></tr>
+      <tr><td>Create worktree from stash</td><td>Stash: <kbd>w</kbd></td><td>Keeps current workspace untouched.</td></tr>
+      <tr><td>Rename / drop</td><td>Stash: <kbd>r</kbd> / <kbd>d</kbd></td><td>Drop is not covered by lazygit undo.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout"><strong>Prefer apply while uncertain</strong>Apply, verify, then drop deliberately. Pop combines two state changes. Neither working-tree changes nor stash operations are recoverable through lazygit <kbd>z</kbd>.</div>
+</section>
+
+<section id="conflicts">
+  <h2>10 · Conflicts: resolve, verify, continue</h2>
+  <p>Conflicted files appear in Files. Select one and enter main conflict resolver. Lazygit groups competing hunks and can auto-stage resolved files by default.</p>
+  <div class="workflow">
+    <div><strong>Locate</strong>Files conflict</div>
+    <div><strong>Enter</strong><kbd>Enter</kbd></div>
+    <div><strong>Choose</strong><kbd>Space</kbd>/<kbd>b</kbd></div>
+    <div><strong>Review</strong><kbd>e</kbd> if needed</div>
+    <div><strong>Continue</strong><kbd>m</kbd></div>
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Conflict action</th><th>Key</th><th>Use</th></tr></thead>
+    <tbody>
+      <tr><td>Previous/next hunk</td><td><kbd>k</kbd>/<kbd>j</kbd></td><td>Move inside current conflict.</td></tr>
+      <tr><td>Previous/next conflict</td><td><kbd>h</kbd>/<kbd>l</kbd></td><td>Move between conflict groups.</td></tr>
+      <tr><td>Pick selected hunk</td><td><kbd>Space</kbd></td><td>Accept highlighted side.</td></tr>
+      <tr><td>Pick both hunks</td><td><kbd>b</kbd></td><td>Keep both; edit ordering/combination afterward.</td></tr>
+      <tr><td>Undo resolver choice</td><td><kbd>z</kbd></td><td>Conflict-resolver-local undo.</td></tr>
+      <tr><td>Edit/open file</td><td><kbd>e</kbd>/<kbd>o</kbd></td><td>Resolve semantics beyond side selection.</td></tr>
+      <tr><td>Conflict options</td><td><kbd>M</kbd></td><td>Context actions for current merge conflict.</td></tr>
+      <tr><td>Continue/abort/skip operation</td><td><kbd>m</kbd></td><td>Global merge/rebase options.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout warn"><strong>Ours/theirs changes meaning during rebase</strong>Reason about actual content and destination, not labels alone. Read diff; run tests after resolution. “Pick both” often still needs manual cleanup.</div>
+</section>
+
+<section id="rebase">
+  <h2>11 · Rewrite history: interactive rebase without todo-file editing</h2>
+  <p>In Commits, press <kbd>i</kbd> to start interactive rebase for current branch commits down to main/first merge boundary. Press <kbd>e</kbd> to start from selected commit. One-off rewrite actions can also start background rebase.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Todo/action</th><th>Key</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>Pick</td><td><kbd>p</kbd></td><td>Retain commit when mid-rebase.</td></tr>
+      <tr><td>Squash</td><td><kbd>s</kbd></td><td>Meld into commit below; append message.</td></tr>
+      <tr><td>Fixup</td><td><kbd>f</kbd></td><td>Meld into commit below; discard selected message.</td></tr>
+      <tr><td>Reword</td><td><kbd>r</kbd> / <kbd>R</kbd></td><td>Inline prompt / external editor.</td></tr>
+      <tr><td>Edit</td><td><kbd>e</kbd></td><td>Pause at commit for changes.</td></tr>
+      <tr><td>Drop</td><td><kbd>d</kbd></td><td>Remove selected commit.</td></tr>
+      <tr><td>Move</td><td><kbd>Ctrl K</kbd> / <kbd>Ctrl J</kbd></td><td>Move commit up/down.</td></tr>
+      <tr><td>Continue/abort/skip</td><td><kbd>m</kbd></td><td>Open operation menu.</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Rebase current branch onto another branch</h3>
+  <ol>
+    <li>Checkout branch whose commits should move.</li>
+    <li>Select destination/base branch in Local branches.</li>
+    <li>Press <kbd>r</kbd>; choose normal or interactive option from menu.</li>
+    <li>Resolve conflicts, then <kbd>m</kbd> → continue. Abort if assumptions fail.</li>
+    <li>Review graph and tests before force-pushing rewritten published branch.</li>
+  </ol>
+  <h3>Rebase only commits above marked base</h3>
+  <div class="keyline">select old base commit <span class="arrow">→</span><kbd>B</kbd><span class="arrow">→</span> select destination branch <span class="arrow">→</span><kbd>r</kbd></div>
+  <p>Uses <code>git rebase --onto</code>. Essential when feature branch was stacked on another feature branch and only its own commits should move.</p>
+  <div class="callout danger"><strong>Published history contract</strong>Squash, fixup, amend, drop, reorder, and rebase change commit IDs. Coordinate before rewriting shared branches. Prefer revert for public history when rewrite is unsafe.</div>
+</section>
+
+<section id="recovery">
+  <h2>12 · Cherry-pick, revert, reset, undo</h2>
+  <h3>Choose by intent</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Intent</th><th>Lazygit action</th><th>History effect</th></tr></thead>
+    <tbody>
+      <tr><td>Bring selected commit(s) here</td><td>Commits/Reflog: <kbd>C</kbd>; destination commits: <kbd>V</kbd></td><td>Creates new commit(s). Range selection supported.</td></tr>
+      <tr><td>Publicly negate commit</td><td>Commits: <kbd>t</kbd></td><td>Creates revert commit; preserves history.</td></tr>
+      <tr><td>Move branch/index/tree to commit</td><td>Commits: <kbd>g</kbd></td><td>Reset menu: soft/mixed/hard. Hard can destroy edits.</td></tr>
+      <tr><td>Undo recent ref/commit action</td><td>Global: <kbd>z</kbd></td><td>Walks reflog-supported operations backward.</td></tr>
+      <tr><td>Redo lazygit undo</td><td>Global: <kbd>Z</kbd></td><td>Walks forward through marked undo state.</td></tr>
+      <tr><td>Recover from known reflog point</td><td>Reflog tab: inspect, branch <kbd>n</kbd> or reset <kbd>g</kbd></td><td>Manual recovery from reachable commit.</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Undo boundary</h3>
+  <p><kbd>z</kbd>/<kbd>Z</kbd> uses reflog. It can reason about commits, resets, rebases, and checkouts—including actions run outside lazygit. It cannot restore working-tree discards, stash operations, remote pushes, or branch creation. Undo is unsupported mid-rebase; use <kbd>m</kbd> and abort.</p>
+  <div class="callout danger"><strong>No magic safety net</strong>Before <kbd>D</kbd> “nuke,” hard reset, force checkout, stash drop, branch/worktree/submodule deletion, or force push: stop, read target, inspect command menu, make recoverable checkpoint when warranted.</div>
+</section>
+
+<section id="bisect">
+  <h2>13 · Bisect: binary search through history</h2>
+  <p>Use when test outcome is binary and a known-good commit precedes known-bad state. In Commits, press <kbd>b</kbd> for bisect options.</p>
+  <ol>
+    <li>Start from known bad state, select known-good commit, open <kbd>b</kbd> menu, mark good/bad as prompted.</li>
+    <li>Git checks out midpoint. Run deterministic test outside lazygit or through <kbd>:</kbd>.</li>
+    <li>Return to Commits, <kbd>b</kbd>, mark current commit good or bad.</li>
+    <li>Repeat until culprit identified. Use <kbd>b</kbd> menu to reset bisect.</li>
+  </ol>
+  <div class="callout blue"><strong>Automate when test has reliable exit code</strong>CLI remains ideal for <code>git bisect run ./test-command</code>. Lazygit remains useful for graph inspection and manual classification.</div>
+</section>
+
+<section id="worktrees">
+  <h2>14 · Worktrees: parallel branches without stash churn</h2>
+  <p>Worktree gives another working directory and index sharing repository objects and refs. Use for long-running feature, review checkout, urgent hotfix, or side-by-side test.</p>
+  <div class="grid">
+    <div class="card"><h3>Create from branch/commit/tag</h3><p>Select source and press <kbd>w</kbd>. Choose new worktree path/branch details. Current directory remains usable.</p></div>
+    <div class="card"><h3>Manage Worktrees tab</h3><p><kbd>n</kbd> new, <kbd>Space</kbd> switch, <kbd>o</kbd> open editor, <kbd>d</kbd> remove.</p></div>
+  </div>
+  <h3>Changing shell directory on exit</h3>
+  <p>Lazygit can switch internally, but parent shell cannot normally be changed by child process. Official wrapper uses <code>LAZYGIT_NEW_DIR_FILE</code>; exiting with <kbd>q</kbd> changes directory through wrapper, while <kbd>Q</kbd> exits without changing.</p>
+  <pre><code>lg() {
+  export LAZYGIT_NEW_DIR_FILE="$HOME/.lazygit/newdir"
+  lazygit "$@"
+  if [ -f "$LAZYGIT_NEW_DIR_FILE" ]; then
+    cd "$(cat "$LAZYGIT_NEW_DIR_FILE")" || return
+    rm -f "$LAZYGIT_NEW_DIR_FILE"
+  fi
+}</code></pre>
+  <div class="callout warn"><strong>Removal deletes directory</strong><kbd>d</kbd> in Worktrees removes worktree directory and Git metadata. Commit/stash wanted changes first. A branch checked out in another worktree cannot be checked out here without switching worktrees.</div>
+</section>
+
+<section id="submodules">
+  <h2>15 · Submodules, tags, remotes, search, and comparison</h2>
+  <h3>Submodules</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Task</th><th>Key</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>Enter nested repository</td><td><kbd>Enter</kbd></td><td><kbd>Esc</kbd> returns to parent.</td></tr>
+      <tr><td>Initialize / update</td><td><kbd>i</kbd> / <kbd>u</kbd></td><td>Initialize metadata, then fetch/checkout configured commit.</td></tr>
+      <tr><td>Bulk options</td><td><kbd>b</kbd></td><td>Operate across submodules.</td></tr>
+      <tr><td>Add / update URL</td><td><kbd>n</kbd> / <kbd>e</kbd></td><td>Changes parent repository configuration.</td></tr>
+      <tr><td>Remove</td><td><kbd>d</kbd></td><td>Removes submodule and directory; review confirmation.</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Tags</h3>
+  <p>Tags tab: <kbd>n</kbd> creates from current commit, <kbd>Space</kbd> checks out detached HEAD, <kbd>P</kbd> pushes selected tag, <kbd>d</kbd> offers local/remote deletion, <kbd>w</kbd> creates worktree, <kbd>g</kbd> resets to tag.</p>
+  <h3>Search, filter, compare</h3>
+  <ul>
+    <li><kbd>/</kbd> filters some views and searches others. Search keeps context and uses <kbd>n</kbd>/<kbd>N</kbd>; filter narrows list.</li>
+    <li>Files <kbd>Ctrl B</kbd> filters by staged/unstaged status.</li>
+    <li>Global <kbd>Ctrl S</kbd> filters commit log, including file path.</li>
+    <li>Select commit/ref and press <kbd>W</kbd> (or <kbd>Ctrl E</kbd>) to mark diff reference; choose another ref. Menu reverses direction or exits diff mode.</li>
+    <li><kbd>{</kbd>/<kbd>}</kbd> decreases/increases diff context. <kbd>Ctrl W</kbd> toggles whitespace. <kbd>Ctrl T</kbd> launches configured <code>git difftool</code>.</li>
+    <li><kbd>|</kbd>/<kbd>\</kbd> cycles configured pagers forward/backward.</li>
+  </ul>
+</section>
+
+<section id="labs">
+  <h2>16 · Real-repo labs</h2>
+  <p>All labs use disposable local repository. No network remote required. Commands create intentional history and conflicts; run only inside generated directory.</p>
+  <div class="lab">
+    <div class="lab-title">Lab 0 — Build playground</div>
+    <div class="lab-meta">5 minutes · safe local setup</div>
+    <pre><code>lab_dir="$(mktemp -d)/lazygit-lab"
+mkdir -p "$lab_dir"
+cd "$lab_dir"
+git init -b main
+git config user.name "Lazygit Student"
+git config user.email "student@example.invalid"
+
+printf '# Lazygit Lab\n' > README.md
+printf 'mode=stable\n' > app.conf
+git add README.md app.conf
+git commit -m "Initialize lab"
+
+printf '\nFirst note.\n' >> README.md
+printf 'mode=fast\nfeature=off\n' > app.conf
+lazygit</code></pre>
+    <ul class="checklist">
+      <li>Identify both changed files and inspect diffs.</li>
+      <li>Stage only <code>README.md</code>; commit “Document first note.”</li>
+      <li>Enter <code>app.conf</code>; stage only <code>mode=fast</code>; commit.</li>
+      <li>Leave <code>feature=off</code> unstaged. Verify with Files and <kbd>@</kbd>.</li>
+    </ul>
+  </div>
+  <div class="lab">
+    <div class="lab-title">Lab 1 — Branch, stash, fixup</div>
+    <div class="lab-meta">10 minutes · daily workflow</div>
+    <pre><code># Start from lab repo after Lab 0
+git switch main
+git status --short</code></pre>
+    <ol>
+      <li>Create <code>feature/toggle</code> from Branches with <kbd>n</kbd>.</li>
+      <li>Commit remaining <code>feature=off</code> as “Add feature toggle.”</li>
+      <li>Change it to <code>feature=on</code>. Stash using Files <kbd>s</kbd>; rename stash.</li>
+      <li>Apply with Stash <kbd>Space</kbd>, keeping entry. Stage correction.</li>
+      <li>Select “Add feature toggle” commit, press <kbd>F</kbd> to create fixup commit.</li>
+      <li>Select branch's first commit, press <kbd>S</kbd> to autosquash. Inspect graph.</li>
+      <li>Drop retained stash only after verifying correction exists in history.</li>
+    </ol>
+  </div>
+  <div class="lab">
+    <div class="lab-title">Lab 2 — Create and resolve conflict</div>
+    <div class="lab-meta">10 minutes · merge state</div>
+    <pre><code>git switch main
+printf 'color=blue\n' > theme.conf
+git add theme.conf
+git commit -m "Add blue theme"
+
+git switch -c feature/theme
+printf 'color=green\n' > theme.conf
+git commit -am "Use green theme"
+
+git switch main
+printf 'color=amber\n' > theme.conf
+git commit -am "Use amber theme"
+lazygit</code></pre>
+    <ol>
+      <li>In Local branches, select <code>feature/theme</code>, press <kbd>M</kbd>, choose merge.</li>
+      <li>Enter conflicted <code>theme.conf</code>. Navigate hunks and choose content.</li>
+      <li>Edit file if needed; final result must be one valid <code>color=…</code> line.</li>
+      <li>Use <kbd>m</kbd> to continue merge. Inspect merge commit and run <code>cat theme.conf</code> through <kbd>:</kbd>.</li>
+    </ol>
+  </div>
+  <div class="lab">
+    <div class="lab-title">Lab 3 — Rebase, reorder, cherry-pick</div>
+    <div class="lab-meta">15 minutes · rewritten history</div>
+    <pre><code>git switch -c feature/history main
+printf 'one\n' > one.txt
+git add one.txt && git commit -m "Add one"
+printf 'two\n' > two.txt
+git add two.txt && git commit -m "Add two"
+printf 'three\n' > three.txt
+git add three.txt && git commit -m "Add three"
+lazygit</code></pre>
+    <ol>
+      <li>In Commits, press <kbd>i</kbd>. Reword “Add one”; swap last two with <kbd>Ctrl K</kbd>/<kbd>Ctrl J</kbd>; continue via <kbd>m</kbd>.</li>
+      <li>Verify file semantics and graph. Undo entire rebase with <kbd>z</kbd>; redo with <kbd>Z</kbd>.</li>
+      <li>Create branch <code>release/pick</code> from main.</li>
+      <li>Find one feature commit, copy with <kbd>C</kbd>; checkout <code>release/pick</code>; paste with <kbd>V</kbd>.</li>
+      <li>Inspect resulting new commit ID and content.</li>
+    </ol>
+  </div>
+  <div class="lab">
+    <div class="lab-title">Lab 4 — Worktree and bisect</div>
+    <div class="lab-meta">15 minutes · parallel work + diagnosis</div>
+    <ol>
+      <li>Select <code>main</code> in Branches, press <kbd>w</kbd>, create sibling worktree named <code>review</code>.</li>
+      <li>Open Worktrees tab. Switch/open editor, then return to original worktree.</li>
+      <li>Create several commits changing <code>result=good</code>; one changes it to <code>result=bad</code>; later commits add unrelated files.</li>
+      <li>Press <kbd>b</kbd> in Commits. Mark initial commit good and HEAD bad.</li>
+      <li>At each midpoint run <code>grep -q '^result=good$' result.txt</code>, then mark good/bad.</li>
+      <li>Identify culprit, reset bisect, verify original branch checkout.</li>
+    </ol>
+  </div>
+</section>
+
+<section id="troubleshooting">
+  <h2>17 · Troubleshooting and safety playbook</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Symptom</th><th>Likely cause</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td>Key does wrong thing</td><td>Wrong focused panel/context</td><td>Read focused border and footer; press <kbd>?</kbd>.</td></tr>
+      <tr><td>Modified Enter ignored</td><td>Terminal/tmux lacks extended-key forwarding</td><td>Try <kbd>Ctrl S</kbd>; update terminal; configure tmux extended keys.</td></tr>
+      <tr><td>State looks stale</td><td>Refresh/fetch distinction</td><td><kbd>R</kbd> refreshes local state; <kbd>f</kbd> fetches remote refs.</td></tr>
+      <tr><td>Cannot checkout branch</td><td>Dirty collision or branch checked out in worktree</td><td>Read error; stash/commit, or switch to owning worktree. Do not reflexively force checkout.</td></tr>
+      <tr><td>Push rejected</td><td>Upstream ahead/diverged or missing upstream</td><td>Fetch, inspect graph, choose pull/rebase/merge deliberately; set upstream via <kbd>u</kbd>.</td></tr>
+      <tr><td>Rebase/merge stuck</td><td>Unresolved conflicts or pending operation</td><td>Files → resolve; <kbd>m</kbd> continue/skip/abort.</td></tr>
+      <tr><td>Commit disappeared</td><td>Reset/rebase/drop changed branch</td><td>Try <kbd>z</kbd>; inspect Reflog; branch from known commit before experiments.</td></tr>
+      <tr><td>Discarded edit disappeared</td><td>Working-tree discard not in reflog</td><td>Check editor local history/backups. Lazygit undo cannot restore it.</td></tr>
+      <tr><td>PR actions unavailable</td><td><code>gh</code> absent or unauthenticated</td><td>Install <code>gh</code>, run <code>gh auth login</code>; verify host/remotes.</td></tr>
+      <tr><td>Need unsupported operation</td><td>No built-in action</td><td>Use <kbd>:</kbd> for shell command, quit to CLI, or later define custom command.</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Five-second destructive-action pause</h3>
+  <ol>
+    <li><strong>Where?</strong> Focused panel and selected object.</li>
+    <li><strong>What state?</strong> Working tree, index, local ref, or remote?</li>
+    <li><strong>Recoverable?</strong> Reflog, stash, branch, backup, or none?</li>
+    <li><strong>Shared?</strong> Has commit/ref been pushed or consumed?</li>
+    <li><strong>Verify?</strong> What visible change and test confirms success?</li>
+  </ol>
+</section>
+
+<section id="reference">
+  <h2>18 · Comprehensive default-key reference</h2>
+  <p>Curated for v0.63.0 daily and advanced operations. Press <kbd>?</kbd> for complete context list in installed version.</p>
+  <h3>Global + navigation</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Key</th><th>Action</th><th>Key</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td><kbd>?</kbd></td><td>Context keybindings</td><td><kbd>q</kbd>/<kbd>Ctrl C</kbd></td><td>Quit</td></tr>
+      <tr><td><kbd>j</kbd>/<kbd>k</kbd></td><td>Next/previous item</td><td><kbd>h</kbd>/<kbd>l</kbd></td><td>Previous/next panel</td></tr>
+      <tr><td><kbd>1</kbd>…<kbd>5</kbd></td><td>Jump side panel</td><td><kbd>0</kbd></td><td>Focus main</td></tr>
+      <tr><td><kbd>Enter</kbd>/<kbd>Esc</kbd></td><td>Enter/return-cancel</td><td><kbd>[</kbd>/<kbd>]</kbd></td><td>Previous/next tab</td></tr>
+      <tr><td><kbd>/</kbd></td><td>Search/filter current view</td><td><kbd>n</kbd>/<kbd>N</kbd></td><td>Next/previous match</td></tr>
+      <tr><td><kbd>v</kbd></td><td>Sticky range select</td><td><kbd>Shift ↑</kbd>/<kbd>Shift ↓</kbd></td><td>Extend range</td></tr>
+      <tr><td><kbd>,</kbd>/<kbd>.</kbd></td><td>Previous/next page</td><td><kbd>&lt;</kbd>/<kbd>&gt;</kbd></td><td>Top/bottom</td></tr>
+      <tr><td><kbd>K</kbd>/<kbd>J</kbd></td><td>Scroll main up/down</td><td><kbd>H</kbd>/<kbd>L</kbd></td><td>Scroll left/right</td></tr>
+      <tr><td><kbd>+</kbd>/<kbd>_</kbd></td><td>Screen size next/previous</td><td><kbd>R</kbd></td><td>Refresh local Git state</td></tr>
+      <tr><td><kbd>p</kbd>/<kbd>P</kbd></td><td>Pull/push</td><td><kbd>:</kbd></td><td>Execute shell command</td></tr>
+      <tr><td><kbd>@</kbd></td><td>Command-log options</td><td><kbd>Ctrl R</kbd></td><td>Recent repository</td></tr>
+      <tr><td><kbd>z</kbd>/<kbd>Z</kbd></td><td>Undo/redo</td><td><kbd>m</kbd></td><td>Merge/rebase operation menu</td></tr>
+      <tr><td><kbd>W</kbd>/<kbd>Ctrl E</kbd></td><td>Diffing options</td><td><kbd>Ctrl W</kbd></td><td>Toggle whitespace</td></tr>
+      <tr><td><kbd>{</kbd>/<kbd>}</kbd></td><td>Diff context −/+</td><td><kbd>|</kbd>/<kbd>\</kbd></td><td>Cycle pager forward/back</td></tr>
+      <tr><td><kbd>Ctrl T</kbd></td><td>External difftool</td><td><kbd>Ctrl O</kbd></td><td>Copy selected identifier/path</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Files + staging</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Key</th><th>Files action</th><th>Key</th><th>Files/staging action</th></tr></thead>
+    <tbody>
+      <tr><td><kbd>Space</kbd></td><td>Stage selected file</td><td><kbd>a</kbd></td><td>Stage/unstage all</td></tr>
+      <tr><td><kbd>Enter</kbd></td><td>Enter line/hunk staging</td><td><kbd>Tab</kbd></td><td>Switch staged/unstaged main</td></tr>
+      <tr><td><kbd>c</kbd>/<kbd>C</kbd></td><td>Commit prompt/editor</td><td><kbd>A</kbd></td><td>Amend last commit</td></tr>
+      <tr><td><kbd>w</kbd></td><td>Commit without hook</td><td><kbd>Ctrl F</kbd></td><td>Find fixup base commit</td></tr>
+      <tr><td><kbd>s</kbd>/<kbd>S</kbd></td><td>Stash all/options</td><td><kbd>i</kbd></td><td>Ignore/exclude</td></tr>
+      <tr><td><kbd>d</kbd>/<kbd>D</kbd></td><td>Discard menu/reset menu</td><td><kbd>g</kbd></td><td>Upstream reset options</td></tr>
+      <tr><td><kbd>f</kbd></td><td>Fetch</td><td><kbd>M</kbd></td><td>Conflict options</td></tr>
+      <tr><td><kbd>`</kbd></td><td>Tree/flat view</td><td><kbd>-</kbd>/<kbd>=</kbd></td><td>Collapse/expand directories</td></tr>
+      <tr><td><kbd>Ctrl B</kbd></td><td>Filter by status</td><td><kbd>e</kbd>/<kbd>o</kbd></td><td>Edit/open file</td></tr>
+      <tr><td><kbd>Space</kbd></td><td>Stage line/hunk in staging</td><td><kbd>a</kbd></td><td>Toggle line/hunk selection</td></tr>
+      <tr><td><kbd>E</kbd></td><td>Edit hunk</td><td><kbd>h</kbd>/<kbd>l</kbd></td><td>Previous/next hunk</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Branches + remotes</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Key</th><th>Branch action</th><th>Key</th><th>Branch/remote action</th></tr></thead>
+    <tbody>
+      <tr><td><kbd>Space</kbd></td><td>Checkout selected</td><td><kbd>n</kbd></td><td>New branch/remote</td></tr>
+      <tr><td><kbd>c</kbd>/<kbd>-</kbd></td><td>Checkout by name/previous</td><td><kbd>F</kbd></td><td>Force checkout; Remotes: add fork</td></tr>
+      <tr><td><kbd>R</kbd></td><td>Rename branch</td><td><kbd>d</kbd></td><td>Delete branch/remote</td></tr>
+      <tr><td><kbd>r</kbd></td><td>Rebase current onto selected</td><td><kbd>M</kbd></td><td>Merge selected into current</td></tr>
+      <tr><td><kbd>f</kbd></td><td>Fast-forward; Remotes: fetch</td><td><kbd>u</kbd></td><td>Upstream options/set upstream</td></tr>
+      <tr><td><kbd>N</kbd></td><td>Move unpushed commits to new branch</td><td><kbd>w</kbd></td><td>Create/view worktree options</td></tr>
+      <tr><td><kbd>T</kbd></td><td>Create tag</td><td><kbd>s</kbd></td><td>Sort order</td></tr>
+      <tr><td><kbd>o</kbd>/<kbd>O</kbd></td><td>Create PR/options</td><td><kbd>G</kbd></td><td>Open PR in browser</td></tr>
+      <tr><td><kbd>Ctrl Y</kbd></td><td>Copy PR URL</td><td><kbd>Enter</kbd></td><td>View commits/remote branches</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Commits + reflog</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Key</th><th>Action</th><th>Key</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td><kbd>Enter</kbd></td><td>View files</td><td><kbd>Space</kbd></td><td>Checkout detached HEAD</td></tr>
+      <tr><td><kbd>i</kbd>/<kbd>e</kbd></td><td>Interactive rebase/from selected</td><td><kbd>p</kbd></td><td>Pick during rebase</td></tr>
+      <tr><td><kbd>s</kbd>/<kbd>f</kbd></td><td>Squash/fixup down</td><td><kbd>r</kbd>/<kbd>R</kbd></td><td>Reword inline/editor</td></tr>
+      <tr><td><kbd>d</kbd></td><td>Drop commit</td><td><kbd>Ctrl K</kbd>/<kbd>Ctrl J</kbd></td><td>Move commit up/down</td></tr>
+      <tr><td><kbd>F</kbd>/<kbd>S</kbd></td><td>Create/apply fixup commits</td><td><kbd>A</kbd></td><td>Amend selected with staged changes</td></tr>
+      <tr><td><kbd>C</kbd>/<kbd>V</kbd></td><td>Copy/paste cherry-pick</td><td><kbd>Ctrl R</kbd></td><td>Cancel copied selection</td></tr>
+      <tr><td><kbd>t</kbd></td><td>Revert commit</td><td><kbd>g</kbd></td><td>Reset options</td></tr>
+      <tr><td><kbd>B</kbd></td><td>Mark rebase base</td><td><kbd>b</kbd></td><td>Bisect options</td></tr>
+      <tr><td><kbd>T</kbd></td><td>Tag selected commit</td><td><kbd>n</kbd>/<kbd>N</kbd></td><td>Branch off/move unpushed commits</td></tr>
+      <tr><td><kbd>y</kbd></td><td>Copy commit attribute</td><td><kbd>o</kbd>/<kbd>G</kbd></td><td>Open commit/PR in browser</td></tr>
+      <tr><td><kbd>Ctrl L</kbd></td><td>Log options</td><td><kbd>*</kbd></td><td>Select current-branch commits</td></tr>
+      <tr><td><kbd>Ctrl P</kbd></td><td>Custom patch options</td><td><kbd>w</kbd></td><td>New worktree</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Stash + worktrees + submodules + tags</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Context</th><th>Key</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td>Stash</td><td><kbd>Space</kbd>/<kbd>g</kbd></td><td>Apply/pop</td></tr>
+      <tr><td>Stash</td><td><kbd>n</kbd>/<kbd>w</kbd></td><td>New branch/worktree from stash</td></tr>
+      <tr><td>Stash</td><td><kbd>r</kbd>/<kbd>d</kbd></td><td>Rename/drop</td></tr>
+      <tr><td>Worktrees</td><td><kbd>n</kbd>/<kbd>Space</kbd></td><td>New/switch</td></tr>
+      <tr><td>Worktrees</td><td><kbd>o</kbd>/<kbd>d</kbd></td><td>Open editor/remove</td></tr>
+      <tr><td>Submodules</td><td><kbd>Enter</kbd></td><td>Enter nested repo; Esc returns</td></tr>
+      <tr><td>Submodules</td><td><kbd>i</kbd>/<kbd>u</kbd>/<kbd>b</kbd></td><td>Initialize/update/bulk options</td></tr>
+      <tr><td>Submodules</td><td><kbd>n</kbd>/<kbd>e</kbd>/<kbd>d</kbd></td><td>Add/edit URL/remove</td></tr>
+      <tr><td>Tags</td><td><kbd>n</kbd>/<kbd>P</kbd>/<kbd>d</kbd></td><td>Create/push/delete</td></tr>
+      <tr><td>Tags</td><td><kbd>Space</kbd>/<kbd>w</kbd>/<kbd>g</kbd></td><td>Detached checkout/worktree/reset</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Main view + commit-file patch building + conflicts</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Context</th><th>Key</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td>Main normal</td><td><kbd>Tab</kbd>/<kbd>Esc</kbd></td><td>Switch staged/unstaged view; return to side panel</td></tr>
+      <tr><td>Main staging</td><td><kbd>h</kbd>/<kbd>l</kbd></td><td>Previous/next hunk</td></tr>
+      <tr><td>Main staging</td><td><kbd>a</kbd>/<kbd>v</kbd>/<kbd>Space</kbd></td><td>Line-vs-hunk mode/range select/toggle staged</td></tr>
+      <tr><td>Main staging</td><td><kbd>d</kbd>/<kbd>E</kbd></td><td>Discard or unstage/edit hunk</td></tr>
+      <tr><td>Commit files</td><td><kbd>c</kbd></td><td>Checkout file from selected commit into working tree</td></tr>
+      <tr><td>Commit files</td><td><kbd>d</kbd></td><td>Remove file's changes from commit via rebase</td></tr>
+      <tr><td>Commit files</td><td><kbd>Space</kbd>/<kbd>a</kbd></td><td>Toggle file/toggle all files in custom patch</td></tr>
+      <tr><td>Commit files</td><td><kbd>Enter</kbd></td><td>Enter line-level custom patch builder</td></tr>
+      <tr><td>Patch builder</td><td><kbd>h</kbd>/<kbd>l</kbd></td><td>Previous/next hunk</td></tr>
+      <tr><td>Patch builder</td><td><kbd>a</kbd>/<kbd>v</kbd>/<kbd>Space</kbd></td><td>Line-vs-hunk mode/range select/toggle patch lines</td></tr>
+      <tr><td>Patch builder</td><td><kbd>d</kbd></td><td>Remove selected lines from old commit via rebase</td></tr>
+      <tr><td>Conflict resolver</td><td><kbd>j</kbd>/<kbd>k</kbd></td><td>Next/previous hunk</td></tr>
+      <tr><td>Conflict resolver</td><td><kbd>h</kbd>/<kbd>l</kbd></td><td>Previous/next conflict</td></tr>
+      <tr><td>Conflict resolver</td><td><kbd>Space</kbd>/<kbd>b</kbd>/<kbd>z</kbd></td><td>Pick hunk/pick both/undo resolver choice</td></tr>
+      <tr><td>Any main mode</td><td><kbd>e</kbd>/<kbd>o</kbd>/<kbd>Ctrl T</kbd></td><td>Edit/open/use external difftool</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Less-frequent global/status controls</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Key</th><th>Action</th><th>Key</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td><kbd>Q</kbd></td><td>Quit without shell-directory change</td><td><kbd>Ctrl Z</kbd></td><td>Suspend application</td></tr>
+      <tr><td><kbd>Alt Shift C</kbd></td><td>Edit config externally</td><td>Status <kbd>e</kbd></td><td>Edit config</td></tr>
+      <tr><td>Status <kbd>u</kbd></td><td>Check for update</td><td>Status <kbd>Enter</kbd></td><td>Recent repositories</td></tr>
+      <tr><td>Status <kbd>a</kbd>/<kbd>A</kbd></td><td>Cycle all-branch logs forward/back</td><td><kbd>Ctrl S</kbd></td><td>Commit-log filter options</td></tr>
+      <tr><td><kbd>(</kbd>/<kbd>)</kbd></td><td>Rename similarity threshold −/+</td><td><kbd>{</kbd>/<kbd>}</kbd></td><td>Diff context −/+</td></tr>
+      <tr><td><kbd>Ctrl P</kbd></td><td>Custom patch options</td><td><kbd>Ctrl O</kbd></td><td>Copy current path/hash/name</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="cheatsheet">
+  <h2>19 · Compact cheat sheet</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>Daily loop</h3>
+      <div class="keyline"><kbd>2</kbd> Files</div>
+      <div class="keyline"><kbd>Space</kbd> stage file</div>
+      <div class="keyline"><kbd>Enter</kbd> stage lines</div>
+      <div class="keyline"><kbd>c</kbd> commit</div>
+      <div class="keyline"><kbd>p</kbd> pull · <kbd>P</kbd> push</div>
+    </div>
+    <div class="card">
+      <h3>Move &amp; inspect</h3>
+      <div class="keyline"><kbd>j</kbd><kbd>k</kbd> items · <kbd>h</kbd><kbd>l</kbd> panels</div>
+      <div class="keyline"><kbd>1</kbd>…<kbd>5</kbd> panels · <kbd>0</kbd> main</div>
+      <div class="keyline"><kbd>Enter</kbd> in · <kbd>Esc</kbd> out</div>
+      <div class="keyline"><kbd>/</kbd> search/filter · <kbd>?</kbd> help</div>
+      <div class="keyline"><kbd>@</kbd> command log · <kbd>:</kbd> shell</div>
+    </div>
+    <div class="card">
+      <h3>History</h3>
+      <div class="keyline"><kbd>i</kbd> interactive rebase</div>
+      <div class="keyline"><kbd>s</kbd> squash · <kbd>f</kbd> fixup · <kbd>d</kbd> drop</div>
+      <div class="keyline"><kbd>A</kbd> amend · <kbd>F</kbd> create fixup</div>
+      <div class="keyline"><kbd>C</kbd> copy · <kbd>V</kbd> cherry-pick</div>
+      <div class="keyline"><kbd>t</kbd> revert · <kbd>g</kbd> reset</div>
+    </div>
+    <div class="card">
+      <h3>Safety</h3>
+      <div class="keyline"><kbd>z</kbd>/<kbd>Z</kbd> reflog undo/redo</div>
+      <div class="keyline"><kbd>m</kbd> continue/abort/skip</div>
+      <div class="keyline"><kbd>d</kbd>/<kbd>D</kbd> read selected target</div>
+      <div class="keyline"><kbd>F</kbd> force checkout destroys edits</div>
+      <div class="keyline"><strong>No undo:</strong> working-tree discard, stash, push</div>
+    </div>
+  </div>
+  <div class="callout"><strong>One rule worth memorizing</strong>Focus panel → select object → inspect preview → press action → verify state. If context uncertain, <kbd>?</kbd> before action.</div>
+</section>
+
+<section id="quiz">
+  <h2>20 · Retrieval quiz, glossary, sources</h2>
+  <p>Answer aloud before revealing. Mark honestly; score persists locally in this browser.</p>
+  <div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0 answered</div>
+
+  <div class="quiz-item" data-q="1"><div class="quiz-q"><span class="qnum">Q1</span>What five-step loop prevents context errors?</div><div class="quiz-answer">Focus panel → select object → inspect preview → act → verify state.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="2"><div class="quiz-q"><span class="qnum">Q2</span>Difference between <kbd>Space</kbd> and <kbd>Enter</kbd> on file?</div><div class="quiz-answer"><kbd>Space</kbd> toggles whole-file staging. <kbd>Enter</kbd> enters hunk/line staging.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="3"><div class="quiz-q"><span class="qnum">Q3</span>Fetch, pull, push defaults?</div><div class="quiz-answer">Files/Remotes <kbd>f</kbd> fetches. Global <kbd>p</kbd> pulls. Global <kbd>P</kbd> pushes.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="4"><div class="quiz-q"><span class="qnum">Q4</span>How do you stage only selected lines?</div><div class="quiz-answer">Select file, <kbd>Enter</kbd>, navigate hunks, toggle line/hunk mode with <kbd>a</kbd>, range-select if needed, stage with <kbd>Space</kbd>.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="5"><div class="quiz-q"><span class="qnum">Q5</span>Difference between commit <kbd>f</kbd>, <kbd>F</kbd>, and <kbd>S</kbd>?</div><div class="quiz-answer"><kbd>f</kbd> immediately fixes selected commit into parent. <kbd>F</kbd> creates review-visible fixup/amend commit targeting selection. <kbd>S</kbd> autosquashes fixup commits.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="6"><div class="quiz-q"><span class="qnum">Q6</span>How do you resolve and continue conflict?</div><div class="quiz-answer">Enter conflicted file; navigate with <kbd>h</kbd>/<kbd>l</kbd> and <kbd>j</kbd>/<kbd>k</kbd>; choose hunk with <kbd>Space</kbd> or both with <kbd>b</kbd>; edit/verify; <kbd>m</kbd> to continue.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="7"><div class="quiz-q"><span class="qnum">Q7</span>How do you cherry-pick several commits?</div><div class="quiz-answer">Range-select commits, press <kbd>C</kbd> to copy, checkout destination branch, press <kbd>V</kbd> in local commits. Esc or Ctrl-R cancels copied selection.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="8"><div class="quiz-q"><span class="qnum">Q8</span>What can lazygit undo not recover?</div><div class="quiz-answer">Working-tree edits/discards, stash changes, pushes, and branch creation. Undo also unsupported mid-rebase; abort via <kbd>m</kbd>.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="9"><div class="quiz-q"><span class="qnum">Q9</span>Merge selected branch vs rebase current onto selected?</div><div class="quiz-answer">Branches <kbd>M</kbd> merges selected branch into current. Branches <kbd>r</kbd> rebases current branch onto selected.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="10"><div class="quiz-q"><span class="qnum">Q10</span>When is worktree better than stash?</div><div class="quiz-answer">When multiple branches need active directories simultaneously—review, hotfix, long-running test—without packing/unpacking working-tree changes.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="11"><div class="quiz-q"><span class="qnum">Q11</span>How do you rebase only commits above a known base?</div><div class="quiz-answer">Select base commit and press <kbd>B</kbd>; select destination branch and press <kbd>r</kbd>. Lazygit uses rebase --onto semantics.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+  <div class="quiz-item" data-q="12"><div class="quiz-q"><span class="qnum">Q12</span>Fastest way to learn unknown contextual key?</div><div class="quiz-answer">Focus intended panel/object and press <kbd>?</kbd>. Footer shows common actions; help menu shows full context list for installed version.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
+
+  <h3>Glossary</h3>
+  <dl class="glossary">
+    <dt>Focused panel</dt><dd>Panel receiving keystrokes; shown with emphasized border.</dd>
+    <dt>Main view</dt><dd>Large preview/work area showing diff, graph, staging, patch, or conflict content.</dd>
+    <dt>Range select</dt><dd>Contiguous multi-selection, toggled with <kbd>v</kbd> or extended with Shift+arrows.</dd>
+    <dt>Custom patch</dt><dd>Selected files/hunks/lines from an old commit, used for history surgery through <kbd>Ctrl P</kbd>.</dd>
+    <dt>Fixup commit</dt><dd>Temporary <code>fixup!</code>/<code>amend!</code> commit targeting earlier commit for later autosquash.</dd>
+    <dt>Marked base</dt><dd>Commit selected with <kbd>B</kbd> delimiting commits moved by next rebase-onto.</dd>
+    <dt>Nuke</dt><dd>Destructive Files reset option removing everything visible in Git status, including dirty submodules.</dd>
+    <dt>Reflog undo</dt><dd>Lazygit's interpretation of ref/commit movements, navigated with <kbd>z</kbd>/<kbd>Z</kbd>.</dd>
+  </dl>
+
+  <h3>Sources</h3>
+  <p class="tiny">Content verified against official tagged v0.63.0 source and installed v0.63.0 binary on 2026-07-20. External links require network; guide itself does not.</p>
+  <ul>
+    <li><a href="https://github.com/jesseduffield/lazygit" target="_blank" rel="noopener">Official lazygit README: features, installation, usage</a></li>
+    <li><a href="https://github.com/jesseduffield/lazygit/blob/v0.63.0/docs/keybindings/Keybindings_en.md" target="_blank" rel="noopener">Official v0.63.0 default keybindings</a></li>
+    <li><a href="https://github.com/jesseduffield/lazygit/blob/v0.63.0/docs/Undoing.md" target="_blank" rel="noopener">Official undo/redo behavior and limitations</a></li>
+    <li><a href="https://github.com/jesseduffield/lazygit/blob/v0.63.0/docs/Fixup_Commits.md" target="_blank" rel="noopener">Official fixup/amend commit workflow</a></li>
+    <li><a href="https://github.com/jesseduffield/lazygit/blob/v0.63.0/docs/Range_Select.md" target="_blank" rel="noopener">Official range-selection behavior</a></li>
+    <li><a href="https://github.com/jesseduffield/lazygit/blob/v0.63.0/docs/Searching.md" target="_blank" rel="noopener">Official searching/filtering behavior</a></li>
+    <li><a href="https://github.com/jesseduffield/lazygit/blob/v0.63.0/docs/Stacked_Branches.md" target="_blank" rel="noopener">Official stacked-branches guidance</a></li>
+    <li><a href="https://github.com/jesseduffield/lazygit/blob/v0.63.0/docs/keybindings/Custom_Keybindings.md" target="_blank" rel="noopener">Official terminal compatibility notes</a></li>
+  </ul>
+  <div class="callout blue"><strong>Keep learning interactive</strong>Ask agent about confusing state before rehearsing keys blindly. Bring exact focused panel, selected row, operation state, and command-log entry.</div>
+</section>
+</main>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const root = document.documentElement;
+  const themeButton = document.getElementById('themeToggle');
+  const savedTheme = localStorage.getItem('lazygit-guide-theme');
+  if (savedTheme === 'light' || savedTheme === 'dark') root.classList.add(savedTheme);
+
+  function themeName() {
+    if (root.classList.contains('light')) return 'light';
+    if (root.classList.contains('dark')) return 'dark';
+    return 'auto';
+  }
+  function updateThemeLabel() { themeButton.textContent = `Theme: ${themeName()}`; }
+  updateThemeLabel();
+  themeButton.addEventListener('click', () => {
+    const current = themeName();
+    root.classList.remove('light', 'dark');
+    const next = current === 'auto' ? 'dark' : current === 'dark' ? 'light' : 'auto';
+    if (next !== 'auto') root.classList.add(next);
+    localStorage.setItem('lazygit-guide-theme', next);
+    updateThemeLabel();
+  });
+
+  document.querySelectorAll('pre').forEach(pre => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'copy-btn';
+    button.textContent = 'Copy';
+    button.setAttribute('aria-label', 'Copy code block');
+    button.addEventListener('click', async () => {
+      const code = pre.querySelector('code');
+      try {
+        await navigator.clipboard.writeText(code ? code.innerText : pre.innerText);
+        button.textContent = 'Copied';
+      } catch (_) {
+        button.textContent = 'Select text';
+      }
+      setTimeout(() => { button.textContent = 'Copy'; }, 1500);
+    });
+    pre.appendChild(button);
+  });
+
+  const tocLinks = [...document.querySelectorAll('.toc a[href^="#"]')];
+  const sections = tocLinks.map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver(entries => {
+      const visible = entries.filter(e => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (!visible) return;
+      tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === `#${visible.target.id}`));
+    }, { rootMargin: '-12% 0px -72% 0px', threshold: 0 });
+    sections.forEach(section => observer.observe(section));
+  }
+
+  const sim = document.getElementById('simulator');
+  const simFiles = document.getElementById('simFiles');
+  const simCommits = document.getElementById('simCommits');
+  const simMain = document.getElementById('simMain');
+  const simStatus = document.getElementById('simStatus');
+  const simMessage = document.getElementById('simMessage');
+  const simEditor = document.getElementById('simEditor');
+  const simInput = document.getElementById('simCommitMessage');
+  const simCommitButton = document.getElementById('simCommitButton');
+  const panelNames = ['status', 'files', 'branches', 'commits', 'stash'];
+  let simState;
+
+  function resetSim() {
+    simState = {
+      panel: 1,
+      file: 0,
+      files: [
+        { name: 'src/app.js', staged: false, diff: "- const mode = 'old';\n+ const mode = 'daily-driver';" },
+        { name: 'docs/notes.md', staged: false, diff: "+ Daily workflow documented." }
+      ],
+      commits: ['a18f02c Initialize demo'],
+      unpushed: false,
+      pushed: false
+    };
+    simEditor.classList.remove('open');
+    simInput.value = '';
+    simMessage.textContent = 'Goal: stage both files, commit, then push.';
+    renderSim();
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, character => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[character]);
+  }
+
+  function renderSim() {
+    document.querySelectorAll('.sim-panel').forEach((panel, index) => panel.classList.toggle('focused', index === simState.panel));
+    simFiles.innerHTML = simState.files.length
+      ? simState.files.map((file, index) => `<div class="sim-row ${file.staged ? 'staged' : 'unstaged'} ${simState.panel === 1 && index === simState.file ? 'selected' : ''}">${escapeHtml(file.name)}</div>`).join('')
+      : '<div class="sim-row">(clean)</div>';
+    simCommits.innerHTML = simState.commits.map((commit, index) => `<div class="sim-row ${simState.panel === 3 && index === 0 ? 'selected' : ''}">${index === 0 && simState.unpushed ? '↑ ' : ''}${escapeHtml(commit)}</div>`).join('');
+    const selected = simState.files[simState.file];
+    if (simState.panel === 1 && selected) {
+      const lines = selected.diff.split('\n').map(line => {
+        const className = line.startsWith('-') ? 'sim-del' : 'sim-add';
+        return `<span class="${className}">${line}</span>`;
+      }).join('\n');
+      simMain.innerHTML = `<h4>${selected.staged ? 'Staged' : 'Unstaged'} changes — ${escapeHtml(selected.name)}</h4><pre>${lines}</pre>`;
+    } else if (simState.panel === 3) {
+      simMain.innerHTML = `<h4>Commit graph</h4><pre>${simState.commits.map((c, i) => `${i === 0 ? '*' : '|'} ${escapeHtml(c)}`).join('\n')}</pre>`;
+    } else {
+      simMain.innerHTML = `<h4>${panelNames[simState.panel][0].toUpperCase() + panelNames[simState.panel].slice(1)} panel</h4><pre>Press ? for contextual help.\nUse h/l or 1…5 to focus Files.</pre>`;
+    }
+    const staged = simState.files.filter(file => file.staged).length;
+    simStatus.textContent = `${simState.panel + 1} ${panelNames[simState.panel]} · ${staged} staged · ${simState.unpushed ? '1 unpushed' : 'clean remote'}`;
+  }
+
+  function simHelp() {
+    const hints = [
+      'Status: Enter would open recent repositories.',
+      'Files: j/k select, Space stages, c commits staged content.',
+      'Branches: n creates; Space checks out; r rebases current onto selected.',
+      'Commits: i rebases; C/V cherry-pick; z undoes reflog actions.',
+      'Stash: Space applies; g pops; d drops.'
+    ];
+    simMessage.textContent = hints[simState.panel];
+  }
+
+  function openSimCommit() {
+    if (!simState.files.some(file => file.staged)) {
+      simMessage.textContent = 'Nothing staged. Focus Files and press Space.';
+      return;
+    }
+    simEditor.classList.add('open');
+    simInput.focus();
+    simMessage.textContent = 'Write commit subject, then Enter or Commit.';
+  }
+
+  function commitSim() {
+    const message = simInput.value.trim();
+    if (!message) { simMessage.textContent = 'Commit needs message.'; return; }
+    simState.files = simState.files.filter(file => !file.staged);
+    simState.file = 0;
+    simState.commits.unshift(`b72d91e ${message}`);
+    simState.unpushed = true;
+    simEditor.classList.remove('open');
+    simInput.value = '';
+    simMessage.textContent = 'Commit created. Press uppercase P to push.';
+    renderSim();
+    sim.focus();
+  }
+
+  function handleSimKey(key) {
+    if (key === 'reset') { resetSim(); return; }
+    if (key === '?') { simHelp(); return; }
+    if (/^[1-5]$/.test(key)) simState.panel = Number(key) - 1;
+    else if (key === 'h') simState.panel = (simState.panel + 4) % 5;
+    else if (key === 'l' || key === 'Tab') simState.panel = (simState.panel + 1) % 5;
+    else if ((key === 'j' || key === 'ArrowDown') && simState.panel === 1 && simState.files.length) simState.file = (simState.file + 1) % simState.files.length;
+    else if ((key === 'k' || key === 'ArrowUp') && simState.panel === 1 && simState.files.length) simState.file = (simState.file + simState.files.length - 1) % simState.files.length;
+    else if (key === ' ' && simState.panel === 1 && simState.files.length) {
+      simState.files[simState.file].staged = !simState.files[simState.file].staged;
+      const staged = simState.files.filter(file => file.staged).length;
+      simMessage.textContent = `${staged} file${staged === 1 ? '' : 's'} staged. ${staged === simState.files.length ? 'Press c.' : 'Stage remaining file.'}`;
+    } else if (key === 'c' && simState.panel === 1) { openSimCommit(); return; }
+    else if (key === 'P') {
+      if (simState.unpushed) {
+        simState.unpushed = false; simState.pushed = true;
+        simMessage.textContent = 'Complete: staged → committed → pushed.';
+      } else simMessage.textContent = 'Nothing to push.';
+    } else if (key === 'p') simMessage.textContent = 'Lowercase p pulls. Simulator remote has no incoming commits.';
+    else return;
+    renderSim();
+  }
+
+  sim.addEventListener('keydown', event => {
+    if (event.target === simInput) return;
+    const accepted = ['1','2','3','4','5','h','l','j','k','ArrowDown','ArrowUp',' ','c','P','p','?','Tab'];
+    if (!accepted.includes(event.key)) return;
+    event.preventDefault();
+    handleSimKey(event.key);
+  });
+  document.querySelectorAll('[data-sim-key]').forEach(button => button.addEventListener('click', () => {
+    handleSimKey(button.dataset.simKey);
+    sim.focus();
+  }));
+  simCommitButton.addEventListener('click', commitSim);
+  simInput.addEventListener('keydown', event => {
+    if (event.key === 'Enter') { event.preventDefault(); commitSim(); }
+    if (event.key === 'Escape') { simEditor.classList.remove('open'); sim.focus(); }
+  });
+  resetSim();
+
+  const quizKey = 'lazygit-guide-quiz-v1';
+  let quizState = {};
+  try { quizState = JSON.parse(localStorage.getItem(quizKey) || '{}'); } catch (_) { quizState = {}; }
+  const quizItems = [...document.querySelectorAll('.quiz-item')];
+  const quizScore = document.getElementById('quizScore');
+
+  function updateQuiz() {
+    let got = 0, missed = 0;
+    quizItems.forEach(item => {
+      const state = quizState[item.dataset.q];
+      item.classList.toggle('correct', state === 'got');
+      item.classList.toggle('missed', state === 'missed');
+      if (state === 'got') got++;
+      if (state === 'missed') missed++;
+    });
+    quizScore.textContent = `Score: ${got} learned · ${missed} review · ${got + missed}/${quizItems.length} answered`;
+    localStorage.setItem(quizKey, JSON.stringify(quizState));
+  }
+
+  quizItems.forEach(item => {
+    const answer = item.querySelector('.quiz-answer');
+    item.querySelector('.reveal').addEventListener('click', buttonEvent => {
+      answer.classList.toggle('open');
+      buttonEvent.currentTarget.textContent = answer.classList.contains('open') ? 'Hide' : 'Reveal';
+    });
+    item.querySelector('.got').addEventListener('click', () => { quizState[item.dataset.q] = 'got'; updateQuiz(); });
+    item.querySelector('.missed').addEventListener('click', () => { quizState[item.dataset.q] = 'missed'; answer.classList.add('open'); updateQuiz(); });
+  });
+  updateQuiz();
+})();
+</script>
+</body>
+</html>
