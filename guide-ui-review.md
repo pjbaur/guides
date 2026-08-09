@@ -16,13 +16,13 @@ numbers go stale as guides change.
 | Guide | Mobile nav @390px | Quiz reset | Clipboard `.catch` | H-overflow @390px | Glyph contrast (light) |
 |---|---|---|---|---|---|
 | `atuin-user-guide.html` | **none** | **missing** | **missing** | 0 | 6.8:1 |
-| `chezmoi-study-guide.html` | **none** | **missing** | **missing** | 0 | 7.3:1 |
-| `cmux-study-guide.html` | 12 links | n/a (no quiz) | **missing** | 0 | — |
-| `fzf-study-guide.html` | **none** | **missing** | **missing** | **10px** | **3.7:1** |
-| `gascity-study-guide.html` | 11 links | **missing** | **missing** | 0 | — |
-| `gastown-study-guide.html` | 14 links | **missing** | **missing** | **29px** | — |
-| `git-workflows-study-guide.html` | 18 links | **missing** | **missing** | 0 | — |
-| `lazygit-study-guide.html` | 20 links | **missing** | **missing** | 0 | — |
+| `chezmoi-user-guide.html` | **none** | **missing** | **missing** | 0 | 7.3:1 |
+| `cmux-user-guide.html` | 12 links | n/a (no quiz) | **missing** | 0 | — |
+| `fzf-user-guide.html` | **none** | **missing** | **missing** | **10px** | **3.7:1** |
+| `gascity-user-guide.html` | 11 links | **missing** | **missing** | 0 | — |
+| `gastown-user-guide.html` | 14 links | **missing** | **missing** | **29px** | — |
+| `git-workflows-user-guide.html` | 18 links | **missing** | **missing** | 0 | — |
+| `lazygit-user-guide.html` | 20 links | **missing** | **missing** | 0 | — |
 | `rsync-user-guide.html` | **none** | **missing** | **missing** | 0 | 5.0:1 |
 | `sqlite-shell-guide.html` | 16 links | **missing** | **missing** | 0 | — |
 | `syncthing-user-guide.html` | toggle ✓ | ✓ | ✓ | 0 | 5.5:1 |
@@ -193,8 +193,8 @@ Measured contrast ratios, light auto mode:
 
 Two guides scroll sideways at 390px, which no page should:
 
-- **`gastown-study-guide.html` — 29px**
-- **`fzf-study-guide.html` — 10px**
+- **`gastown-user-guide.html` — 29px**
+- **`fzf-user-guide.html` — 10px**
 
 The cause found in the atuin guide was a CSS grid whose items default to
 `min-width: auto`, letting a wide `<pre>` push the column past the viewport

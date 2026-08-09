@@ -15,15 +15,15 @@ plane.
 |---|---|---|
 | [`atuin-user-guide.html`](atuin-user-guide.html) | Shell history as a queryable, syncing SQLite database | atuin 18.19.0 · 2026-08-07 |
 | [`rsync-user-guide.html`](rsync-user-guide.html) | The trailing slash, the delta algorithm, filter rules, SSH and daemon transports, `--link-dest` snapshots | rsync 3.4.4 (protocol 32) · 2026-08-07 |
-| [`chezmoi-study-guide.html`](chezmoi-study-guide.html) | Declaring your home directory once and applying it everywhere | chezmoi v2.72.0 · 2026-08-06 |
+| [`chezmoi-user-guide.html`](chezmoi-user-guide.html) | Declaring your home directory once and applying it everywhere | chezmoi v2.72.0 · 2026-08-06 |
 | [`syncthing-user-guide.html`](syncthing-user-guide.html) | Continuous file sync across devices with no cloud in the middle | Syncthing v2.1.3 · 2026-08-06 |
-| [`fzf-study-guide.html`](fzf-study-guide.html) | Fuzzy finding as a composable shell primitive | fzf 0.74.2 · 2026-08-06 |
-| [`lazygit-study-guide.html`](lazygit-study-guide.html) | Daily Git through a terminal UI, without losing the plot | lazygit 0.63.0 |
+| [`fzf-user-guide.html`](fzf-user-guide.html) | Fuzzy finding as a composable shell primitive | fzf 0.74.2 · 2026-08-06 |
+| [`lazygit-user-guide.html`](lazygit-user-guide.html) | Daily Git through a terminal UI, without losing the plot | lazygit 0.63.0 |
 | [`sqlite-shell-guide.html`](sqlite-shell-guide.html) | Opening, triaging, profiling and maintaining any SQLite database from the shell | — |
-| [`git-workflows-study-guide.html`](git-workflows-study-guide.html) | GitHub Flow, Git Flow, trunk-based and GitLab Flow — and choosing deliberately | — |
-| [`gastown-study-guide.html`](gastown-study-guide.html) | Steve Yegge's multi-agent coding orchestration system | 2026-07-11 |
-| [`gascity-study-guide.html`](gascity-study-guide.html) | Go orchestration-builder SDK for multi-agent workflows, successor to Gas Town | gascity ≈ v1.3.0 · 2026-07-09 |
-| [`cmux-study-guide.html`](cmux-study-guide.html) | Terminal workspace and pane orchestration | 2026-07-09 |
+| [`git-workflows-user-guide.html`](git-workflows-user-guide.html) | GitHub Flow, Git Flow, trunk-based and GitLab Flow — and choosing deliberately | — |
+| [`gastown-user-guide.html`](gastown-user-guide.html) | Steve Yegge's multi-agent coding orchestration system | 2026-07-11 |
+| [`gascity-user-guide.html`](gascity-user-guide.html) | Go orchestration-builder SDK for multi-agent workflows, successor to Gas Town | gascity ≈ v1.3.0 · 2026-07-09 |
+| [`cmux-user-guide.html`](cmux-user-guide.html) | Terminal workspace and pane orchestration | 2026-07-09 |
 
 ## How they are built
 
