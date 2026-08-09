@@ -55,6 +55,7 @@ Single self-contained HTML file. No external CSS, JS, fonts, images, or CDNs. In
 ### Visual style
 
 - **CSS custom properties only** — no color literals outside the variable block. Core vocabulary: `--bg --surface --surface2 --ink --ink2 --muted --line --code-bg --accent --accent-wash` plus semantic `--warn --danger` and terminal colors `--terminal --terminal-ink --terminal-accent`.
+- **`--on-accent`** — the color for any glyph or text sitting on an accent background (brand mark, step numbers), defined per theme in all four variable blocks (`:root`, the `prefers-color-scheme: dark` media block, `:root.dark`, `:root.light`). Never style such glyphs with per-selector color overrides — in particular never a bare `:root:not(.light)` rule, which wrongly matches auto mode on a light OS. Aim for ≥4.5:1 contrast against the accent in both themes.
 - **Light + dark:** light values on `:root`; dark via `@media (prefers-color-scheme: dark)` AND `:root.dark` / `:root.light` class overrides. A fixed round theme-toggle button cycles auto → dark → light, persisted to localStorage under a guide-specific key.
 - **Distinct palette per guide:** pick a hue family deliberately different from sibling guides in the directory. Check contrast in both themes.
 - **Type:** system font stack, `16px/1.62`, `p { max-width: 78ch }`; `ui-monospace` stack for code.

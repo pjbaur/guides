@@ -1,5 +1,10 @@
 # Guide UI Review — Known Gaps
 
+**All five gaps were fixed and re-verified on 2026-08-09** — the summary
+table below shows the post-fix state, and each gap section opens with what
+was actually done (several original counts turned out wrong; see Gaps 2
+and 3). The audit script and per-gap findings are kept for the next pass.
+
 Working checklist for a comprehensive UI pass over the HTML guides in this
 directory. Every status below was **measured in headless Chromium on
 2026-08-07**, not inferred from grep — an earlier grep-based pass got three
@@ -15,16 +20,16 @@ numbers go stale as guides change.
 
 | Guide | Mobile nav @390px | Quiz reset | Clipboard `.catch` | H-overflow @390px | Glyph contrast (light) |
 |---|---|---|---|---|---|
-| `atuin-user-guide.html` | **none** | **missing** | **missing** | 0 | 6.8:1 |
-| `chezmoi-user-guide.html` | **none** | **missing** | **missing** | 0 | 7.3:1 |
-| `cmux-user-guide.html` | 12 links | n/a (no quiz) | **missing** | 0 | — |
-| `fzf-user-guide.html` | **none** | **missing** | **missing** | **10px** | **3.7:1** |
-| `gascity-user-guide.html` | 11 links | **missing** | **missing** | 0 | — |
-| `gastown-user-guide.html` | 14 links | **missing** | **missing** | **29px** | — |
-| `git-workflows-user-guide.html` | 18 links | **missing** | **missing** | 0 | — |
-| `lazygit-user-guide.html` | 20 links | **missing** | **missing** | 0 | — |
-| `rsync-user-guide.html` | **none** | **missing** | **missing** | 0 | 5.0:1 |
-| `sqlite-shell-guide.html` | 16 links | **missing** | **missing** | 0 | — |
+| `atuin-user-guide.html` | toggle ✓ | ✓ | ✓ | 0 | 6.8:1 |
+| `chezmoi-user-guide.html` | toggle ✓ | ✓ | ✓ | 0 | 7.3:1 |
+| `cmux-user-guide.html` | 12 links | n/a (no quiz) | n/a (no copy btn) | 0 | — |
+| `fzf-user-guide.html` | toggle ✓ | ✓ | ✓ | 0 | 5.0:1 |
+| `gascity-user-guide.html` | 11 links | n/a (no persistence) | n/a (no copy btn) | 0 | — |
+| `gastown-user-guide.html` | 14 links | n/a (no persistence) | n/a (no copy btn) | 0 | — |
+| `git-workflows-user-guide.html` | 18 links | ✓ | ✓ | 0 | — |
+| `lazygit-user-guide.html` | 20 links | ✓ | ✓ | 0 | — |
+| `rsync-user-guide.html` | toggle ✓ | ✓ | ✓ | 0 | 5.0:1 |
+| `sqlite-shell-guide.html` | 16 links | n/a (no persistence) | n/a (no copy btn) | 0 | — |
 | `syncthing-user-guide.html` | toggle ✓ | ✓ | ✓ | 0 | 5.5:1 |
 
 `syncthing-user-guide.html` is the reference implementation for all four
@@ -40,9 +45,17 @@ by any of these gaps.
 
 ---
 
-## Gap 1 · Mobile navigation disappears — **highest severity**
+## Gap 1 · Mobile navigation disappears — **FIXED 2026-08-09**
 
-**Four guides render zero navigation below their mobile breakpoint:**
+The syncthing toc-toggle pattern was ported to all four guides (`atuin`,
+`chezmoi`, `fzf`, `rsync`) and verified in headless Chromium at 390px:
+toggle visible and nav hidden when closed, `aria-expanded` tracks state,
+scrollspy active link correct when opened mid-page, link tap closes the
+panel and lands on target, toggle hidden at 1440px, no JS errors, no new
+overflow. In `fzf` the `#tocFilter` input also reappears inside the opened
+panel and filters links. Original findings kept below for reference.
+
+**Four guides rendered zero navigation below their mobile breakpoint:**
 `atuin`, `chezmoi`, `fzf`, `rsync`.
 
 The pattern is a media query that collapses the sidebar and then hides the nav
@@ -85,7 +98,18 @@ Points to confirm when porting:
 
 ---
 
-## Gap 2 · No quiz reset button
+## Gap 2 · No quiz reset button — **FIXED 2026-08-09**
+
+The syncthing reset (in-memory clear + existing save path, never touching
+`localStorage` directly) was ported to the six guides that actually persist
+quiz state: `atuin`, `chezmoi`, `fzf`, `git-workflows`, `lazygit`, `rsync`.
+The other three flagged guides turned out not to need it — `gastown` and
+`sqlite` are reveal-only quizzes with no state at all, and `gascity` keeps
+its score in memory only, so a reload already resets it. All six verified
+in Chromium alongside the syncthing control: answer two questions, reset →
+score returns to 0, answers close, the quiz `localStorage` key becomes
+`{}`, and the per-guide theme key survives untouched. Original findings
+kept below for reference.
 
 **Nine guides have a quiz; only `syncthing` can reset it.** (`cmux` has no quiz.)
 
@@ -119,7 +143,25 @@ guide, since they all share that origin.
 
 ---
 
-## Gap 3 · Clipboard copy fails silently
+## Gap 3 · Clipboard copy fails silently — **FIXED 2026-08-09**
+
+The original count of "ten guides missing `.catch`" was wrong on two fronts,
+both artifacts of the audit's `\.catch\(` regex:
+
+- `chezmoi`, `fzf`, `git-workflows`, `lazygit` already handled failure with
+  `try { await … } catch`, which the regex cannot see. Their handlers also
+  catch `navigator.clipboard` being undefined, since the property access
+  throws inside the `try`. Only fix applied: `chezmoi` and `fzf` left the
+  failure label (`Select text`) stuck permanently; the restore timeout was
+  moved outside the `try` so the label always returns to `Copy`.
+- `cmux`, `gascity`, `gastown`, `sqlite` have **no copy button at all** —
+  nothing to fix under this gap (a missing feature, not a silent failure).
+
+Only `atuin` and `rsync` had the real bug (bare `.then()`, no undefined
+guard); both now use the syncthing pattern verbatim. All six guides with
+copy buttons verified in Chromium: success path shows `Copied`, forced
+rejection shows `Copy failed` / `Select text`, and the label restores to
+`Copy` on both paths. Original findings kept below for reference.
 
 **Ten of eleven guides** call `navigator.clipboard.writeText()` with a `.then()`
 and no `.catch()`:
@@ -153,7 +195,20 @@ sees a definite outcome.
 
 ---
 
-## Gap 4 · Two competing fixes for the auto-theme glyph bug
+## Gap 4 · Two competing fixes for the auto-theme glyph bug — **FIXED 2026-08-09**
+
+All five guides with accent-background glyphs now use the `--on-accent`
+token, defined in all four theme blocks (`:root`, the auto-dark media
+block, `:root.dark`, `:root.light`); the media-query-guard rules in
+`atuin`, `chezmoi`, `syncthing` were deleted, and `fzf` — which had no
+guard because it used one static color for both themes — got per-theme
+values, lifting its light-mode glyph from 3.7:1 to 5.04:1 (white on teal,
+now AA for normal text). Measured in all four theme modes (auto-light,
+auto-dark, forced dark, forced light) on both `.brand-mark` and
+`.step-num`: every ratio ≥ 4.99:1, zero `:root:not(.light)` selectors
+remain anywhere. `create-guide-prompt.md` now names `--on-accent` in its
+CSS vocabulary with the four-block rule and the `:root:not(.light)`
+warning. Original findings kept below for reference.
 
 The original bug — recorded in the format-preferences memory and fixed in commit
 `18b8a98` — was dark-glyph rules written as:
@@ -189,9 +244,25 @@ Measured contrast ratios, light auto mode:
 
 ---
 
-## Gap 5 · Horizontal overflow on mobile
+## Gap 5 · Horizontal overflow on mobile — **FIXED 2026-08-09**
 
-Two guides scroll sideways at 390px, which no page should:
+Causes found and fixed, verified at 360/390/800/1100/1440px with zero
+overflow and zero JS errors in both guides:
+
+- `gastown` — a long unbreakable token in an inline `<code>`
+  (`0040_ignored_tables_also_nonlocal_tables.up.sql`). Fixed with
+  `overflow-wrap: anywhere` on the `code` rule; `pre` is unaffected since
+  `white-space: pre` offers no wrap opportunities and `pre` already scrolls.
+  The guide has no CSS grids at all.
+- `fzf` — the 760px media query set `.grid { grid-template-columns:1fr }`,
+  the exact bare-`1fr` bug from atuin. All bare `1fr` grid tracks in the
+  guide (`.grid`, `.grid.three`, `.step`, `.syntax`, `.sim-row`,
+  `.hero-flow`, at every breakpoint) were converted to `minmax(0,1fr)`.
+  Wide `<pre>` blocks inside cards now scroll internally.
+
+Original findings kept below for reference.
+
+Two guides scrolled sideways at 390px, which no page should:
 
 - **`gastown-user-guide.html` — 29px**
 - **`fzf-user-guide.html` — 10px**
@@ -225,7 +296,7 @@ const scrolls = el => /auto|scroll|hidden/.test(getComputedStyle(el).overflowX);
 
 ---
 
-## Suggested order of work
+## Suggested order of work — all done 2026-08-09, in this order
 
 1. **Gap 1 on the four guides with no mobile nav** — this is the only gap that
    makes a document unusable rather than merely imperfect.

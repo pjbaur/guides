@@ -238,6 +238,7 @@
     border-radius: 7px; padding: 5px 9px; font-size: 12px;
   }
   .quiz-actions button:hover { color: var(--accent-strong); border-color: var(--accent); }
+  .quiz-reset { margin: -6px 0 15px; }
   .quiz-item.correct { border-color: var(--accent); background: var(--accent-wash); }
   .quiz-item.missed { border-color: var(--amber); background: var(--amber-wash); }
   .glossary { display: grid; grid-template-columns: 170px 1fr; gap: 0; border-top: 1px solid var(--line); }
@@ -1351,6 +1352,7 @@ cd ../bob</code></pre>
   <h2>18 · Retrieval quiz and sources</h2>
   <p>Answer aloud before revealing. Mark honestly; your score persists in this browser only.</p>
   <div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0 answered</div>
+  <div class="quiz-actions quiz-reset"><button id="quizReset" type="button">Reset score</button></div>
 
   <div class="quiz-item" data-q="1"><div class="quiz-q"><span class="qnum">Q1</span>What is the single load-bearing assumption shared by GitHub Flow and trunk-based development?</div><div class="quiz-answer">That <code>main</code> is always deployable — kept green by CI and review. Without trustworthy CI keeping <code>main</code> releasable, both models break.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
   <div class="quiz-item" data-q="2"><div class="quiz-q"><span class="qnum">Q2</span>Name the four merge models and the one-word history shape each produces.</div><div class="quiz-answer">Fast-forward (linear), merge commit/no-ff (branch bubbles/topology), squash (linear, one commit per PR), rebase (linear, keeps commits).</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
@@ -1470,6 +1472,14 @@ cd ../bob</code></pre>
     });
     item.querySelector('.got').addEventListener('click', () => { quizState[item.dataset.q] = 'got'; updateQuiz(); });
     item.querySelector('.missed').addEventListener('click', () => { quizState[item.dataset.q] = 'missed'; answer.classList.add('open'); updateQuiz(); });
+  });
+  document.getElementById('quizReset').addEventListener('click', () => {
+    quizState = {};
+    quizItems.forEach(item => {
+      item.querySelector('.quiz-answer').classList.remove('open');
+      item.querySelector('.reveal').textContent = 'Reveal';
+    });
+    updateQuiz();
   });
   updateQuiz();
 })();

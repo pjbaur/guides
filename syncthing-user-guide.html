@@ -12,12 +12,13 @@
      guides (chezmoi raspberry, fzf teal/coral, git-workflows cobalt, lazygit
      green, sqlite violet, cmux blue, gascity amber, gastown teal).
      No color literals outside this variable block, except deliberate constants:
-     the terminal/sim panels are always dark (#4a3722 borders, rgba overlays)
-     and the brand/step glyph colors are tuned per theme below. */
+     the terminal/sim panels are always dark (#4a3722 borders, rgba overlays).
+     Glyphs on accent backgrounds use --on-accent, defined per theme here. */
   :root {
     --bg: #faf6f2; --surface: #ffffff; --surface-2: #f2e9e1; --ink: #241609;
     --ink-2: #55402e; --muted: #857260; --line: #ddccbb; --hairline: rgba(36,22,9,.1);
     --accent: #b04a12; --accent-strong: #8f3a0c; --accent-wash: rgba(176,74,18,.09);
+    --on-accent: #ffffff;
     --teal: #0e7a6c; --teal-wash: rgba(14,122,108,.10); --gold: #8d6500;
     --gold-wash: rgba(141,101,0,.11); --blue: #1465a0; --blue-wash: rgba(20,101,160,.10);
     --danger: #b3261e; --danger-wash: rgba(179,38,30,.10); --terminal: #1a1109;
@@ -30,6 +31,7 @@
       --bg: #150e07; --surface: #1e150c; --surface-2: #2a1f13; --ink: #f8efe4;
       --ink-2: #d3c2ae; --muted: #9b8873; --line: #453522; --hairline: rgba(255,255,255,.10);
       --accent: #ff9d55; --accent-strong: #ffb87e; --accent-wash: rgba(255,157,85,.12);
+      --on-accent: #2b1405;
       --teal: #57cfba; --teal-wash: rgba(87,207,186,.12); --gold: #e4bd55;
       --gold-wash: rgba(228,189,85,.13); --blue: #79bdea; --blue-wash: rgba(121,189,234,.12);
       --danger: #ff8a7e; --danger-wash: rgba(255,138,126,.12); --terminal: #120c05;
@@ -41,7 +43,7 @@
   :root.dark {
     --bg:#150e07;--surface:#1e150c;--surface-2:#2a1f13;--ink:#f8efe4;--ink-2:#d3c2ae;
     --muted:#9b8873;--line:#453522;--hairline:rgba(255,255,255,.10);--accent:#ff9d55;
-    --accent-strong:#ffb87e;--accent-wash:rgba(255,157,85,.12);--teal:#57cfba;
+    --accent-strong:#ffb87e;--accent-wash:rgba(255,157,85,.12);--on-accent:#2b1405;--teal:#57cfba;
     --teal-wash:rgba(87,207,186,.12);--gold:#e4bd55;--gold-wash:rgba(228,189,85,.13);
     --blue:#79bdea;--blue-wash:rgba(121,189,234,.12);--danger:#ff8a7e;
     --danger-wash:rgba(255,138,126,.12);--terminal:#120c05;--terminal-2:#1e150c;
@@ -52,7 +54,7 @@
   :root.light {
     --bg:#faf6f2;--surface:#fff;--surface-2:#f2e9e1;--ink:#241609;--ink-2:#55402e;
     --muted:#857260;--line:#ddccbb;--hairline:rgba(36,22,9,.1);--accent:#b04a12;
-    --accent-strong:#8f3a0c;--accent-wash:rgba(176,74,18,.09);--teal:#0e7a6c;
+    --accent-strong:#8f3a0c;--accent-wash:rgba(176,74,18,.09);--on-accent:#fff;--teal:#0e7a6c;
     --teal-wash:rgba(14,122,108,.10);--gold:#8d6500;--gold-wash:rgba(141,101,0,.11);
     --blue:#1465a0;--blue-wash:rgba(20,101,160,.10);--danger:#b3261e;
     --danger-wash:rgba(179,38,30,.10);--terminal:#1a1109;--terminal-2:#271a10;
@@ -73,9 +75,7 @@
   .layout { display: flex; max-width: 1440px; margin: 0 auto; }
   .sidebar { position: sticky; top: 0; align-self: flex-start; width: 272px; height: 100vh; flex: 0 0 auto; overflow-y: auto; padding: 23px 16px 30px 20px; border-right: 1px solid var(--line); background: color-mix(in srgb,var(--bg) 92%,transparent); }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 850; letter-spacing: -.02em; }
-  .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: #fff; background: var(--accent); font: 900 15px/1 ui-monospace,monospace; }
-  :root.dark .brand-mark { color: #2b1405; }
-  @media (prefers-color-scheme: dark) { :root:not(.light) .brand-mark { color: #2b1405; } }
+  .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: var(--on-accent); background: var(--accent); font: 900 15px/1 ui-monospace,monospace; }
   .brand-sub { margin: 5px 0 14px 44px; color: var(--muted); font-size: 11px; }
   .toc-toggle { display: none; margin: 10px 0 2px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink-2); background: var(--surface); font-size: 13px; }
   .toc-group { margin: 16px 8px 4px; color: var(--muted); font-size: 10px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
@@ -165,9 +165,7 @@
   .sim-log .o { color:var(--terminal-muted); }
   .sim-log .add { color:var(--terminal-teal); }
   .step { display:grid; grid-template-columns:42px 1fr; gap:13px; margin:18px 0; }
-  .step-num { display:grid; place-items:center; width:38px; height:38px; border-radius:12px; color:#fff; background:var(--accent); font-weight:900; }
-  :root.dark .step-num { color:#2b1405; }
-  @media (prefers-color-scheme: dark) { :root:not(.light) .step-num { color:#2b1405; } }
+  .step-num { display:grid; place-items:center; width:38px; height:38px; border-radius:12px; color:var(--on-accent); background:var(--accent); font-weight:900; }
   .step h3 { margin:4px 0 8px; }
   .pill { display:inline-block; margin:2px 3px 2px 0; padding:2px 8px; border-radius:99px; color:var(--ink-2); background:var(--surface-2); font-size:11px; }
   .flow { display:flex; flex-wrap:wrap; gap:8px; align-items:stretch; margin:17px 0; }

@@ -80,6 +80,7 @@
   .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--accent); font: 900 15px/1 ui-monospace,monospace; }
   .brand-mark { color: var(--on-accent); }
   .brand-sub { margin: 5px 0 14px 44px; color: var(--muted); font-size: 11px; }
+  .toc-toggle { display: none; margin: 10px 0 2px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink-2); background: var(--surface); font-size: 13px; }
   .toc-group { margin: 16px 8px 4px; color: var(--muted); font-size: 10px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
   .sidebar nav a { display: block; margin: 1px 0; padding: 5px 8px; border-radius: 7px; color: var(--ink-2); font-size: 12.5px; text-decoration: none; }
   .sidebar nav a:hover,.sidebar nav a.active { color: var(--accent-strong); background: var(--accent-wash); }
@@ -222,6 +223,7 @@
   .quiz-actions { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
   .quiz-actions button { padding:4px 11px; border:1px solid var(--line); border-radius:99px; color:var(--ink-2); background:var(--surface-2); font-size:12px; }
   .quiz-actions button:hover { color:var(--accent-strong); border-color:var(--accent); }
+  .quiz-reset { margin:-6px 0 15px; }
   .quiz-item.correct { border-color:var(--accent); background:var(--accent-wash); }
   .quiz-item.missed { border-color:var(--gold); background:var(--gold-wash); }
   /* Without JS there is no Reveal button, so open every quiz answer instead. */
@@ -236,6 +238,8 @@
   @media (max-width:760px) {
     .layout { display:block; } .sidebar { position:relative; width:auto; height:auto; padding:15px; border-right:0; border-bottom:1px solid var(--line); }
     .brand-sub,.sidebar nav { display:none; }
+    .toc-toggle { display:inline-block; }
+    .sidebar.open nav { display:block; padding-top:6px; }
     main { padding:25px 17px 80px; } .theme-toggle { top:10px; } .grid,.grid.three { grid-template-columns:minmax(0,1fr); }
     .lab-head { display:block; } .lab-time { display:inline-block; margin-top:5px; }
     .index-cols { columns:1; } .trees { grid-template-columns:1fr; } .tree { border-right:0; border-bottom:1px solid var(--terminal-line); }
@@ -257,6 +261,7 @@
 <div class="layout" id="top">
   <aside class="sidebar" aria-label="Guide navigation">
     <div class="brand"><span class="brand-mark">⇉</span><span>rsync field guide</span></div>
+    <button class="toc-toggle" id="tocToggle" type="button" aria-expanded="false" aria-controls="toc">☰ Contents</button>
     <div class="brand-sub">reconcile, don't copy</div>
     <nav id="toc" aria-label="Guide sections">
       <div class="toc-group">Foundations</div>
@@ -3437,6 +3442,7 @@ EXCLUDES="$LAB/excludes.txt" KEEP=3 ./snap.sh "$LAB/proj" "$LAB/backups"
       <h2>Retrieval quiz</h2>
       <p class="lede">Answer out loud before revealing. Retrieval builds durable memory in a way re-reading does not — this is the highest-value ten minutes in the guide. Aim for <strong>16/19</strong> before you consider rsync learned; revisit a day later and again a week later.</p>
       <div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0/17 answered</div>
+      <div class="quiz-actions quiz-reset"><button id="quizReset" type="button">Reset score</button></div>
 
       <div class="quiz-item" data-q="1">
         <div class="quiz-q"><span class="qnum">Q1</span>rsync does not "copy files". What does it do, and what one sentence explains <code>--delete</code>, idempotency, and the trailing slash at once?</div>
@@ -3614,9 +3620,12 @@ EXCLUDES="$LAB/excludes.txt" KEEP=3 ./snap.sh "$LAB/proj" "$LAB/backups"
         full.querySelectorAll('.copy').forEach(n => n.remove());
         text = full.textContent.trim();
       }
-      navigator.clipboard.writeText(text).then(() => {
-        b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1200);
-      });
+      const write = navigator.clipboard
+        ? navigator.clipboard.writeText(text)
+        : Promise.reject(new Error('clipboard unavailable'));
+      write.then(() => { b.textContent = 'Copied'; })
+           .catch(() => { b.textContent = 'Copy failed'; })
+           .then(() => { setTimeout(() => { b.textContent = 'Copy'; }, 1200); });
     });
     pre.appendChild(b);
   });
@@ -3626,6 +3635,16 @@ EXCLUDES="$LAB/excludes.txt" KEEP=3 ./snap.sh "$LAB/proj" "$LAB/backups"
   addEventListener('scroll', () => {
     topButton.classList.toggle('visible', scrollY > 900);
   }, { passive: true });
+
+  // ---- Mobile TOC toggle (button is display:none on desktop). ---------------
+  const tocToggle = document.getElementById('tocToggle');
+  const sidebar = document.querySelector('.sidebar');
+  function setToc(open) {
+    sidebar.classList.toggle('open', open);
+    tocToggle.setAttribute('aria-expanded', String(open));
+  }
+  tocToggle.addEventListener('click', () => setToc(!sidebar.classList.contains('open')));
+  document.querySelectorAll('#toc a').forEach(a => a.addEventListener('click', () => setToc(false)));
 
   // ---- Scrollspy. -----------------------------------------------------------
   const tocLinks = [...document.querySelectorAll('#toc a')];
@@ -3952,6 +3971,14 @@ EXCLUDES="$LAB/excludes.txt" KEEP=3 ./snap.sh "$LAB/proj" "$LAB/backups"
     item.querySelector('.missed').addEventListener('click', () => {
       quizState[item.dataset.q] = 'missed'; answer.classList.add('open'); updateQuiz();
     });
+  });
+  document.getElementById('quizReset').addEventListener('click', () => {
+    quizState = {};
+    quizItems.forEach(item => {
+      item.querySelector('.quiz-answer').classList.remove('open');
+      item.querySelector('.reveal').textContent = 'Reveal';
+    });
+    updateQuiz();
   });
   updateQuiz();
 })();

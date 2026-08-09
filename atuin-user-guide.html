@@ -18,6 +18,7 @@
     --bg: #faf7fb; --surface: #ffffff; --surface-2: #f1e9f4; --ink: #1c111f;
     --ink-2: #4a3b4f; --muted: #776a7c; --line: #e0d2e4; --hairline: rgba(28,17,31,.10);
     --accent: #9227ab; --accent-strong: #781b8e; --accent-wash: rgba(146,39,171,.10);
+    --on-accent: #ffffff;
     --gold: #8a5e00; --gold-wash: rgba(138,94,0,.12);
     --blue: #1d5fbf; --blue-wash: rgba(29,95,191,.10);
     --danger: #b3261e; --danger-wash: rgba(179,38,30,.10);
@@ -31,6 +32,7 @@
       --bg: #130b16; --surface: #1c1120; --surface-2: #281a2e; --ink: #f6eef8;
       --ink-2: #d3c2d8; --muted: #97869c; --line: #3d2a44; --hairline: rgba(255,255,255,.10);
       --accent: #dd8ef5; --accent-strong: #ecb0ff; --accent-wash: rgba(221,142,245,.13);
+      --on-accent: #100616;
       --gold: #e0bb52; --gold-wash: rgba(224,187,82,.13);
       --blue: #8ab6f5; --blue-wash: rgba(138,182,245,.12);
       --danger: #ff8a7e; --danger-wash: rgba(255,138,126,.13);
@@ -43,7 +45,7 @@
   :root.dark {
     --bg:#130b16;--surface:#1c1120;--surface-2:#281a2e;--ink:#f6eef8;--ink-2:#d3c2d8;
     --muted:#97869c;--line:#3d2a44;--hairline:rgba(255,255,255,.10);--accent:#dd8ef5;
-    --accent-strong:#ecb0ff;--accent-wash:rgba(221,142,245,.13);--gold:#e0bb52;
+    --accent-strong:#ecb0ff;--accent-wash:rgba(221,142,245,.13);--on-accent:#100616;--gold:#e0bb52;
     --gold-wash:rgba(224,187,82,.13);--blue:#8ab6f5;--blue-wash:rgba(138,182,245,.12);
     --danger:#ff8a7e;--danger-wash:rgba(255,138,126,.13);--terminal:#100616;
     --terminal-2:#1d0f24;--terminal-ink:#f4eaf7;--terminal-muted:#9c86a5;
@@ -53,7 +55,7 @@
   :root.light {
     --bg:#faf7fb;--surface:#fff;--surface-2:#f1e9f4;--ink:#1c111f;--ink-2:#4a3b4f;
     --muted:#776a7c;--line:#e0d2e4;--hairline:rgba(28,17,31,.1);--accent:#9227ab;
-    --accent-strong:#781b8e;--accent-wash:rgba(146,39,171,.10);--gold:#8a5e00;
+    --accent-strong:#781b8e;--accent-wash:rgba(146,39,171,.10);--on-accent:#fff;--gold:#8a5e00;
     --gold-wash:rgba(138,94,0,.12);--blue:#1d5fbf;--blue-wash:rgba(29,95,191,.10);
     --danger:#b3261e;--danger-wash:rgba(179,38,30,.10);--terminal:#16091a;
     --terminal-2:#221029;--terminal-ink:#f4eaf7;--terminal-muted:#9c86a5;
@@ -73,10 +75,9 @@
   .layout { display: flex; max-width: 1440px; margin: 0 auto; }
   .sidebar { position: sticky; top: 0; align-self: flex-start; width: 272px; height: 100vh; flex: 0 0 auto; overflow-y: auto; padding: 23px 16px 30px 20px; border-right: 1px solid var(--line); background: color-mix(in srgb,var(--bg) 92%,transparent); }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 850; letter-spacing: -.02em; }
-  .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: #fff; background: var(--accent); font: 900 15px/1 ui-monospace,monospace; }
-  :root.dark .brand-mark { color: #100616; }
-  @media (prefers-color-scheme: dark) { :root:not(.light) .brand-mark { color: #100616; } }
+  .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: var(--on-accent); background: var(--accent); font: 900 15px/1 ui-monospace,monospace; }
   .brand-sub { margin: 5px 0 14px 44px; color: var(--muted); font-size: 11px; }
+  .toc-toggle { display: none; margin: 10px 0 2px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink-2); background: var(--surface); font-size: 13px; }
   .toc-group { margin: 16px 8px 4px; color: var(--muted); font-size: 10px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
   .sidebar nav a { display: block; margin: 1px 0; padding: 5px 8px; border-radius: 7px; color: var(--ink-2); font-size: 12.5px; text-decoration: none; }
   .sidebar nav a:hover,.sidebar nav a.active { color: var(--accent-strong); background: var(--accent-wash); }
@@ -176,9 +177,7 @@
      push the column past the viewport instead of scrolling inside itself. */
   .step { display:grid; grid-template-columns:42px minmax(0,1fr); gap:13px; margin:18px 0; }
   .step > * { min-width:0; }
-  .step-num { display:grid; place-items:center; width:38px; height:38px; border-radius:12px; color:#fff; background:var(--accent); font-weight:900; }
-  :root.dark .step-num { color:#100616; }
-  @media (prefers-color-scheme: dark) { :root:not(.light) .step-num { color:#100616; } }
+  .step-num { display:grid; place-items:center; width:38px; height:38px; border-radius:12px; color:var(--on-accent); background:var(--accent); font-weight:900; }
   .step h3 { margin:4px 0 8px; }
   .pill { display:inline-block; margin:2px 3px 2px 0; padding:2px 8px; border-radius:99px; color:var(--ink-2); background:var(--surface-2); font-size:11px; }
   .flow { display:flex; flex-wrap:wrap; gap:8px; align-items:stretch; margin:17px 0; }
@@ -221,6 +220,7 @@
   .quiz-actions { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
   .quiz-actions button { padding:4px 11px; border:1px solid var(--line); border-radius:99px; color:var(--ink-2); background:var(--surface-2); font-size:12px; }
   .quiz-actions button:hover { color:var(--accent-strong); border-color:var(--accent); }
+  .quiz-reset { margin:-6px 0 15px; }
   .quiz-item.correct { border-color:var(--accent); background:var(--accent-wash); }
   .quiz-item.missed { border-color:var(--gold); background:var(--gold-wash); }
   .print-only { display:none; }
@@ -242,6 +242,8 @@
   @media (max-width:760px) {
     .layout { display:block; } .sidebar { position:relative; width:auto; height:auto; padding:15px; border-right:0; border-bottom:1px solid var(--line); }
     .brand-sub,.sidebar nav { display:none; }
+    .toc-toggle { display:inline-block; }
+    .sidebar.open nav { display:block; padding-top:6px; }
     main { padding:25px 17px 80px; } .theme-toggle { top:10px; } .grid,.grid.three { grid-template-columns:minmax(0,1fr); }
     .lab-head { display:block; } .lab-time { display:inline-block; margin-top:5px; }
     .index-cols { columns:1; }
@@ -263,6 +265,7 @@
 <div class="layout" id="top">
   <aside class="sidebar" aria-label="Guide navigation">
     <div class="brand"><span class="brand-mark">⌕</span><span>atuin user guide</span></div>
+    <button class="toc-toggle" id="tocToggle" type="button" aria-expanded="false" aria-controls="toc">☰ Contents</button>
     <div class="brand-sub">history is a database now</div>
     <nav id="toc">
       <div class="toc-group">Foundations</div>
@@ -3806,6 +3809,7 @@ atuin uuid</code></pre>
       <h2>Retrieval quiz</h2>
       <p>Self-scored flashcards. Read the question, answer out loud, then reveal. Marking something "Review" is more useful than getting it right — it is the signal for where to reread. <strong>Aim for 14/17 before you consider yourself fluent.</strong></p>
       <div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0/17 answered</div>
+      <div class="quiz-actions quiz-reset"><button id="quizReset" type="button">Reset score</button></div>
 
       <div class="quiz-item" data-q="1">
         <div class="quiz-q"><span class="qnum">Q1</span>Atuin is not a nicer <kbd>Ctrl</kbd>+<kbd>R</kbd>. What is the one structural change it makes, and name three features that fall out of it?</div>
@@ -3978,9 +3982,12 @@ atuin uuid</code></pre>
     b.addEventListener('click', () => {
       const clone = pre.cloneNode(true);
       clone.querySelectorAll('.copy,.out').forEach(n => n.remove());
-      navigator.clipboard.writeText(clone.textContent.trim()).then(() => {
-        b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1200);
-      });
+      const write = navigator.clipboard
+        ? navigator.clipboard.writeText(clone.textContent.trim())
+        : Promise.reject(new Error('clipboard unavailable'));
+      write.then(() => { b.textContent = 'Copied'; })
+           .catch(() => { b.textContent = 'Copy failed'; })
+           .then(() => { setTimeout(() => { b.textContent = 'Copy'; }, 1200); });
     });
     pre.appendChild(b);
   });
@@ -3990,6 +3997,16 @@ atuin uuid</code></pre>
   addEventListener('scroll', () => {
     topButton.classList.toggle('visible', scrollY > 900);
   }, { passive: true });
+
+  // ---- Mobile TOC toggle (button is display:none on desktop). ---------------
+  const tocToggle = document.getElementById('tocToggle');
+  const sidebar = document.querySelector('.sidebar');
+  function setToc(open) {
+    sidebar.classList.toggle('open', open);
+    tocToggle.setAttribute('aria-expanded', String(open));
+  }
+  tocToggle.addEventListener('click', () => setToc(!sidebar.classList.contains('open')));
+  document.querySelectorAll('#toc a').forEach(a => a.addEventListener('click', () => setToc(false)));
 
   // ---- Scrollspy. -----------------------------------------------------------
   const tocLinks = [...document.querySelectorAll('#toc a')];
@@ -4406,6 +4423,11 @@ atuin uuid</code></pre>
         state[item.dataset.q] = state[item.dataset.q] === 'missed' ? null : 'missed';
         save(); paint();
       });
+    });
+    document.getElementById('quizReset').addEventListener('click', () => {
+      state = {};
+      items.forEach(item => item.querySelector('.quiz-answer').classList.remove('open'));
+      save(); paint();
     });
     paint();
   }());
