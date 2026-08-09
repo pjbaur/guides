@@ -278,6 +278,7 @@
     border-radius: 7px; padding: 5px 9px; font-size: 12px;
   }
   .quiz-actions button:hover { color: var(--accent-strong); border-color: var(--accent); }
+  .quiz-reset { margin: -6px 0 15px; }
   .quiz-item.correct { border-color: var(--accent); background: var(--accent-wash); }
   .quiz-item.missed { border-color: var(--amber); background: var(--amber-wash); }
   .glossary { display: grid; grid-template-columns: 150px 1fr; gap: 0; border-top: 1px solid var(--line); }
@@ -1064,6 +1065,7 @@ lazygit</code></pre>
   <h2>20 · Retrieval quiz, glossary, sources</h2>
   <p>Answer aloud before revealing. Mark honestly; score persists locally in this browser.</p>
   <div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0 answered</div>
+  <div class="quiz-actions quiz-reset"><button id="quizReset" type="button">Reset score</button></div>
 
   <div class="quiz-item" data-q="1"><div class="quiz-q"><span class="qnum">Q1</span>What five-step loop prevents context errors?</div><div class="quiz-answer">Focus panel → select object → inspect preview → act → verify state.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
   <div class="quiz-item" data-q="2"><div class="quiz-q"><span class="qnum">Q2</span>Difference between <kbd>Space</kbd> and <kbd>Enter</kbd> on file?</div><div class="quiz-answer"><kbd>Space</kbd> toggles whole-file staging. <kbd>Enter</kbd> enters hunk/line staging.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
@@ -1323,6 +1325,14 @@ lazygit</code></pre>
     });
     item.querySelector('.got').addEventListener('click', () => { quizState[item.dataset.q] = 'got'; updateQuiz(); });
     item.querySelector('.missed').addEventListener('click', () => { quizState[item.dataset.q] = 'missed'; answer.classList.add('open'); updateQuiz(); });
+  });
+  document.getElementById('quizReset').addEventListener('click', () => {
+    quizState = {};
+    quizItems.forEach(item => {
+      item.querySelector('.quiz-answer').classList.remove('open');
+      item.querySelector('.reveal').textContent = 'Reveal';
+    });
+    updateQuiz();
   });
   updateQuiz();
 })();

@@ -12,6 +12,7 @@
     --bg: #f3f7f7; --surface: #ffffff; --surface-2: #e9f1f1; --ink: #11252b;
     --ink-2: #40575d; --muted: #6d8186; --line: #ccdadd; --hairline: rgba(17,37,43,.1);
     --teal: #007d70; --teal-strong: #005f56; --teal-wash: rgba(0,125,112,.10);
+    --on-accent: #ffffff;
     --coral: #bf4f2d; --coral-wash: rgba(191,79,45,.11); --gold: #8d6500;
     --gold-wash: rgba(141,101,0,.11); --blue: #1668a4; --blue-wash: rgba(22,104,164,.10);
     --danger: #b3261e; --danger-wash: rgba(179,38,30,.10); --terminal: #08171d;
@@ -24,6 +25,7 @@
       --bg: #091319; --surface: #101e24; --surface-2: #172a31; --ink: #edf8f6;
       --ink-2: #b8cfcc; --muted: #809c99; --line: #294047; --hairline: rgba(255,255,255,.10);
       --teal: #4de1c1; --teal-strong: #80efd7; --teal-wash: rgba(77,225,193,.12);
+    --on-accent: #061517;
       --coral: #ff9b78; --coral-wash: rgba(255,155,120,.13); --gold: #e4bd55;
       --gold-wash: rgba(228,189,85,.13); --blue: #72bff0; --blue-wash: rgba(114,191,240,.12);
       --danger: #ff8a7e; --danger-wash: rgba(255,138,126,.12); --terminal: #050e12;
@@ -35,7 +37,7 @@
   :root.dark {
     --bg:#091319;--surface:#101e24;--surface-2:#172a31;--ink:#edf8f6;--ink-2:#b8cfcc;
     --muted:#809c99;--line:#294047;--hairline:rgba(255,255,255,.10);--teal:#4de1c1;
-    --teal-strong:#80efd7;--teal-wash:rgba(77,225,193,.12);--coral:#ff9b78;
+    --teal-strong:#80efd7;--teal-wash:rgba(77,225,193,.12);--on-accent:#061517;--coral:#ff9b78;
     --coral-wash:rgba(255,155,120,.13);--gold:#e4bd55;--gold-wash:rgba(228,189,85,.13);
     --blue:#72bff0;--blue-wash:rgba(114,191,240,.12);--danger:#ff8a7e;
     --danger-wash:rgba(255,138,126,.12);--terminal:#050e12;--terminal-2:#0c1c22;
@@ -45,7 +47,7 @@
   :root.light {
     --bg:#f3f7f7;--surface:#fff;--surface-2:#e9f1f1;--ink:#11252b;--ink-2:#40575d;
     --muted:#6d8186;--line:#ccdadd;--hairline:rgba(17,37,43,.1);--teal:#007d70;
-    --teal-strong:#005f56;--teal-wash:rgba(0,125,112,.10);--coral:#bf4f2d;
+    --teal-strong:#005f56;--teal-wash:rgba(0,125,112,.10);--on-accent:#fff;--coral:#bf4f2d;
     --coral-wash:rgba(191,79,45,.11);--gold:#8d6500;--gold-wash:rgba(141,101,0,.11);
     --blue:#1668a4;--blue-wash:rgba(22,104,164,.10);--danger:#b3261e;
     --danger-wash:rgba(179,38,30,.10);--terminal:#08171d;--terminal-2:#10262d;
@@ -65,8 +67,9 @@
   .layout { display: flex; max-width: 1440px; margin: 0 auto; }
   .sidebar { position: sticky; top: 0; align-self: flex-start; width: 275px; height: 100vh; flex: 0 0 auto; overflow-y: auto; padding: 23px 16px 30px 20px; border-right: 1px solid var(--line); background: color-mix(in srgb,var(--bg) 92%,transparent); }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 850; letter-spacing: -.02em; }
-  .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: #061517; background: var(--teal); font: 900 20px/1 ui-monospace,monospace; }
+  .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: var(--on-accent); background: var(--teal); font: 900 20px/1 ui-monospace,monospace; }
   .brand-sub { margin: 5px 0 14px 44px; color: var(--muted); font-size: 11px; }
+  .toc-toggle { display: none; margin: 10px 0 2px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink-2); background: var(--surface); font-size: 13px; }
   .find-doc { width: 100%; padding: 8px 10px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 9px; }
   .find-doc::placeholder { color: var(--muted); }
   .toc-group { margin: 16px 8px 4px; color: var(--muted); font-size: 10px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
@@ -90,7 +93,7 @@
   .subtitle { max-width: 70ch; margin: 0 0 19px; color: var(--ink-2); font-size: 19px; }
   .badges { display: flex; flex-wrap: wrap; gap: 8px; }
   .badge { padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink-2); background: var(--surface); font-size: 11px; }
-  .hero-flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; max-width: 850px; margin-top: 27px; }
+  .hero-flow { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr); align-items: center; max-width: 850px; margin-top: 27px; }
   .flow-node { padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: 0 3px 14px var(--hairline); }
   .flow-node b { display:block; color:var(--teal-strong); font:800 12px ui-monospace,monospace; }
   .flow-node span { color:var(--muted); font-size:12px; }
@@ -140,7 +143,7 @@
   summary { padding:11px 14px; cursor:pointer; color:var(--ink); font-weight:750; }
   details > :not(summary) { margin-left:14px; margin-right:14px; }
   details > :last-child { margin-bottom:14px; }
-  .syntax { display:grid; grid-template-columns:130px 1fr; gap:8px 14px; margin:15px 0; }
+  .syntax { display:grid; grid-template-columns:130px minmax(0,1fr); gap:8px 14px; margin:15px 0; }
   .syntax > div { padding:9px 11px; border-bottom:1px solid var(--line); color:var(--ink-2); }
   .syntax .token { color:var(--coral); background:var(--coral-wash); border:0; border-radius:8px; font:700 14px ui-monospace,monospace; }
   .term { margin:19px 0; overflow:hidden; border:1px solid #294149; border-radius:14px; background:var(--terminal); color:var(--terminal-ink); box-shadow:var(--shadow); }
@@ -153,15 +156,15 @@
   .sim-query label { color:var(--terminal-teal); font:700 14px ui-monospace,monospace; }
   .sim-query input { width:100%; border:0; outline:0; color:var(--terminal-ink); background:transparent; font:14px ui-monospace,monospace; }
   .sim-list { min-height:240px; padding:8px; }
-  .sim-row { display:grid; grid-template-columns:24px 1fr auto; gap:8px; padding:5px 8px; border-radius:5px; font:13px/1.45 ui-monospace,monospace; }
+  .sim-row { display:grid; grid-template-columns:24px minmax(0,1fr) auto; gap:8px; padding:5px 8px; border-radius:5px; font:13px/1.45 ui-monospace,monospace; }
   .sim-row.current { color:#061517; background:var(--terminal-teal); }
   .sim-row .mark { color:var(--terminal-coral); } .sim-row.current .mark { color:#60301f; }
   .sim-score { opacity:.55; font-size:11px; }
   .sim-empty { padding:50px 10px; color:var(--terminal-muted); text-align:center; font:13px ui-monospace,monospace; }
   .sim-foot { padding:8px 13px; border-top:1px solid #294149; color:var(--terminal-muted); font:11px ui-monospace,monospace; }
   .keyline { display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin:7px 0; color:var(--ink-2); }
-  .step { display:grid; grid-template-columns:42px 1fr; gap:13px; margin:18px 0; }
-  .step-num { display:grid; place-items:center; width:38px; height:38px; border-radius:12px; color:#061517; background:var(--teal); font-weight:900; }
+  .step { display:grid; grid-template-columns:42px minmax(0,1fr); gap:13px; margin:18px 0; }
+  .step-num { display:grid; place-items:center; width:38px; height:38px; border-radius:12px; color:var(--on-accent); background:var(--teal); font-weight:900; }
   .step h3 { margin:4px 0 8px; }
   .pill { display:inline-block; margin:2px 3px 2px 0; padding:2px 8px; border-radius:99px; color:var(--ink-2); background:var(--surface-2); font-size:11px; }
   .source-list li { margin-bottom:8px; }
@@ -189,18 +192,22 @@
   .quiz-actions { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
   .quiz-actions button { padding:4px 11px; border:1px solid var(--line); border-radius:99px; color:var(--ink-2); background:var(--surface-2); font-size:12px; }
   .quiz-actions button:hover { color:var(--teal-strong); border-color:var(--teal); }
+  .quiz-reset { margin:-6px 0 15px; }
   .quiz-item.correct { border-color:var(--teal); background:var(--teal-wash); }
   .quiz-item.missed { border-color:var(--gold); background:var(--gold-wash); }
   .print-only { display:none; }
   @media (max-width:1000px) {
-    .sidebar { width:235px; } main { padding:38px 30px 100px; } .grid.three { grid-template-columns:1fr 1fr; }
+    .sidebar { width:235px; } main { padding:38px 30px 100px; } .grid.three { grid-template-columns:repeat(2,minmax(0,1fr)); }
   }
   @media (max-width:760px) {
     .layout { display:block; } .sidebar { position:relative; width:auto; height:auto; padding:15px; border-right:0; border-bottom:1px solid var(--line); }
     .brand-sub,.find-doc,.sidebar nav,.progress-track,.progress-label { display:none; }
-    main { padding:25px 17px 80px; } .theme-toggle { top:10px; } .grid,.grid.three { grid-template-columns:1fr; }
-    .hero-flow { grid-template-columns:1fr; gap:7px; } .flow-arrow { transform:rotate(90deg); text-align:center; }
-    .syntax { grid-template-columns:1fr; gap:3px; } .syntax > div { border-bottom:0; } .syntax .token { margin-top:8px; }
+    .toc-toggle { display:inline-block; }
+    .sidebar.open nav { display:block; padding-top:6px; }
+    .sidebar.open .find-doc { display:block; margin-top:8px; }
+    main { padding:25px 17px 80px; } .theme-toggle { top:10px; } .grid,.grid.three { grid-template-columns:minmax(0,1fr); }
+    .hero-flow { grid-template-columns:minmax(0,1fr); gap:7px; } .flow-arrow { transform:rotate(90deg); text-align:center; }
+    .syntax { grid-template-columns:minmax(0,1fr); gap:3px; } .syntax > div { border-bottom:0; } .syntax .token { margin-top:8px; }
     .lab-head { display:block; } .lab-time { display:inline-block; margin-top:5px; }
   }
   @media print {
@@ -219,6 +226,7 @@
 <div class="layout" id="top">
   <aside class="sidebar" aria-label="Guide navigation">
     <div class="brand"><span class="brand-mark">›_</span><span>fzf field guide</span></div>
+    <button class="toc-toggle" id="tocToggle" type="button" aria-expanded="false" aria-controls="toc">☰ Contents</button>
     <div class="brand-sub">interactive filtering, composed</div>
     <input class="find-doc" id="tocFilter" type="search" placeholder="Filter topics…" aria-label="Filter table of contents">
     <nav id="toc">
@@ -843,6 +851,7 @@ fi</code></pre></details></div>
       <h2>20. Retrieval quiz</h2>
       <p>Answer aloud before revealing. Mark honestly; score persists locally in this browser.</p>
       <div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0 answered</div>
+      <div class="quiz-actions quiz-reset"><button id="quizReset" type="button">Reset score</button></div>
       <div class="quiz-item" data-q="1"><div class="quiz-q"><span class="qnum">Q1</span>Query for entries starting with <code>src</code>, excluding <code>test</code>, ending <code>.ts</code> or <code>.tsx</code>?</div><div class="quiz-answer"><code>^src !test .ts$ | .tsx$</code> — terms AND within each side of the bar; bar separates OR alternatives.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
       <div class="quiz-item" data-q="2"><div class="quiz-q"><span class="qnum">Q2</span>Difference between <code>execute(...)</code> and <code>become(...)</code>?</div><div class="quiz-answer"><code>execute</code> runs the command and returns to fzf. <code>become</code> replaces the fzf process—natural for a final “open this” action.</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
       <div class="quiz-item" data-q="3"><div class="quiz-q"><span class="qnum">Q3</span>Meaning of exit statuses 0, 1, 2, 130?</div><div class="quiz-answer">0 normal acceptance · 1 no match · 2 fzf error · 130 cancelled with Esc/Ctrl-C. (126/127: <code>become</code> permission/command errors.)</div><div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div></div>
@@ -915,10 +924,10 @@ choice=$(<span class="cmd">producer</span> | <span class="cmd">fzf</span> --prom
       try {
         await navigator.clipboard.writeText(code ? code.innerText : pre.innerText);
         button.textContent = 'Copied';
-        setTimeout(() => { button.textContent = 'Copy'; }, 1200);
       } catch (_) {
         button.textContent = 'Select text';
       }
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
     });
     pre.appendChild(button);
   });
@@ -936,6 +945,16 @@ choice=$(<span class="cmd">producer</span> | <span class="cmd">fzf</span> --prom
   };
   addEventListener('scroll', updateScroll, { passive: true });
   updateScroll();
+
+  // Mobile TOC toggle (button is display:none on desktop).
+  const tocToggle = document.getElementById('tocToggle');
+  const sidebar = document.querySelector('.sidebar');
+  function setToc(open) {
+    sidebar.classList.toggle('open', open);
+    tocToggle.setAttribute('aria-expanded', String(open));
+  }
+  tocToggle.addEventListener('click', () => setToc(!sidebar.classList.contains('open')));
+  document.querySelectorAll('#toc a').forEach(a => a.addEventListener('click', () => setToc(false)));
 
   // Active section observer.
   const tocLinks = [...document.querySelectorAll('#toc a')];
@@ -1083,6 +1102,14 @@ choice=$(<span class="cmd">producer</span> | <span class="cmd">fzf</span> --prom
     });
     item.querySelector('.got').addEventListener('click', () => { quizState[item.dataset.q] = 'got'; updateQuiz(); });
     item.querySelector('.missed').addEventListener('click', () => { quizState[item.dataset.q] = 'missed'; answer.classList.add('open'); updateQuiz(); });
+  });
+  document.getElementById('quizReset').addEventListener('click', () => {
+    quizState = {};
+    quizItems.forEach(item => {
+      item.querySelector('.quiz-answer').classList.remove('open');
+      item.querySelector('.reveal').textContent = 'Reveal';
+    });
+    updateQuiz();
   });
   updateQuiz();
 })();

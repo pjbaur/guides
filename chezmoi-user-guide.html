@@ -15,6 +15,7 @@
     --bg: #faf5f7; --surface: #ffffff; --surface-2: #f2e7ec; --ink: #26141c;
     --ink-2: #57404b; --muted: #86707a; --line: #ddc7d1; --hairline: rgba(38,20,28,.1);
     --rose: #a4195a; --rose-strong: #841145; --rose-wash: rgba(164,25,90,.09);
+    --on-accent: #ffffff;
     --plum: #6f42a8; --plum-wash: rgba(111,66,168,.10); --gold: #8d6500;
     --gold-wash: rgba(141,101,0,.11); --blue: #1465a0; --blue-wash: rgba(20,101,160,.10);
     --danger: #b3261e; --danger-wash: rgba(179,38,30,.10); --terminal: #1a0d14;
@@ -27,6 +28,7 @@
       --bg: #150a10; --surface: #1e1118; --surface-2: #2a1a22; --ink: #f8ecf1;
       --ink-2: #d3bcc6; --muted: #9c828d; --muted: #9b828e; --line: #452e3a; --hairline: rgba(255,255,255,.10);
       --rose: #ff8bb8; --rose-strong: #ffadcd; --rose-wash: rgba(255,139,184,.12);
+      --on-accent: #2b0517;
       --plum: #c5a1f2; --plum-wash: rgba(197,161,242,.12); --gold: #e4bd55;
       --gold-wash: rgba(228,189,85,.13); --blue: #79bdea; --blue-wash: rgba(121,189,234,.12);
       --danger: #ff8a7e; --danger-wash: rgba(255,138,126,.12); --terminal: #120810;
@@ -38,7 +40,7 @@
   :root.dark {
     --bg:#150a10;--surface:#1e1118;--surface-2:#2a1a22;--ink:#f8ecf1;--ink-2:#d3bcc6;
     --muted:#9b828e;--line:#452e3a;--hairline:rgba(255,255,255,.10);--rose:#ff8bb8;
-    --rose-strong:#ffadcd;--rose-wash:rgba(255,139,184,.12);--plum:#c5a1f2;
+    --rose-strong:#ffadcd;--rose-wash:rgba(255,139,184,.12);--on-accent:#2b0517;--plum:#c5a1f2;
     --plum-wash:rgba(197,161,242,.12);--gold:#e4bd55;--gold-wash:rgba(228,189,85,.13);
     --blue:#79bdea;--blue-wash:rgba(121,189,234,.12);--danger:#ff8a7e;
     --danger-wash:rgba(255,138,126,.12);--terminal:#120810;--terminal-2:#1e1019;
@@ -48,7 +50,7 @@
   :root.light {
     --bg:#faf5f7;--surface:#fff;--surface-2:#f2e7ec;--ink:#26141c;--ink-2:#57404b;
     --muted:#86707a;--line:#ddc7d1;--hairline:rgba(38,20,28,.1);--rose:#a4195a;
-    --rose-strong:#841145;--rose-wash:rgba(164,25,90,.09);--plum:#6f42a8;
+    --rose-strong:#841145;--rose-wash:rgba(164,25,90,.09);--on-accent:#fff;--plum:#6f42a8;
     --plum-wash:rgba(111,66,168,.10);--gold:#8d6500;--gold-wash:rgba(141,101,0,.11);
     --blue:#1465a0;--blue-wash:rgba(20,101,160,.10);--danger:#b3261e;
     --danger-wash:rgba(179,38,30,.10);--terminal:#1a0d14;--terminal-2:#271420;
@@ -68,10 +70,9 @@
   .layout { display: flex; max-width: 1440px; margin: 0 auto; }
   .sidebar { position: sticky; top: 0; align-self: flex-start; width: 272px; height: 100vh; flex: 0 0 auto; overflow-y: auto; padding: 23px 16px 30px 20px; border-right: 1px solid var(--line); background: color-mix(in srgb,var(--bg) 92%,transparent); }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 850; letter-spacing: -.02em; }
-  .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: #fff; background: var(--rose); font: 900 17px/1 ui-monospace,monospace; }
-  :root.dark .brand-mark { color: #2b0517; }
-  @media (prefers-color-scheme: dark) { :root:not(.light) .brand-mark { color: #2b0517; } }
+  .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: var(--on-accent); background: var(--rose); font: 900 17px/1 ui-monospace,monospace; }
   .brand-sub { margin: 5px 0 14px 44px; color: var(--muted); font-size: 11px; }
+  .toc-toggle { display: none; margin: 10px 0 2px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink-2); background: var(--surface); font-size: 13px; }
   .toc-group { margin: 16px 8px 4px; color: var(--muted); font-size: 10px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
   .sidebar nav a { display: block; margin: 1px 0; padding: 5px 8px; border-radius: 7px; color: var(--ink-2); font-size: 12.5px; text-decoration: none; }
   .sidebar nav a:hover,.sidebar nav a.active { color: var(--rose-strong); background: var(--rose-wash); }
@@ -154,9 +155,7 @@
   .sim-log .o { color:var(--terminal-muted); }
   .sim-log .add { color:var(--terminal-gold); }
   .step { display:grid; grid-template-columns:42px 1fr; gap:13px; margin:18px 0; }
-  .step-num { display:grid; place-items:center; width:38px; height:38px; border-radius:12px; color:#fff; background:var(--rose); font-weight:900; }
-  :root.dark .step-num { color:#2b0517; }
-  @media (prefers-color-scheme: dark) { :root:not(.light) .step-num { color:#2b0517; } }
+  .step-num { display:grid; place-items:center; width:38px; height:38px; border-radius:12px; color:var(--on-accent); background:var(--rose); font-weight:900; }
   .step h3 { margin:4px 0 8px; }
   .pill { display:inline-block; margin:2px 3px 2px 0; padding:2px 8px; border-radius:99px; color:var(--ink-2); background:var(--surface-2); font-size:11px; }
   .source-list li { margin-bottom:8px; }
@@ -190,6 +189,7 @@
   .quiz-actions { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
   .quiz-actions button { padding:4px 11px; border:1px solid var(--line); border-radius:99px; color:var(--ink-2); background:var(--surface-2); font-size:12px; }
   .quiz-actions button:hover { color:var(--rose-strong); border-color:var(--rose); }
+  .quiz-reset { margin:-6px 0 15px; }
   .quiz-item.correct { border-color:var(--rose); background:var(--rose-wash); }
   .quiz-item.missed { border-color:var(--gold); background:var(--gold-wash); }
   .print-only { display:none; }
@@ -200,6 +200,8 @@
   @media (max-width:760px) {
     .layout { display:block; } .sidebar { position:relative; width:auto; height:auto; padding:15px; border-right:0; border-bottom:1px solid var(--line); }
     .brand-sub,.sidebar nav { display:none; }
+    .toc-toggle { display:inline-block; }
+    .sidebar.open nav { display:block; padding-top:6px; }
     main { padding:25px 17px 80px; } .theme-toggle { top:10px; } .grid,.grid.three { grid-template-columns:minmax(0,1fr); }
     .sim-panels { grid-template-columns:1fr; } .sim-panel { border-right:0; border-bottom:1px solid #4a2e3c; }
     .lab-head { display:block; } .lab-time { display:inline-block; margin-top:5px; }
@@ -222,6 +224,7 @@
 <div class="layout" id="top">
   <aside class="sidebar" aria-label="Guide navigation">
     <div class="brand"><span class="brand-mark">~/</span><span>chezmoi field guide</span></div>
+    <button class="toc-toggle" id="tocToggle" type="button" aria-expanded="false" aria-controls="toc">☰ Contents</button>
     <div class="brand-sub">dotfiles, declared once</div>
     <nav id="toc">
       <div class="toc-group">Foundations</div>
@@ -1036,6 +1039,7 @@ encryption = "age"
       <h2>Retrieval quiz</h2>
       <p>Flashcard style: answer out loud first, then reveal. Aim for 12/14 before calling the guide done; anything marked Review, reread its section the next day.</p>
       <div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0/14 answered</div>
+      <div class="quiz-actions quiz-reset"><button id="quizReset" type="button">Reset score</button></div>
 
       <div class="quiz-item" data-q="1">
         <div class="quiz-q"><span class="qnum">Q1</span>Name the three states, and which two of them <code>chezmoi diff</code> compares.</div>
@@ -1160,10 +1164,10 @@ encryption = "age"
       try {
         await navigator.clipboard.writeText(code ? code.innerText : pre.innerText);
         button.textContent = 'Copied';
-        setTimeout(() => { button.textContent = 'Copy'; }, 1200);
       } catch (_) {
         button.textContent = 'Select text';
       }
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
     });
     pre.appendChild(button);
   });
@@ -1173,6 +1177,16 @@ encryption = "age"
   addEventListener('scroll', () => {
     topButton.classList.toggle('visible', scrollY > 650);
   }, { passive: true });
+
+  // Mobile TOC toggle (button is display:none on desktop).
+  const tocToggle = document.getElementById('tocToggle');
+  const sidebar = document.querySelector('.sidebar');
+  function setToc(open) {
+    sidebar.classList.toggle('open', open);
+    tocToggle.setAttribute('aria-expanded', String(open));
+  }
+  tocToggle.addEventListener('click', () => setToc(!sidebar.classList.contains('open')));
+  document.querySelectorAll('#toc a').forEach(a => a.addEventListener('click', () => setToc(false)));
 
   // Active section observer.
   const tocLinks = [...document.querySelectorAll('#toc a')];
@@ -1288,6 +1302,14 @@ encryption = "age"
     });
     item.querySelector('.got').addEventListener('click', () => { quizState[item.dataset.q] = 'got'; updateQuiz(); });
     item.querySelector('.missed').addEventListener('click', () => { quizState[item.dataset.q] = 'missed'; answer.classList.add('open'); updateQuiz(); });
+  });
+  document.getElementById('quizReset').addEventListener('click', () => {
+    quizState = {};
+    quizItems.forEach(item => {
+      item.querySelector('.quiz-answer').classList.remove('open');
+      item.querySelector('.reveal').textContent = 'Reveal';
+    });
+    updateQuiz();
   });
   updateQuiz();
 })();
