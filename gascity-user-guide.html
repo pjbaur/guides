@@ -296,7 +296,7 @@
 <div class="layout">
 <nav class="toc" id="toc">
   <div class="brand">Gas City Mastery Guide</div>
-  <div class="brand-sub">study handbook · July 2026</div>
+  <div class="brand-sub">user guide · gc v1.4.0</div>
   <div class="part">Part I · Big picture</div>
   <a href="#s1">1 · What is Gas City</a>
   <a href="#s2">2 · The mental model</a>
@@ -321,10 +321,13 @@
   <h1>Gas City</h1>
   <p class="lede" style="margin-top:8px">
     “Composable orchestration infrastructure for multi-agent coding workflows.”
-    An open-source <strong>Go SDK for building your own multi-agent system</strong>: you declare a
-    <em>city</em> of AI coding agents in TOML, and a controller keeps reality matching that
+    An open-source <strong>Go platform for building your own multi-agent system</strong>: you declare
+    a <em>city</em> of AI coding agents in TOML, and an orchestrator keeps reality matching that
     declaration — starting and stopping sessions, routing work, running scheduled automation —
-    while every unit of work lives as a durable, queryable record called a <em>bead</em>.
+    while every unit of work lives as a durable, queryable record called a <em>bead</em>. Write a
+    <em>formula</em> and that orchestrator runs it as a graph across your whole fleet: decomposing
+    the job into beads, fanning ready ones out to many agents, gating each step on its dependencies,
+    retrying failures, and driving it to completion <em>outside your session</em>.
   </p>
   <div class="chips">
     <span class="chip">Go · MIT</span>
@@ -332,9 +335,14 @@
     <span class="chip">Beads-backed work tracking</span>
     <span class="chip">6 session backends, tmux → k8s</span>
     <span class="chip">Any CLI agent (claude, codex, gemini…)</span>
+    <span class="chip">Zero hardcoded roles</span>
     <span class="chip">Extracted from Gas Town</span>
   </div>
-  <p class="fact-date">All facts verified against the linked sources on 2026-07-09/10, at gascity ≈ v1.3.0 (<code>main</code> branch docs). The project moves fast — trust the <a href="https://github.com/gastownhall/gascity/tree/main/docs">live docs</a> over this page for anything newer.</p>
+  <p class="fact-date">All facts verified against the linked sources on 2026-08-09, at the
+  <strong>v1.4.0</strong> tag (released 2026-07-24) — every source link on this page is pinned to
+  <code>v1.4.0</code>, so quotes stay checkable. The project moves fast — trust the
+  <a href="https://github.com/gastownhall/gascity/tree/main/docs">live docs</a> over this page for
+  anything newer.</p>
 
   <h3>The idea: orchestration as infrastructure</h3>
   <p>
@@ -342,19 +350,20 @@
     supervise agent processes, something to track work that outlives any one session, something to
     let agents message each other, something to run jobs on a schedule and restart what breaks.
     Gas City extracts exactly that machinery from Gas Town — Steve Yegge's 20-to-30-agent
-    “coding factory” — into a <strong>primitive-first SDK</strong>. The primitives (sessions, beads,
-    events, packs, formulas) are generic; every behavior, including all of Gas Town's famous roles,
+    “coding factory” — into a <strong>primitive-first platform</strong>. Six primitives (agent, bead,
+    formula, rig, pack, event) are generic; every behavior, including all of Gas Town's famous roles,
     is just configuration layered on top. The engdocs state the design goal plainly: <em>“The same
-    SDK can express Gas Town, Ralph, or any other pack”</em> — zero hardcoded roles.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/README.md">README</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/nine-concepts.md">nine-concepts</a>]</span>
+    SDK can express Gas Town, Ralph, or any other pack”</em> — <em>“the orchestrator hardcodes
+    <strong>zero roles</strong> — no built-in ‘manager’ or ‘reviewer.’”</em>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/README.md">README</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/nine-concepts.md">nine-concepts</a>]</span>
   </p>
   <p>
     Concretely, the README's feature list is the whole story in five bullets: declarative city
     configuration via <code>city.toml</code>; work routing with Beads-backed tracking, formulas,
-    molecules, waits and mail; runtime providers from tmux to Kubernetes; a controller/supervisor
-    loop that reconciles desired state to running state; and packs, overrides, and rig-scoped
-    orchestration for multi-project setups.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/README.md">README</a>]</span>
+    molecules, waits and mail; runtime providers “tmux, subprocess, exec, ACP, Kubernetes, and
+    herdr”; a controller/supervisor loop that reconciles desired state to running state; and packs,
+    overrides, and rig-scoped orchestration for multi-project setups.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/README.md">README</a>]</span>
   </p>
 
   <h3>Where it came from</h3>
@@ -378,17 +387,39 @@
   <h3>Vital statistics</h3>
   <div class="table-wrap"><table>
     <tr><th>Fact</th><th>Value</th></tr>
-    <tr><td>What</td><td>“Composable orchestration infrastructure for multi-agent coding workflows” — an orchestration-builder SDK, not a hosted product</td></tr>
+    <tr><td>What</td><td>“Composable orchestration infrastructure for multi-agent coding workflows” — an orchestration-builder platform, not a hosted product</td></tr>
+    <tr><td>Version covered</td><td><strong>v1.4.0</strong>, released 2026-07-24 (this page pins every source link to that tag)</td></tr>
     <tr><td>Builders</td><td>Julian Knutsen &amp; Chris Sells; announced by Steve Yegge, April 2026</td></tr>
-    <tr><td>Language</td><td>Go ≈92%, TypeScript ≈6%, Shell — repo <code>gastownhall/gascity</code>, MIT license</td></tr>
+    <tr><td>Language</td><td>Go ≈93%, TypeScript ≈5%, Shell — repo <code>gastownhall/gascity</code>, MIT license</td></tr>
     <tr><td>Required tools</td><td><code>tmux</code>, <code>git</code>, <code>jq</code>, <code>pgrep</code>, <code>lsof</code></td></tr>
-    <tr><td>Optional tools</td><td><code>dolt</code> + <code>bd</code> (Beads store), <code>gh</code> (GitHub gates), agent CLIs (<code>claude</code>, <code>codex</code>, <code>gemini</code>…) per provider</td></tr>
+    <tr><td>Optional tools</td><td><code>dolt</code> 2.1.0+ &amp; <code>bd</code> 1.0.0+ + <code>flock</code> (the default <code>bd</code> beads store), <code>gh</code> (GitHub gates), <code>herdr</code> 0.7.1+ (optional backend), agent CLIs (<code>claude</code>, <code>codex</code>, <code>gemini</code>…) per provider</td></tr>
     <tr><td>Session backends</td><td>tmux (default <em>and</em> required fallback), subprocess, exec, ACP, Kubernetes, herdr</td></tr>
     <tr><td>Docs</td><td><code>docs/</code> user docs (Mintlify) · <code>engdocs/</code> contributor architecture docs</td></tr>
   </table></div>
+
+  <h3>What changed in v1.4.0</h3>
+  <p>
+    If you learned Gas City on the 1.3 line, five things moved. Each gets its full treatment in the
+    section named beside it.
+  </p>
+  <div class="table-wrap"><table>
+    <tr><th>Change</th><th>Why it matters</th><th>Where</th></tr>
+    <tr><td><strong>The vocabulary shifted</strong> — user docs now say <em>platform</em> and <em>orchestrator</em> where they said SDK and controller, and the canonical model is “<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/how-gas-city-works.md">the six primitives</a>”</td><td>Agent · Bead · Formula · Rig · Pack · Event, with orchestrator, bead store, and event bus as the role-agnostic machinery under them. <code>engdocs/</code> still says “controller” for the same daemon</td><td><a href="#s2">§2</a></td></tr>
+    <tr><td><strong>A run-centered dashboard and typed API</strong></td><td>Run detail unifies the formula stage ladder, structured transcripts, live token rate, and estimated burn rate; session and run reads moved to typed, paginated surfaces backed by warm projections. The SPA is now compiled into the <code>gc</code> binary and served by the supervisor</td><td><a href="#s3">§3</a></td></tr>
+    <tr><td><strong>Command-usage metrics ship in release builds</strong></td><td>Official releases record a canonical command ID, release, OS, and an anonymous installation ID after a one-time disclosure — never arguments, paths, or file contents. <code>gc metrics off</code>, <code>DO_NOT_TRACK=1</code>, or <code>GC_DISABLE_USAGE_METRICS=1</code> opt out</td><td><a href="#s3">§3</a></td></tr>
+    <tr><td><strong>Formulas v2 is the shape to learn</strong></td><td>v1 and v2 are peers, not a version ladder — but v2 is what makes the orchestrator, rather than one agent, the engine. Production controls landed for retry, fan-out, drain, scope, artifacts, and finalization</td><td><a href="#s5">§5</a></td></tr>
+    <tr><td><strong>New operator surface</strong></td><td><code>gc costs</code> (per-run usage from <code>.gc/usage.jsonl</code>), <code>gc context</code> (named remote cities), <code>gc extmsg</code> (external-conversation bindings), <code>gc login/logout/whoami</code>, <code>gc metrics</code>, <code>gc runtime check/conformance/heartbeat</code>. Nothing was removed</td><td><a href="#s4">§4</a>, <a href="#s10">§10</a></td></tr>
+  </table></div>
+  <div class="callout warn">
+    <p><strong>Upgrading an existing city? Run <code>gc doctor --fix</code> once, first.</strong> It
+    “converges pack imports, provider catalogs, project identity, retired hold labels, and managed
+    beads/Dolt metadata before the orchestrator starts.” The known 1.3→1.4 papercuts and their
+    one-command fixes are in <a href="#s3">§3</a>.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/releases/tag/v1.4.0">v1.4.0 release notes</a>]</span></p>
+  </div>
   <p class="sources-block">Sources:
     <a href="https://github.com/gastownhall/gascity">repo</a> ·
-    <a href="https://github.com/gastownhall/gascity/blob/main/README.md">README</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/README.md">README</a> ·
     <a href="https://steveyegge.spicytakes.org/post/2026-04-24-welcome-to-gas-city-57f564bb3607">Yegge announcement</a> ·
     <a href="https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04">Gas Town origin post</a>
   </p>
@@ -400,59 +431,95 @@
   <p>
     Three sentences carry the whole system. <strong>You declare what should exist</strong> — agents,
     projects, methods, schedules — in <code>city.toml</code> and the packs it imports.
-    <strong>A controller daemon makes reality match</strong>, reconciling running sessions against
-    that declaration on every tick. <strong>All state lives in beads</strong> — “everything is a bead:
-    tasks, mail, molecules, convoys, and epics” — so work survives any crash, and agents <em>pull</em>
-    work instead of being pushed to.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/glossary.md">glossary</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/life-of-a-bead.md">life-of-a-bead</a>]</span>
+    <strong>An orchestrator daemon makes reality match</strong>, reconciling running sessions against
+    that declaration on every tick and driving formula runs forward. <strong>All state lives in
+    beads</strong> — “everything is a bead: tasks, mail, molecules, convoys, and epics” — so work
+    survives any crash, and agents <em>pull</em> work instead of being pushed to.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/glossary.md">glossary</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/life-of-a-bead.md">life-of-a-bead</a>]</span>
   </p>
+
+  <p>
+    Since v1.4.0 the docs name a canonical model: <strong>six primitives</strong>, each answering one
+    question, sitting on three pieces of role-agnostic machinery — the <em>orchestrator</em> (runs
+    formulas, reconciles sessions), the <em>bead store</em> (durable work), and the <em>event bus</em>
+    (fires activity outward). <em>“None of this machinery knows what your agents do.”</em>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a>]</span>
+  </p>
+  <div class="table-wrap"><table>
+    <tr><th>Primitive</th><th>Asks</th><th>Is</th></tr>
+    <tr><td>Agent</td><td>WHO</td><td>a configured worker — name, provider, prompt template, scope</td></tr>
+    <tr><td>Bead</td><td>WHAT</td><td>one unit of work — ID, title, status, type</td></tr>
+    <tr><td>Formula</td><td>HOW</td><td>a reusable, written-down method applied over work</td></tr>
+    <tr><td>Rig</td><td>WHERE</td><td>an external project (usually a git repo) registered with the city</td></tr>
+    <tr><td>Pack</td><td>CONFIGURES</td><td>the unit of configuration — declares agents, formulas, orders</td></tr>
+    <tr><td>Event</td><td>OBSERVE</td><td>an outbound notification fired by activity — <em>fired, not polled</em></td></tr>
+  </table></div>
+  <div class="callout">
+    <p><strong>Terminology, so the two doc trees don't confuse you.</strong> The v1.4.0 user docs call
+    the per-city daemon the <strong>orchestrator</strong> and Gas City a <strong>platform</strong>;
+    <code>engdocs/</code> still calls the same daemon the <strong>controller</strong> and the same
+    thing an SDK. Same component, same code. This guide uses “orchestrator” for the concept and
+    “controller” where it names actual Go symbols like <code>controllerLoop()</code>.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/nine-concepts.md">nine-concepts</a>]</span></p>
+  </div>
 
   <div class="concept" style="border-left-color: var(--s1)">
     <span class="term">City</span> — “the local (root) pack rooted at the deployment directory.”
     A directory with <code>city.toml</code> plus <code>.gc/</code> runtime state. Crucially,
     <em>“the City is a pack”</em>: the same configuration unit as everything else, just the root one.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a>]</span>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a>]</span>
   </div>
   <div class="concept" style="border-left-color: var(--s1)">
     <span class="term">Rig</span> — “an external project (usually a git repo) registered with the
     city.” Each rig gets its own bead namespace (ID prefix), its own agent scope, and its own hooks —
-    so one city can orchestrate many codebases without cross-talk.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a>]</span>
+    so one city can orchestrate many codebases without cross-talk. v1.4.0's docs sharpen how that
+    isolation works: <em>“Isolation is by bead-ID prefix, not a separate database: the city and all
+    its rigs share one underlying store, and reads and writes are filtered to the current scope's
+    prefix.”</em> Operationally each scope still behaves as its own store — which is why routing
+    across scopes is refused (<a href="#s5">§5</a>).
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a>]</span>
   </div>
   <div class="concept" style="border-left-color: var(--s2)">
     <span class="term">Agent → session</span> — an agent is “<em>who</em> does the work — a worker a
     pack defines as a prompt plus a scope and a provider”; <em>configuration, not code</em>. When it runs, it becomes a
     <strong>session</strong>: a live process the platform manages. Pools scale between
-    <code>min_active_sessions</code> and <code>max_active_sessions</code>. “The SDK manages session
-    lifecycle. The prompt defines agent behavior.”
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/nine-concepts.md">nine-concepts</a>]</span>
+    <code>min_active_sessions</code> and <code>max_active_sessions</code> — “each tick the
+    orchestrator runs the agent's <code>scale_check</code> query to measure demand and sizes the pool
+    to it,” retiring sessions that fall idle. On restart the orchestrator <em>adopts</em> the live
+    sessions it finds, creating a session bead for each, rather than respawning them. “The SDK
+    manages session lifecycle. The prompt defines agent behavior.”
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/nine-concepts.md">nine-concepts</a>]</span>
   </div>
   <div class="concept" style="border-left-color: var(--s3)">
     <span class="term">Bead</span> — “one unit with an ID, title, status, and type,” moving
     <code>open → in_progress → closed</code>. The universal substrate: tasks, mail messages, sessions,
     and convoys are all beads differentiated only by type. Stored durably (Dolt-backed <code>bd</code>
     by default), which is why a crashed agent's work is resumable.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a>]</span>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a>]</span>
   </div>
   <div class="concept" style="border-left-color: var(--s3)">
-    <span class="term">Formula → molecule</span> — a formula is “<em>how</em> a job gets done — a
-    reusable, written-down method”: a TOML file of steps and dependencies. Applying (“cooking”) it materializes
-    beads that outlive the file; the instantiated result — one root bead plus step beads — is a
-    <strong>molecule</strong>.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/glossary.md">glossary</a>]</span>
+    <span class="term">Formula → run</span> — a formula is “<em>how</em> a job gets done — a
+    reusable, written-down method”: a TOML file of steps and dependencies. Applying (“cooking”) it
+    materializes beads that outlive the file. What lands depends on the compiler contract: a v1
+    formula with steps produces a <strong>molecule</strong> (container root + step children); a v2
+    formula produces a <strong>workflow</strong> — a flat graph of independently routable step beads
+    that the orchestrator drives. Either way, “from that moment a run is independent of the file and
+    of any session.”
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/glossary.md">glossary</a>]</span>
   </div>
   <div class="concept" style="border-left-color: var(--s1)">
     <span class="term">Pack</span> — “the unit of configuration — declares agents, formulas, orders”
     via <code>pack.toml</code>. Packs compose through named imports, so shared behavior (like the
     entire Gas Town role set) ships as a reusable directory instead of copied files.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a>]</span>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a>]</span>
   </div>
   <div class="concept" style="border-left-color: var(--s4)">
-    <span class="term">Controller &amp; supervisor</span> — two different things. The
-    <strong>controller</strong> is “the long-running daemon that drives all SDK infrastructure”
-    inside one city: the reconcile loop. The <strong>supervisor</strong> is machine-wide — a “typed
-    HTTP + SSE control plane” that cities register with; it serves the REST API and the dashboard.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/glossary.md">glossary</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/index.md">reference</a>]</span>
+    <span class="term">Orchestrator (controller) &amp; supervisor</span> — two different things. The
+    <strong>orchestrator</strong> is “the long-running daemon that drives all SDK infrastructure”
+    inside one city: the reconcile loop plus formula-run execution. The <strong>supervisor</strong>
+    is machine-wide — a “typed HTTP + SSE control plane” that cities register with; it serves the
+    REST API and, since v1.4.0, hosts the dashboard SPA itself.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/glossary.md">glossary</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/index.md">reference</a>]</span>
   </div>
 
   <figure>
@@ -543,10 +610,10 @@
     crash recovery — is a query. Keep that in mind and the rest of this guide is details.</p>
   </div>
   <p class="sources-block">Sources:
-    <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a> ·
-    <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/nine-concepts.md">nine-concepts</a> ·
-    <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/glossary.md">engdocs glossary</a> ·
-    <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/dashboard.md">dashboard</a>
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/nine-concepts.md">nine-concepts</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/glossary.md">engdocs glossary</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/dashboard.md">dashboard</a>
   </p>
 </section>
 
@@ -554,10 +621,11 @@
 <section id="s3">
   <h2>3 · Install &amp; first city</h2>
   <p>
-    Labs in this guide were written against gascity ≈ v1.3.0 docs (fetched 2026-07-09/10) on macOS
+    Labs in this guide were written against gascity v1.4.0 docs (fetched 2026-08-09) on macOS
     with Homebrew. Homebrew installs all runtime dependencies for you (tmux, jq, dolt, bd…); the
-    manual dependency table only matters for direct-download or source builds.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/installation.md">installation</a>]</span>
+    manual dependency table only matters for direct-download or source builds. Building from source
+    needs Go 1.26+ (pinned in <code>go.mod</code> as 1.26.4).
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/installation.md">installation</a>]</span>
   </p>
 
   <div class="lab">
@@ -566,14 +634,14 @@
 gc version</code></pre>
     <p class="expect">Expect: a version string. Homebrew pulls the runtime dependencies automatically.</p>
     <p>Upgrades later: <code>brew update &amp;&amp; brew upgrade gascity &amp;&amp; gc service restart</code>.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/installation.md">installation</a>]</span></p>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/installation.md">installation</a>]</span></p>
   </div>
 
   <div class="callout warn">
     <p><strong>zsh users:</strong> Oh My Zsh's git plugin aliases <code>gc</code> to
     <code>git commit</code>. Check with <code>command gc version</code>; fix permanently by adding
     <code>unalias gc 2&gt;/dev/null</code> to <code>~/.zshrc</code>.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/installation.md">installation</a>]</span></p>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/installation.md">installation</a>]</span></p>
   </div>
 
   <div class="lab">
@@ -590,13 +658,95 @@ gc dashboard</code></pre>
     <p>Useful from anywhere: <code>gc cities</code> lists every city registered with the machine-wide
     supervisor; <code>gc stop</code> stops all agent sessions in a city; <code>gc start</code> starts
     a city under the supervisor again.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/quickstart.md">quickstart</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/dashboard.md">dashboard</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/cli.md">CLI</a>]</span></p>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/quickstart.md">quickstart</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/dashboard.md">dashboard</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/cli.md">CLI</a>]</span></p>
+  </div>
+
+  <h3>The dashboard, rebuilt around runs</h3>
+  <p>
+    v1.4.0 changed what <code>gc dashboard</code> <em>is</em>. The UI is “a single-page app compiled
+    into the <code>gc</code> binary and served by the supervisor on its own listener, so there is
+    nothing extra to install or run” — the old standalone static server (and its <code>--port</code>
+    flag) is gone. <code>gc dashboard</code> now resolves the supervisor URL, opens your browser, and
+    prints the URL; <code>--no-open</code> prints without launching (handy over SSH). If the
+    supervisor isn't running it tells you how to start it instead of opening a dead URL. One
+    supervisor serves every registered city — pick yours from the header switcher.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/dashboard.md">dashboard</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/cli.md">CLI</a>]</span>
+  </p>
+  <p>
+    The headline feature is <strong>run detail</strong>: the release notes describe it as unifying
+    “the formula stage ladder, structured transcripts, live token rate, and estimated burn rate,”
+    with session and run reads moved onto “typed, paginated API surfaces backed by warm projections
+    instead of ad hoc wire shapes.” A late fix (PR #4436) restored <code>tokens/min</code> and
+    <code>burn/hr</code> for long-lived pool sessions by sweeping model usage at each interval end —
+    so those fields populate even when agents self-drive after their initial claim.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/releases/tag/v1.4.0">v1.4.0 release notes</a>]</span>
+  </p>
+  <div class="callout warn">
+    <p><strong>Security posture:</strong> the dashboard binds where the supervisor binds — loopback
+    (<code>127.0.0.1</code>) by default — and is “intended for local, single-operator use.” Without
+    <code>allow_mutations</code> it runs read-only and disables its mutating controls. Set
+    <code>GC_SUPERVISOR_DASHBOARD=0</code> before starting the supervisor for a typed-API-only
+    supervisor with no embedded dashboard. Exposing it beyond loopback is a real deployment decision
+    — see the <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/runbooks/remote-hardened-city.md">remote-hardened-city runbook</a>
+    before you do.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/dashboard.md">dashboard</a>]</span></p>
+  </div>
+
+  <h3>Command-usage metrics (new in v1.4.0)</h3>
+  <p>
+    Official release builds of <code>gc</code> now record privacy-scoped command-usage metrics. The
+    disclosure is shown before the first eligible interactive command is recorded, and that first
+    invocation is never recorded — collection begins with the next one. Unversioned, development,
+    test, and CI builds fail closed and cannot collect. Events carry “only a canonical command ID,
+    the <code>gc</code> release, operating system, and an anonymous installation ID — never
+    arguments, paths, file contents, or environment values.”
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/releases/tag/v1.4.0">release notes</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/cli.md">CLI</a>]</span>
+  </p>
+  <pre><code>gc metrics status          # redacted local state
+gc metrics example         # the exact request shape that would be sent
+gc metrics off             # durable opt-out: disables, purges queued data, removes the ID
+gc metrics on              # accept the disclosure (verified TTY)
+
+# environment-level opt-outs, per process
+export DO_NOT_TRACK=1
+export GC_DISABLE_USAGE_METRICS=1</code></pre>
+  <p>
+    Note the asymmetry: <code>DO_NOT_TRACK=0</code> or <code>GC_DISABLE_USAGE_METRICS=0</code>
+    “never forces collection on and never overrides a saved opt-out. There is no environment
+    force-enable.” Don't confuse this with <code>[usage]</code> and <code>gc costs</code>
+    (<a href="#s4">§4</a>) — those are your own local cost accounting and go nowhere off the machine.
+  </p>
+
+  <div class="lab">
+    <div class="lab-title">Lab 2b — Upgrade an existing 1.3 city to 1.4</div>
+    <pre><code>brew update &amp;&amp; brew upgrade gascity
+cd ~/bright-lights
+gc doctor --fix            # run this once per existing city, before anything else
+gc start</code></pre>
+    <p class="expect">Expect: <code>gc doctor --fix</code> “converges pack imports, provider catalogs,
+    project identity, retired hold labels, and managed beads/Dolt metadata before the orchestrator
+    starts.” The release notes report no 1.3→1.4 regressions; every known papercut comes from
+    <em>existing machine state</em> left by an older install:</p>
+    <div class="table-wrap"><table>
+      <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td><code>gc start</code> keeps running an old binary, or fails with <code>synthetic cache is invalid … missing bundled pack cache marker</code></td><td>Older <code>gc</code>/supervisor at a different path; a present-but-invalid bundled-pack cache does not self-heal (only an <em>absent</em> one does)</td><td><code>gc import install</code> to reseed, then let <code>gc start</code> auto-restart the supervisor (Linux: <code>systemctl --user restart gascity-supervisor</code>)</td></tr>
+      <tr><td><code>gc start &lt;city&gt;</code> aborts over an <em>unrelated</em> city, hinting you to <code>gc init</code> the healthy one</td><td>A stale pre-1.3 registered city with un-migrated provider config fails the registry scan</td><td><code>gc doctor --fix</code> <em>in the offending stale city</em>, or <code>gc unregister &lt;stale-city&gt;</code></td></tr>
+      <tr><td>macOS: supervisor binary-drift auto-restart never completes</td><td>macOS can't resolve a direct (non-launchd) supervisor's executable</td><td><code>gc supervisor stop --wait</code>, then <code>gc start</code></td></tr>
+    </table></div>
+    <p>One config change is load-bearing: <strong>configure one store-scoped
+    <code>control-dispatcher</code> for every graph-owning scope.</strong> Formula control beads route
+    to the dispatcher whose <code>Dir</code> matches the city or rig store that owns the graph, and “a
+    rig-owned graph with no matching dispatcher fails before instantiation” rather than falling back
+    to a dispatcher that cannot read its work.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/releases/tag/v1.4.0">v1.4.0 release notes</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/cli.md">CLI</a>]</span></p>
   </div>
 
   <p class="sources-block">Sources:
-    <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/installation.md">installation</a> ·
-    <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/quickstart.md">quickstart</a> ·
-    <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/dashboard.md">dashboard</a>
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/installation.md">installation</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/quickstart.md">quickstart</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/dashboard.md">dashboard</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/troubleshooting.md">troubleshooting</a> ·
+    <a href="https://github.com/gastownhall/gascity/releases/tag/v1.4.0">v1.4.0 release notes</a>
   </p>
 </section>
 
@@ -607,7 +757,7 @@ gc dashboard</code></pre>
     Everything section 2 called “desired state” is written here. Only <code>[workspace]</code> is
     required; a useful minimal city is four blocks. Below, the documented minimal example with the
     fields you'll touch first, annotated.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/config.md">config reference</a>]</span>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/config.md">config reference</a>]</span>
   </p>
   <pre><code># ── required: city-level metadata ─────────────────────────────
 [workspace]
@@ -643,28 +793,75 @@ path = "/path/to/rig"
     <tr><td><code>[mail]</code>, <code>[events]</code></td><td>Mail backend (beadmail default; retention TTL for read messages) · event log (file-backed JSONL with rotation)</td></tr>
     <tr><td><code>[daemon]</code></td><td>Controller: patrol interval, restart thresholds, session circuit breaker, formula-v2 enablement</td></tr>
     <tr><td><code>[orders]</code>, <code>[convergence]</code></td><td>Order skip list + timeout caps · convergence loop limits (max_per_agent 2, max_total 10)</td></tr>
-    <tr><td><code>[api]</code>, <code>[[webhook]]</code>, <code>[[service]]</code></td><td>HTTP API (port 9443, mutation controls, auth keys) · inbound webhooks (default-closed) · workspace-owned services</td></tr>
-    <tr><td><code>[upstreams]</code>, <code>[agent_defaults]</code>, <code>[[pricing]]</code></td><td>Model-endpoint presets · fallback agent settings · per-model cost overrides</td></tr>
-    <tr><td><code>[github]</code>, <code>[dolt]</code>, <code>[doctor]</code>, <code>[maintenance]</code></td><td>PR monitors with repair routing · Dolt server tuning · health thresholds · store maintenance cadence</td></tr>
+    <tr><td><code>[api]</code>, <code>[[webhook]]</code>, <code>[webhooks]</code>, <code>[[service]]</code></td><td>HTTP API (port 9443, mutation controls, auth keys) · inbound webhooks (default-closed) · <em>new in 1.4:</em> city-level webhook governance — public-exposure grants and the operator-owned rate limit · workspace-owned services</td></tr>
+    <tr><td><code>[upstreams]</code>, <code>[agent_defaults]</code>, <code>[[pricing]]</code></td><td>Named model-serving endpoint presets, selectable per agent via <code>upstream</code> — the “Upstream axis”: <em>who serves the model</em>, rendered onto whatever env-var names each harness reads · fallback agent settings · per-model cost overrides</td></tr>
+    <tr><td><code>[usage]</code>, <code>[extmsg]</code></td><td><em>New in 1.4.</em> Usage-fact sink — <code>local</code> (default, JSONL at <code>.gc/usage.jsonl</code>), <code>exec:&lt;script&gt;</code>, or <code>discard</code>; feeds <code>gc costs</code> · default routes for inbound external conversations that have no binding</td></tr>
+    <tr><td><code>[github]</code>, <code>[dolt]</code>, <code>[doctor]</code>, <code>[maintenance]</code></td><td>PR monitors with repair routing (<code>repair_workflow</code> now defaults to the standard polecat repair workflow) · Dolt server tuning · health thresholds · store maintenance cadence</td></tr>
   </table></div>
+
+  <div class="callout">
+    <p><strong>Two 1.4 knobs worth knowing before you need them.</strong> Under <code>[beads]</code>,
+    <code>conditional_writes</code> selects the bead-write discipline — <code>off</code> (legacy),
+    <code>auto</code> (compare-and-swap where the store can, loud degrade otherwise), or
+    <code>require</code> (CAS or a typed refusal) — and <code>guarded_release</code> does the same for
+    ownership release (owner-blind unclaim vs fence-guarded verbs). Both default to <code>off</code>,
+    and any value outside the enum fails config load. Turn them up when concurrent claims start
+    racing.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/config.md">config reference</a>]</span></p>
+  </div>
+  <div class="callout warn">
+    <p><strong>If you ever bind the API off loopback,</strong> v1.4.0 added signed-grant admission
+    control: <code>write_auth_verify_key</code> / <code>read_auth_verify_key</code> require every
+    mutating (or reading) request to the typed per-city routes to carry a grant from a trusted
+    authority, with <code>*_auth_required</code> making a missing key a startup error instead of a
+    silently disabled gate. A non-loopback bind with <code>allow_mutations</code> and no verify key is
+    a fail-closed startup error unless you explicitly set
+    <code>write_auth_allow_unverified</code>. The bundled CLI and dashboard mint no grants, so
+    enabling the gates means fronting them with the authority that does.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/config.md">config reference</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/runbooks/remote-hardened-city.md">remote-hardened-city</a>]</span></p>
+  </div>
 
   <div class="callout">
     <p><strong>Never guess what your config resolved to.</strong> <code>gc config show</code> dumps
     the fully resolved city configuration as TOML; <code>gc config explain</code> adds provenance —
     which pack or layer each value came from. These two commands make section 7's layering rules
     observable.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/cli.md">CLI</a>]</span></p>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/cli.md">CLI</a>]</span></p>
   </div>
   <p>
     Templates: fields like <code>work_dir</code>, <code>session_setup</code>, <code>on_boot</code>,
     and <code>work_query</code> accept placeholders — <code>{{.Session}}</code>,
     <code>{{.Agent}}</code>, <code>{{.Rig}}</code>, <code>{{.RigRoot}}</code>,
     <code>{{.CityRoot}}</code>, <code>{{.WorkDir}}</code> and friends — resolved per session.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/config.md">config reference</a>]</span>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/config.md">config reference</a>]</span>
   </p>
+
+  <h3>New command surface in v1.4.0</h3>
+  <p>
+    Nothing was removed from the CLI in this release; these command families are additions. Most of
+    them read or write config you now know where to find.
+  </p>
+  <div class="table-wrap"><table>
+    <tr><th>Command</th><th>What it does</th></tr>
+    <tr><td><code>gc costs</code></td><td>Aggregates recorded usage facts (model tokens and compute wall-seconds) by run, from <code>.gc/usage.jsonl</code>. Local only — under an <code>exec:</code> or <code>discard</code> <code>[usage]</code> provider it shows nothing. Cost is “a list-price estimate for decision support, not an authoritative charge”; unpriced invocations are flagged and excluded from the total</td></tr>
+    <tr><td><code>gc context</code> (+ <code>--city-url</code>, <code>--city-name</code>, <code>--context</code>)</td><td>A client-side registry of <strong>named remote cities</strong> in <code>~/.gc/contexts.toml</code> — URL, remote city name, TLS options, and an optional credential- or grant-minting command. Precedence is git-like and dry-runnable with <code>gc context current</code>: explicit flag &gt; explicit env &gt; local city discovery &gt; sticky default</td></tr>
+    <tr><td><code>gc extmsg bind / handoff / unbind</code></td><td>Binds an external conversation (telegram, discord, …) to a session or a configured agent. An agent-name binding survives session restarts — inbound messages resolve a live session at delivery time, cold-waking one if none is live. <code>handoff</code> rebinds to another agent: the front-desk pattern. Requires the city API server; no local fallback</td></tr>
+    <tr><td><code>gc login</code> / <code>gc logout</code> / <code>gc whoami</code></td><td>Authenticate to a hosted Gas City service and show the authenticated account</td></tr>
+    <tr><td><code>gc metrics status/example/on/off</code></td><td>Local controls for command-usage metrics (<a href="#s3">§3</a>)</td></tr>
+    <tr><td><code>gc runtime check / conformance / heartbeat</code></td><td>Probe a runtime backend and check it against the provider contract</td></tr>
+    <tr><td><code>gc import credential add/list/remove</code></td><td>Credentials for fetching private pack imports</td></tr>
+  </table></div>
+  <div class="callout warn">
+    <p><strong>One flag change that will bite scripts:</strong> for <code>gc beads list</code> and
+    <code>gc beads show</code>, the bare <code>--json</code> flag “is reserved by the CLI's
+    JSON-contract layer and is not wired for this command” — use <code>--format=json</code>. As
+    before, API-path JSON includes <code>_cache_age_s</code> and fallback-path JSON omits it.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/cli.md">CLI reference</a>]</span></p>
+  </div>
   <p class="sources-block">Sources:
-    <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/config.md">config reference (city.toml schema)</a> ·
-    <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/cli.md">CLI reference</a>
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/config.md">config reference (city.toml schema)</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/cli.md">CLI reference</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/guides/connected-clients.md">connected clients</a>
   </p>
 </section>
 
@@ -676,7 +873,7 @@ path = "/path/to/rig"
     work is written into the bead store, and each agent's hook query finds what's addressed to it.
     The docs put the contract in capitals: <em>“If you find work on your hook, YOU RUN IT”</em> —
     the run-what-you-find rule.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/life-of-a-bead.md">life-of-a-bead</a>]</span>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/life-of-a-bead.md">life-of-a-bead</a>]</span>
   </p>
 
   <figure>
@@ -760,7 +957,7 @@ path = "/path/to/rig"
     creates a bead and routes it — to a fixed agent by setting its assignee, to a pool by labeling it
     <code>pool:&lt;name&gt;</code>, and with <code>--formula</code> it cooks and routes in one motion.
     Pool agents then claim with <code>bd update &lt;id&gt; --claim</code>.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/quickstart.md">quickstart</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/life-of-a-bead.md">life-of-a-bead</a>]</span>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/quickstart.md">quickstart</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/life-of-a-bead.md">life-of-a-bead</a>]</span>
   </p>
   <p>
     <strong>Formulas</strong> go through three stages: TOML file → in-memory recipe (flattened steps
@@ -768,8 +965,9 @@ path = "/path/to/rig"
     picks it up next finds the same state.” Preview with <code>gc formula show</code>, materialize
     without routing via <code>gc formula cook</code>, detect drift with
     <code>gc formula version-check</code>.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/guides/understanding-formulas.md">understanding-formulas</a>]</span>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/guides/understanding-formulas.md">understanding-formulas</a>]</span>
   </p>
+
   <pre><code>formula = "feature-flow"
 [vars]
 feature = "the feature"
@@ -783,9 +981,13 @@ id = "implement"
 needs = ["design"]        # readiness gate: runs when design closes</code></pre>
   <p>
     <strong>Molecules and wisps.</strong> A molecule is “a formula instantiated at runtime: one root
-    bead plus zero or more provider-managed step beads.” A <em>wisp</em> is an ephemeral molecule —
-    created by <code>gc sling</code> or order dispatch, auto-closed and garbage-collected on a TTL.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/glossary.md">glossary</a>]</span>
+    bead plus zero or more provider-managed step beads.” A <em>wisp</em> is “an ephemeral bead
+    produced by a v1 formula run” — created by <code>gc sling</code> or order dispatch, auto-closed
+    and garbage-collected once both <code>wisp_gc_interval</code> and <code>wisp_ttl</code> are set
+    (wisp GC is disabled unless both are). The core pack's cleanup order tidies all three outcomes
+    above: it reaps stale ephemeral runs and purges closed step records, with cleanup edges covering
+    v2 workflows too.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/glossary.md">glossary</a>]</span>
   </p>
   <p>
     <strong>Convoys</strong> group related beads into a tracked batch (“a container bead that groups
@@ -793,7 +995,7 @@ needs = ["design"]        # readiness gate: runs when design closes</code></pre>
     the convoy auto-closes. <strong>Orders</strong> automate dispatch: a trigger — cooldown, cron,
     condition, event, or manual — paired with a formula (<code>gc order list</code>,
     <code>gc order run</code>).
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/glossary.md">glossary</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/life-of-a-bead.md">life-of-a-bead</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/cli.md">CLI</a>]</span>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/glossary.md">glossary</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/life-of-a-bead.md">life-of-a-bead</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/cli.md">CLI</a>]</span>
   </p>
   <p>
     <strong>Mail</strong> is messaging built from beads: a message is a bead with
@@ -804,8 +1006,71 @@ needs = ["design"]        # readiness gate: runs when design closes</code></pre>
     straight into a session to wake or redirect it — fire-and-forget, no persistence, lost if the
     session isn't running. <strong>Waits</strong> are durable session waits — a session blocks on a
     condition and survives it (<code>gc wait</code> inspects them).
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/messaging.md">messaging</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/session.md">session</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/cli.md">CLI</a>]</span>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/messaging.md">messaging</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/session.md">session</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/cli.md">CLI</a>]</span>
   </p>
+
+  <h3>Two compiler contracts — and why v2 is the one to learn</h3>
+  <p>
+    This is the decision v1.4.0's docs put first, ahead of every pattern. <em>“Both contracts are live
+    and supported. They are peers, not a version ladder — each makes a different thing the engine.”</em>
+    Under v1 the engine is the agent you sling to; under v2 it is the orchestrator.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/guides/understanding-formulas.md">understanding-formulas</a>]</span>
+  </p>
+  <div class="table-wrap"><table>
+    <tr><th></th><th>v1 (default)</th><th>v2 (<code>[requires]</code>)</th></tr>
+    <tr><td>Engine</td><td>the agent you sling to</td><td>the orchestrator</td></tr>
+    <tr><td>Steps</td><td>resolved at apply, then inert</td><td>independently routable units</td></tr>
+    <tr><td>Control flow</td><td>none after apply</td><td>check/retry/drain/tally, scope checks, finalize</td></tr>
+    <tr><td>Routing</td><td>one agent, one session</td><td>many agents and pools (<code>gc.run_target</code> per step)</td></tr>
+    <tr><td>Shape</td><td>parent-child molecule tree</td><td>flat graph of blocking edges + appended finalize</td></tr>
+  </table></div>
+  <p>“For new work, choose v2. The opt-in is one table”:</p>
+  <pre><code>[requires]
+formula_compiler = "&gt;=2.0.0"</code></pre>
+  <p>
+    Base constructs (<code>steps</code>, <code>needs</code>, <code>children</code>,
+    <code>condition</code>, <code>loop</code>, <code>vars</code>, <code>extends</code>) mean the same
+    in both. Graph-only constructs — <code>check</code>, <code>retry</code>, <code>drain</code>,
+    <code>on_complete</code>, <code>tally</code>, and reserved <code>gc.*</code> step metadata —
+    require the declaration; compiling without it fails telling you exactly which table to add. The
+    host-side <code>[daemon] formula_v2</code> switch defaults to on, and the deprecated
+    <code>contract = "graph.v2"</code> key still parses with a <code>gc doctor</code> warning.
+  </p>
+  <p>
+    Two v1-only edges remain, “neither a reason to start on v1”: <code>gc converge</code> accepts only
+    v1 formulas (use a v2 check loop for iterate-until-it-passes instead), and container dependencies
+    have a v2 gap — the v2 compiler creates no parent-child edges yet, so a <code>needs</code> on a
+    parent gates only on that parent step; list the children explicitly until
+    <a href="https://github.com/gastownhall/gascity/issues/3451">#3451</a> lands.
+  </p>
+
+  <h3>Verb vs outcome: cook, sling, or order</h3>
+  <p>
+    Three verbs create formula instances, and the <em>outcome</em> follows from the contract rather
+    than from a separate choice. <strong>Cook</strong> (<code>gc formula cook &lt;name&gt;</code>)
+    creates without routing — nothing wakes up; use it to inspect beads first, route yourself, or
+    graft a sub-DAG onto existing work with <code>--attach &lt;bead-id&gt;</code>.
+    <strong>Sling</strong> (<code>gc sling &lt;target&gt; &lt;name&gt; --formula</code>) cooks and
+    routes in one motion. <strong>Orders</strong> are scheduled dispatch: a trigger plus a formula
+    (or a shell command — never both), instantiated and routed to the order's pool each time it fires.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/guides/understanding-formulas.md">understanding-formulas</a>]</span>
+  </p>
+  <div class="table-wrap"><table>
+    <tr><th>Outcome</th><th>From</th><th>Per-step beads</th><th>Root is visible work</th></tr>
+    <tr><td>Single-bead run (a <em>wisp</em>)</td><td>v1, no steps (<code>phase = "vapor"</code>)</td><td>No — steps stay in the recipe</td><td>Yes — the root is the work</td></tr>
+    <tr><td>v1 run with steps (a <em>molecule</em>)</td><td>v1 with steps: container root + step children</td><td>Yes, as children</td><td>No — the root is a container</td></tr>
+    <tr><td>v2 <em>workflow</em></td><td>v2</td><td>Yes, independently routable</td><td>No — the root blocks on finalize</td></tr>
+  </table></div>
+  <div class="callout warn">
+    <p><strong>Two refusals that will confuse you the first time.</strong> “A pool wakes only for
+    Ready-visible work, so slinging a v1 run at a pool is refused outright — convert to v2 first.”
+    And <strong>cook and sling in the store the worker reads</strong>: cook materializes into the
+    scope you run it from (<code>--rig</code>, else the enclosing rig directory, else the city), and
+    sling refuses a cross-store route with <code>refusing cross-store route</code>, telling you to
+    re-file the bead or pick a reachable target. City-scoped agents are the exception — they are
+    cross-store eligible and may serve work in any store.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/guides/understanding-formulas.md">understanding-formulas</a>]</span></p>
+  </div>
 
   <div class="lab">
     <div class="lab-title">Lab 3 — Route your first bead</div>
@@ -822,23 +1087,25 @@ bd show &lt;bead-id&gt; --watch
 
 # and see the same activity as events
 gc events</code></pre>
-    <p class="expect">Expect: <code>gc rig add</code> gives the rig its own beads database, hooks,
-    and routing context. <code>gc sling</code> prints the created bead's ID; a session starts and
-    the task is delivered. <code>--watch</code> live-updates the status line.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/quickstart.md">quickstart</a>]</span></p>
+    <p class="expect">Expect: <code>gc rig add</code> gives the rig its own bead scope (an ID prefix
+    filtered out of the shared store), hooks, and routing context — and, since v1.3.2, materializes
+    the rig's skills immediately, including for rigs sourced outside the city tree.
+    <code>gc sling</code> prints the created bead's ID; a session starts and the task is delivered.
+    <code>--watch</code> live-updates the status line.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/quickstart.md">quickstart</a>]</span></p>
   </div>
 
   <div class="gt-note">
     <p>Gas Town's convoys survive intact — “convoys stay bead-backed grouping and lineage; the
     implementation boundary moved.” <code>gc sling</code> now creates convoy structure while routing.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/coming-from-gastown.md">coming-from-gastown</a>]</span></p>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/coming-from-gastown.md">coming-from-gastown</a>]</span></p>
   </div>
   <p class="sources-block">Sources:
-    <a href="https://github.com/gastownhall/gascity/blob/main/docs/guides/understanding-formulas.md">understanding-formulas</a> ·
-    <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/life-of-a-bead.md">life-of-a-bead</a> ·
-    <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/messaging.md">messaging</a> ·
-    <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/glossary.md">glossary</a> ·
-    <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/cli.md">CLI reference</a>
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/guides/understanding-formulas.md">understanding-formulas</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/life-of-a-bead.md">life-of-a-bead</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/messaging.md">messaging</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/glossary.md">glossary</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/cli.md">CLI reference</a>
   </p>
 </section>
 
@@ -846,12 +1113,16 @@ gc events</code></pre>
 <section id="s6">
   <h2>6 · Runtime providers</h2>
   <p>
-    Agents don't care where they run. The <code>[session]</code> block picks a backend; every backend
-    implements the same provider contract, so the controller's logic — and your config — stays
-    identical from a laptop tmux pane to a Kubernetes pod. One rule to remember: <em>“tmux is the
-    default session backend and the fallback, so it stays required even if you run agents on another
-    backend.”</em>
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/config.md">config reference</a> · <a href="https://github.com/gastownhall/gascity/blob/main/README.md">README</a>]</span>
+    Agents don't care where they run. The <code>[session]</code> block picks a backend city-wide (or
+    <code>GC_SESSION</code> for one process); every backend implements the same provider contract, so
+    the orchestrator's logic — and your config — stays identical from a laptop tmux pane to a
+    Kubernetes pod. One rule to remember: <em>“tmux is the default session backend and the fallback,
+    so it stays required even if you run agents on another backend.”</em> v1.4.0 pushed this further:
+    provider routing, ACP/automatic runtime selection, Herdr-backed sessions, and
+    Kubernetes/subprocess/tmux execution now “share one session lifecycle and worker boundary,” with
+    pool demand, wake, resume, drain, close, and orphan recovery all reasoning from persisted
+    session/work identity rather than provider-specific shortcuts.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/config.md">config reference</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/README.md">README</a>]</span>
   </p>
 
   <figure>
@@ -913,25 +1184,45 @@ gc events</code></pre>
     <tr><td>exec:&lt;script&gt;</td><td>Your script implements the session contract</td><td>Custom environments — the escape hatch (contract in reference/exec-session-provider.md)</td></tr>
     <tr><td>ACP</td><td>Agent Client Protocol; acp/auto/hybrid routing layers</td><td>Editor/protocol-native agents rather than terminal CLIs</td></tr>
     <tr><td>k8s</td><td>Sessions in Kubernetes</td><td>Scaling beyond one machine</td></tr>
-    <tr><td>herdr</td><td>Shared herdr session-server per city, workspace/tab hierarchy</td><td>Many agents, cleaner organization than raw tmux — purpose-built for AI agent fleets</td></tr>
+    <tr><td>herdr</td><td>Shared herdr session-server per city, workspace/tab hierarchy; opt-in, selected city-wide only</td><td>Many agents, cleaner organization than raw tmux — purpose-built for AI agent fleets</td></tr>
   </table></div>
 
+  <div class="callout warn">
+    <p><strong>The backend is a whole-city choice — you cannot pin one agent back to tmux.</strong>
+    This trips people who expect Kubernetes-style per-workload scheduling. The per-agent
+    <code>session</code> field selects a <em>transport</em>, not a backend, and accepts only
+    <code>acp</code>, <code>tmux</code>, or omission. Under a herdr city:
+    <code>session = "acp"</code> genuinely moves that agent onto the ACP backend — “it is the one
+    per-agent lever that changes which backend an agent runs on” — but
+    <em>“<code>session = "tmux"</code> does not keep an agent on tmux. The herdr provider does not
+    implement the transport-capability check, so the pin is neither honored nor rejected; the agent
+    falls back to the base provider and runs on herdr.”</em> To put an agent on tmux, the whole city
+    (or process) must default to tmux.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/herdr-provider.md">herdr-provider</a>]</span></p>
+  </div>
   <div class="callout">
-    <p><strong>Piloting a new backend, the documented way:</strong> switch the city, pin the critical
-    agent back to tmux, widen adoption only after stability.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/herdr-provider.md">herdr-provider</a>]</span></p>
-    <pre style="margin-top:10px"><code>[session]
+    <p><strong>Piloting a new backend, the documented way:</strong> scope which <em>city</em> runs on
+    it, not which agents. Requires <code>herdr</code> 0.7.1+ on <code>PATH</code> — if the binary is
+    missing, sessions selected onto herdr fail to start.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/herdr-provider.md">herdr-provider</a>]</span></p>
+    <pre style="margin-top:10px"><code># 1 · per-process trial on a throwaway city — nothing committed
+GC_SESSION=herdr gc start &lt;scratch-city&gt;
+
+# 2 · promote to that scratch city's default, run it end to end
+[session]
 provider = "herdr"
 
-[[patches.agent]]
-name = "mayor"
-session = "tmux"   # keep the orchestrator on the proven backend</code></pre>
+# 3 · widen to the real city only after several stable work cycles</code></pre>
+    <p>Apply a selector change with <code>gc reload</code> or a city restart; already-running sessions
+    keep their current backend until they next restart. Confirm with <code>gc config show</code>.
+    Layout under herdr mirrors the town: one workspace per rig plus one for the town, one tab per
+    agent.</p>
   </div>
   <p class="sources-block">Sources:
-    <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/config.md">config reference</a> ·
-    <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/herdr-provider.md">herdr-provider</a> ·
-    <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/session.md">session architecture</a> ·
-    <a href="https://github.com/gastownhall/gascity/blob/main/README.md">README</a>
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/config.md">config reference</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/herdr-provider.md">herdr-provider</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/session.md">session architecture</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/README.md">README</a>
   </p>
 </section>
 
@@ -946,11 +1237,16 @@ session = "tmux"   # keep the orchestrator on the proven backend</code></pre>
   </p>
   <h3>Rigs: project isolation</h3>
   <p>
-    Registering a repo (<code>gc rig add</code>) gives it its own beads database, hook installation,
-    and routing context; the rig's <code>prefix</code> namespaces its bead IDs so queries never leak
-    across projects. Rig config can set its own <code>formulas_dir</code>, <code>formula_vars</code>,
-    session caps, and default sling targets.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/quickstart.md">quickstart</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/config.md">config reference</a>]</span>
+    Registering a repo (<code>gc rig add</code>) gives it its own bead scope, hook installation, and
+    routing context; the rig's <code>prefix</code> namespaces its bead IDs so queries never leak
+    across projects. Under the hood “the city and all its rigs share one underlying store, and reads
+    and writes are filtered to the current scope's prefix” — the isolation is the prefix, not a
+    separate database, but it is enforced hard enough that cross-scope routing is refused
+    (<a href="#s5">§5</a>). Rig config can set its own <code>formulas_dir</code>,
+    <code>formula_vars</code>, session caps, and default sling targets —
+    <code>default_sling_targets</code> (plural, new in 1.4) takes a list and picks one at random per
+    targetless dispatch, taking precedence over the singular form.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/config.md">config reference</a>]</span>
   </p>
   <h3>Packs: shared behavior via named imports</h3>
   <p>
@@ -960,7 +1256,18 @@ session = "tmux"   # keep the orchestrator on the proven backend</code></pre>
     <code>gascity</code> and you address its planner as <code>gascity.planner</code>, never bare
     <code>planner</code>. Imports live at city level, or under a <code>[[rigs]]</code> entry — which
     stamps the rig's identity onto the imported agents.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/guides/understanding-packs.md">understanding-packs</a>]</span>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/guides/understanding-packs.md">understanding-packs</a>]</span>
+  </p>
+  <p>
+    Keep two identifiers apart, because only one is portable. A <strong>registry handle</strong> like
+    <code>main:gascity</code> finds a pack <em>on this machine</em> — <code>main</code> is your local
+    registry name and another machine could call it <code>work</code>. A <strong>durable
+    source</strong> like
+    <code>https://github.com/gastownhall/gascity-packs/tree/main/gascity</code> is what you commit,
+    “independent of any machine's registry name or cache.” Use the handle to search
+    (<code>gc pack registry …</code>); write the source into your TOML. New in 1.4:
+    <code>gc import credential</code> manages credentials for private pack sources.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/guides/understanding-packs.md">understanding-packs</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/cli.md">CLI</a>]</span>
   </p>
   <h3>The layering order (memorize the last line)</h3>
   <pre><code>city.toml + city pack
@@ -975,7 +1282,7 @@ session = "tmux"   # keep the orchestrator on the proven backend</code></pre>
     agent &gt; rig &gt; workspace; an agent's <code>scope</code> field (<code>city</code>,
     <code>rig</code>, or omitted for both) says <em>where a definition may load</em> — “it does not
     name a particular rig.”
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/guides/understanding-packs.md">understanding-packs</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/config.md">config reference</a>]</span>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/guides/understanding-packs.md">understanding-packs</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/config.md">config reference</a>]</span>
   </p>
 
   <div class="lab">
@@ -988,19 +1295,19 @@ gc config explain      # every resolved value, with which layer set it</code></p
     <p class="expect">Expect: the new rig appears with its own prefix and beads store;
     <code>gc config explain</code> shows provenance per value — the layering chain above, made
     visible.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/quickstart.md">quickstart</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/cli.md">CLI</a>]</span></p>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/quickstart.md">quickstart</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/cli.md">CLI</a>]</span></p>
   </div>
 
   <div class="gt-note">
     <p>The deepest habit to unlearn from Gas Town: <em>“do not port code or prompts that assume
     directory path implies who the agent is.”</em> Identity is explicit config now — <code>dir</code>
     is scope, not selfhood.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/coming-from-gastown.md">coming-from-gastown</a>]</span></p>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/coming-from-gastown.md">coming-from-gastown</a>]</span></p>
   </div>
   <p class="sources-block">Sources:
-    <a href="https://github.com/gastownhall/gascity/blob/main/docs/guides/understanding-packs.md">understanding-packs</a> ·
-    <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/config.md">config reference</a> ·
-    <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/quickstart.md">quickstart</a>
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/guides/understanding-packs.md">understanding-packs</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/config.md">config reference</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/quickstart.md">quickstart</a>
   </p>
 </section>
 
@@ -1008,13 +1315,26 @@ gc config explain      # every resolved value, with which layer set it</code></p
 <section id="s8">
   <h2>8 · The reconcile loop</h2>
   <p>
-    Kubernetes users will feel at home: the controller is a <strong>declarative convergence
+    Kubernetes users will feel at home: the orchestrator is a <strong>declarative convergence
     engine</strong>. Desired state comes from <code>city.toml</code> parsed with includes and
     patches; observed state comes from <code>Provider.ListRunning()</code> plus session metadata;
     <code>reconcileSessionBeads()</code> continuously repairs the divergence. The whole cycle lives
     in <code>controllerLoop()</code> and runs every <code>patrol_interval</code> (default 30s).
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/controller.md">controller</a>]</span>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/controller.md">controller</a>]</span>
   </p>
+  <div class="callout">
+    <p><strong>Where v2 orchestration actually executes.</strong> The reconcile loop keeps
+    <em>sessions</em> converged; a second mechanism drives <em>work graphs</em>. The engdocs are
+    blunt about it: v2 orchestration “is implemented by the control dispatcher in
+    <code>internal/dispatch</code> executing control beads (check, retry, fan-out, tally, drain,
+    scope-check, workflow-finalize).” Those control beads route to the dispatcher whose
+    <code>Dir</code> matches the store that owns the graph — which is why every graph-owning scope
+    needs its own <code>control-dispatcher</code> agent configured (<a href="#s3">§3</a>). v1.4.0 also
+    made that routing retry transient config/include read failures instead of quarantining an
+    in-flight run, while still failing closed when a successfully loaded config genuinely lacks the
+    scoped dispatcher.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/nine-concepts.md">nine-concepts</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/dispatch.md">dispatch</a> · <a href="https://github.com/gastownhall/gascity/releases/tag/v1.4.0">release notes</a>]</span></p>
+  </div>
 
   <figure>
   <svg id="svg-reconcile-loop" viewBox="0 0 960 480" role="img" aria-label="Reconcile cycle: desired state from city.toml and observed state from providers feed a five-step controller tick that repairs divergence and emits events">
@@ -1083,21 +1403,30 @@ gc config explain      # every resolved value, with which layer set it</code></p
     <li><strong>Health patrol is just an order:</strong> “probe sessions… compare thresholds…
     publish stalls… restart with backoff” — remediation composed from the same primitives as any
     other automation.</li>
+    <li><strong>Pool capacity is fenced (new in 1.4):</strong> claim ownership, wake budgets, slot
+    selection, and confirmed-dead cleanup are “fenced against stale or partial observations,” so pool
+    sessions no longer lose or strand work while draining, restarting, or reusing capacity.</li>
+    <li><strong>Degraded is now said out loud:</strong> managed beads and Dolt paths — provider
+    health, endpoint ownership, lock release, compaction, reindexing, stale data-dir cleanup, partial
+    store reads — “preserve errors instead of silently reporting complete state.”</li>
   </ul>
-  <p class="src" style="margin-top:-6px">[<a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/controller.md">controller</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/nine-concepts.md">nine-concepts</a>]</p>
+  <p class="src" style="margin-top:-6px">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/controller.md">controller</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/nine-concepts.md">nine-concepts</a>]</p>
 
   <h3>Above the loop: the supervisor</h3>
   <p>
     The machine-wide supervisor exposes the “typed HTTP + SSE control plane” (OpenAPI-documented)
-    that the dashboard and <code>gc events</code> consume. Its API defaults to loopback with mutation
-    controls and auth keys in <code>[api]</code>; the event log is file-backed JSONL with rotation
-    (<code>gc events rotate</code>).
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/index.md">reference index</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/config.md">config reference</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/cli.md">CLI</a>]</span>
+    that the dashboard and <code>gc events</code> consume — and since v1.4.0 it serves the dashboard
+    SPA itself, same-origin, out of the <code>gc</code> binary. Its API defaults to loopback with
+    mutation controls and auth keys in <code>[api]</code>; the event log is file-backed JSONL with
+    rotation (<code>gc events rotate</code>). v1.4.0 bounded these paths under load: “the CLI drains
+    paginated event windows, request paths avoid unbounded scans, tmux sessions keep their shared
+    server, and structured transcripts preserve tool and error frames.”
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/index.md">reference index</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/config.md">config reference</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/cli.md">CLI</a>]</span>
   </p>
   <p class="sources-block">Sources:
-    <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/controller.md">engdocs controller</a> ·
-    <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/nine-concepts.md">nine-concepts</a> ·
-    <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/index.md">reference index</a>
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/controller.md">engdocs controller</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/nine-concepts.md">nine-concepts</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/index.md">reference index</a>
   </p>
 </section>
 
@@ -1106,11 +1435,12 @@ gc config explain      # every resolved value, with which layer set it</code></p
   <h2>9 · Code tour</h2>
   <p>
     The repo splits cleanly: <code>cmd/gc/</code> holds the CLI <em>and</em> the controller;
-    <code>internal/</code> holds 97 focused packages implementing the primitives; <code>docs/</code>
+    <code>internal/</code> holds 106 top-level packages (150 Go package directories at v1.4.0, up
+    from 76/105 at v1.3.0) implementing the primitives; <code>docs/</code>
     is the user manual and <code>engdocs/</code> the contributor manual. Start reading with three
     engdocs files: <code>nine-concepts.md</code> (the layering), <code>life-of-a-bead.md</code>
     (the data flow), <code>controller.md</code> (the loop).
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/tree/main/internal">internal/</a> · <a href="https://github.com/gastownhall/gascity/tree/main/engdocs/architecture">engdocs/architecture</a>]</span>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/tree/v1.4.0/internal">internal/</a> · <a href="https://github.com/gastownhall/gascity/tree/v1.4.0/engdocs/architecture">engdocs/architecture</a>]</span>
   </p>
 
   <figure>
@@ -1132,7 +1462,7 @@ gc config explain      # every resolved value, with which layer set it</code></p
     <text x="44" y="366" class="d-sub">architecture/ (20 docs: controller,</text>
     <text x="44" y="382" class="d-sub">nine-concepts, glossary, invariants…)</text>
     <rect x="350" y="24" width="590" height="378" fill="var(--surface)" stroke="var(--line)" class="d-box"/>
-    <text x="366" y="48" class="d-label">internal/ — 97 packages; the ones that matter first</text>
+    <text x="366" y="48" class="d-label">internal/ — 106 packages; the ones that matter first</text>
     <rect x="366" y="64" width="270" height="70" fill="var(--s2-wash)" stroke="var(--s2)" class="d-box"/>
     <text x="380" y="86" class="d-label">sessions</text>
     <text x="380" y="104" class="d-code">runtime (Provider iface) · session</text>
@@ -1181,13 +1511,22 @@ gc config explain      # every resolved value, with which layer set it</code></p
     parent-child + dependencies + labels + query contract.</li>
     <li><strong>The invariant that bites:</strong> “Only non-nil fields in UpdateOpts are applied.
     Labels append, never replace.”</li>
+    <li><strong>Where v1.4.0's new surface lives:</strong> 30 top-level packages appeared under
+    <code>internal/</code>. The ones that map to features in this guide are <code>usage</code> and
+    <code>productmetrics</code> (usage facts and command-usage metrics), <code>eventfeed</code> and
+    <code>transcriptmeta</code> (paginated feeds, structured transcripts), <code>poolplan</code>,
+    <code>warmup</code> and <code>orderdispatch</code> (pool sizing and dispatch),
+    <code>clientauth</code>/<code>clientgrant</code>/<code>citywriteauth</code>/<code>clientcontext</code>
+    (remote cities and signed grants), <code>webhookmatch</code>/<code>webhooksink</code>/<code>webhookverify</code>,
+    and <code>rig</code>, <code>storeref</code>, <code>doltorphan</code> for store scoping and repair.
+    <code>engdocs/architecture/</code> lost <code>tally-control.md</code> (21 docs → 20).</li>
   </ul>
-  <p class="src" style="margin-top:-6px">[<a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/session.md">session</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/nine-concepts.md">nine-concepts</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/life-of-a-bead.md">life-of-a-bead</a>]</p>
+  <p class="src" style="margin-top:-6px">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/session.md">session</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/nine-concepts.md">nine-concepts</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/life-of-a-bead.md">life-of-a-bead</a>]</p>
   <p class="sources-block">Sources:
-    <a href="https://github.com/gastownhall/gascity/tree/main/internal">internal/ tree</a> ·
-    <a href="https://github.com/gastownhall/gascity/tree/main/engdocs/architecture">engdocs/architecture tree</a> ·
-    <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/session.md">session.md</a> ·
-    <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/controller.md">controller.md</a>
+    <a href="https://github.com/gastownhall/gascity/tree/v1.4.0/internal">internal/ tree</a> ·
+    <a href="https://github.com/gastownhall/gascity/tree/v1.4.0/engdocs/architecture">engdocs/architecture tree</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/session.md">session.md</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/controller.md">controller.md</a>
   </p>
 </section>
 
@@ -1200,7 +1539,13 @@ gc config explain      # every resolved value, with which layer set it</code></p
     “owns reconciling desired→running sessions, session scaling, order evaluation, health patrol” —
     duties Gas Town distributed across role agents. Roles didn't die; they became configuration, and
     ship today as the <strong>Gastown pack</strong> (mayor, polecat, witness, refinery, deacon, boot).
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/coming-from-gastown.md">coming-from-gastown</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/gastown-command-map.md">command map</a>]</span>
+    v1.4.0's rewrite of that page adds the second half of the story: <em>“the orchestrator can now run
+    a formula as a <strong>graph across many agents, out of your session</strong> — decomposing a job
+    into beads, fanning the ready ones out in parallel, gating each step on its dependencies, and
+    retrying failures to completion. Your single-agent, in-session formulas still run (v1); this fleet
+    orchestration (v2) is what's new.”</em> Because it is a platform, a feature added to Gas City
+    lifts every orchestrator built on it — Gas Town included.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/coming-from-gastown.md">coming-from-gastown</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/gastown-command-map.md">command map</a>]</span>
   </p>
 
   <h3>Roles &amp; concepts</h3>
@@ -1236,29 +1581,40 @@ gc config explain      # every resolved value, with which layer set it</code></p
   <p>
     Dropped without direct equivalent — usually on purpose: <code>gt broadcast</code>,
     <code>gt notify</code>, <code>gt dnd</code>, <code>gt escalate</code>, <code>gt whoami</code>,
-    <code>gt checkpoint</code>, <code>gt patrol</code>, <code>gt costs</code>, <code>gt seance</code>,
+    <code>gt checkpoint</code>, <code>gt patrol</code>, <code>gt seance</code>,
     <code>gt mq</code> (merge queue), <code>gt callbacks</code>, <code>gt issue</code>. Hardcoded role
     types, path-derived config, and helper agents for shell work are explicitly gone.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/gastown-command-map.md">command map</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/coming-from-gastown.md">coming-from-gastown</a>]</span>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/gastown-command-map.md">command map</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/coming-from-gastown.md">coming-from-gastown</a>]</span>
   </p>
+  <div class="callout">
+    <p><strong>Two entries the command map hasn't caught up with.</strong> It still lists
+    <code>gt costs</code> as having “no matching top-level cost accounting command today,” but
+    v1.4.0's CLI reference ships <strong><code>gc costs</code></strong> — per-run model tokens and
+    compute wall-seconds with a list-price estimate, read from <code>.gc/usage.jsonl</code>. Treat
+    that row as stale. <code>gc whoami</code> also now exists, but it is <em>not</em> the successor to
+    <code>gt whoami</code>: it shows the authenticated hosted-service account, whereas Town's
+    <code>whoami</code> answered “which agent am I” — still answered by config, session metadata, and
+    <code>GC_*</code> env, exactly as the map says.
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/cli.md">CLI reference</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/gastown-command-map.md">command map</a>]</span></p>
+  </div>
   <div class="callout warn">
     <p><strong>Documented migration mistakes:</strong> importing Town's surface area instead of
     re-expressing intent · inventing new hardcoded roles instead of configuring agents · duplicating
     state outside beads when metadata suffices · assuming directory layout enforces architecture.
-    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/coming-from-gastown.md">coming-from-gastown</a>]</span></p>
+    <span class="src">[<a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/coming-from-gastown.md">coming-from-gastown</a>]</span></p>
   </div>
   <p class="sources-block">Sources:
-    <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/coming-from-gastown.md">coming-from-gastown</a> ·
-    <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/gastown-command-map.md">gastown-command-map</a>
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/coming-from-gastown.md">coming-from-gastown</a> ·
+    <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/gastown-command-map.md">gastown-command-map</a>
   </p>
 </section>
 
 <!-- ============ 11. QUIZ, GLOSSARY, SOURCES ============ -->
 <section id="s11">
   <h2>11 · Quiz, glossary &amp; sources</h2>
-  <p>Eighteen questions, weighted toward the mental model and work routing. Reveal, then score
-  yourself honestly — 14+ is mastery.</p>
-  <div class="quiz-score" id="quizScore">Score: 0 / 0 answered (18 total)</div>
+  <p>Twenty-two questions, weighted toward the mental model and work routing, with the last four on
+  what v1.4.0 changed. Reveal, then score yourself honestly — 17+ is mastery.</p>
+  <div class="quiz-score" id="quizScore">Score: 0 / 0 answered (22 total)</div>
 
   <div class="quiz-item">
     <div class="quiz-q"><span class="qnum">Q1</span>What is the universal substrate of Gas City, and name three different things that are “all just” instances of it?</div>
@@ -1332,6 +1688,22 @@ gc config explain      # every resolved value, with which layer set it</code></p
     <div class="quiz-q"><span class="qnum">Q18</span>You'd have written a Gas Town plugin. What do you build in Gas City, and what are the two flavors?</div>
     <div class="answer">An <strong>order</strong> — a trigger (cooldown, cron, condition, event, or manual) paired with work: an <em>exec order</em> for shell/orchestrator-side logic, a <em>formula order</em> for agent-driven work. (§10, §5)</div>
   </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q19</span>Name the six primitives and the three pieces of machinery they sit on.</div>
+    <div class="answer">Primitives: <strong>Agent</strong> (who), <strong>Bead</strong> (what), <strong>Formula</strong> (how), <strong>Rig</strong> (where), <strong>Pack</strong> (configures), <strong>Event</strong> (observe). Machinery: the <strong>orchestrator</strong> (runs formulas, reconciles sessions), the <strong>bead store</strong> (durable work), the <strong>event bus</strong> (fires activity outward). “None of this machinery knows what your agents do.” (§2)</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q20</span>v1 vs v2 formulas: what actually differs, and how do you opt in to v2?</div>
+    <div class="answer">They are peers, not a version ladder — the difference is <em>what the engine is</em>. Under v1 the engine is the single agent you sling to; steps are inert after apply and the shape is a parent-child molecule. Under v2 the engine is the orchestrator: steps are independently routable to many agents and pools, with check/retry/drain/tally control flow and a flat graph plus a finalize step. Opt in with <code>[requires] formula_compiler = "&gt;=2.0.0"</code>. Choose v2 for new work. (§5)</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q21</span>You want an agent under a herdr city to keep running on tmux. How do you pin it?</div>
+    <div class="answer">You don't — that's the trap. The backend is a whole-city (or whole-process) choice. The per-agent <code>session</code> field selects a <em>transport</em> and accepts only <code>acp</code>, <code>tmux</code>, or omission; <code>session = "tmux"</code> under a herdr city is “neither honored nor rejected” and the agent runs on herdr anyway. Only <code>session = "acp"</code> genuinely moves an agent to a different backend. To get tmux, the city must default to tmux. (§6)</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="qnum">Q22</span>You upgraded a 1.3 city and <code>gc start</code> aborts complaining about a city you weren't starting. What happened, and what's the first command you run on any 1.3→1.4 upgrade?</div>
+    <div class="answer">A <em>stale, unrelated</em> registered city with un-migrated provider config fails the registry scan and aborts startup — with a misleading hint to <code>gc init</code> the healthy city. Fix the offending one (<code>gc doctor --fix</code> inside it) or <code>gc unregister &lt;stale-city&gt;</code>. And the first command on any upgrade is <code>gc doctor --fix</code>, which converges pack imports, provider catalogs, project identity, retired hold labels, and managed beads/Dolt metadata before the orchestrator starts. (§3)</div>
+  </div>
 
   <h3>Glossary</h3>
   <div class="table-wrap"><table>
@@ -1343,8 +1715,11 @@ gc config explain      # every resolved value, with which layer set it</code></p
     <tr><td>Session</td><td>A running agent — live process managed by a provider</td><td>—</td></tr>
     <tr><td>Pool</td><td>Agent scaling between min/max active sessions</td><td>Polecats</td></tr>
     <tr><td>Formula</td><td>Reusable TOML method: steps, vars, needs edges</td><td>gt formula</td></tr>
-    <tr><td>Molecule</td><td>Formula instantiated at runtime: root bead + step beads</td><td>gt mol</td></tr>
-    <tr><td>Wisp</td><td>Ephemeral molecule; auto-closes, garbage-collected on TTL</td><td>—</td></tr>
+    <tr><td>Molecule</td><td>A v1 formula instantiated at runtime: container root + step children</td><td>gt mol</td></tr>
+    <tr><td>Workflow</td><td>A v2 formula instantiated at runtime: flat graph of independently routable step beads, root blocks on finalize</td><td>—</td></tr>
+    <tr><td>Wisp</td><td>Ephemeral bead from a v1 formula run; auto-closes, garbage-collected on TTL</td><td>—</td></tr>
+    <tr><td>Control bead</td><td>Orchestration step the control dispatcher executes: check, retry, fan-out, tally, drain, scope-check, workflow-finalize</td><td>—</td></tr>
+    <tr><td>Control dispatcher</td><td>Store-scoped worker that executes control beads; one required per graph-owning scope</td><td>—</td></tr>
     <tr><td>Convoy</td><td>Container bead grouping related work as a tracked batch</td><td>Convoy</td></tr>
     <tr><td>Epic</td><td>Ordinary bead type for tracking; not a first-class container</td><td>—</td></tr>
     <tr><td>Order</td><td>Trigger (cooldown/cron/condition/event/manual) + formula or script</td><td>Plugin</td></tr>
@@ -1354,31 +1729,38 @@ gc config explain      # every resolved value, with which layer set it</code></p
     <tr><td>Wait</td><td>Durable session wait — block on a condition, survive it (gc wait)</td><td>gt gate / gt park</td></tr>
     <tr><td>Pack</td><td>The unit of configuration: pack.toml + agents, formulas, orders</td><td>—</td></tr>
     <tr><td>Sling</td><td>Create + route work in one motion (gc sling, --formula to cook too)</td><td>gt sling / gt send</td></tr>
-    <tr><td>Controller</td><td>Per-city daemon driving the reconcile loop</td><td>(distributed across roles)</td></tr>
-    <tr><td>Supervisor</td><td>Machine-wide HTTP+SSE control plane; dashboard + API</td><td>gt daemon</td></tr>
+    <tr><td>Orchestrator</td><td>Per-city daemon driving the reconcile loop and formula runs — called the <em>controller</em> in engdocs and in code</td><td>(distributed across roles)</td></tr>
+    <tr><td>Supervisor</td><td>Machine-wide HTTP+SSE control plane; serves the API and hosts the dashboard SPA</td><td>gt daemon</td></tr>
     <tr><td>Health patrol</td><td>Probe → thresholds → stalls → restart with backoff; just an order</td><td>Deacon</td></tr>
+    <tr><td>Upstream</td><td>Named model-serving endpoint preset, selected per agent; renders onto each harness's env-var names</td><td>—</td></tr>
+    <tr><td>Context</td><td>Named remote city in <code>~/.gc/contexts.toml</code>; a local city always wins over the sticky default</td><td>—</td></tr>
+    <tr><td>Usage fact</td><td>Recorded model-token / compute-second record in <code>.gc/usage.jsonl</code>; what <code>gc costs</code> aggregates</td><td>gt costs</td></tr>
   </table></div>
 
   <h3>Sources</h3>
-  <p>Everything above traces to these. All sources fetched 2026-07-09/10, from the <code>main</code> branch (gascity ≈ v1.3.0).</p>
+  <p>Everything above traces to these. All sources fetched 2026-08-09 and pinned to the
+  <code>v1.4.0</code> tag, so every quote on this page stays checkable even as <code>main</code> moves
+  on.</p>
   <h3 style="font-size:15px">Official — user docs</h3>
   <ul>
-    <li><a href="https://github.com/gastownhall/gascity">github.com/gastownhall/gascity</a> — repo · <a href="https://github.com/gastownhall/gascity/blob/main/README.md">README</a></li>
-    <li>Getting started: <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/installation.md">installation</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/quickstart.md">quickstart</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/dashboard.md">dashboard</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/getting-started/coming-from-gastown.md">coming-from-gastown</a></li>
-    <li>Guides: <a href="https://github.com/gastownhall/gascity/blob/main/docs/guides/understanding-formulas.md">understanding-formulas</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/guides/understanding-packs.md">understanding-packs</a></li>
-    <li>Reference: <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/config.md">config (city.toml schema)</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/cli.md">cli</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/gastown-command-map.md">gastown-command-map</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/herdr-provider.md">herdr-provider</a> · <a href="https://github.com/gastownhall/gascity/blob/main/docs/reference/index.md">reference index</a></li>
+    <li><a href="https://github.com/gastownhall/gascity">github.com/gastownhall/gascity</a> — repo · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/README.md">README</a> · <a href="https://github.com/gastownhall/gascity/releases/tag/v1.4.0">v1.4.0 release notes</a></li>
+    <li>Getting started: <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/how-gas-city-works.md">how-gas-city-works</a> (the six primitives) · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/installation.md">installation</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/quickstart.md">quickstart</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/dashboard.md">dashboard</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/troubleshooting.md">troubleshooting</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/faq.md">FAQ</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/getting-started/coming-from-gastown.md">coming-from-gastown</a></li>
+    <li>Guides: <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/guides/understanding-formulas.md">understanding-formulas</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/guides/understanding-packs.md">understanding-packs</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/guides/configuring-an-agent.md">configuring-an-agent</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/guides/harness-recipes.md">harness-recipes</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/guides/connected-clients.md">connected-clients</a></li>
+    <li>Reference: <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/config.md">config (city.toml schema)</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/cli.md">cli</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/gastown-command-map.md">gastown-command-map</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/herdr-provider.md">herdr-provider</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/specs/formula-spec-v2.md">formula-spec-v2</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/reference/index.md">reference index</a></li>
+    <li>Runbooks: <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/docs/runbooks/remote-hardened-city.md">remote-hardened-city</a></li>
   </ul>
   <h3 style="font-size:15px">Official — contributor architecture (engdocs)</h3>
   <ul>
-    <li><a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/nine-concepts.md">nine-concepts</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/controller.md">controller</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/life-of-a-bead.md">life-of-a-bead</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/glossary.md">glossary</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/messaging.md">messaging</a> · <a href="https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/session.md">session</a></li>
+    <li><a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/nine-concepts.md">nine-concepts</a> (retitled “Code-layering View (implements the six primitives)”) · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/controller.md">controller</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/dispatch.md">dispatch</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/life-of-a-bead.md">life-of-a-bead</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/glossary.md">glossary</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/messaging.md">messaging</a> · <a href="https://github.com/gastownhall/gascity/blob/v1.4.0/engdocs/architecture/session.md">session</a></li>
   </ul>
   <h3 style="font-size:15px">Lineage</h3>
   <ul>
     <li><a href="https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04">Yegge — “Welcome to Gas Town”</a> (Jan 2026) · <a href="https://steveyegge.spicytakes.org/post/2026-04-24-welcome-to-gas-city-57f564bb3607">Yegge — “Welcome to Gas City”</a> (Apr 2026)</li>
   </ul>
   <footer>
-    Compiled 2026-07-10 by Claude Code for Paul. Facts verified against the sources above on
-    2026-07-09/10 at gascity ≈ v1.3.0; the project moves fast — trust the
+    Compiled 2026-07-10 by Claude Code for Paul; updated 2026-08-09 for gascity v1.4.0. Facts
+    verified against the sources above at the <code>v1.4.0</code> tag (released 2026-07-24); the
+    project moves fast — trust the
     <a href="https://github.com/gastownhall/gascity/tree/main/docs">live docs</a> for anything newer.
   </footer>
 </section>
@@ -1439,7 +1821,7 @@ gc config explain      # every resolved value, with which layer set it</code></p
       verdict.textContent = ok ? '✓ got it' : '✗ review this one';
       verdict.style.color = ok ? 'var(--good)' : 'var(--s4)';
       if (score) score.textContent = `Score: ${correct} / ${answered} answered (${total} total)` +
-        (answered === total ? (correct >= 14 ? ' — mastery. 🏆' : ' — reread & retry.') : '');
+        (answered === total ? (correct >= 17 ? ' — mastery. 🏆' : ' — reread & retry.') : '');
     };
     got.addEventListener('click', () => scoreIt(true));
     missed.addEventListener('click', () => scoreIt(false));
