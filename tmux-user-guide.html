@@ -428,5 +428,131 @@
 </section>
 </main>
 </div>
+<script>
+(() => {
+  'use strict';
+
+  const THEME_KEY = 'tmuxGuide.theme';
+  const QUIZ_KEY = 'tmuxGuide.quiz';
+
+  const root = document.documentElement;
+  const themeButton = document.getElementById('themeToggle');
+  let savedTheme = null;
+  try { savedTheme = localStorage.getItem(THEME_KEY); } catch (_) { /* storage unavailable */ }
+  if (savedTheme === 'light' || savedTheme === 'dark') root.classList.add(savedTheme);
+
+  function themeName() {
+    if (root.classList.contains('light')) return 'light';
+    if (root.classList.contains('dark')) return 'dark';
+    return 'auto';
+  }
+  function updateThemeLabel() {
+    if (themeButton) themeButton.textContent = `Theme: ${themeName()}`;
+  }
+  updateThemeLabel();
+  if (themeButton) themeButton.addEventListener('click', () => {
+    const current = themeName();
+    root.classList.remove('light', 'dark');
+    const next = current === 'auto' ? 'dark' : current === 'dark' ? 'light' : 'auto';
+    if (next !== 'auto') root.classList.add(next);
+    try { localStorage.setItem(THEME_KEY, next); } catch (_) { /* session-only */ }
+    updateThemeLabel();
+  });
+
+  document.querySelectorAll('pre').forEach(pre => {
+    const code = pre.querySelector('code');
+    const copyText = code ? code.innerText : pre.innerText;
+    const firstLine = copyText.trim().split('\n')[0].trim();
+    const label = firstLine
+      ? `Copy code: ${firstLine.length > 60 ? firstLine.slice(0, 60) + '…' : firstLine}`
+      : 'Copy code block';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'copy-btn';
+    button.textContent = 'Copy';
+    button.setAttribute('aria-label', label);
+    button.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(copyText);
+        button.textContent = 'Copied';
+      } catch (_) {
+        button.textContent = 'Select text';
+      }
+      setTimeout(() => { button.textContent = 'Copy'; }, 1500);
+    });
+    pre.appendChild(button);
+  });
+
+  const tocLinks = [...document.querySelectorAll('.toc a[href^="#"]')];
+  const sections = tocLinks.map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver(entries => {
+      const visible = entries.filter(e => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (!visible) return;
+      tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === `#${visible.target.id}`));
+    }, { rootMargin: '-12% 0px -72% 0px', threshold: 0 });
+    sections.forEach(section => observer.observe(section));
+  }
+
+  // The stylesheet ships .quiz-answer visible so the guide reads with JS off;
+  // the engine hides answers here and manages reveal from there.
+  const quizItems = [...document.querySelectorAll('.quiz-item')];
+  const quizScore = document.getElementById('quizScore');
+  const quizReset = document.getElementById('quizReset');
+  if (quizScore) quizScore.setAttribute('aria-live', 'polite');
+  let quizState = {};
+  try { quizState = JSON.parse(localStorage.getItem(QUIZ_KEY) || '{}'); } catch (_) { quizState = {}; }
+
+  function setAnswerOpen(answer, open) {
+    answer.classList.toggle('open', open);
+    answer.style.display = open ? '' : 'none';
+  }
+
+  function updateQuiz() {
+    let got = 0, missed = 0;
+    quizItems.forEach(item => {
+      const state = quizState[item.dataset.q];
+      item.classList.toggle('correct', state === 'got');
+      item.classList.toggle('missed', state === 'missed');
+      if (state === 'got') got++;
+      if (state === 'missed') missed++;
+    });
+    if (quizScore) quizScore.textContent = `Score: ${got} learned · ${missed} review · ${got + missed}/${quizItems.length} answered`;
+    try { localStorage.setItem(QUIZ_KEY, JSON.stringify(quizState)); } catch (_) { /* session-only */ }
+  }
+
+  quizItems.forEach(item => {
+    const answer = item.querySelector('.quiz-answer');
+    const revealButton = item.querySelector('.reveal');
+    const gotButton = item.querySelector('.got');
+    const missedButton = item.querySelector('.missed');
+    if (answer) {
+      setAnswerOpen(answer, false);
+      if (revealButton) revealButton.addEventListener('click', buttonEvent => {
+        const open = answer.style.display === 'none';
+        setAnswerOpen(answer, open);
+        buttonEvent.currentTarget.textContent = open ? 'Hide' : 'Reveal';
+      });
+    }
+    if (gotButton) gotButton.addEventListener('click', () => { quizState[item.dataset.q] = 'got'; updateQuiz(); });
+    if (missedButton) missedButton.addEventListener('click', () => {
+      quizState[item.dataset.q] = 'missed';
+      if (answer) setAnswerOpen(answer, true);
+      updateQuiz();
+    });
+  });
+  if (quizReset) quizReset.addEventListener('click', () => {
+    quizState = {};
+    quizItems.forEach(item => {
+      const answer = item.querySelector('.quiz-answer');
+      if (answer) setAnswerOpen(answer, false);
+      const revealButton = item.querySelector('.reveal');
+      if (revealButton) revealButton.textContent = 'Reveal';
+    });
+    updateQuiz();
+  });
+  updateQuiz();
+})();
+</script>
 </body>
 </html>
