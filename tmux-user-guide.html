@@ -1001,7 +1001,7 @@ $ tmux -L t6 list-windows -t alpha -F '#{window_index}: #{window_name} #{window_
   <p class="tiny">One window wearing three flags at once: bell (<code>!</code>), last-used (<code>-</code>), marked pane (<code>M</code>). Two footnotes from the same run. Flags stack in one string per window. And in <em>format output</em> — as opposed to the status line — <code>#</code> is escaped to <code>##</code>, so an activity-and-silence-flagged current window printed <code>flags=##~*</code>: activity, silence, current. The status line shows the single character; the escaping only bites when you parse format strings (<a href="#formats">§12</a>).</p>
 
   <h3>Scoping, first contact</h3>
-  <p>That flag table quietly introduced the guide's first non-global options: <code>monitor-activity</code> and <code>monitor-silence</code> were set with <code>set-window-option -t alpha:idle …</code> — per window. tmux options come in scopes (server, session, window, pane), and the defaults live in a global layer each new window inherits from. You set <code>base-index</code> and <code>renumber-windows</code> per session; you set <code>monitor-activity</code> per window. The full machinery — <code>-g</code>, inheritance at creation time, why order matters — is <a href="#configuration">§10</a>'s subject. Until then, notice the pattern: <em>some options follow the object they name</em>.</p>
+  <p>That flag table quietly introduced the guide's first non-global options: <code>monitor-activity</code> and <code>monitor-silence</code> were set with <code>set-window-option -t alpha:idle …</code> — per window. tmux options come in scopes (server, session, window, pane), and the defaults live in a global layer that any window without its own value falls back to. You set <code>base-index</code> and <code>renumber-windows</code> per session; you set <code>monitor-activity</code> per window. The full machinery — <code>-g</code>, the live global fallback, why order matters — is <a href="#configuration">§10</a>'s subject. Until then, notice the pattern: <em>some options follow the object they name</em>.</p>
 
   <h3>link-window: one window, two sessions</h3>
   <p>A window normally belongs to exactly one session. A <em>link</em> puts one window object into a second session's list at an index you choose — both sessions now view the same panes, the same processes. This is how you keep a monitor window available everywhere without duplicating anything. And it is the most instructive failure in this half of the guide. First, the form everyone tries — link <code>alpha</code>'s logs window into <code>beta</code> under a new name:</p>
@@ -1592,8 +1592,8 @@ tmux -L lab list-clients -F '#{client_width}x#{client_height}'</code></pre>
       <text x="640" y="118" class="d-title">copy-mode(-vi)</text>
       <text x="640" y="146" class="d-text">the pane's keyboard, retasked:</text>
       <text x="640" y="164" class="d-text">move · search · select · copy</text>
-      <text x="640" y="198" class="d-mono">border: yellow (mode-style tells</text>
-      <text x="640" y="216" class="d-mono">you already — §14's conditionals)</text>
+      <text x="640" y="198" class="d-mono">border: yellow — pane-active-border-style</text>
+      <text x="640" y="216" class="d-mono">is a live conditional (§14)</text>
       <text x="640" y="252" class="d-mono">cursor starts at the bottom of view</text>
 
       <!-- entry arrows -->
@@ -1769,7 +1769,7 @@ pbpaste | head -1</code></pre>
   <p>At startup the server reads the first of these that exists — from the local man page's FILES section, verbatim: <code>~/.tmux.conf</code>, <code>$XDG_CONFIG_HOME/tmux/tmux.conf</code>, <code>~/.config/tmux/tmux.conf</code>, then the system-wide <code>/usr/local/etc/tmux.conf</code>. Every line is a command you could type after <code>tmux</code> — <code>set-option</code>, <code>bind-key</code>, <code>source-file</code>, comments starting with <code>#</code>. The flag every transcript in this guide relies on, <code>-f /dev/null</code>, simply points the startup script at nothing: stock tmux, zero configuration. Your everyday server is running a script right now; <a href="#key-bindings">§11</a>'s <code>list-keys</code> and this section's <code>show-options</code> show you what it did.</p>
   <p>Because the file is a script, there is no config format to learn and no reload magic: re-running the script is literally <code>source-file ~/.tmux.conf</code>. Two properties of that command shape everything downstream, both verified live in this section's research:</p>
   <ul>
-    <li><strong>It applies to a running server.</strong> A server started stock was handed the opinionated config below mid-flight; <code>show-options -gv prefix</code> flipped from <code>C-b</code> to <code>C-a</code> with sessions alive and nothing restarted.</li>
+    <li><strong>It applies to a running server.</strong> A server started stock was handed the opinionated config below mid-flight; <code>show-options -gv prefix</code> flipped from <code>C-b</code> to <code>C-a</code> with sessions alive and nothing restarted — every existing session obeying a <em>later</em> global, which is your first hint of the rule this section builds below.</li>
     <li><strong>Re-running is not resetting.</strong> After that, <code>source-file /dev/null</code> — sourcing nothing — left the prefix at <code>C-a</code>. The old commands already ran; running zero new ones changes nothing. To undo a setting you must set it back explicitly, or start a fresh server.</li>
   </ul>
 
@@ -1784,9 +1784,30 @@ pbpaste | head -1</code></pre>
       <tr><td>Pane</td><td><code>set -p</code></td><td><code>show -p</code></td><td>any window option, for one pane — the man page's own example: <code>set -pt:.0 window-style bg=blue</code></td></tr>
     </tbody>
   </table></div>
-  <p class="tiny">The <code>-g</code> layers are the <em>templates</em>: global session options for sessions not yet created, global window options for windows not yet created. One 3.7b nicety verified live: <code>set -g mode-keys vi</code> — session-spelled, window-scoped option — is accepted and lands in the global <em>window</em> options, where <code>show -gw mode-keys</code> finds it. Explicit <code>-wg</code> says the same thing without the sleight of hand.</p>
-  <p>And that is the load-bearing rule: <strong>options are inherited at creation, not linked live.</strong> A session or window copies the global layer's values when it comes into existence; later changes to the global never reach it. Proven on a live server — one option, sessions on both sides of the change:</p>
-  <pre><code>$ tmux -L lab set -g base-index 1          # global session template becomes 1
+  <p class="tiny">The <code>-g</code> layers are the <em>fallbacks</em>, consulted live — the man page's words: "Sessions which do not have a particular option configured inherit the value from the global session options," and global window options are "a set … from which any unset window or pane options are inherited." An object with no value of its own reads the global at the moment the option matters, whenever that is. One 3.7b nicety verified live: <code>set -g mode-keys vi</code> — session-spelled, window-scoped option — is accepted and lands in the global <em>window</em> options, where <code>show -gw mode-keys</code> finds it. Explicit <code>-wg</code> says the same thing without the sleight of hand.</p>
+  <p>And that is the load-bearing rule, and it is the opposite of what most tutorials say: <strong>an option with no value of its own falls back to the global layer at the moment it is read — live, not copied at creation.</strong> Your own earlier evidence already said so: the prefix flipped on a running server mid-flight, and every existing session obeyed. Two deliberate falsifications of the copy-at-creation story, both on a fresh throwaway — first <code>base-index</code>, where the copy story predicts a <em>pre-change</em> session can never see the new value:</p>
+  <pre><code>$ tmux -L t7fix -f /dev/null new-session -d -s old '/bin/zsh -f'   # born under base-index 0
+$ tmux -L t7fix new-window -d -t old -n w2
+$ tmux -L t7fix move-window -s old:1 -t old:2     # park w2 at index 2
+$ tmux -L t7fix kill-window -t old:0              # index 0 is now free
+$ tmux -L t7fix list-windows -t old -F '#{window_index}: #{window_name}'
+2: w2
+$ tmux -L t7fix set -g base-index 1               # the global changes NOW
+$ tmux -L t7fix new-window -d -t old -n probe     # …in the same old session
+$ tmux -L t7fix list-windows -t old -F '#{window_index}: #{window_name}'
+1: probe
+2: w2</code></pre>
+  <p>If the session had copied <code>base-index 0</code> at its birth, the new window would take the free index 0. It took 1 — the live global. Second, <code>remain-on-exit</code>, a window option, where the copy story says a window created before the change keeps the old behavior:</p>
+  <pre><code>$ tmux -L t7fix new-window -d -t old -n pre '/bin/zsh -f'   # window born while global says…
+$ tmux -L t7fix show-options -gw remain-on-exit
+remain-on-exit off
+$ tmux -L t7fix set -wg remain-on-exit on                   # …then the global flips
+$ tmux -L t7fix send-keys -t old:pre 'exit' Enter; sleep 1
+$ tmux -L t7fix display-message -p -t old:pre 'dead=#{pane_dead} cmd=#{pane_current_command}'
+dead=1 cmd=zsh</code></pre>
+  <p class="tiny">Both from fresh <code>-L t7fix</code> captures, 2026-08-23 (socket reused across two server lives, each killed after; the <code>#</code> comments are annotations, the outputs verbatim). The pane-exit decision consulted the <em>current</em> global — <code>dead=1</code> is <a href="#windows">§6</a>'s surviving dead pane, not a destroyed window.</p>
+  <p>So what <em>does</em> stick? The <strong>materialized effects</strong> of old values, not the values: window indexes already allocated, scrollback already trimmed to an old <code>history-limit</code>, borders already drawn. The original demonstration — one option, sessions on both sides of the change — was real, but it was showing materialization, not copying:</p>
+  <pre><code>$ tmux -L lab set -g base-index 1          # the global changes now
 $ tmux -L lab list-windows -t x -F '#{window_index}: #{window_name}'   # x is older
 0: zsh
 1: clean2
@@ -1794,7 +1815,7 @@ $ tmux -L lab list-windows -t x -F '#{window_index}: #{window_name}'   # x is ol
 $ tmux -L lab new-session -d -s newidx    # created AFTER the change
 $ tmux -L lab list-windows -t newidx -F '#{window_index}: #{window_name}'
 1: kernel_task</code></pre>
-  <p class="tiny">Real capture, 2026-08-23. Session <code>x</code> keeps its 0-based indexes forever; the session born after the change starts its first window at 1. This is why config files set <code>-g</code> options — and why reloading a config never renumbers the windows you already have.</p>
+  <p class="tiny">Real capture, 2026-08-23. Window indexes are allocated when a window is created, reading whatever the global says <em>at that instant</em> — so session <code>x</code>'s 0-based windows are frozen as data, and the session born after numbers its first window from the live global (1). Config files set <code>-g</code> because it is the fallback every valueless object reads, present or future; reloading still never renumbers existing windows, because their indexes are already materialized — that is what <code>move-window -r</code> and <code>renumber-windows</code> are for.</p>
 
   <h3>The opinionated build, one line at a time</h3>
   <p>What follows is a small config with opinions, argued honestly — including the cases where the stock default is the right call and the famous advice is wrong for you. Adopt it line by line or stop where your taste diverges; the point of showing the reasoning is that you leave able to argue your <em>own</em> config line by line.</p>
@@ -1823,15 +1844,15 @@ bind - split-window -v -c "#{pane_current_path}"</code></pre>
   <p>You know the dependency from <a href="#copy-mode">§9</a>: the default follows <code>EDITOR</code>/<code>VISUAL</code>, so the same machine can hand you different tables depending on which shell started the server. Pinning it makes copy-mode predictable everywhere — and if you keep vim habits, remember <kbd>y</kbd> is still unbound until you bind it (<a href="#copy-mode">§9</a>'s misconception card has the one-liner).</p>
 
   <h4>Line 9 · escape-time, kept low</h4>
-  <pre><code>set -g escape-time 10</code></pre>
-  <p>Terminals send <kbd>Esc</kbd> slowly — <a href="#key-bindings">§11</a> does this option full justice; here it is enough to know this is the milliseconds tmux waits to tell a lone <kbd>Esc</kbd> apart from the start of an arrow key, that too high a value measurably delays every <kbd>Esc</kbd> you press in vim, and that 10 — the stock default on 3.7b — is already right. This line exists to keep it right on machines whose older defaults were 500.</p>
+  <pre><code>set -s escape-time 10</code></pre>
+  <p>Terminals send <kbd>Esc</kbd> slowly — <a href="#key-bindings">§11</a> does this option full justice; here it is enough to know this is the milliseconds tmux waits to tell a lone <kbd>Esc</kbd> apart from the start of an arrow key, that too high a value measurably delays every <kbd>Esc</kbd> you press in vim, and that 10 — the stock default on 3.7b — is already right. This line exists to keep it right on machines whose older defaults were 500. One scope note: <code>escape-time</code> is a <em>server</em> option, so the block sets it with <code>-s</code> — matching the scope table above, and matching §9's <code>set -s copy-command</code>.</p>
 
   <h4>Line 10–13 · Sizes and cadence</h4>
   <pre><code>set -g history-limit 50000
 set -g status-interval 5
 set -g base-index 1
 set -g renumber-windows on</code></pre>
-  <p>Four one-liners with one honest sentence each. <code>history-limit</code> is per-pane scrollback (stock 2000 lines) — 50000 costs RAM per pane, real but cheap, and only matters for panes that actually flood. <code>status-interval</code> is how often the status line re-runs its format strings (stock 15 s) — 5 makes clock and custom segments feel live (<a href="#styling">§14</a>). <code>base-index 1</code> starts numbering at one, so your first window lives on the <kbd>Prefix</kbd> <kbd>1</kbd> key instead of <kbd>Prefix</kbd> <kbd>0</kbd> — keyboards and humans both count from one; pure taste, zero function. <code>renumber-windows on</code> closes the gaps <a href="#windows">§6</a> demonstrated — windows compact after every close, so <kbd>Prefix</kbd> <kbd>2</kbd> is always "second window from the left" rather than "whatever survived." The pair is inherited at session creation, per the rule above: reload now, new sessions later.</p>
+  <p>Four one-liners with one honest sentence each. <code>history-limit</code> is per-pane scrollback (stock 2000 lines) — 50000 costs RAM per pane, real but cheap, and only matters for panes that actually flood. <code>status-interval</code> is how often the status line re-runs its format strings (stock 15 s) — 5 makes clock and custom segments feel live (<a href="#styling">§14</a>). <code>base-index 1</code> starts numbering at one, so your first window lives on the <kbd>Prefix</kbd> <kbd>1</kbd> key instead of <kbd>Prefix</kbd> <kbd>0</kbd> — keyboards and humans both count from one; pure taste, zero function. <code>renumber-windows on</code> closes the gaps <a href="#windows">§6</a> demonstrated — windows compact after every close, so <kbd>Prefix</kbd> <kbd>2</kbd> is always "second window from the left" rather than "whatever survived." Both are read live at the moment they matter — <code>base-index</code> when a window is allocated (in any session, not just new ones), <code>renumber-windows</code> when a window closes. The second was verified directly: turning it on globally slid an existing session's windows <code>1,2,3</code> down to <code>1,2</code> the moment window 1 died — no new session involved. What never moves retroactively is already-allocated data: the indexes your windows hold today.</p>
 
   <h3>The whole file, assembled</h3>
   <pre><code># ~/.tmux.conf — the guide's opinionated build, assembled (section 10)
@@ -1852,7 +1873,7 @@ bind r source-file ~/.tmux.conf \; display-message "config reloaded"
 # Options
 set -g mouse on
 set -g mode-keys vi
-set -g escape-time 10
+set -s escape-time 10
 set -g history-limit 50000
 set -g status-interval 5
 set -g base-index 1
@@ -1890,7 +1911,7 @@ $ tmux -L lab show-options -gv prefix
 C-a</code></pre>
     <p><strong>Expect:</strong> still <code>C-a</code>. Sourcing an empty file ran zero commands; the earlier ones stand. If a config change ever "won't take," this is usually why — something older is still in force, and only an explicit set-back or a fresh server clears it.</p>
 
-    <p><strong>6.</strong> See inheritance at creation, then revert the honest way:</p>
+    <p><strong>6.</strong> See allocation read the live global, then revert the honest way:</p>
     <pre><code>$ tmux -L lab new-session -d -s fresh
 $ tmux -L lab list-windows -t fresh -F '#{window_index}: #{window_name}'
 1: zsh
@@ -1898,19 +1919,19 @@ $ tmux -L lab kill-server
 $ tmux -L lab -f /dev/null new-session -d -s stock
 $ tmux -L lab show-options -gv prefix
 C-b</code></pre>
-    <p><strong>Expect:</strong> the new session's first window at index 1 — born after <code>base-index 1</code>, the creation-time copy from this section's transcript, now in your hands (the window's <em>name</em> is automatic renaming's business and may briefly read whatever process it caught at birth; this guide's live capture printed <code>1: kernel_task</code>, yours will likely say <code>zsh</code> — the index is the assertion). Then — after the kill and a fresh <code>-f /dev/null</code> start — <code>C-b</code> again: genuinely stock, because a new server inherited nothing. Re-adopt with one <code>source-file ~/.tmux-lab8.conf</code> to complete the loop: stock → adopt → reload → revert → adopt.</p>
+    <p><strong>Expect:</strong> the new session's first window at index 1 — allocated while the <em>live</em> global said 1, the materialized side of this section's rule, now in your hands (the window's <em>name</em> is automatic renaming's business and may briefly read whatever process it caught at birth; this guide's live capture printed <code>1: kernel_task</code>, yours will likely say <code>zsh</code> — the index is the assertion). Then — after the kill and a fresh <code>-f /dev/null</code> start — <code>C-b</code> again: genuinely stock, because a new server fell back to factory defaults. Re-adopt with one <code>source-file ~/.tmux-lab8.conf</code> to complete the loop: stock → adopt → reload → revert → adopt.</p>
 
     <p>Checkpoint:</p>
     <ul class="checklist">
       <li>The prefix flipped on a live server, and you can explain why no restart was needed (the config is a script; <code>source-file</code> runs it)</li>
       <li>The empty <code>source-file</code> changed nothing — and you can say what <em>would</em> have undone the prefix instead</li>
-      <li>A session created after <code>base-index 1</code> started at window 1 while the older session kept its 0 — the inheritance rule, demonstrated personally</li>
+      <li>A session created after <code>base-index 1</code> started at window 1 while the older session kept its 0 — allocation reads the <em>live</em> global; the older session's indexes were already materialized</li>
       <li>You know which two stock chords the config displaced (<kbd>-</kbd> and <kbd>r</kbd>) and where that functionality still lives</li>
     </ul>
     <p class="tiny">Teardown: <code>tmux -L lab kill-server</code>, then <code>rm ~/.tmux-lab8.conf</code> if you do not want the scratch file. Adopting this config for real is a copy into <code>~/.tmux.conf</code> and one reload — but that server is yours, so read the arguments first, not just the lines.</p>
   </div>
 
-  <p class="tiny">Sources: <a href="https://man.openbsd.org/tmux" target="_blank" rel="noopener">tmux(1) — set-option, show-options, source-file, bind-key; FILES; OPTIONS (escape-time, history-limit, status-interval, base-index, renumber-windows)</a> · transcripts: research captures 2026-08-22 (options dumps, defaults) and fresh <code>-L t7</code>/<code>-L cfgtest</code> captures 2026-08-23 (scope fallthrough, inheritance at creation, adopt-without-restart, reload-is-not-reset, assembled-config smoke test), throwaway servers only</p>
+  <p class="tiny">Sources: <a href="https://man.openbsd.org/tmux" target="_blank" rel="noopener">tmux(1) — set-option, show-options, source-file, bind-key; FILES; OPTIONS (option scopes and global inheritance, escape-time, history-limit, status-interval, base-index, renumber-windows)</a> · transcripts: research captures 2026-08-22 (options dumps, defaults) and fresh <code>-L t7</code>/<code>-L t7fix</code>/<code>-L cfgtest</code> captures 2026-08-23 (scope fallthrough, live global fallback — base-index and remain-on-exit falsifications, renumber-on-close, materialized indexes, adopt-without-restart, reload-is-not-reset, assembled-config smoke test), throwaway servers only</p>
 </section>
 
 <section id="key-bindings">
