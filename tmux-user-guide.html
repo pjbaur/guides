@@ -651,22 +651,842 @@ exit=1</code></pre>
 
 <section id="server">
   <h2>4 · The server</h2>
+  <p class="lede">You have never started the server, and you never will. It starts itself the first time a session is created, runs with no terminal of its own, and exits the moment its work runs out. Nearly every tmux mystery — "where did my session go?", "why is there no server running?", "what did that command just talk to?" — dissolves once you can point at the process. So point at it.</p>
+
+  <h3>What is actually running</h3>
+  <p>Start a throwaway session the way every transcript in this guide was captured, then ask the process table:</p>
+  <pre><code>$ tmux -L lab -f /dev/null new-session -d -s try
+$ ps aux | grep '[t]mux -L lab'
+you              68328   0.0  0.0 34562324   2172   ??  Ss   11:09PM   0:00.02 tmux -L lab -f /dev/null new-session -d -s try</code></pre>
+  <p>That line is the server. Two details reward a second look. The state column reads <code>Ss</code> — sleeping, and a session leader with no controlling terminal. It is attached to nothing, and it does not need to be. And the command line still reads like the client that created it: on macOS the server keeps the <code>ps</code> identity of the command that spawned it, rather than relabeling itself. A server started by a plain <code>tmux attach</code> years ago shows up as just <code>tmux</code> — the one this guide was written next to has been doing exactly that since July. One line in <code>ps</code>, one server, however it is labeled.</p>
+  <p>That launch line's flags, once: <code>-L lab</code> names the socket (next sub-section), and <code>-f /dev/null</code> replaces the config file with nothing — stock tmux, zero user configuration. Every research transcript in this guide runs that way, so what you read is what an out-of-the-box tmux does. Your everyday server, with your config loaded, may differ where this guide says so.</p>
+
+  <h3>The socket: where clients find the server</h3>
+  <p>Each server owns exactly one Unix socket — a special file that client processes connect to. They live in a per-user directory with mode 700; no other account can reach your servers:</p>
+  <pre><code>$ ls -la /tmp/tmux-$(id -u)/
+total 0
+drwx------@   5 you       wheel   160 Aug 22 23:09 .
+drwxrwxrwt  278 root       wheel   8896 Aug 22 23:09 ..
+srwxrwx---@   1 you       wheel     0 Jul  9 18:28 default
+srw-rw----@   1 you       wheel     0 Jul 13 13:43 gt-01778c
+srw-rw----@   1 you       wheel     0 Aug 22 23:09 lab</code></pre>
+  <p class="tiny">Real directory, real servers: <code>default</code> is this machine's everyday server, alive since July 9; <code>gt-01778c</code> a second one; <code>lab</code> the throwaway from the transcript above. One file per server, one server per file.</p>
+  <p>A command with no <code>-L</code> talks to the socket named <code>default</code>. That is the entire meaning of "the default server." <code>-L name</code> picks any other name and gets you a separate server that shares nothing with the default one except this directory. (<code>-S path</code> does the same job with a full filesystem path; you may go your whole life without it. The <code>501</code> in the path is this machine's user id — <code>id -u</code>.)</p>
+  <div class="callout warn">
+    <strong>Drift: a dead server leaves its socket file behind.</strong>
+    On this machine (macOS, tmux 3.7b) the socket file is <em>not</em> unlinked when the server exits. After <code>kill-server</code>, <code>lab</code> still sat in the listing above — and every throwaway server in this guide's research left the same corpse. A later server on the same <code>-L</code> name reuses the path without complaint. Consequence: the file's existence tells you nothing. Whether a server is alive is answered by asking it, not by listing the directory — the exit-code table below is the reliable test.
+  </div>
+
+  <h3>Lifetime: born on demand, dies with its work</h3>
+  <p>Three rules, each verified live:</p>
+  <ul>
+    <li><strong>It starts when a session is created.</strong> The first <code>new-session</code> quietly spawns a server if none exists. No message, no output — you watched this in <a href="#install">§3</a>. Commands that do not create — <code>ls</code>, <code>attach</code> — never start one; they just report <code>no server running</code>. (There is also an explicit <code>tmux start-server</code>; you will rarely have a reason.)</li>
+    <li><strong>It outlives every client.</strong> Detach, close the terminal, drop the SSH, let the laptop sleep. The server does not notice. It has no terminal to lose.</li>
+    <li><strong>It exits when its last session ends</strong> — by default. This is the <code>exit-empty</code> server option, shipped <code>on</code> and visible in the server options dump: <code>exit-empty on</code>.</li>
+  </ul>
+  <p>That third rule has an escape hatch, and pulling it produces one of the strangest sights in tmux — a live server with nothing inside it:</p>
+  <pre><code>$ tmux -L t6 -f /dev/null new-session -d -s one
+$ tmux -L t6 set-option -s exit-empty off
+$ tmux -L t6 show-options -s exit-empty
+exit-empty off
+$ tmux -L t6 kill-session -t one
+$ tmux -L t6 ls; echo "exit=$?"
+exit=0
+$ tmux -L t6 new-session -d -s two
+$ tmux -L t6 ls
+two: 1 windows (created Sun Aug 23 01:09:33 2026)</code></pre>
+  <p class="tiny">Fresh capture on a throwaway server, 2026-08-23. The server survived the death of its only session, and <code>ls</code> — with zero sessions to list — printed nothing and exited 0. Restoring <code>exit-empty on</code> and killing <code>two</code> ended the server with the familiar <code>no server running</code>, exit 1.</p>
+  <p>Put the three states of a socket name side by side, all observed:</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>State</th><th><code>ls</code> says</th><th>Exit status</th></tr></thead>
+    <tbody>
+      <tr><td>No server (never started, or last session ended with <code>exit-empty on</code>)</td><td><code>no server running on /private/tmp/tmux-501/NAME</code></td><td>1</td></tr>
+      <tr><td>Server running, one or more sessions</td><td>one line per session</td><td>0</td></tr>
+      <tr><td>Server running, zero sessions (<code>exit-empty off</code>)</td><td><em>nothing at all</em></td><td>0</td></tr>
+    </tbody>
+  </table></div>
+  <p>Silence with exit 0 is the server saying "I am here, and I have nothing." The error with exit 1 says "there is no work to reconnect to." Neither is a failure condition to fix — which is why <a href="#install">§3</a> drilled the receipt. "No server running" after a <code>kill-server</code> you typed is the correct answer; after a reboot it is also the correct answer, for a sadder reason:</p>
+  <div class="callout warn">
+    <strong>Misconception: "tmux runs as a daemon."</strong>
+    The server feels daemon-like — faceless, always there, surviving your logout. It is a plain process owned by your user, sitting in <code>ps</code> like any other, parented to whatever launched it. Nothing registers it with <code>launchd</code> or <code>systemd</code>; nothing restarts it. A reboot clears <code>/tmp</code>, and your sessions are gone — not paused, gone. This is the honest limit of the durability promise, and <a href="#troubleshooting">§16</a> starts there. If you truly need server-managed sessions, that is a deliberate piece of infrastructure you build (the spec's capstone points the way), not something tmux does silently.
+  </div>
+
+  <h3>Named servers, and why you want them</h3>
+  <p>One machine can run any number of servers, one per socket name, in total ignorance of each other. Lab 2 below runs two side by side and proves the blindness from inside. What named servers are for:</p>
+  <ul>
+    <li><strong>Throwaways.</strong> Every lab in this guide lives on a <code>-L</code> socket so its final <code>kill-server</code> cannot touch anything you care about. Adopt the habit for anything unfamiliar.</li>
+    <li><strong>Isolated configuration.</strong> Server options — <code>exit-empty</code>, <code>escape-time</code>, <code>default-terminal</code> — are per-server. A second server with <code>-f /dev/null</code> is a clean-room tmux for testing config without reloading your everyday one.</li>
+    <li><strong>Hard project separation.</strong> A socket per context (work, personal, the flaky experiment) means one <code>kill-server</code> can only ever be as destructive as its own world.</li>
+  </ul>
+  <p>The cost is remembering which world you are in: <code>tmux -L work attach</code> is a mouthful, and a bare <code>tmux attach</code> will never find it. <a href="#formats">§12</a> scripts that friction away.</p>
+
+  <div class="lab">
+    <div class="lab-title">Lab 2 · Two servers</div>
+    <div class="lab-meta">5 minutes · local · throwaway</div>
+    <p>Two servers, side by side, on <code>lab</code> and <code>lab2</code> sockets. Your default server never appears in this lab — no command below omits <code>-L</code>.</p>
+
+    <p><strong>1.</strong> Start both:</p>
+    <pre><code>tmux -L lab -f /dev/null new-session -d -s alpha
+tmux -L lab2 -f /dev/null new-session -d -s beta</code></pre>
+    <p><strong>Expect:</strong> no output, twice. Two servers are now running; neither knows the other exists.</p>
+
+    <p><strong>2.</strong> Ask each what it holds:</p>
+    <pre><code>$ tmux -L lab ls
+alpha: 1 windows (created …)
+$ tmux -L lab2 ls
+beta: 1 windows (created …)</code></pre>
+    <p><strong>Expect:</strong> each <code>ls</code> sees exactly its own session — the captured pair from this guide's fresh run read <code>alpha: 1 windows (created Sun Aug 23 01:12:58 2026)</code> on one socket and <code>beta: 1 windows (created Sun Aug 23 01:12:58 2026)</code> on the other, identical timestamps, zero shared state. Your timestamps differ; the blindness does not.</p>
+
+    <p><strong>3.</strong> Prove the blindness from inside — <code>lab2</code> reaches for <code>lab</code>'s session:</p>
+    <pre><code>$ tmux -L lab2 new-window -t alpha -n x
+can't find window: alpha
+$ echo "exit=$?"
+exit=1</code></pre>
+    <p><strong>Expect:</strong> that refusal, exit 1. To <code>lab2</code>, <code>alpha</code> is not hidden or busy — it does not exist. Separate socket, separate universe.</p>
+
+    <p><strong>4.</strong> See both in the flesh:</p>
+    <pre><code>ls -la /tmp/tmux-$(id -u)/ | grep -E 'lab2?$'
+ps aux | grep -E '[t]mux -L (lab|lab2)'</code></pre>
+    <p><strong>Expect:</strong> two fresh socket files in the directory, and two server processes in <code>ps</code> — each still wearing the command line that spawned it, per the drift note above.</p>
+
+    <p><strong>5.</strong> End both worlds:</p>
+    <pre><code>$ tmux -L lab kill-server
+$ tmux -L lab2 kill-server
+$ tmux -L lab ls
+no server running on /private/tmp/tmux-501/lab</code></pre>
+    <p><strong>Expect:</strong> each <code>ls</code> after its <code>kill-server</code> prints the no-server error. Two independent exits — one <code>kill-server</code> never reached across.</p>
+
+    <p>Checkpoint:</p>
+    <ul class="checklist">
+      <li>Each server's <code>ls</code> listed only its own session — no flag ever shared state</li>
+      <li>The cross-server command failed with <code>can't find window</code> — you can say why that is blindness, not a permissions error</li>
+      <li>Both <code>kill-server</code> calls were surgical, and you know what the lingering socket files in the directory mean (nothing)</li>
+    </ul>
+    <p class="tiny">Teardown: <code>kill-server</code> on both sockets ended everything; <code>pgrep -fl 'tmux -L lab'</code> prints nothing. The socket files linger — that is the macOS drift, not a leftover server.</p>
+  </div>
+
+  <p class="tiny">Sources: <a href="https://man.openbsd.org/tmux" target="_blank" rel="noopener">tmux(1) — CLIENTS AND SERVERS; start-server; exit-empty</a> · transcripts: research captures 2026-08-22 (ps, socket directory, kill receipts) and fresh <code>-L t6</code>/<code>-L t6b</code> captures 2026-08-23 (exit-empty states, isolation), all on throwaway servers · <a href="https://man.openbsd.org/tmux.1#CLIENTS_AND_SERVERS" target="_blank" rel="noopener">socket naming detail</a></p>
 </section>
 
 <section id="sessions">
   <h2>5 · Sessions</h2>
+  <p class="lede">You already know the session is the unit that survives — <a href="#mental-model">§1</a> made that point before you installed anything. What the mental model does not prepare you for is how cheap sessions are. The daily-driver habit this section breaks is one giant session stretched across every project. The feature is a workspace per context — named, listed, and switchable in a single chord without ever detaching. A deliberately fast pass over the basics first: verify them, do not skip them. The checkpoint cards at the end prove you own them.</p>
+
+  <div class="callout blue">
+    <strong>Chord notation, from here on.</strong>
+    <a href="#install">§3</a> wrote the detach chord out in full. From now on it is compressed: <kbd>Prefix</kbd> <kbd>d</kbd> means press <kbd>Ctrl</kbd>+<kbd>b</kbd>, release it, then press <kbd>d</kbd>. The prefix behaves like a shift key for commands — always release it, never hold it.
+  </div>
+
+  <h3>The fast pass</h3>
+  <p>Create two sessions on a throwaway server, list them, rename one, kill one:</p>
+  <pre><code>$ tmux -L lab -f /dev/null new-session -d -s alpha
+$ tmux -L lab new-session -d -s beta
+$ tmux -L lab ls
+alpha: 1 windows (created Sat Aug 22 23:09:37 2026)
+beta: 1 windows (created Sat Aug 22 23:09:37 2026)
+$ tmux -L lab rename-session -t beta work
+$ tmux -L lab ls
+alpha: 1 windows (created Sat Aug 22 23:09:37 2026)
+work: 1 windows (created Sat Aug 22 23:09:37 2026)
+$ tmux -L lab kill-session -t alpha
+$ tmux -L lab ls
+work: 1 windows (created Sat Aug 22 23:09:37 2026)</code></pre>
+  <p>Four details, half a second each. <code>-d</code> creates the session detached — it exists without any client. Rename keeps the creation timestamp: new name, same object. <code>kill-session</code> ends the session and everything in it — the deliberate, visible ending from <a href="#prereqs">§2</a>'s honest pitch. And sessions created without <code>-s</code> get numbers for names, in sequence:</p>
+  <pre><code>$ tmux -L t6 -f /dev/null new-session -d -s alpha
+$ tmux -L t6 new-session -d
+$ tmux -L t6 new-session -d
+$ tmux -L t6 ls
+1: 1 windows (created Sun Aug 23 01:10:20 2026)
+2: 1 windows (created Sun Aug 23 01:10:20 2026)
+alpha: 1 windows (created Sun Aug 23 01:10:20 2026)</code></pre>
+  <p>Numbered sessions sort before named ones. Fine for throwaways; name anything you intend to keep, because <code>attach -t 2</code> is a mystery six months later and <code>attach -t project</code> is not.</p>
+
+  <h3>Detaching, attaching, stealing</h3>
+  <p>Detach with <kbd>Prefix</kbd> <kbd>d</kbd>. Come back with <code>tmux attach</code> — or <code>tmux attach -t name</code> once more than one session exists, because a plain <code>attach</code> takes the most recently used one. Naming the target is the habit worth building now.</p>
+  <p>Attach while another client — a colleague, or another terminal of yours — is already attached, and by default you both stay: two clients mirroring one session. Real transcript, two clients of different sizes:</p>
+  <pre><code>$ tmux -L t6 list-clients
+/dev/ttys013: alpha [100x30 xterm-256color] (attached,focused,UTF-8)
+/dev/ttys014: alpha [80x24 xterm-256color] (attached,focused,UTF-8)
+$ tmux -L t6 ls
+alpha: 1 windows (created Sun Aug 23 01:10:43 2026) (attached)
+beta: 1 windows (created Sun Aug 23 01:10:43 2026)</code></pre>
+  <p>Two things to notice. The <code>(attached)</code> marker in <code>ls</code> appears the moment <em>any</em> client is attached — a one-glance "is anyone in there?" from outside. And both clients see the same window, the same pane, the same cursor; a shared session is a shared screen, not a shared folder. When you want the terminal to yourself, attach with <code>-d</code> and steal it:</p>
+  <pre><code>$ tmux -L t6 attach -d -t alpha
+$ tmux -L t6 list-clients
+/dev/ttys018: alpha [80x24 xterm-256color] (attached,focused,UTF-8)</code></pre>
+  <p>One row remains: the newcomer detached both earlier clients on its way in. Their terminals dropped to their shells; the session itself never changed. <code>-d</code> is "detach others as I arrive" — the polite-heist version of <code>detach-client</code>, which <a href="#clients">§8</a> covers properly.</p>
+
+  <h3>Switching without detaching</h3>
+  <p>The underused move. <kbd>Prefix</kbd> <kbd>s</kbd> opens an interactive tree of sessions — type to filter, <kbd>Enter</kbd> to land. <kbd>Prefix</kbd> <kbd>(</kbd> and <kbd>Prefix</kbd> <kbd>)</kbd> step to the previous and next session outright. Same client, same terminal, different workspace, no detach. Verified by driving the actual chords into a real attached client:</p>
+  <pre><code>### client attached to alpha
+$ tmux -L t6 list-clients -F '#{client_tty} #{client_session}'
+/dev/ttys018 alpha
+### chord sent: Prefix )
+/dev/ttys018 beta
+### chord sent: Prefix (
+/dev/ttys018 alpha</code></pre>
+  <p>The client's pointer moved; nothing was detached and no process went anywhere. The command form is <code>switch-client -t name</code>, and it has a sharp edge worth meeting on purpose: it acts on "the current client," which exists only when one is attached. From your plain shell:</p>
+  <pre><code>$ tmux -L t6 switch-client -t alpha
+no current client
+exit=1</code></pre>
+  <p>Run it from inside a pane — where the <code>TMUX</code> environment identifies your client — or from outside with an explicit <code>-c /dev/ttysXXX</code> naming the client to switch; both forms verified in the same rig run. This command is the backbone of scripted session-jumping in <a href="#formats">§12</a>.</p>
+
+  <h3>Session chords</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Chord</th><th>Command underneath</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><kbd>Prefix</kbd> <kbd>d</kbd></td><td><code>detach-client</code></td><td>Detach the current client; the session keeps running</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>s</kbd></td><td><code>choose-tree -Zs</code></td><td>Interactive session picker for the attached client</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>$</kbd></td><td><code>rename-session</code> via prompt</td><td>Rename the current session</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>(</kbd></td><td><code>switch-client -p</code></td><td>Switch this client to the previous session</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>)</kbd></td><td><code>switch-client -n</code></td><td>Switch this client to the next session</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>D</kbd></td><td><code>choose-client -Z</code></td><td>Pick a client to detach — for when you are not the only one attached (<a href="#clients">§8</a>)</td></tr>
+    </tbody>
+  </table></div>
+  <p class="tiny">"Command underneath" is the shipped default binding, read off this machine's <code>tmux list-keys -T prefix</code>. <a href="#key-bindings">§11</a> teaches that table's key-table machinery; the cheat sheet (<a href="#cheatsheet">§17</a>) repeats these cards.</p>
+
+  <h3>How sessions end</h3>
+  <ul>
+    <li><strong><code>kill-session -t name</code></strong> — the deliberate ending: every process in every pane is killed, visibly, on purpose. The counterpart of the orphan you can never reach again from <a href="#prereqs">§2</a>.</li>
+    <li><strong>Killing the last session exits the server</strong> — <code>exit-empty on</code>, the rule <a href="#server">§4</a> demonstrated from both directions.</li>
+    <li><strong>Detaching never ends anything.</strong> Neither does closing the terminal, or the client dying mid-SSH. All three remove a client; the session is untouched.</li>
+    <li><strong>If the session you are watching dies, your client is detached</strong> — <code>detach-on-destroy on</code>, the default. Verified live: a client attached to <code>alpha</code>, <code>kill-session -t alpha</code>, and the client process exited cleanly while the server and the other session carried on (<code>list-clients</code> empty, exit 0). Set <code>detach-on-destroy off</code> and the client would instead be switched to the most recently used surviving session — useful for pickers that kill what they leave.</li>
+  </ul>
+
+  <h3>Checkpoint: the basics, verified</h3>
+  <p>Four cards on what this section actually taught. Answer out loud, then reveal. These are for you now — the full-course quiz lives in <a href="#quiz">§20</a>.</p>
+
+  <div class="quiz-item" data-q="101">
+    <div class="quiz-q"><span class="qnum">1</span>Your server has zero sessions because <code>exit-empty</code> is off. What does <code>tmux ls</code> print, and with what exit status?</div>
+    <div class="quiz-answer">Nothing at all, exit 0 — a live server with nothing to list. The <code>no server running</code> error (exit 1) belongs to a dead server. Both were captured live in <a href="#server">§4</a>.</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button></div>
+  </div>
+  <div class="quiz-item" data-q="102">
+    <div class="quiz-q"><span class="qnum">2</span>Two clients are attached to <code>alpha</code>. A third runs <code>tmux attach -d -t alpha</code>. What does <code>list-clients</code> show afterward?</div>
+    <div class="quiz-answer">One row — the newcomer. <code>-d</code> detached both earlier clients on arrival. The session itself never changed; their terminals simply fell back to their shells.</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button></div>
+  </div>
+  <div class="quiz-item" data-q="103">
+    <div class="quiz-q"><span class="qnum">3</span>Attached to <code>alpha</code>, you press <kbd>Prefix</kbd> <kbd>)</kbd> then <kbd>Prefix</kbd> <kbd>(</kbd>. Where are you, and what happened to your terminal?</div>
+    <div class="quiz-answer">Back on <code>alpha</code>, in the same terminal — <kbd>)</kbd> switched the client to <code>beta</code>, <kbd>(</kbd> switched it back. Session switching moves a pointer; it detaches nothing and moves no process.</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button></div>
+  </div>
+  <div class="quiz-item" data-q="104">
+    <div class="quiz-q"><span class="qnum">4</span><code>tmux ls</code> prints <code>beta: 1 windows (created …) (attached)</code>. What is the final marker telling you?</div>
+    <div class="quiz-answer">At least one client is currently attached to <code>beta</code> — the mirror state. It says nothing about who, from where, or at what size; <code>list-clients</code> (<a href="#clients">§8</a>) answers those.</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button></div>
+  </div>
+
+  <div class="lab">
+    <div class="lab-title">Lab 3 · Three sessions, one terminal</div>
+    <div class="lab-meta">7 minutes · local · throwaway</div>
+    <p>A project, a scratchpad, a monitor — the three-workspace habit, built and toured on the throwaway <code>-L lab</code> server. Every command keeps its <code>-L</code>; your default server never appears.</p>
+
+    <p><strong>1.</strong> Create the three, detached:</p>
+    <pre><code>tmux -L lab -f /dev/null new-session -d -s project
+tmux -L lab new-session -d -s scratch
+tmux -L lab new-session -d -s monitor</code></pre>
+    <p><strong>Expect:</strong> silence, three times — and <code>tmux -L lab ls</code> lists all three in creation order, in the shape of the fast-pass transcript above.</p>
+
+    <p><strong>2.</strong> Drop into the middle of the stack:</p>
+    <pre><code>tmux -L lab attach -t scratch</code></pre>
+    <p><strong>Expect:</strong> <code>scratch</code> fills the terminal. The status line's left end now lists the sessions with <code>scratch</code> marked current — the same list <code>s</code> will offer.</p>
+
+    <p><strong>3.</strong> Tour without detaching — press <kbd>Prefix</kbd> <kbd>)</kbd> three times, slowly, watching the status line:</p>
+    <p><strong>Expect:</strong> the current session advances <code>monitor</code> → <code>project</code> → back to <code>scratch</code>. The ring wraps, your terminal never detaches, and the third press lands you exactly where the tour began.</p>
+
+    <p><strong>4.</strong> Land somewhere by name — <kbd>Prefix</kbd> <kbd>s</kbd>, type <code>proj</code>, <kbd>Enter</kbd>:</p>
+    <p><strong>Expect:</strong> the tree filters to <code>project</code> as you type; Enter switches to it. This is <code>switch-client</code> wearing a picker.</p>
+
+    <p><strong>5.</strong> Rename where you stand — <kbd>Prefix</kbd> <kbd>$</kbd>, type <code>lab-project</code>, <kbd>Enter</kbd>, then from your plain shell after detaching:</p>
+    <pre><code>$ tmux -L lab ls</code></pre>
+    <p><strong>Expect:</strong> <code>lab-project</code> has replaced <code>project</code> — with its original creation timestamp, like the fast-pass rename.</p>
+
+    <p><strong>6.</strong> Kill a session you are <em>not</em> attached to, then one you are:</p>
+    <pre><code>tmux -L lab kill-session -t scratch</code></pre>
+    <p><strong>Expect:</strong> nothing happens to your client — you are attached to <code>lab-project</code>, and only its death would detach you. Then, inside <code>monitor</code> after switching to it, run <code>tmux -L lab kill-session -t monitor</code> from a second terminal: that client detaches and its terminal returns to the plain shell, while <code>lab-project</code> carries on.</p>
+
+    <p>Checkpoint:</p>
+    <ul class="checklist">
+      <li>The <kbd>)</kbd> tour wrapped the ring and landed back on <code>scratch</code> — three switches, zero detaches</li>
+      <li>The rename kept the creation timestamp</li>
+      <li>You can say which session's death would detach your client, and why (<code>detach-on-destroy on</code>)</li>
+    </ul>
+    <p class="tiny">Teardown: <code>tmux -L lab kill-server</code>, then <code>tmux -L lab ls</code> — the no-server receipt, exit 1.</p>
+  </div>
+
+  <p class="tiny">Sources: <a href="https://man.openbsd.org/tmux" target="_blank" rel="noopener">tmux(1) — new-session, attach-session (-d), switch-client, rename-session, kill-session, detach-on-destroy; DEFAULT KEY BINDINGS</a> · bindings read from <code>tmux list-keys -T prefix</code> on 3.7b · transcripts: research captures 2026-08-22 (fast pass) and fresh <code>-L t6</code> captures 2026-08-23 (mirror, steal, chords, kill-own-session), throwaway servers only</p>
 </section>
 
 <section id="windows">
   <h2>6 · Windows</h2>
+  <p class="lede">A window is the tab-like unit from <a href="#mental-model">the map (§1)</a>: one full-screen view, one visible at a time, holding panes. If that sentence still feels like a definition to memorize rather than a thing you have, this section fixes it — because the window is also where tmux's option scoping, its status-line language, and its most counterintuitive command (<code>link-window</code>) all show up for the first time.</p>
+
+  <h3>Create, name, navigate</h3>
+  <p>Inside an attached session, <kbd>Prefix</kbd> <kbd>c</kbd> creates a window and makes it current. From outside, name it as you create it:</p>
+  <pre><code>$ tmux -L lab -f /dev/null new-session -d -s alpha
+$ tmux -L lab new-session -d -s beta
+$ tmux -L lab new-window -t alpha -n logs
+$ tmux -L lab new-window -t alpha -n edit
+$ tmux -L lab list-windows -t alpha -F '#{window_index}: #{window_name} #{window_flags}'
+0: zsh
+1: logs -
+2: edit *</code></pre>
+  <p>Read that listing carefully; it teaches three things. The first window was never named, so tmux named it for you: <code>zsh</code>, the running program — <em>automatic renaming</em>, on by default, tracking whatever the pane is running. Your named windows keep their names. The <code>*</code> marks the session's current window and <code>-</code> the last-used one; selecting <code>alpha:1</code> swaps them, live:</p>
+  <pre><code>$ tmux -L lab select-window -t alpha:1
+$ tmux -L lab list-windows -t alpha -F '#{window_index}: #{window_name} #{window_flags}'
+0: zsh
+1: logs *
+2: edit -</code></pre>
+  <p class="tiny">Exact targets matter when no client is attached: an untargeted command acts on the server's current session — the most recently used one — which may not be the one you mean. Every transcript here carries an explicit <code>-t</code>; make it a reflex.</p>
+
+  <h3>Window chords</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Chord</th><th>Command underneath</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><kbd>Prefix</kbd> <kbd>c</kbd></td><td><code>new-window</code></td><td>New window, made current</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>,</kbd></td><td><code>rename-window</code> via prompt</td><td>Rename the current window</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>n</kbd> / <kbd>p</kbd></td><td><code>next-window</code> / <code>previous-window</code></td><td>Step through the window ring</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>0</kbd>–<kbd>9</kbd></td><td><code>select-window -t :N</code></td><td>Jump straight to an index</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>l</kbd></td><td><code>last-window</code></td><td>Back to the <code>-</code> window — the two-window ping-pong</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>w</kbd></td><td><code>choose-tree -Zw</code></td><td>Interactive window (and session) tree</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>'</kbd></td><td>prompt, then <code>select-window -t :N</code></td><td>Jump to a typed index</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>.</kbd></td><td>prompt, then <code>move-window</code></td><td>Move the current window to a typed index</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>&amp;</kbd></td><td><code>confirm-before kill-window</code></td><td>Kill the current window (with a y/n prompt)</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>M-n</kbd> / <kbd>M-p</kbd></td><td>next/previous by alert</td><td>Jump to the next window with a bell or activity marker</td></tr>
+    </tbody>
+  </table></div>
+  <p class="tiny">Bindings read off this machine's <code>tmux list-keys -T prefix</code>; the man page's DEFAULT KEY BINDINGS section documents the same table.</p>
+
+  <h3>Reorder: move and swap</h3>
+  <p>Indexes are positions, and positions are yours to edit. The command form is <code>move-window -s from -t to</code>, and its edges are worth meeting once so they never surprise you:</p>
+  <pre><code>$ tmux -L t6 move-window -s alpha:2 -t alpha:1
+index in use: 1
+$ tmux -L t6 move-window -s alpha:2 -t alpha:5
+$ tmux -L t6 list-windows -t alpha -F '#{window_index}: #{window_name} #{window_flags}'
+0: zsh
+1: logs -
+5: edit *</code></pre>
+  <p>A move into an occupied index is refused — same error you will meet again in <a href="#panes">§7</a> — but a free index is taken literally: <code>edit</code> now lives at 5, and nothing renumbers to fill the gap. That is <code>renumber-windows off</code>, the default. Two cleanup shapes:</p>
+  <pre><code>$ tmux -L t6 swap-window -s alpha:1 -t alpha:5
+$ tmux -L t6 list-windows -t alpha -F '#{window_index}: #{window_name} #{window_flags}'
+0: zsh
+1: edit -
+5: logs *
+$ tmux -L t6 move-window -r -t alpha
+$ tmux -L t6 list-windows -t alpha -F '#{window_index}: #{window_name} #{window_flags}'
+0: zsh
+1: edit -
+2: logs *</code></pre>
+  <p><code>swap-window</code> exchanges two occupied slots — the honest way to reorder. <code>move-window -r</code> compacts the session's windows into sequence from <code>base-index</code> (0 by default) — the post-cleanup sweep. Rename is the last verb: <code>rename-window -t alpha:2 drafts</code> relabels in place, or <kbd>Prefix</kbd> <kbd>,</kbd> from inside.</p>
+
+  <h3>The status-line flag decoder</h3>
+  <p>The window list in your status line is annotated with flag characters — and tmux never explains them anywhere you would notice. The man page documents the <code>#{window_flags}</code> format variable but not the letters, so every row below was generated live, on purpose, on a throwaway server:</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Flag</th><th>Means</th><th>How it was generated</th></tr></thead>
+    <tbody>
+      <tr><td><code>*</code></td><td>current window</td><td>any listing — see the transcripts above</td></tr>
+      <tr><td><code>-</code></td><td>last-used window (before the current one)</td><td>same — swaps with <code>*</code> when you select another window</td></tr>
+      <tr><td><code>!</code></td><td>a bell rang in this window</td><td><code>printf '\a'</code> sent into a background window; flag appeared within 2 s</td></tr>
+      <tr><td><code>#</code></td><td>activity since you last looked</td><td><code>monitor-activity on</code> for that window, then output in it</td></tr>
+      <tr><td><code>~</code></td><td>silence — no output for the <code>monitor-silence</code> interval</td><td><code>monitor-silence 3</code>, then 4 s of nothing</td></tr>
+      <tr><td><code>Z</code></td><td>this window's pane is zoomed (<a href="#panes">§7</a>)</td><td>zoom a pane, then list another session's view of it</td></tr>
+      <tr><td><code>M</code></td><td>contains the marked pane (<a href="#panes">§7</a>)</td><td><code>select-pane -m</code>; cleared with <code>-M</code></td></tr>
+    </tbody>
+  </table></div>
+  <pre><code>$ tmux -L t6 list-windows -t alpha -F '#{window_index}: #{window_name} flags=#{window_flags} marked=#{window_marked_flag}'
+0: zsh flags= marked=0
+1: logs flags=* marked=0
+2: edit flags=!-M marked=1</code></pre>
+  <p class="tiny">One window wearing three flags at once: bell (<code>!</code>), last-used (<code>-</code>), marked pane (<code>M</code>). Two footnotes from the same run. Flags stack in one string per window. And in <em>format output</em> — as opposed to the status line — <code>#</code> is escaped to <code>##</code>, so an activity-and-silence-flagged current window printed <code>flags=##~*</code>: activity, silence, current. The status line shows the single character; the escaping only bites when you parse format strings (<a href="#formats">§12</a>).</p>
+
+  <h3>Scoping, first contact</h3>
+  <p>That flag table quietly introduced the guide's first non-global options: <code>monitor-activity</code> and <code>monitor-silence</code> were set with <code>set-window-option -t alpha:idle …</code> — per window. tmux options come in scopes (server, session, window, pane), and the defaults live in a global layer each new window inherits from. You set <code>base-index</code> and <code>renumber-windows</code> per session; you set <code>monitor-activity</code> per window. The full machinery — <code>-g</code>, inheritance at creation time, why order matters — is <a href="#configuration">§10</a>'s subject. Until then, notice the pattern: <em>some options follow the object they name</em>.</p>
+
+  <h3>link-window: one window, two sessions</h3>
+  <p>A window normally belongs to exactly one session. A <em>link</em> puts one window object into a second session's list at an index you choose — both sessions now view the same panes, the same processes. This is how you keep a monitor window available everywhere without duplicating anything. And it is the most instructive failure in this half of the guide. First, the form everyone tries — link <code>alpha</code>'s logs window into <code>beta</code> under a new name:</p>
+  <pre><code>$ tmux -L lab link-window -s alpha:1 -t beta:linked
+can't find window: linked</code></pre>
+  <div class="callout warn">
+    <strong>The target of link-window is a slot, not a name to create.</strong>
+    <code>-t</code> addresses an existing window position by index — <code>session:index</code>. It will not create a window named <code>linked</code>; it looks for one, does not find it, and says exactly that. The working form names the index you want the link to occupy:
+  </div>
+  <pre><code>$ tmux -L lab link-window -s alpha:1 -t beta:1
+$ tmux -L lab list-windows -t beta -F '#{window_index}: #{window_name} #{window_flags}'
+0: zsh -
+1: logs *</code></pre>
+  <p><code>logs</code> — the very same window, same panes, same shells — is now <code>beta:1</code> and current there. The index is per-session: linking <code>alpha:2</code> into <code>beta</code> at index 9 put the same window at <code>beta:9</code> in the research run, while it stayed <code>alpha:2</code>. One object, two addresses. Unlink with <code>unlink-window -t beta:9</code>; the link dissolves and <code>alpha</code> still has its window. A window may not be linked to zero sessions — the last link out is the window's death (or use <code>-k</code> to make that explicit).</p>
+
+  <h3>When a pane dies: remain-on-exit, introduced</h3>
+  <p>One window-scoped option earns an early introduction because it rewrites the default death rules. Normally, a pane whose process exits is destroyed, and the last pane out takes the window and possibly the session with it. With <code>remain-on-exit on</code> — a window option — the pane stays, dead, showing its last output and a line tmux writes itself:</p>
+  <pre><code>$ tmux -L dp display-message -p -t dp:0.0 'dead=#{pane_dead} dead_status=#{pane_dead_status} cmd=#{pane_current_command} flags=#{pane_flags}'
+dead=1 dead_status=0 cmd=zsh flags=*
+$ tmux -L dp capture-pane -p -t dp:0.0 | grep -n . | tail -2
+1:macbook% exit
+24:Pane is dead (status 0, Sat Aug 22 23:54:59 2026)</code></pre>
+  <p class="tiny">From the troubleshooting research run: <code>#{pane_dead}</code> is the probe, and the pane's last line literally reads <code>Pane is dead (status N, …)</code>. A dead pane is recoverable — <code>respawn-pane -k</code> restarts it — and a window whose pane died unannounced shows as <code>zsh[dead]</code> in listings. Full treatment, including why a pane in the same window inherits the option: <a href="#troubleshooting">§16</a>.</p>
+
+  <div class="lab">
+    <div class="lab-title">Lab 4 · Four windows and a shared one</div>
+    <div class="lab-meta">8 minutes · local · throwaway</div>
+    <p>Build a real window set, draw what you think it looks like, then make the terminal agree — and finish by sharing one window into a second session.</p>
+
+    <p><strong>1.</strong> Create the session and its named windows:</p>
+    <pre><code>tmux -L lab -f /dev/null new-session -d -s proj
+tmux -L lab new-window -t proj -n edit
+tmux -L lab new-window -t proj -n logs
+tmux -L lab new-window -t proj -n tests</code></pre>
+    <p><strong>Expect:</strong> four windows after the dust settles — index 0 still automatically named <code>zsh</code>, then your three named ones.</p>
+
+    <p><strong>2.</strong> Before checking, <em>draw the status line</em> on paper: indexes, names, and which flag each window should carry, given that <code>tests</code> was created last and nothing else has happened.</p>
+
+    <p><strong>3.</strong> Check:</p>
+    <pre><code>$ tmux -L lab list-windows -t proj -F '#{window_index}: #{window_name} #{window_flags}'
+0: zsh
+1: edit -
+2: logs -
+3: tests *</code></pre>
+    <pre><code>$ tmux -L t6 list-windows -t proj -F '#{window_index}: #{window_name} #{window_flags}'
+0: zsh
+1: edit
+2: logs -
+3: tests *</code></pre>
+    <p><strong>Expect:</strong> exactly your drawing — <code>*</code> on <code>tests</code> (created last, so current), <code>-</code> on <code>logs</code> (the current window <code>tests</code> displaced), and nothing at all on <code>zsh</code> or <code>edit</code>. One <code>*</code> and one <code>-</code> per session, always. If your drawing differed, re-read the flag decoder before continuing; the rest of the guide assumes it.</p>
+
+    <p><strong>4.</strong> Reorder and compact: move <code>tests</code> to index 8, swap it with <code>logs</code>, then renumber:</p>
+    <pre><code>tmux -L lab move-window -s proj:3 -t proj:8
+tmux -L lab swap-window -s proj:2 -t proj:8
+tmux -L lab move-window -r -t proj</code></pre>
+    <p><strong>Expect:</strong> the same four windows at 0–3 with <code>logs</code> and <code>tests</code> exchanged — <code>2: tests -</code>, <code>3: logs *</code> — and the <code>-</code> having followed the displacement, not the name. The occupied-index move error from this section is yours to reproduce by aiming <code>move-window</code> at an occupied slot.</p>
+
+    <p><strong>5.</strong> Share one window. Create a second session and try the intuitive link first:</p>
+    <pre><code>tmux -L lab new-session -d -s shared
+tmux -L lab link-window -s proj:2 -t shared:logs</code></pre>
+    <p><strong>Expect:</strong> <code>can't find window: logs</code> — the same refusal as <code>beta:linked</code> above. Then the working form:</p>
+    <pre><code>tmux -L lab link-window -s proj:2 -t shared:1
+tmux -L lab list-windows -a</code></pre>
+    <p><strong>Expect:</strong> the all-sessions listing shows every window on the server, <code>logs</code> appearing in both <code>proj</code> and <code>shared</code> — in the shape of the research run's <code>alpha:1: logs panes=3 …</code> rows. Compare it to your drawing from step 2, updated.</p>
+
+    <p>Checkpoint:</p>
+    <ul class="checklist">
+      <li>Your step-2 drawing matched the step-3 listing, flags included</li>
+      <li>The named link failed and the indexed link worked — and you can say why before revealing the callout above</li>
+      <li><code>list-windows -a</code> matches your updated drawing: one window, two addresses</li>
+    </ul>
+    <p class="tiny">Teardown: <code>tmux -L lab kill-server</code>. The <code>shared</code> session dies with its own last window; the unlinked <code>proj</code> windows are all in one server, so one <code>kill-server</code> is the whole cleanup.</p>
+  </div>
+
+  <p class="tiny">Sources: <a href="https://man.openbsd.org/tmux" target="_blank" rel="noopener">tmux(1) — WINDOWS AND PANES; new-window, move-window, swap-window, link-window, unlink-window, remain-on-exit; window_flags format</a> · transcripts: research captures 2026-08-22 (naming, flags, linking) and fresh <code>-L t6</code> captures 2026-08-23 (move/swap/renumber, flag generation), throwaway servers only</p>
 </section>
 
 <section id="panes">
   <h2>7 · Panes</h2>
+  <p class="lede">Everything above the pane is organization. The pane is a pseudo-terminal with one process inside it — the only place in the entire object tree where your work actually runs. Which means two things drive this section: how panes multiply and move (splits, layouts, resize, zoom, break and join), and the one distinction that makes all of it tractable — a pane's <em>identity</em> versus its <em>index</em>. Get that distinction and even the weirdest pane command reads cleanly.</p>
+
+  <figure class="diagram" id="pane-map">
+    <svg viewBox="0 0 960 470" role="img" aria-label="A window split into three panes: a tall pane at index 0 on the left, two stacked panes at indexes 1 and 2 on the right, each labeled with a server-global pane id. An arrow labeled Prefix Space points to the same three panes re-dealt into an even-vertical stack. Two boxes below contrast pane index (position, renumbered) with pane id (identity, never reused).">
+      <title>Pane layout and identity: one window, three panes, indexes versus ids, and layout cycling</title>
+      <defs>
+        <marker id="t7space" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10z" fill="var(--accent)"/></marker>
+      </defs>
+
+      <!-- the split window -->
+      <rect x="24" y="18" width="520" height="352" rx="12" class="d-box d-hot"/>
+      <text x="48" y="46" class="d-title">window — three panes</text>
+      <text x="528" y="46" text-anchor="end" class="d-mono">one pane = one pty = one process</text>
+
+      <rect x="48" y="66" width="234" height="270" rx="7" class="d-box"/>
+      <text x="64" y="90" class="d-label">pane %0 · index 0</text>
+      <text x="64" y="114" class="d-mono">40x24</text>
+      <text x="64" y="148" class="d-text">the original pane;</text>
+      <text x="64" y="166" class="d-text">every split carved</text>
+      <text x="64" y="184" class="d-text">out of a neighbor</text>
+
+      <rect x="294" y="66" width="226" height="130" rx="7" class="d-box"/>
+      <text x="310" y="90" class="d-label">pane %1 · index 1</text>
+      <text x="310" y="114" class="d-mono">39x12</text>
+      <text x="310" y="146" class="d-text">born of Prefix %</text>
+
+      <rect x="294" y="208" width="226" height="128" rx="7" class="d-box"/>
+      <text x="310" y="232" class="d-label">pane %2 · index 2</text>
+      <text x="310" y="256" class="d-mono">39x11</text>
+      <text x="310" y="288" class="d-text">born of Prefix " from %1</text>
+
+      <text x="48" y="356" class="d-mono">80 cols = 40 + 1 divider + 39 · 24 rows = 12 + 1 divider + 11</text>
+
+      <!-- layout cycling -->
+      <line x1="548" y1="120" x2="578" y2="120" class="d-arrow2" marker-end="url(#t7space)"/>
+      <text x="563" y="106" text-anchor="middle" class="d-label">Prefix</text>
+      <text x="563" y="140" text-anchor="middle" class="d-label">Space</text>
+
+      <rect x="584" y="18" width="352" height="352" rx="12" class="d-box"/>
+      <text x="604" y="46" class="d-label">same three panes, next layout</text>
+
+      <rect x="608" y="66" width="304" height="86" rx="7" class="d-box"/>
+      <text x="624" y="90" class="d-label">index 0 · %0</text>
+      <text x="624" y="112" class="d-mono">80x8</text>
+      <rect x="608" y="162" width="304" height="86" rx="7" class="d-box"/>
+      <text x="624" y="186" class="d-label">index 1 · %1</text>
+      <text x="624" y="208" class="d-mono">80x7</text>
+      <rect x="608" y="258" width="304" height="86" rx="7" class="d-box"/>
+      <text x="624" y="282" class="d-label">index 2 · %2</text>
+      <text x="624" y="304" class="d-mono">80x7</text>
+
+      <text x="608" y="356" class="d-mono">even-vertical: full width, near-thirds</text>
+
+      <!-- identity vs index -->
+      <rect x="24" y="392" width="452" height="66" rx="9" class="d-box"/>
+      <text x="44" y="416" class="d-label">index — a position</text>
+      <text x="44" y="436" class="d-text">per window · starts at 0 · renumbered when panes close:</text>
+      <text x="44" y="452" class="d-text">kill index 1 above and %2 relabels from 2 to 1</text>
+
+      <rect x="496" y="392" width="440" height="66" rx="9" class="d-box"/>
+      <text x="516" y="416" class="d-label">id %N — an identity</text>
+      <text x="516" y="436" class="d-text">server-global · never reused · survives moves and joins ·</text>
+      <text x="516" y="452" class="d-text">visible inside the pane as $TMUX_PANE</text>
+    </svg>
+    <figcaption>The pane map. Left: one window and its three panes with both labels — the durable id (<code>%0</code>, <code>%1</code>, <code>%2</code>, from a fresh-server capture) and the positional index. Right: what <kbd>Prefix</kbd> <kbd>Space</kbd> does — the same three panes, re-dealt; sizes shown are the research run's. Below: the distinction the rest of this section leans on. Later references point back here as <a href="#pane-map">the pane map (§7)</a>.</figcaption>
+  </figure>
+
+  <h3>Splits, and where the columns go</h3>
+  <p><kbd>Prefix</kbd> <kbd>%</kbd> splits the current pane left-and-right; <kbd>Prefix</kbd> <kbd>"</kbd> splits it top-and-bottom. The command forms are <code>split-window -h</code> and <code>split-window -v</code>, and the flags name the arrangement: <em>h</em>orizontal = panes side by side, <em>v</em>ertical = panes stacked. (The divider between them runs the other way — a <code>-h</code> pair is separated by a vertical line — which is how everyone misremembers it once.) Watch the arithmetic on a real window, 80x24 with no client attached:</p>
+  <pre><code>$ tmux -L lab split-window -h -t alpha:1
+$ tmux -L lab split-window -v -t alpha:1
+$ tmux -L lab list-panes -t alpha:1 -F '#{pane_index} #{pane_width}x#{pane_height}'
+0 40x24
+1 39x12
+2 39x11</code></pre>
+  <p>80 columns became 40 + 1 + 39: every divider eats one column. The right half's 24 rows became 12 + 1 + 11 the same way. Splits always halve <em>the pane being split</em> — the second split targeted the right pane, so the left pane never changed. Your window's numbers come from its size; the plumbing does not. The 80x24 itself is the <code>default-size</code> option talking, which matters more than it sounds — <a href="#clients">§8</a> shows who really decides a window's size.</p>
+
+  <h3>Identity versus index</h3>
+  <p>Every pane has two labels, and conflating them is the root of most pane confusion. The <strong>index</strong> is a position: per window, starting at 0, in creation order — the number <kbd>Prefix</kbd> <kbd>q</kbd> flashes on each pane. The <strong>id</strong> (<code>%N</code>) is an identity: assigned server-wide in creation order, never reused, and it follows the pane through every move. Watch a pane keep its id while losing its index — three panes, then the middle one killed:</p>
+  <pre><code>$ tmux -L t6 list-panes -t p:0 -F '#{pane_id} index=#{pane_index} #{pane_width}x#{pane_height}'
+%0 index=0 40x24
+%1 index=1 39x12
+%2 index=2 39x11
+$ tmux -L t6 kill-pane -t p:0.1
+$ tmux -L t6 list-panes -t p:0 -F '#{pane_id} index=#{pane_index} #{pane_width}x#{pane_height}'
+%0 index=0 40x24
+%2 index=1 39x24</code></pre>
+  <p class="tiny">Fresh capture, 2026-08-23. Killing index 1 destroyed pane <code>%1</code>; pane <code>%2</code> — a different pane, born second — slid down into index 1 and healed the split. Ids are also how a pane knows itself: inside any pane, <code>$TMUX_PANE</code> expands to its own id.</p>
+  <p>Rule of thumb: <strong>indexes are for talking about position, ids are for talking about the pane itself.</strong> Scripts and bindings should target <code>%N</code> (or <code>#{pane_id}</code>) precisely because indexes shift under them — a lesson <a href="#formats">§12</a> builds on. The pid makes the same point from underneath — one process traced across its whole journey:</p>
+  <pre><code>$ tmux -L lab list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} pid=#{pane_pid} tty=#{pane_tty} cmd=#{pane_current_command} active=#{pane_active}'
+alpha:0.0 pid=71262 tty=/dev/ttys025 cmd=zsh active=1
+alpha:1.0 pid=71264 tty=/dev/ttys026 cmd=zsh active=1
+alpha:2.0 pid=71268 tty=/dev/ttys027 cmd=zsh active=0
+alpha:2.1 pid=73799 tty=/dev/ttys029 cmd=zsh active=1
+alpha:2.2 pid=73802 tty=/dev/ttys030 cmd=zsh active=0
+alpha:3.0 pid=71273 tty=/dev/ttys028 cmd=zsh active=1</code></pre>
+  <p>Pid 71264 appears there as <code>alpha:1.0</code> — the only pane of a window called <code>broken</code>. By the end of this section it will have been <code>alpha:3.1</code>, one address changed twice while the process never noticed.</p>
+
+  <h3>Layouts: positions, re-dealt</h3>
+  <p>tmux ships five preset arrangements — <code>even-horizontal</code>, <code>even-vertical</code>, <code>main-horizontal</code>, <code>main-vertical</code>, <code>tiled</code> — plus, on this 3.7b, their mirrored variants. <kbd>Prefix</kbd> <kbd>Space</kbd> cycles them; <code>select-layout</code> names one outright. A layout is purely a dealing of positions: pane ids and indexes keep their numbers, only the geometry changes:</p>
+  <pre><code>$ tmux -L lab select-layout -t alpha:1 even-vertical
+$ tmux -L lab list-panes -t alpha:1 -F '#{pane_index} #{pane_width}x#{pane_height}'
+0 80x8
+1 80x7
+2 80x7</code></pre>
+  <p>Same three panes as the splits transcript, full width, near-thirds — the right side of <a href="#pane-map">the pane map (§7)</a>. Layouts are the fast answer to "just make this tidy"; manual resize is the slow answer with exact control.</p>
+
+  <h3>Resize moves a boundary — nothing else</h3>
+  <pre><code>$ tmux -L lab resize-pane -t alpha:1.0 -R 10
+$ tmux -L lab list-panes -t alpha:1 -F '#{pane_index} #{pane_width}x#{pane_height}'
+0 80x8
+1 80x7
+2 80x7</code></pre>
+  <p>That is the complete output of a resize that did nothing — by design, and it teaches the whole model:</p>
+  <div class="callout warn">
+    <strong>Misconception: "resize makes a pane bigger."</strong>
+    Resize moves an existing split boundary, in a direction, by cells. In the <code>even-vertical</code> stack above, pane 0 spans the full width — there is no vertical boundary to its right, so <code>-R 10</code> (right by 10) has nothing to move, and nothing happens. No error, no change. Give the same command a boundary to chew on and it works immediately — same window, shrinking pane 2 from below its neighbor:
+  </div>
+  <pre><code>$ tmux -L lab resize-pane -t alpha:1.2 -D 5
+$ tmux -L lab list-panes -t alpha:1 -F '#{pane_index} #{pane_width}x#{pane_height}'
+0 80x8
+1 80x12
+2 80x2</code></pre>
+  <p>Pane 1 gained exactly the five rows pane 2 lost: boundary moved, cells conserved. From a keyboard, <kbd>Prefix</kbd> <kbd>Ctrl</kbd>+<kbd>↓</kbd> (and the other three arrows) resizes the current pane by one cell per press, repeatable within <code>repeat-time</code>.</p>
+
+  <h3>Zoom: one pane, temporarily everything</h3>
+  <p><kbd>Prefix</kbd> <kbd>z</kbd> zooms the current pane to fill its window; the other panes keep running behind it, invisible. It is a toggle — <kbd>z</kbd> again restores the layout exactly. The research run zoomed pane 1 of the three-pane window:</p>
+  <pre><code>$ tmux -L lab resize-pane -Z -t alpha:1.1
+$ tmux -L lab list-panes -t alpha:1 -F '#{pane_index} #{pane_width}x#{pane_height} flags=#{pane_flags}'
+0 80x8 flags=
+1 80x24 flags=*Z
+2 80x2 flags=-</code></pre>
+  <p>Pane 1 reports the full window size (80x24) and carries flag <code>Z</code> — the zoomed pane is also marked current, <code>*</code>. The other panes still exist at their old sizes behind it. When zoom beats a bigger split: when you need to <em>read</em>, not <em>watch</em> — a diff, a log flood, a test run. When you need two things visible at once, zoom is the wrong tool and a split is the right one. Zoom is a lens, not a layout. One trap worth knowing now: a zoomed window advertises <code>Z</code> in the status line from <em>any</em> session's point of view (§6's decoder) — if you link that window elsewhere, the flag travels with it.</p>
+
+  <h3>break-pane and join-pane: flags you will get backwards once</h3>
+  <p>Promote a pane to its own window (<code>break-pane</code>); pull a pane from anywhere into the current window (<code>join-pane</code>). Both take <code>-s</code> and <code>-t</code> — and their meanings are <em>inverted relative to intuition</em>, differently from each other. This is the single most-misused command pair in tmux, so meet the failures first, on purpose:</p>
+  <pre><code>$ tmux -L lab break-pane -t alpha:1.2
+can't specify pane here
+$ tmux -L lab break-pane -t alpha:1 -n broken
+index in use: 1</code></pre>
+  <div class="callout warn">
+    <strong>break-pane's -t is the destination <em>window</em>, and -s is the pane.</strong>
+    The intuitive reading — "break the pane I target with <code>-t</code>" — is exactly wrong. On 3.7b, from the local man page, verbatim: <code>break-pane [-abdP] [-F format] [-n window-name] [-s src-pane] [-t dst-window]</code> — "Break <em>src-pane</em> off from its containing window to make it the only pane in <em>dst-window</em>." So <code>-t alpha:1.2</code> fails because a destination window must not carry a pane suffix, and <code>-t alpha:1</code> fails because index 1 is occupied — add <code>-a</code>/<code>-b</code> to place after/before it instead. <code>join-pane</code> flips back to pane-level flags (<code>-s src-pane -t dst-pane</code>): the pane you join <em>into</em> is the one that gets split to make room.
+  </div>
+  <p>The working break, placing the new window before index 1:</p>
+  <pre><code>$ tmux -L lab break-pane -b -t alpha:1 -n broken
+$ tmux -L lab list-windows -t alpha -F '#{window_index}: #{window_name} #{window_flags} panes=#{window_panes}'
+0: zsh  panes=1
+1: broken * panes=1
+2: logs - panes=3
+3: edit  panes=1</code></pre>
+  <p><code>broken</code> inserted at index 1 and everything else shifted up — <code>logs</code> from 1 to 2, <code>edit</code> from 2 to 3. Now, which pane did it take? The pid transcript above is the before-picture; <code>broken</code> holds pid 71264, which the before-picture shows as… not an <code>alpha</code> pane at all. Two traps fired at once:</p>
+  <ul>
+    <li><strong><code>-s</code> omitted means "the server's current pane."</strong> With no client attached, that belongs to the most recently used session — here <code>beta</code>, not <code>alpha</code>. The break carried away <code>beta</code>'s only pane. Name your panes explicitly; every transcript-level surprise in this pair of commands comes from an implicit target.</li>
+    <li><strong>A session cannot exist with zero windows.</strong> <code>beta</code> lost its last window and was destroyed by the break — the same last-one-out rule that ends servers (<a href="#server">§4</a>) and windows, one level up each time. After the break the server held exactly one session: <code>alpha: 4 windows</code>.</li>
+  </ul>
+  <p>And the return trip — <code>join-pane</code>, pane-level flags, moving <code>broken</code>'s pane into <code>edit</code>:</p>
+  <pre><code>$ tmux -L lab join-pane -h -s alpha:broken.0 -t alpha:3.0
+$ tmux -L lab list-windows -t alpha -F '#{window_index}: #{window_name} panes=#{window_panes} flags=#{window_flags}'
+0: zsh panes=1 flags=
+2: logs panes=3 flags=-
+3: edit panes=2 flags=*
+$ tmux -L lab list-panes -t alpha:edit -F '#{pane_index} #{pane_current_command} #{pane_width}x#{pane_height}'
+0 zsh 40x24
+1 zsh 39x24</code></pre>
+  <p>The <code>broken</code> window is gone (its only pane left it — last-one-out again), <code>edit</code> now has two panes, and the traveler is pid 71264's shell: born <code>beta</code>'s only pane, promoted to <code>alpha:1.0</code>, now <code>alpha:3.1</code>. Three addresses, one process, still running. Note the hole at index 1: <code>renumber-windows off</code> again — <a href="#windows">§6</a>'s <code>move-window -r</code> sweeps it. From a keyboard, <kbd>Prefix</kbd> <kbd>!</kbd> breaks the current pane (no targets to misread); there is no default join chord — <a href="#configuration">§10</a> binds one.</p>
+
+  <h3>synchronize-panes: type everywhere at once</h3>
+  <p>A window option that sends every keystroke to <em>every</em> pane in the window. On, off, and proof — one <code>send-keys</code> landing in both panes of <code>edit</code>, each pane identifying itself by its own id:</p>
+  <pre><code>$ tmux -L lab set-window-option -t alpha:edit synchronize-panes on
+$ tmux -L lab show-window-options -t alpha:edit synchronize-panes
+synchronize-panes on
+$ tmux -L lab send-keys -t alpha:edit 'echo "keys received in pane $TMUX_PANE"' Enter
+$ tmux -L lab capture-pane -p -t alpha:edit.0 -S -10
+docs/tmux-guide guides
+❯ echo "keys received in pane $TMUX_PANE
+"
+keys received in pane %3
+
+docs/tmux-guide guides
+❯ echo "keys received in pane $TMUX_PANE
+"
+keys received in pane %3
+
+docs/tmux-guide guides
+❯
+$ tmux -L lab capture-pane -p -t alpha:edit.1 -S -10
+docs/tmux-guide guides
+❯ echo "keys received in pane $TMUX_PAN
+E"
+keys received in pane %1
+
+docs/tmux-guide guides
+❯ echo "keys received in pane $TMUX_PAN
+E"
+keys received in pane %1
+
+docs/tmux-guide guides
+❯</code></pre>
+  <p class="tiny">Both panes ran the same line — <code>%3</code> and <code>%1</code>, two ids, one keystroke. The doubled commands are real: the research run sent the demo twice. The broken-looking <code>$TMUX_PAN</code> / <code>E"</code> in pane 1 is also real — the command wrapping across its 39 columns, nothing more. And note the ids are not in window order: ids are global creation-order, indexes are local position.</p>
+  <div class="callout danger">
+    <strong>It is called synchronize for a reason.</strong>
+    With it on, <em>everything</em> you type goes everywhere — including <code>rm</code>, including <kbd>Ctrl</kbd>+<kbd>c</kbd>, including the <code>exit</code> that would close N panes at once. Turn it on for the burst of parallel work, and off the moment the burst ends: <code>set-window-option synchronize-panes off</code>. The status line shows the window as <code>sync</code> while it is on — check it before you type.
+  </div>
+
+  <h3>A word on the mouse</h3>
+  <p>Stock tmux ships with <code>mouse off</code> — the options dump says so — and every pane action above has a keyboard form precisely because of that. Turn it on (<code>set -g mouse on</code>, full treatment in <a href="#configuration">§10</a>) and the terminal's mouse reaches into tmux: click selects a pane, drag on a divider resizes it, drag over text selects and copies, and the wheel scrolls — the default bindings route wheel-up into copy-mode, so scrollback just works. Two honest caveats: mouse text selection and terminal-native selection fight each other (hold <kbd>Shift</kbd>/<kbd>Fn</kbd> to let the terminal win, per your terminal's rules — <a href="#copy-mode">§9</a> covers the clipboard fallout), and long sessions that depend on the mouse quietly lose the keyboard fluency this guide is building.</p>
+
+  <h3>Pane chords</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Chord</th><th>Command underneath</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><kbd>Prefix</kbd> <kbd>%</kbd></td><td><code>split-window -h</code></td><td>Split left-and-right</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>"</kbd></td><td><code>split-window -v</code></td><td>Split top-and-bottom</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>o</kbd></td><td><code>select-pane -t :.+</code></td><td>Next pane, in order</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>;</kbd></td><td><code>select-pane -l</code></td><td>Previously active pane — the two-pane ping-pong</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>q</kbd></td><td><code>display-panes</code></td><td>Flash each pane's index on screen</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>Space</kbd></td><td><code>next-layout</code></td><td>Cycle the preset layouts</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>Ctrl</kbd>+<kbd>←</kbd>/<kbd>→</kbd>/<kbd>↑</kbd>/<kbd>↓</kbd></td><td><code>resize-pane</code></td><td>Move the split boundary, one cell per press</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>z</kbd></td><td><code>resize-pane -Z</code></td><td>Toggle zoom on the current pane</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>{</kbd> / <kbd>}</kbd></td><td><code>swap-pane -U</code> / <code>-D</code></td><td>Swap the current pane with its neighbor</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>!</kbd></td><td><code>break-pane</code></td><td>Promote the current pane to its own window</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>x</kbd></td><td><code>confirm-before kill-pane</code></td><td>Kill the current pane, with a y/n prompt</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>m</kbd> / <kbd>M</kbd></td><td><code>select-pane -m</code> / <code>-M</code></td><td>Mark the current pane / clear the mark — the target for <code>swap-pane</code> and joins</td></tr>
+    </tbody>
+  </table></div>
+  <p class="tiny">Bindings verified against this machine's <code>tmux list-keys -T prefix</code> on 3.7b. Killing the last pane of a window takes the window with it — last-one-out, all the way up the tree.</p>
+
+  <div class="lab">
+    <div class="lab-title">Lab 5 · Pane calisthenics</div>
+    <div class="lab-meta">8 minutes · local · throwaway</div>
+    <p>From a bare window to the exact arrangement in <a href="#pane-map">the pane map (§7)</a> — left pane full height, right column split in two — using <em>chords only</em>. Then bend it, zoom it, break it, and join it back.</p>
+
+    <p><strong>1.</strong> Start clean and attach:</p>
+    <pre><code>tmux -L lab -f /dev/null new -s gym</code></pre>
+    <p><strong>Expect:</strong> one session, one window, one pane, you attached. Draw the target on paper first: three panes, indexes 0/1/2, in the map's arrangement.</p>
+
+    <p><strong>2.</strong> Build it with two chords: <kbd>Prefix</kbd> <kbd>%</kbd>, then <kbd>Prefix</kbd> <kbd>"</kbd>.</p>
+    <p><strong>Expect:</strong> after <kbd>%</kbd>, two side-by-side panes with the new one current; after <kbd>"</kbd>, the current (right) pane splits top-and-bottom. The arrangement matches your drawing. Your exact dimensions depend on your terminal's size — the map's 40/39 and 12/11 came from an 80x24 window; the <em>structure</em> is the target. (<a href="#clients">§8</a> explains why your terminal gets a vote.)</p>
+
+    <p><strong>3.</strong> Verify from the shell, after detaching with <kbd>Prefix</kbd> <kbd>d</kbd>:</p>
+    <pre><code>$ tmux -L lab list-panes -t gym:0 -F '#{pane_id} index=#{pane_index} #{pane_width}x#{pane_height}'</code></pre>
+    <p><strong>Expect:</strong> three rows: pane 0 tall on the left, panes 1 and 2 stacked right, and ids in creation order — the same shape as the identity transcript in this section, modulo your window size. Re-attach with <code>tmux -L lab attach</code>.</p>
+
+    <p><strong>4.</strong> Focus tour: <kbd>Prefix</kbd> <kbd>o</kbd> three times; then <kbd>Prefix</kbd> <kbd>;</kbd> twice.</p>
+    <p><strong>Expect:</strong> <kbd>o</kbd> walks the ring 0 → 1 → 2 → 0; <kbd>;</kbd> bounces you between the two most recently focused panes.</p>
+
+    <p><strong>5.</strong> Move a boundary: <kbd>Prefix</kbd> <kbd>Ctrl</kbd>+<kbd>↓</kbd> a few times on a right-column pane; then give up on tidiness and press <kbd>Prefix</kbd> <kbd>Space</kbd> repeatedly.</p>
+    <p><strong>Expect:</strong> each arrow press moves one boundary one cell; <kbd>Space</kbd> cycles the preset layouts — watch the indexes stay put while positions re-dealt, exactly as the map promises.</p>
+
+    <p><strong>6.</strong> Zoom: <kbd>Prefix</kbd> <kbd>z</kbd>, look around, <kbd>Prefix</kbd> <kbd>z</kbd> again.</p>
+    <p><strong>Expect:</strong> the current pane fills the window and the status line's window name gains a <code>Z</code>; the toggle restores your arrangement untouched. From outside, <code>tmux -L lab display-message -p -t gym:0 '#{window_zoomed_flag}'</code> reads 1 zoomed, 0 restored.</p>
+
+    <p><strong>7.</strong> Break and rejoin — the commands, used precisely:</p>
+    <pre><code>tmux -L lab break-pane -s gym:0.1 -t gym:1
+tmux -L lab list-windows -t gym -F '#{window_index}: #{window_name} panes=#{window_panes} #{window_flags}'</code></pre>
+    <p><strong>Expect:</strong> the pane you named with <code>-s</code> — explicit, so no "current pane" surprises — becomes the only pane of a new window at index 1, and window 0 drops to two panes. Then join it back and watch the window count return to one:</p>
+    <pre><code>tmux -L lab join-pane -s gym:1.0 -t gym:0.0</code></pre>
+
+    <p>Checkpoint:</p>
+    <ul class="checklist">
+      <li>Two chords produced the map's arrangement, and <code>list-panes</code> agreed with your drawing</li>
+      <li>You can point at each pane and say its id and its index — and which of the two just changed when you pressed <kbd>Space</kbd></li>
+      <li>The break used <code>-s</code> for the pane and <code>-t</code> for the destination window, and you can recite why the intuitive reading fails</li>
+    </ul>
+    <p class="tiny">Teardown: <code>tmux -L lab kill-server</code> — one session, one server, one receipt.</p>
+  </div>
+
+  <p class="tiny">Sources: <a href="https://man.openbsd.org/tmux" target="_blank" rel="noopener">tmux(1) — split-window, resize-pane (-Z), select-layout, break-pane, join-pane, synchronize-panes, pane_index/pane_id formats; DEFAULT KEY BINDINGS</a> · bindings read from <code>tmux list-keys</code> on 3.7b · transcripts: research captures 2026-08-22 (splits, layouts, resize, zoom, break/join, synchronize) and fresh <code>-L t6</code> captures 2026-08-23 (id-vs-index kill; splits/layout/resize re-confirmed number-for-number), throwaway servers only</p>
 </section>
 
 <section id="clients">
   <h2>8 · Clients</h2>
+  <p class="lede">Everything in <a href="#server">§4</a> through <a href="#panes">§7</a> lived inside the server. The client is the part outside: a terminal plus one socket connection, and nothing else. This is the section where tmux's most confident folklore dies — because clients get a vote on window size, and the way they vote on current tmux is not the way the old stories tell it.</p>
+
+  <h3>What a client is, precisely</h3>
+  <p>A client is a process — the <code>tmux attach</code> you ran — connected to the server through the socket, drawing into exactly one terminal. Not the terminal itself; the terminal is the client's furniture. Ask the server who is connected, in tmux's own words:</p>
+  <pre><code>$ tmux -L lab list-clients
+/dev/ttys031: alpha [80x24 xterm-256color] (attached,focused,UTF-8)</code></pre>
+  <p>One row per client: the tty it owns, the session it views, its terminal's size and <code>$TERM</code> (the contract from <a href="#prereqs">§2</a>), and its state — this one is attached and holds focus. With no clients connected, the same command prints nothing and exits 0 — and with no server, it prints nothing and exits 1. Same silence, different meanings; the exit status is the tell, which is why scripts should check it rather than parse output:</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>State</th><th><code>list-clients</code> says</th><th>Exit status</th></tr></thead>
+    <tbody>
+      <tr><td>Server alive, clients attached</td><td>one row per client</td><td>0</td></tr>
+      <tr><td>Server alive, no clients</td><td><em>nothing</em></td><td>0</td></tr>
+      <tr><td>No server</td><td><em>nothing</em></td><td>1</td></tr>
+    </tbody>
+  </table></div>
+  <p class="tiny">All three observed — the empty-but-alive row in this guide's client research, the other two re-confirmed in fresh captures. Compare <a href="#server">§4</a>'s socket-state table: same discipline, different question.</p>
+
+  <h3>Who may attach, and what happens</h3>
+  <p>Any number of clients may attach to the same session; they mirror it — same window, same pane, same cursor. Two sessions, one client? The client views one at a time and switches without detaching (<a href="#sessions">§5</a>). The patterns worth having names for:</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Pattern</th><th>You run</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>One session, two clients</td><td><code>tmux attach -t shared</code> in a second terminal</td><td>Mirror — both see everything; whoever types, types for both</td></tr>
+      <tr><td>Two sessions, one client</td><td><kbd>Prefix</kbd> <kbd>s</kbd> / <kbd>(</kbd> / <kbd>)</kbd></td><td>The client's pointer moves; no second connection</td></tr>
+      <tr><td>Take the session back</td><td><code>tmux attach -d -t shared</code></td><td>Steal — every other client is detached as you arrive</td></tr>
+      <tr><td>Watch without typing</td><td><code>tmux attach -r -t shared</code></td><td>Read-only client — input ignored (an <code>attach-session</code> flag, man-sourced)</td></tr>
+    </tbody>
+  </table></div>
+  <p>The mirror row deserves its warning: a shared session is a shared <em>keyboard</em>. If two people are attached and one starts typing in the editor both are viewing, those keystrokes land once, for both. Pair-programming gold; accident risk otherwise. <code>list-clients</code> before you type.</p>
+
+  <h3>Size negotiation: latest, not smallest</h3>
+  <p>Here is the folklore: "when two clients share a session, the smallest terminal wins — everyone gets the little window." That was true of older tmux. On the 3.7 series it is <em>opt-in</em>, and the default is the opposite. Straight off this machine:</p>
+  <pre><code>$ tmux -L lab show-options -g window-size
+window-size latest</code></pre>
+  <div class="callout warn">
+    <strong>Misconception: "smallest terminal wins."</strong>
+    <code>window-size</code> is a session option, and its default on 3.7b is <code>latest</code>: the window matches <em>the most recent client to attach or resize</em>, whoever that is and however small. A 100-column window happily persists while a 60-column client is attached — the small client just gets a viewport with scroll-off. The classic smallest-wins behavior still exists, but you ask for it: <code>set-option -t SESSION window-size smallest</code>. If you learned tmux from an older version or an older tutorial, this one option is why shared sessions no longer shrink.
+  </div>
+  <p>The whole matrix, captured live — client A on a 100x30 pty, client B on 60x20, both attached to <code>alpha</code>, window dimensions probed after each step:</p>
+  <pre><code>$ tmux -L lab list-clients -F '#{client_name} #{client_tty} #{client_termname} #{client_session} #{client_width}x#{client_height}'
+/dev/ttys031 /dev/ttys031 xterm-256color alpha 100x30
+/dev/ttys032 /dev/ttys032 xterm-256color alpha 60x20
+### A alone (100x30): w=100 h=29
+### B attached (60x20, most recent): w=60 h=19
+### A resized to 40x15 (A most recent): w=40 h=14
+### A back to 100x30 (B still 60x20, smaller): w=100 h=29
+### set window-size smallest: w=60 h=19
+### set window-size back to latest: w=100 h=29</code></pre>
+  <p>Read the fourth line twice: B — smaller — is attached, and the window is 100 wide anyway, because A touched its size last. That is <code>latest</code> working exactly as shipped. Two smaller observations in the same data: the off-by-one (a 100x30 client yields a 100x29 window — the status line eats one row, always), and the fact that <code>client_width</code>/<code>client_height</code> report each client's own terminal, while <code>window_width</code>/<code>window_height</code> report the negotiated window — the predict-then-check pair Lab 6 drills.</p>
+
+  <h3>Three ways to detach (one of them accidental)</h3>
+  <pre><code>### client attached:
+/dev/ttys031: alpha [80x24 xterm-256color] (attached,focused,UTF-8)
+### closing the pty master (simulates closing the terminal window)
+client exited rc=1
+### session after terminal closed:
+alpha: 3 windows (created Sat Aug 22 23:09:49 2026)
+### list-clients:
+''</code></pre>
+  <p class="tiny">The <code>###</code> lines are the capture rig's step labels between real outputs; <code>''</code> is the rig's rendering of empty output — no rows, exit 0.</p>
+  <p>That is the accidental one: close the terminal, and the client dies with it — while the session does not so much as blink. The deliberate ones: <kbd>Prefix</kbd> <kbd>d</kbd> detaches the client you are in, and <code>detach-client</code> does it surgically from outside:</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Command</th><th>Detaches</th></tr></thead>
+    <tbody>
+      <tr><td><code>detach-client</code></td><td>The current client (from a binding) — what <kbd>Prefix</kbd> <kbd>d</kbd> runs</td></tr>
+      <tr><td><code>detach-client -s shared</code></td><td>Every client attached to session <code>shared</code></td></tr>
+      <tr><td><code>detach-client -a</code></td><td>All clients on the server</td></tr>
+      <tr><td><code>detach-client -a -t /dev/ttys031</code></td><td>All except the named client</td></tr>
+    </tbody>
+  </table></div>
+  <p class="tiny">The last three follow the man page's synopsis, verified against 3.7b docs; the first and the <code>-a</code> form are transcript-proven ("<code>detach-client -a</code> — detaches everyone; <code>list-clients</code> empty immediately after; session survives").</p>
+
+  <h3>switch-client versus detach/attach</h3>
+  <p>Both change what your terminal shows. They differ in what happens to the connection:</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th></th><th><code>switch-client</code></th><th>detach, then attach</th></tr></thead>
+    <tbody>
+      <tr><td>Connection to server</td><td>Stays up</td><td>Dropped, then rebuilt</td></tr>
+      <tr><td>Your shell shows through</td><td>Never — the switch is instant</td><td>Yes, between the two commands</td></tr>
+      <tr><td>Works without a client</td><td>No — <code>no current client</code> (<a href="#sessions">§5</a>)</td><td>Yes — attach creates one</td></tr>
+      <tr><td>Typical use</td><td>Hopping between your own sessions</td><td>Coming back later, or from another machine</td></tr>
+    </tbody>
+  </table></div>
+  <p>One more client state rounds out the set: <strong>suspended</strong>. <kbd>Prefix</kbd> <kbd>Ctrl</kbd>+<kbd>z</kbd> runs <code>suspend-client</code> — the client process is stopped and your terminal falls back to the shell that launched tmux, with the session still attached server-side. Type <code>fg</code> in that shell to resume. It is the "let me run one command outside without losing my place" move, and unlike detach it keeps the connection. (Binding verified on 3.7b; the man page's binding table documents it as "Suspend the tmux client.")</p>
+
+  <h3>Client chords</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Chord</th><th>Command underneath</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><kbd>Prefix</kbd> <kbd>d</kbd></td><td><code>detach-client</code></td><td>Detach this client</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>D</kbd></td><td><code>choose-client -Z</code></td><td>Pick <em>which</em> client to detach, from a list</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>Ctrl</kbd>+<kbd>z</kbd></td><td><code>suspend-client</code></td><td>Suspend this client; <code>fg</code> in the shell resumes it</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>r</kbd></td><td><code>refresh-client</code></td><td>Force a redraw — for when the terminal garbles</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="lab">
+    <div class="lab-title">Lab 6 · Two terminals, one session</div>
+    <div class="lab-meta">6 minutes · local · two terminal windows · throwaway</div>
+    <p>The client research in this section was driven by scripted pseudo-terminals; this lab is the hands-on version — two real terminal windows, your mouse doing the resizing, and your predictions on the line before every check.</p>
+
+    <p><strong>1.</strong> Open two terminal windows. In the first:</p>
+    <pre><code>tmux -L lab -f /dev/null new -s shared</code></pre>
+    <p>In the second:</p>
+    <pre><code>tmux -L lab attach -t shared</code></pre>
+    <p><strong>Expect:</strong> both windows show the same session — type in either, watch both. Two rows in <code>tmux -L lab list-clients</code>, both naming <code>shared</code>.</p>
+
+    <p><strong>2.</strong> Shrink the second window's terminal — drag it to roughly half width. <em>Before checking</em>, write down your prediction for the session's window size. Then:</p>
+    <pre><code>tmux -L lab display-message -p -t shared '#{window_width}x#{window_height}'
+tmux -L lab list-clients -F '#{client_width}x#{client_height}'</code></pre>
+    <p><strong>Expect:</strong> the window matches the terminal you just resized — <code>latest</code> at work, the same rule that kept a 100-wide window while a 60-wide client watched in this section's matrix. Each client row reports its own terminal; one row disagrees with the window, and it is not the one you touched. Your height is one less than your terminal's rows: the status line.</p>
+
+    <p><strong>3.</strong> Resize the first terminal instead — even slightly. Predict, then check again.</p>
+    <p><strong>Expect:</strong> the window snaps back toward the first terminal's size. The vote always goes to the most recent toucher, big or small.</p>
+
+    <p><strong>4.</strong> Opt into the old rule:</p>
+    <pre><code>tmux -L lab set-option -t shared window-size smallest</code></pre>
+    <p><strong>Expect:</strong> the window immediately shrinks to the smaller of the two terminals — the behavior the folklore promised, now visibly a choice. Restore the default with <code>window-size latest</code> and watch it snap back.</p>
+
+    <p><strong>5.</strong> Steal the session from a third terminal (or either one, after detaching it with <kbd>Prefix</kbd> <kbd>d</kbd>):</p>
+    <pre><code>tmux -L lab attach -d -t shared</code></pre>
+    <p><strong>Expect:</strong> every other client detaches at once; <code>list-clients</code> shows one row. Their terminals are back at their shells; the session never noticed.</p>
+
+    <p>Checkpoint:</p>
+    <ul class="checklist">
+      <li>Both predictions in steps 2–3 were right — and you can state the default (<code>window-size latest</code>) and what "most recent to attach or resize" means</li>
+      <li>You watched <code>smallest</code> shrink the window and <code>latest</code> restore it — opt-in, not default</li>
+      <li>You can explain the off-by-one between client height and window height without checking</li>
+    </ul>
+    <p class="tiny">Teardown: <code>tmux -L lab kill-server</code> from any terminal.</p>
+  </div>
+
+  <p class="tiny">Sources: <a href="https://man.openbsd.org/tmux" target="_blank" rel="noopener">tmux(1) — attach-session (incl. -d, -r), detach-client, switch-client, suspend-client, window-size; client_width/client_height/window_width/window_height formats</a> · transcripts: research captures 2026-08-22 (sizing matrix, default format, detach methods, zero-clients) and fresh <code>-L t6</code> captures 2026-08-23 (mirror, steal, no-server exit status), throwaway servers only</p>
 </section>
 
 <section id="copy-mode">
