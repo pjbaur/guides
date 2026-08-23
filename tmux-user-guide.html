@@ -345,14 +345,308 @@
 
 <section id="mental-model">
   <h2>1 · Mental model</h2>
+  <p class="lede">The SSH connection drops. The laptop sleeps mid-compile. The terminal freezes and you kill it. None of that has to touch the work. tmux moves your shells out of the terminal and into a process that does not care about your connection — so when a view comes back, everything is exactly where you left it.</p>
+
+  <h3>A window manager, not a terminal</h3>
+  <p>tmux is not Terminal.app, iTerm2, or Alacritty, and it does not replace them. You run it <em>inside</em> a terminal. The terminal still draws every glyph on the screen. What tmux decides is <em>which</em> glyphs: it owns your programs and their layouts, composites them into one character grid, and hands that grid to the terminal to render. It is a window manager for terminals — the same relationship a tiling window manager has to your monitor.</p>
+  <p>Four nouns do the work, nested one inside the next:</p>
+  <ul>
+    <li><strong>Server</strong> — one long-lived process that owns everything: the sessions, the programs inside them, the scrollback.</li>
+    <li><strong>Session</strong> — a workspace. Holds windows.</li>
+    <li><strong>Window</strong> — one full-screen view inside a session. The tab-like unit. Holds panes.</li>
+    <li><strong>Pane</strong> — one pseudo-terminal running one program. The thing you actually type into.</li>
+  </ul>
+  <p>One noun sits outside the nest: the <strong>client</strong> — a terminal plus a connection to the server. Part II gives each of these its own section. For now you only need the nesting and one rule: <strong>processes live in panes, panes live in windows, windows live in sessions, sessions live in the server, and clients live nowhere near any of it.</strong></p>
+
+  <h3>One server, many clients</h3>
+  <p>Every <code>tmux</code> command you type — <code>tmux new</code>, <code>tmux ls</code>, <code>tmux attach</code> — is a client process. It finds the server through a Unix socket in <code>/tmp/tmux-$(id -u)/</code> and talks to it. Most commands finish and exit at once; an attached client stays connected until you detach or close its terminal. The server starts itself the first time it is needed, keeps running after the last client has gone, and exits only when its last session ends. You will watch that entire lifecycle happen in sixty seconds in <a href="#install">§3</a>.</p>
+  <p>That split is the product. Detaching is not pausing and not closing — it is a client hanging up. The session keeps running, headless, inside the server. Attach again from any terminal: the same one, a new one, an SSH session from another machine. The session cannot tell the difference and does not care. One server, many views, coming and going.</p>
+
+  <figure class="diagram" id="object-map">
+    <svg viewBox="0 0 960 560" role="img" aria-label="Object tree of a tmux setup: one server box contains one session box; the session contains two windows, the first detailed with two panes each holding a process; two client boxes sit outside the server, each with an attach arrow into the session.">
+      <title>tmux object tree: server contains sessions, sessions contain windows, windows contain panes, panes hold processes, clients attach from outside</title>
+      <defs>
+        <marker id="t5attach" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10z" fill="var(--blue)"/></marker>
+      </defs>
+
+      <!-- server -->
+      <rect x="24" y="18" width="912" height="396" rx="12" class="d-box d-hot"/>
+      <text x="48" y="48" class="d-title">tmux server</text>
+      <text x="912" y="48" text-anchor="end" class="d-mono">one process · starts on demand · outlives every client</text>
+      <text x="48" y="70" class="d-mono">socket: /tmp/tmux-501/default</text>
+
+      <!-- session -->
+      <rect x="56" y="88" width="848" height="292" rx="9" class="d-box"/>
+      <text x="76" y="114" class="d-label">session: alpha</text>
+      <text x="884" y="114" text-anchor="end" class="d-mono">tmux new -s alpha</text>
+
+      <!-- window 0, detailed -->
+      <rect x="80" y="132" width="560" height="224" rx="9" class="d-box"/>
+      <text x="100" y="156" class="d-label">window 0 — "edit"</text>
+      <text x="620" y="156" text-anchor="end" class="d-mono">the tab-like unit</text>
+
+      <rect x="100" y="172" width="252" height="168" rx="7" class="d-box"/>
+      <text x="116" y="196" class="d-label">pane %0</text>
+      <text x="116" y="222" class="d-mono">zsh</text>
+      <text x="116" y="242" class="d-mono">└─ vim notes.md</text>
+      <text x="116" y="274" class="d-text">one pseudo-terminal,</text>
+      <text x="116" y="292" class="d-text">one process (§7)</text>
+
+      <rect x="372" y="172" width="252" height="168" rx="7" class="d-box"/>
+      <text x="388" y="196" class="d-label">pane %1</text>
+      <text x="388" y="222" class="d-mono">zsh</text>
+      <text x="388" y="242" class="d-mono">└─ tail -f app.log</text>
+      <text x="388" y="274" class="d-text">a split of the same</text>
+      <text x="388" y="292" class="d-text">window, seen at once</text>
+
+      <!-- window 1, ghosted -->
+      <rect x="664" y="132" width="216" height="224" rx="9" class="d-box d-dash"/>
+      <text x="772" y="160" text-anchor="middle" class="d-mono">window 1 — "logs"</text>
+      <text x="772" y="196" text-anchor="middle" class="d-text">another window,</text>
+      <text x="772" y="214" text-anchor="middle" class="d-text">same session,</text>
+      <text x="772" y="232" text-anchor="middle" class="d-text">its own panes</text>
+
+      <text x="80" y="400" class="d-mono">…more sessions would sit beside alpha, one box each (§5)</text>
+
+      <!-- clients, outside the server -->
+      <line x1="290" y1="470" x2="290" y2="386" class="d-arrow" marker-end="url(#t5attach)"/>
+      <line x1="670" y1="470" x2="670" y2="386" class="d-arrow" marker-end="url(#t5attach)"/>
+      <text x="304" y="436" class="d-label">attach</text>
+      <text x="684" y="436" class="d-label">attach</text>
+
+      <rect x="140" y="470" width="300" height="72" rx="9" class="d-box"/>
+      <text x="160" y="496" class="d-label">client A</text>
+      <text x="160" y="516" class="d-mono">Terminal.app, local</text>
+      <text x="160" y="534" class="d-text">a view, nothing more</text>
+
+      <rect x="520" y="470" width="300" height="72" rx="9" class="d-box"/>
+      <text x="540" y="496" class="d-label">client B</text>
+      <text x="540" y="516" class="d-mono">ssh from laptop</text>
+      <text x="540" y="534" class="d-text">another view, same session</text>
+    </svg>
+    <figcaption>The map. One server process owns sessions; each session owns windows; each window tiles panes; each pane is one pseudo-terminal holding one process. Clients sit outside the server — a terminal plus a socket connection — and attach to sessions from below. Detaching removes a client and nothing else. Later sections refer back to this as <a href="#object-map">the map (§1)</a>.</figcaption>
+  </figure>
+
+  <h3>Three misconceptions to drop now</h3>
+
+  <div class="callout warn">
+    <strong>Misconception: "tmux is a terminal."</strong>
+    It looks like one — it draws a status bar, it tiles panes, it feels like an app. It is a window manager that runs <em>inside</em> your terminal. The test takes two seconds: you launched it from a shell prompt, in a window another program drew. Two programs are involved — your terminal renders; the tmux server decides what gets rendered. That is why tmux cannot improve your font, and why it behaves identically locally and over SSH.
+  </div>
+
+  <div class="callout warn">
+    <strong>Misconception: "Detaching pauses my programs."</strong>
+    The view disappears, so it feels like a pause. Nothing pauses. Detach removes a client; the programs keep running inside the server. The honest version cuts the other way, too: even <em>without</em> tmux a background job can outlive its terminal — as an orphan you can never reach again (<a href="#prereqs">§2</a> has the transcript). tmux's promise is not "your processes won't die." It is: the shell, its working directory, its environment, your editor mid-buffer, and the scrollback all stay alive together, attached to a server you can re-enter.
+  </div>
+
+  <div class="callout warn">
+    <strong>Misconception: "Panes are tabs."</strong>
+    Tabs switch — one thing visible at a time. Panes multiply — several things visible at once, inside a single window. The tab-like unit in tmux is the <em>window</em>; panes are simultaneous splits of a window. And the pane is the unit that holds a process: close the pane and the process running in it ends with it (<a href="#panes">§7</a>). Windows are views; panes are where processes live.
+  </div>
+
+  <p class="tiny">Sources: <a href="https://man.openbsd.org/tmux" target="_blank" rel="noopener">tmux(1) — OpenBSD manual, overview</a> · <a href="https://github.com/tmux/tmux/wiki" target="_blank" rel="noopener">tmux GitHub wiki</a></p>
 </section>
 
 <section id="prereqs">
   <h2>2 · Prerequisite floor</h2>
+  <p class="lede">You have used a terminal for years without needing to know what one is. tmux ends that arrangement: it wedges itself into the exact seam between your terminal and your programs, and every confusing thing it does happens at that seam. Three concepts put you back on solid ground — who draws, what <code>$TERM</code> promises, and what a hangup signal really does.</p>
+
+  <h3>Terminal, shell, multiplexer — who does what</h3>
+  <p>Three kinds of program share your one terminal window. The table is the section; the rest of the guide assumes it.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Program</th><th>Draws</th><th>Owns as child processes</th><th>What ends it</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Terminal emulator</strong><br><span class="tiny">Terminal.app · iTerm2 · Alacritty</span></td>
+        <td>The window, every glyph, the font, mouse and clipboard. The only program here that renders anything.</td>
+        <td>Your shell — the one it launched at startup.</td>
+        <td>Closing the window hangs up its pseudo-terminal; the shell receives <code>SIGHUP</code>.</td>
+      </tr>
+      <tr>
+        <td><strong>Shell</strong><br><span class="tiny">zsh</span></td>
+        <td>Nothing. It prints characters and lets the terminal worry about pixels.</td>
+        <td>Every command you run — foreground jobs, <code>cmd &amp;</code> background jobs, editors.</td>
+        <td>Exiting the shell (by choice or by <code>SIGHUP</code>) orphans its children.</td>
+      </tr>
+      <tr>
+        <td><strong>tmux server</strong></td>
+        <td>Only its own UI: the status line and pane borders. Everything else in the grid is your programs' output.</td>
+        <td>Every shell in every pane. Your terminal is not their parent — the server is.</td>
+        <td>Not terminal death. It exits when its last session ends (<a href="#server">§4</a>).</td>
+      </tr>
+    </tbody>
+  </table></div>
+
+  <h3>$TERM: the capability contract</h3>
+  <p><code>$TERM</code> is not your terminal's name. It is the name programs use to look up capabilities — how many colors, how to move the cursor, whether the clipboard is reachable — in the terminfo database. Programs never ask your terminal what it can do; they ask <code>$TERM</code>.</p>
+  <p>tmux sits in the middle of every byte, so it does the only sensible thing: each pane gets a brand-new terminal with its own identity. From the outside, your terminal reports something like <code>xterm-256color</code> — this is how tmux itself describes a real attached client:</p>
+  <pre><code>$ tmux list-clients
+/dev/ttys031: alpha [80x24 xterm-256color] (attached,focused,UTF-8)</code></pre>
+  <p>Inside a pane, <code>$TERM</code> is different — <code>tmux-256color</code> on a stock install (some configurations say <code>screen-256color</code>). Real pane contents, fresh server, one command typed in:</p>
+  <pre><code>$ tmux -L first -f /dev/null new-session -d -s try
+$ tmux -L first send-keys -t try 'echo "inside: $TERM"' Enter
+$ tmux -L first capture-pane -p -t try
+…
+❯ echo "inside: $TERM"
+inside: tmux-256color</code></pre>
+  <p>The stock default it comes from, straight off the server:</p>
+  <pre><code>$ tmux -L first show-options -s default-terminal
+default-terminal tmux-256color</code></pre>
+  <p>Carry two consequences forward. Programs inside tmux are talking to <em>tmux</em>, not to your terminal — one terminal, two contracts, tmux bridging them. And every "the colors are wrong inside tmux" symptom is this contract breaking somewhere along that chain; <a href="#configuration">§10</a> repairs it properly.</p>
+
+  <h3>SIGHUP: what actually happens when the terminal dies</h3>
+  <p>A terminal connection is a pseudo-terminal. Close the window, drop the SSH, let the laptop sleep mid-session: the pty hangs up, and the kernel delivers <strong>SIGHUP</strong> — the hangup signal — to the processes attached to it, delivered by process group. The shell owns the connection, so it gets the signal and exits. That much is standard Unix and always true.</p>
+  <p>What happens to the shell's <em>children</em> is the interesting part, and the folklore answer — "closing the terminal kills your jobs" — did not survive contact with the machine this guide was tested on. Real transcript: a bare interactive zsh on a pty, one backgrounded job, then the terminal closes:</p>
+  <pre><code>### close the terminal (pty master)
+zsh exited rc=1
+### ps after terminal closed:
+  PID STAT COMMAND
+99451 SN   sleep 300</code></pre>
+  <p>The shell died. The backgrounded <code>sleep</code> survived it — reparented, orphaned, and unreachable: no terminal, no shell, no way back in. It had to be killed by hand.</p>
+  <p>The same experiment inside tmux, from the same research run — terminal closed while a client was attached, then the session deliberately killed:</p>
+  <pre><code>### sleep after terminal closed (session detached, process alive):
+  PID STAT COMMAND
+96174 SN   sleep 300
+### kill-session -t alpha
+### ps after kill-session (shell and sleep gone):
+  PID STAT COMMAND
+(no rows)</code></pre>
+  <div class="callout blue">
+    <strong>The honest pitch</strong>
+    Without tmux, a process may well survive your terminal dying — as an orphan you can never reach again. What dies is the <em>session</em>: the shell, its working directory, its environment, the editor mid-buffer, the scrollback, and any route back to what survived. Inside tmux, the terminal closing just detaches a client; the shell and its state keep running in the server, and <code>kill-session</code> is what ends them — on purpose, visibly. Survival is not the product. Survival <em>plus re-entry</em> is the product.
+  </div>
+
+  <h3>Self-assessment</h3>
+  <p>Five things you should be able to say out loud. If any comes out wrong, re-read the sub-section named after it before continuing — Part II leans on all five.</p>
+  <ul class="checklist">
+    <li>I can point at my screen and name which of the three programs draws the glyph I am reading. <span class="tiny">(re-read: Terminal, shell, multiplexer)</span></li>
+    <li>I can say whose child my interactive shell is right now, and whose child it becomes inside tmux. <span class="tiny">(re-read: the table above — <a href="#server">§4</a> shows it with <code>ps</code>)</span></li>
+    <li>I can explain why <code>$TERM</code> changes when I enter tmux, and name the stock value inside a pane. <span class="tiny">(re-read: $TERM)</span></li>
+    <li>I can describe SIGHUP: who sends it, who receives it, and when. <span class="tiny">(re-read: SIGHUP)</span></li>
+    <li>I can state what tmux guarantees about a detached session — and why "your processes would die otherwise" is not the argument. <span class="tiny">(re-read: The honest pitch)</span></li>
+  </ul>
+
+  <p class="tiny">Sources: <a href="https://man.openbsd.org/tmux" target="_blank" rel="noopener">tmux(1) — TERMINALS section, default-terminal</a> · <a href="https://man7.org/linux/man-pages/man7/signal.7.html" target="_blank" rel="noopener">signal(7) — SIGHUP</a> · transcripts captured on macOS, tmux 3.7b, 2026-08-22</p>
 </section>
 
 <section id="install">
   <h2>3 · Install &amp; first session</h2>
+  <p class="lede">Installing tmux takes thirty seconds. The section is really about the sixty seconds after: one full lap of the server lifecycle — create, detach, observe from outside, re-enter, end it — so that "the server owns the work" becomes something you have watched happen, not something you were told.</p>
+
+  <h3>Install</h3>
+  <div class="grid">
+    <div class="card">
+      <h4>macOS</h4>
+      <pre><code>brew install tmux</code></pre>
+      <p>Homebrew tracks releases closely. This is the right default.</p>
+    </div>
+    <div class="card">
+      <h4>Linux — Debian/Ubuntu</h4>
+      <pre><code>sudo apt install tmux</code></pre>
+      <p>Distribution packages lag. Check the version below before blaming tmux for a missing feature.</p>
+    </div>
+  </div>
+  <p>Building from source is out of scope for this guide. If you need it, the releases page ships tarballs and the repository README lists the dependencies — that pointer is as far as we go.</p>
+
+  <h3>Verify the version</h3>
+  <pre><code>$ command -v tmux
+/usr/local/bin/tmux
+$ tmux -V
+tmux 3.7b</code></pre>
+  <p class="tiny">Captured on the machine this guide was verified on: tmux 3.7b, macOS 15.6 (Darwin 24.6.0). Everything ahead was checked against the 3.7 series; where your output should differ, the guide says so.</p>
+
+  <h3>The 60-second loop</h3>
+  <p>Five commands. Together they are the entire mental model of <a href="#mental-model">§1</a>, performed once. Run them in any terminal.</p>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div>
+      <h3>Create a session</h3>
+      <pre><code>tmux new -s try</code></pre>
+      <p><strong>Expect:</strong> your terminal becomes a tmux session — a status line along the bottom, the session name <code>try</code> at the far left, one window, one pane, running your shell. If no server was running, one just started for you, silently, in the background. There is no message. <a href="#server">§4</a> shows you where it lives.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div>
+      <h3>Detach</h3>
+      <p>Press <kbd>Ctrl</kbd>+<kbd>b</kbd>, release, then <kbd>d</kbd>.</p>
+      <p><strong>Expect:</strong> your plain shell returns, status line gone. The session did not close — it is running headless inside the server. You just removed your client, nothing else.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div>
+      <h3>Observe from outside</h3>
+      <pre><code>tmux ls</code></pre>
+      <p><strong>Expect:</strong></p>
+      <pre><code>try: 1 windows (created Sun Aug 23 00:48:49 2026)</code></pre>
+      <p class="tiny">Real output; your timestamp differs. This line is the whole guide in miniature — the session outlived your leaving it.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div>
+      <h3>Come back</h3>
+      <pre><code>tmux attach</code></pre>
+      <p><strong>Expect:</strong> the session returns — same window, same pane, scrollback intact. Nothing re-ran and nothing was restored; it never stopped. With more than one session, name the target: <code>tmux attach -t try</code>. Detach again before the last step.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">5</div>
+    <div>
+      <h3>End it — on purpose</h3>
+      <div class="callout danger">
+        <strong>kill-server is the nuclear option</strong>
+        It ends every session in the server — every window, every pane, every running program. If you already keep tmux sessions (check <code>tmux ls</code> first), run Lab 1 below instead: the same loop on a private named server that cannot touch anything you care about.
+      </div>
+      <pre><code>tmux kill-server</code></pre>
+      <p><strong>Expect:</strong> no output; the command succeeds. The receipt for what just ended, captured verbatim on Lab 1's throwaway server:</p>
+      <pre><code>$ tmux -L first kill-server
+$ tmux -L first ls
+no server running on /private/tmp/tmux-501/first
+$ echo "exit=$?"
+exit=1</code></pre>
+      <p class="tiny">On the default server, the last path component reads <code>default</code>; the <code>501</code> is the user id — <code>id -u</code> on this machine. Killing the only session ends the server the same way: a server exits when its last session ends, by the <code>exit-empty</code> default (<a href="#server">§4</a>). "No server running" here is not a failure; it is the correct description of an empty world.</p>
+    </div>
+  </div>
+
+  <div class="lab">
+    <div class="lab-title">Lab 1 · First session</div>
+    <div class="lab-meta">5 minutes · local · throwaway</div>
+    <p>The same loop on a private named server: every command below takes <code>-L first</code>, which means "use the socket named <code>first</code> instead of the default one." Your default server — if one is running — never sees any of this, and the final <code>kill-server</code> can only ever hit this throwaway. <a href="#server">§4</a> makes named servers precise.</p>
+
+    <p><strong>1.</strong> Create and attach:</p>
+    <pre><code>tmux -L first new -s try</code></pre>
+    <p><strong>Expect:</strong> a fresh session named <code>try</code> fills the terminal. You are now a client. Detach with <kbd>Ctrl</kbd>+<kbd>b</kbd>, <kbd>d</kbd>.</p>
+
+    <p><strong>2.</strong> From your plain shell, prove it survived:</p>
+    <pre><code>$ tmux -L first ls
+try: 1 windows (created Sun Aug 23 00:48:49 2026)</code></pre>
+    <p><strong>Expect:</strong> exactly that line, your timestamp in place of mine.</p>
+
+    <p><strong>3.</strong> Re-enter, then leave again:</p>
+    <pre><code>tmux -L first attach</code></pre>
+    <p><strong>Expect:</strong> the session as you left it — scrollback intact, cursor where it was. Detach once more.</p>
+
+    <p><strong>4.</strong> End the server and read the receipt:</p>
+    <pre><code>$ tmux -L first kill-server
+$ tmux -L first ls
+no server running on /private/tmp/tmux-501/first
+$ echo "exit=$?"
+exit=1</code></pre>
+    <p><strong>Expect:</strong> the no-server error and <code>exit=1</code> — the server exited when its work ended, and saying so is not an error condition.</p>
+
+    <p>Checkpoint:</p>
+    <ul class="checklist">
+      <li><code>tmux -L first ls</code> listed the session <em>after</em> you detached — survival, demonstrated</li>
+      <li>You re-attached and found the scrollback intact — re-entry, demonstrated</li>
+      <li><code>kill-server</code> produced the no-server error — and you can say why that is the correct end state</li>
+    </ul>
+    <p class="tiny">Teardown: <code>kill-server</code> already ended everything, so there is nothing to clean up. Confirm with <code>pgrep -fl 'tmux -L first'</code> — it prints nothing.</p>
+  </div>
+
+  <p class="tiny">Sources: <a href="https://formulae.brew.sh/formula/tmux" target="_blank" rel="noopener">Homebrew — tmux formula</a> · <a href="https://github.com/tmux/tmux/releases" target="_blank" rel="noopener">tmux releases</a> · <a href="https://github.com/tmux/tmux/wiki" target="_blank" rel="noopener">tmux GitHub wiki — installing</a></p>
 </section>
 
 <section id="server">
