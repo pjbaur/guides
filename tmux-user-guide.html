@@ -1043,15 +1043,11 @@ tmux -L lab new-window -t proj -n tests</code></pre>
     <p><strong>3.</strong> Check:</p>
     <pre><code>$ tmux -L lab list-windows -t proj -F '#{window_index}: #{window_name} #{window_flags}'
 0: zsh
-1: edit -
-2: logs -
-3: tests *</code></pre>
-    <pre><code>$ tmux -L t6 list-windows -t proj -F '#{window_index}: #{window_name} #{window_flags}'
-0: zsh
 1: edit
 2: logs -
 3: tests *</code></pre>
     <p><strong>Expect:</strong> exactly your drawing — <code>*</code> on <code>tests</code> (created last, so current), <code>-</code> on <code>logs</code> (the current window <code>tests</code> displaced), and nothing at all on <code>zsh</code> or <code>edit</code>. One <code>*</code> and one <code>-</code> per session, always. If your drawing differed, re-read the flag decoder before continuing; the rest of the guide assumes it.</p>
+    <p class="tiny">Block re-captured 2026-08-23 on a fresh throwaway server running this exact sequence; shown under the lab's socket name.</p>
 
     <p><strong>4.</strong> Reorder and compact: move <code>tests</code> to index 8, swap it with <code>logs</code>, then renumber:</p>
     <pre><code>tmux -L lab move-window -s proj:3 -t proj:8
@@ -1156,6 +1152,7 @@ $ tmux -L lab list-panes -t alpha:1 -F '#{pane_index} #{pane_width}x#{pane_heigh
 0 40x24
 1 39x12
 2 39x11</code></pre>
+  <p class="tiny">Provenance: the 2026-08-22 research run captured these sizes with a wider format string; this exact pairing was re-captured 2026-08-23 on a fresh throwaway and matched number-for-number — as did the layout and resize listings below.</p>
   <p>80 columns became 40 + 1 + 39: every divider eats one column. The right half's 24 rows became 12 + 1 + 11 the same way. Splits always halve <em>the pane being split</em> — the second split targeted the right pane, so the left pane never changed. Your window's numbers come from its size; the plumbing does not. The 80x24 itself is the <code>default-size</code> option talking, which matters more than it sounds — <a href="#clients">§8</a> shows who really decides a window's size.</p>
 
   <h3>Identity versus index</h3>
@@ -1232,7 +1229,7 @@ $ tmux -L lab list-windows -t alpha -F '#{window_index}: #{window_name} #{window
 1: broken * panes=1
 2: logs - panes=3
 3: edit  panes=1</code></pre>
-  <p><code>broken</code> inserted at index 1 and everything else shifted up — <code>logs</code> from 1 to 2, <code>edit</code> from 2 to 3. Now, which pane did it take? The pid transcript above is the before-picture; <code>broken</code> holds pid 71264, which the before-picture shows as… not an <code>alpha</code> pane at all. Two traps fired at once:</p>
+  <p><code>broken</code> inserted at index 1 and everything else shifted up — <code>logs</code> from 1 to 2, <code>edit</code> from 2 to 3. Now, which pane did it take? The pid listing above was captured <em>after</em> the break, and it shows <code>broken</code> (alpha:1.0) holding pid 71264 — a server-start pid, sibling of alpha's originals (71262, 71268, 71273), each of which the same listing shows still in place in its own alpha window. By elimination, 71264 never belonged to an alpha window at all: it was <code>beta</code>'s only pane. Two traps fired at once:</p>
   <ul>
     <li><strong><code>-s</code> omitted means "the server's current pane."</strong> With no client attached, that belongs to the most recently used session — here <code>beta</code>, not <code>alpha</code>. The break carried away <code>beta</code>'s only pane. Name your panes explicitly; every transcript-level surprise in this pair of commands comes from an implicit target.</li>
     <li><strong>A session cannot exist with zero windows.</strong> <code>beta</code> lost its last window and was destroyed by the break — the same last-one-out rule that ends servers (<a href="#server">§4</a>) and windows, one level up each time. After the break the server held exactly one session: <code>alpha: 4 windows</code>.</li>
@@ -1349,7 +1346,7 @@ tmux -L lab list-windows -t gym -F '#{window_index}: #{window_name} panes=#{wind
     <p class="tiny">Teardown: <code>tmux -L lab kill-server</code> — one session, one server, one receipt.</p>
   </div>
 
-  <p class="tiny">Sources: <a href="https://man.openbsd.org/tmux" target="_blank" rel="noopener">tmux(1) — split-window, resize-pane (-Z), select-layout, break-pane, join-pane, synchronize-panes, pane_index/pane_id formats; DEFAULT KEY BINDINGS</a> · bindings read from <code>tmux list-keys</code> on 3.7b · transcripts: research captures 2026-08-22 (splits, layouts, resize, zoom, break/join, synchronize) and fresh <code>-L t6</code> captures 2026-08-23 (id-vs-index kill; splits/layout/resize re-confirmed number-for-number), throwaway servers only</p>
+  <p class="tiny">Sources: <a href="https://man.openbsd.org/tmux" target="_blank" rel="noopener">tmux(1) — split-window, resize-pane (-Z), select-layout, break-pane, join-pane, synchronize-panes, pane_index/pane_id formats; DEFAULT KEY BINDINGS</a> · bindings read from <code>tmux list-keys</code> on 3.7b · transcripts: research captures 2026-08-22 (splits, layouts, resize, zoom, break/join, synchronize) and fresh <code>-L t6</code> captures 2026-08-23 (id-vs-index kill), throwaway servers only</p>
 </section>
 
 <section id="clients">
@@ -1392,16 +1389,22 @@ window-size latest</code></pre>
     <strong>Misconception: "smallest terminal wins."</strong>
     <code>window-size</code> is a session option, and its default on 3.7b is <code>latest</code>: the window matches <em>the most recent client to attach or resize</em>, whoever that is and however small. A 100-column window happily persists while a 60-column client is attached — the small client just gets a viewport with scroll-off. The classic smallest-wins behavior still exists, but you ask for it: <code>set-option -t SESSION window-size smallest</code>. If you learned tmux from an older version or an older tutorial, this one option is why shared sessions no longer shrink.
   </div>
-  <p>The whole matrix, captured live — client A on a 100x30 pty, client B on 60x20, both attached to <code>alpha</code>, window dimensions probed after each step:</p>
+  <p>The whole matrix, captured live in the research rig — client A attached on a 100x30 pty, then client B on 60x20, both to <code>alpha</code>; the window's dimensions probed after each step:</p>
+  <pre><code>### A alone (100x30): dims
+w=100 h=29
+### B attached (60x20): dims (window-size=latest, B most recent)
+w=60 h=19
+### after A resized to 40x15 (A most recent)
+w=40 h=14
+### after A back to 100x30 (B is 60x20, still smaller)
+w=100 h=29
+### set window-size smallest  ->  w=60 h=19
+### set window-size back to latest  ->  w=100 h=29</code></pre>
+  <p class="tiny">Each <code>###</code> line is a label printed by the rig between real <code>display-message</code> outputs; the <code>w=… h=…</code> values are verbatim tmux output.</p>
+  <p>And the cast, listed partway through that same run — after step two, while both clients were attached:</p>
   <pre><code>$ tmux -L lab list-clients -F '#{client_name} #{client_tty} #{client_termname} #{client_session} #{client_width}x#{client_height}'
 /dev/ttys031 /dev/ttys031 xterm-256color alpha 100x30
-/dev/ttys032 /dev/ttys032 xterm-256color alpha 60x20
-### A alone (100x30): w=100 h=29
-### B attached (60x20, most recent): w=60 h=19
-### A resized to 40x15 (A most recent): w=40 h=14
-### A back to 100x30 (B still 60x20, smaller): w=100 h=29
-### set window-size smallest: w=60 h=19
-### set window-size back to latest: w=100 h=29</code></pre>
+/dev/ttys032 /dev/ttys032 xterm-256color alpha 60x20</code></pre>
   <p>Read the fourth line twice: B — smaller — is attached, and the window is 100 wide anyway, because A touched its size last. That is <code>latest</code> working exactly as shipped. Two smaller observations in the same data: the off-by-one (a 100x30 client yields a 100x29 window — the status line eats one row, always), and the fact that <code>client_width</code>/<code>client_height</code> report each client's own terminal, while <code>window_width</code>/<code>window_height</code> report the negotiated window — the predict-then-check pair Lab 6 drills.</p>
 
   <h3>Three ways to detach (one of them accidental)</h3>
