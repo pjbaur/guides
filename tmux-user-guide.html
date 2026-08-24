@@ -151,6 +151,7 @@
     font-size: .88em;
   }
   code { color: var(--ink); background: var(--code-bg); padding: 1px 5px; border-radius: 5px; }
+  :not(pre) > code { overflow-wrap: anywhere; }
   kbd {
     display: inline-block; min-width: 1.7em; text-align: center; white-space: nowrap;
     color: var(--ink); background: var(--surface); border: 1px solid var(--line);
@@ -203,7 +204,7 @@
     content: "→"; position: absolute; right: -9px; top: 50%; transform: translateY(-50%);
     z-index: 2; color: var(--muted); background: var(--bg); padding: 0 2px;
   }
-  .step { display: grid; grid-template-columns: 42px 1fr; gap: 13px; margin: 18px 0; }
+  .step { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 13px; margin: 18px 0; }
   .step h3 { margin: 4px 0 8px; }
   .step-num {
     display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px;
@@ -402,7 +403,7 @@
     a { color: #111; text-decoration: none; }
     a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 8pt; overflow-wrap: anywhere; }
     h2 { break-before: page; }
-    h2:first-of-type { break-before: auto; }
+    section:first-of-type h2 { break-before: auto; }
     h3, .card, .lab, .callout, .step, table, .quiz-item, figure.diagram { break-inside: avoid; }
     details > *:not(summary) { display: block !important; }
     .quiz-answer { display: block !important; }
@@ -524,8 +525,8 @@
       <text x="80" y="400" class="d-mono">…more sessions would sit beside alpha, one box each (§5)</text>
 
       <!-- clients, outside the server -->
-      <line x1="290" y1="470" x2="290" y2="386" class="d-arrow" marker-end="url(#t5attach)"/>
-      <line x1="670" y1="470" x2="670" y2="386" class="d-arrow" marker-end="url(#t5attach)"/>
+      <line x1="290" y1="470" x2="290" y2="380" class="d-arrow" marker-end="url(#t5attach)"/>
+      <line x1="670" y1="470" x2="670" y2="380" class="d-arrow" marker-end="url(#t5attach)"/>
       <text x="304" y="436" class="d-label">attach</text>
       <text x="684" y="436" class="d-label">attach</text>
 
@@ -696,7 +697,7 @@ tmux 3.7b</code></pre>
       <pre><code>tmux ls</code></pre>
       <p><strong>Expect:</strong></p>
       <pre><code>try: 1 windows (created Sun Aug 23 00:48:49 2026)</code></pre>
-      <p class="tiny">Real output; your timestamp differs. This line is the whole guide in miniature — the session outlived your leaving it.</p>
+      <p class="tiny">Real output, captured on Lab 1's throwaway server below; your timestamp differs. This line is the whole guide in miniature — the session outlived your leaving it.</p>
     </div>
   </div>
   <div class="step">
@@ -2091,6 +2092,7 @@ set -g renumber-windows on</code></pre>
     <pre><code>$ tmux -L lab -f /dev/null new-session -d -s cfg
 $ tmux -L lab show-options -gv prefix
 C-b</code></pre>
+    <p><strong>Expect:</strong> <code>C-b</code> — the factory prefix, on the record before you change it.</p>
 
     <p><strong>3.</strong> Adopt without restarting:</p>
     <pre><code>$ tmux -L lab source-file ~/.tmux-lab8.conf
@@ -2143,7 +2145,7 @@ C-b</code></pre>
 $ tmux -L kb list-keys -T prefix | grep ' T '
 bind-key    -T prefix T       display-message bound</code></pre>
   <p>The <code>-T prefix</code> names the table. Omit it and you also get the prefix table — that is the ordinary spelling, <code>bind x …</code>. New tables cost nothing: <code>bind -T mine x …</code> creates <code>mine</code> on first use, and the <code>key-table</code> session option says which table a client consults without a prefix pending (stock: <code>root</code>). That is how nested prefixes, modal setups, and <a href="#copy-mode">§9</a>'s vi-style tables are built — a table is just a name, and which table is live is just state.</p>
-  <div class="callout danger">
+  <div class="callout warn">
     <strong>bind -n reaches into every program you run.</strong>
     <code>bind -n C-l …</code> puts a binding in the <em>root</em> table — no prefix, it fires on the bare key. That is the power: instant global hotkeys. That is also the hazard: the program in the pane never sees the key again. <kbd>Ctrl</kbd>+<kbd>l</kbd> stops clearing your shell's screen, stops redrawing vim — every pane, every session, everywhere on the server. A live round trip on 3.7b confirmed the mechanism in both directions: <code>bind -n C-l display-message 'root hit'</code> appeared in <code>list-keys -T root</code>, and <code>unbind -n C-l</code> removed it, restoring the key to your programs. The rule: root-table bindings should be keys nothing you run cares about — or keys you have decided tmux owns.
   </div>
@@ -2455,6 +2457,7 @@ command -v tss</code></pre>
     <pre><code>tmux -L lab -f /dev/null new-session -d -s project
 tmux -L lab new-session -d -s scratch
 tmux -L lab new-session -d -s monitor</code></pre>
+    <p><strong>Expect:</strong> silence, three times — and <code>tmux -L lab ls</code> lists <code>project</code>, <code>scratch</code>, and <code>monitor</code> for the picker to find.</p>
 
     <p><strong>5.</strong> Attach and jump: <code>tmux -L lab attach -t scratch</code>, then run <code>tss</code> at the pane's prompt, type <code>mon</code>, press <kbd>Enter</kbd>.</p>
     <p><strong>Expect:</strong> fzf lists the three sessions, filters to <code>monitor</code> as you type, and Enter lands you there — the status line's session list confirms it. From a second terminal: <code>tmux -L lab list-clients -F '#{client_session}'</code> prints <code>monitor</code>. Note the bare <code>tmux</code> inside the script worked against the <code>lab</code> server: the pane's <code>$TMUX</code> pointed it there.</p>
@@ -3565,6 +3568,7 @@ tmux -L try -f /dev/null new -s t   # throwaway server: stock config, surgically
   if (quizScore) quizScore.setAttribute('aria-live', 'polite');
   let quizState = {};
   try { quizState = JSON.parse(localStorage.getItem(QUIZ_KEY) || '{}'); } catch (_) { quizState = {}; }
+  if (!quizState || typeof quizState !== 'object' || Array.isArray(quizState)) quizState = {};
 
   function setAnswerOpen(answer, open) {
     answer.classList.toggle('open', open);
@@ -3604,6 +3608,7 @@ tmux -L try -f /dev/null new -s t   # throwaway server: stock config, surgically
     if (missedButton) missedButton.addEventListener('click', () => {
       quizState[item.dataset.q] = 'missed';
       if (answer) setAnswerOpen(answer, true);
+      if (revealButton) revealButton.textContent = 'Hide';
       updateQuiz();
     });
   });
