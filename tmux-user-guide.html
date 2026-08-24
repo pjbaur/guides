@@ -264,6 +264,116 @@
   .tiny { color: var(--muted); font-size: 12px; }
   .danger-text { color: var(--danger); font-weight: 750; }
 
+  /* Prefix playground simulator (§ unnumbered, after §7) */
+  .sim-shell { margin: 22px 0; }
+  .sim-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 9px; }
+  .sim-toolbar button {
+    color: var(--ink2); background: var(--surface); border: 1px solid var(--line);
+    border-radius: 7px; padding: 5px 11px; font-size: 12.5px;
+  }
+  .sim-toolbar button:hover { color: var(--accent-strong); border-color: var(--accent); }
+  .sim-toolbar button[aria-pressed="true"] { color: var(--accent-strong); border-color: var(--accent); background: var(--accent-wash); font-weight: 700; }
+  .sim-hint { color: var(--muted); font-size: 12.5px; }
+  .sim {
+    position: relative; display: flex; flex-direction: column; min-height: 380px;
+    background: var(--terminal); color: var(--terminal-ink); border: 1px solid var(--line);
+    border-radius: 10px; overflow: hidden;
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  .sim-bar {
+    position: relative; display: flex; align-items: center; gap: 12px; flex: 0 0 auto;
+    padding: 5px 10px; font-size: 12.5px; line-height: 1.5;
+    background: rgba(255,138,125,.15); border-bottom: 1px solid rgba(255,138,125,.3);
+  }
+  .sim-sessions { white-space: nowrap; }
+  .sim-sessions .cur { color: var(--terminal-ink); font-weight: 700; }
+  .sim-sessions .other { color: var(--terminal-muted); }
+  .sim-windows { flex: 1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sim-windows .cur { color: var(--terminal-ink); font-weight: 700; }
+  .sim-windows .other { color: var(--terminal-muted); }
+  .sim-right { white-space: nowrap; color: var(--terminal-muted); display: flex; align-items: center; gap: 8px; }
+  .sim-latch {
+    display: none; color: var(--terminal); background: var(--terminal-accent);
+    border-radius: 4px; padding: 0 6px; font-weight: 700;
+  }
+  .sim.latched .sim-latch { display: inline-block; }
+  .sim-msg {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 6; display: none;
+    padding: 5px 10px; font-size: 12.5px; background: var(--surface); color: var(--ink2);
+    border-top: 1px solid var(--line);
+  }
+  .sim-msg.show { display: block; }
+  .sim-msg.warn { background: var(--amber-wash); color: var(--ink); }
+  .sim-msg.error { background: var(--danger-wash); color: var(--ink); }
+  .sim-prompt {
+    position: absolute; left: 6px; right: 6px; bottom: 34px; z-index: 7; display: none;
+    align-items: center; gap: 7px; padding: 5px 9px; font-size: 12.5px;
+    background: #e8c458; color: #241512; border-radius: 4px; box-shadow: var(--shadow);
+  }
+  .sim-prompt.show { display: flex; }
+  .sim-prompt input {
+    flex: 1; min-width: 60px; background: transparent; border: 0; outline: 0;
+    color: inherit; font: inherit; caret-color: #241512; padding: 0;
+  }
+  .sim-hintstrip {
+    flex: 0 0 auto; padding: 4px 10px; font-size: 11.5px; color: var(--terminal-muted);
+    background: rgba(243,226,223,.05); border-top: 1px solid rgba(243,226,223,.12);
+  }
+  .sim-panes {
+    position: relative; flex: 1; display: grid; gap: 3px; padding: 8px; min-height: 300px;
+  }
+  .sim-pane {
+    position: relative; min-height: 74px; padding: 7px 10px; border-radius: 6px;
+    border: 1px solid rgba(243,226,223,.22); background: rgba(243,226,223,.04);
+    color: var(--terminal-muted); font-size: 12.5px; overflow: hidden;
+  }
+  .sim-pane.active {
+    border-color: var(--terminal-accent); box-shadow: inset 0 0 0 1px var(--terminal-accent);
+    background: rgba(255,138,125,.08);
+  }
+  .sim-pane .pane-label { color: var(--terminal-ink); font-weight: 700; }
+  .sim-pane .pane-id { position: absolute; top: 6px; right: 9px; opacity: .65; font-size: 11px; }
+  .sim-pane .pane-body { margin-top: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sim-pane .pane-body::before { content: "❯ "; color: var(--terminal-accent); }
+  .sim-pane .pane-num {
+    position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+    font-size: clamp(26px, 6vw, 44px); font-weight: 800; color: var(--terminal-accent);
+    background: rgba(13,6,5,.55); border-radius: 5px;
+  }
+  .sim-panes.numbers .pane-num { display: flex; }
+  .sim-overlay {
+    position: absolute; inset: 30px 16px 16px; z-index: 8; display: none; flex-direction: column;
+    max-height: calc(100% - 46px); background: #241311; border: 1px solid var(--terminal-accent);
+    border-radius: 8px; box-shadow: var(--shadow); overflow: hidden;
+  }
+  .sim-overlay.show { display: flex; }
+  .sim-overlay .pick-title {
+    flex: 0 0 auto; padding: 7px 12px; font-size: 12px; color: var(--terminal-accent);
+    border-bottom: 1px solid rgba(243,226,223,.18);
+  }
+  .sim-overlay .pick-rows { overflow-y: auto; padding: 4px 0; font-size: 12.5px; }
+  .sim-overlay .pick-row { display: flex; gap: 10px; padding: 3px 12px; color: var(--terminal-muted); }
+  .sim-overlay .pick-row .k { color: var(--terminal-ink); min-width: 7.5em; }
+  .sim-overlay .pick-row.cur { background: rgba(255,138,125,.18); color: var(--terminal-ink); }
+  .sim-overlay .pick-row.cur .k { font-weight: 700; }
+  .sim-overlay .pick-foot {
+    flex: 0 0 auto; padding: 5px 12px; font-size: 11px; color: var(--terminal-muted);
+    border-top: 1px solid rgba(243,226,223,.18);
+  }
+  .sim-splash {
+    position: absolute; inset: 0; z-index: 9; display: none; place-items: center;
+    text-align: center; background: rgba(13,6,5,.82); color: var(--terminal-ink);
+    font-size: 14px; line-height: 1.9; padding: 20px;
+  }
+  .sim-splash.show { display: grid; }
+  .sim-splash .big { font-size: 17px; font-weight: 750; }
+  .sim-splash .dim { color: var(--terminal-muted); font-size: 12.5px; }
+  @media (max-width: 680px) {
+    .sim { min-height: 330px; }
+    .sim-panes { min-height: 250px; }
+    .sim-bar { flex-wrap: wrap; row-gap: 2px; }
+  }
+
   @media (max-width: 940px) {
     .layout { display: block; }
     .toc {
@@ -287,7 +397,7 @@
   @media print {
     :root { color-scheme: light; }
     body { background: #fff; color: #111; font-size: 11pt; }
-    .toc, .theme-toggle, .skip-link, .copy-btn, .quiz-actions { display: none !important; }
+    .toc, .theme-toggle, .skip-link, .copy-btn, .quiz-actions, .sim-shell { display: none !important; }
     main { padding: 0; max-width: none; }
     a { color: #111; text-decoration: none; }
     a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 8pt; overflow-wrap: anywhere; }
@@ -315,6 +425,7 @@
   <a href="#sessions">5 · Sessions</a>
   <a href="#windows">6 · Windows</a>
   <a href="#panes">7 · Panes</a>
+  <a href="#playground">· Prefix playground</a>
   <a href="#clients">8 · Clients</a>
   <a href="#copy-mode">9 · Copy-mode &amp; buffers</a>
   <div class="toc-label">Power Tools</div>
@@ -847,7 +958,7 @@ exit=1</code></pre>
       <tr><td><kbd>Prefix</kbd> <kbd>D</kbd></td><td><code>choose-client -Z</code></td><td>Pick a client to detach — for when you are not the only one attached (<a href="#clients">§8</a>)</td></tr>
     </tbody>
   </table></div>
-  <p class="tiny">"Command underneath" is the shipped default binding, read off this machine's <code>tmux list-keys -T prefix</code>. <a href="#key-bindings">§11</a> teaches that table's key-table machinery; the cheat sheet (<a href="#cheatsheet">§17</a>) repeats these cards.</p>
+  <p class="tiny">"Command underneath" is the shipped default binding, read off this machine's <code>tmux list-keys -T prefix</code>. <a href="#key-bindings">§11</a> teaches that table's key-table machinery; the cheat sheet (<a href="#cheatsheet">§17</a>) repeats these cards. Every chord above is wired into the <a href="#playground">Prefix playground</a> after §7 — a simulator you can drill without a server.</p>
 
   <h3>How sessions end</h3>
   <ul>
@@ -1308,7 +1419,7 @@ docs/tmux-guide guides
       <tr><td><kbd>Prefix</kbd> <kbd>m</kbd> / <kbd>M</kbd></td><td><code>select-pane -m</code> / <code>-M</code></td><td>Mark the current pane / clear the mark — the target for <code>swap-pane</code> and joins</td></tr>
     </tbody>
   </table></div>
-  <p class="tiny">Bindings verified against this machine's <code>tmux list-keys -T prefix</code> on 3.7b. Killing the last pane of a window takes the window with it — last-one-out, all the way up the tree.</p>
+  <p class="tiny">Bindings verified against this machine's <code>tmux list-keys -T prefix</code> on 3.7b. Killing the last pane of a window takes the window with it — last-one-out, all the way up the tree. The <a href="#playground">Prefix playground</a> after this section wires this whole table to a simulated server.</p>
 
   <div class="lab">
     <div class="lab-title">Lab 5 · Pane calisthenics</div>
@@ -1351,6 +1462,88 @@ tmux -L lab list-windows -t gym -F '#{window_index}: #{window_name} panes=#{wind
   </div>
 
   <p class="tiny">Sources: <a href="https://man.openbsd.org/tmux" target="_blank" rel="noopener">tmux(1) — split-window, resize-pane (-Z), select-layout, break-pane, join-pane, synchronize-panes, pane_index/pane_id formats; DEFAULT KEY BINDINGS</a> · bindings read from <code>tmux list-keys</code> on 3.7b · transcripts: research captures 2026-08-22 (splits, layouts, resize, zoom, break/join, synchronize) and fresh <code>-L t6</code> captures 2026-08-23 (id-vs-index kill), throwaway servers only</p>
+</section>
+
+<section id="playground">
+  <h2>Prefix playground</h2>
+  <p class="lede">Reading about chords builds vocabulary; fingers build reflexes. This unnumbered interlude is a small tmux living in the page — a state machine mirroring the object tree from <a href="#mental-model">the map (§1)</a>: server → sessions → windows → panes. Click it, press <kbd>Prefix</kbd> chords, and watch the same objects move: splits deal pane boxes, <kbd>d</kbd> detaches, <kbd>s</kbd> and <kbd>w</kbd> open the choose lists, and the status bar answers with the flag language <a href="#windows">§6</a> decoded.</p>
+
+  <h3>How to drive it</h3>
+  <ul>
+    <li><strong>Click the terminal</strong> below — it takes keyboard focus (<kbd>Tab</kbd> reaches it too). The hint strip inside confirms what the prefix currently is.</li>
+    <li><strong>Press the prefix</strong> — stock is <kbd>Ctrl</kbd>+<kbd>b</kbd> — release it, watch <code>[prefix]</code> latch in the status bar, then press the key. Exactly the two-stroke rhythm <a href="#sessions">§5</a> taught.</li>
+    <li><strong>The toggle above the terminal</strong> swaps between two verified keymaps: stock <kbd>C-b</kbd>, and <a href="#configuration">§10</a>'s opinionated build — <kbd>C-a</kbd> prefix, mnemonic splits, reload chord — plus the pane-nav block the playground ships alongside it (<kbd>h</kbd><kbd>j</kbd><kbd>k</kbd><kbd>l</kbd> under the prefix, plain arrows without it). <strong>Reset</strong> reseeds the two-session state.</li>
+    <li><strong><kbd>Escape</kbd> releases focus</strong> from anywhere in the simulator — no keyboard trap. <kbd>?</kbd> opens a keymap overlay listing whatever the <em>current</em> config binds.</li>
+  </ul>
+
+  <div class="sim-shell" id="playgroundSimShell">
+    <div class="sim-toolbar">
+      <button type="button" id="simConfigToggle" aria-pressed="false">Config: stock (C-b)</button>
+      <button type="button" id="simReset">Reset</button>
+      <span class="sim-hint">Click the terminal, then press Prefix chords — a keyboard is required</span>
+    </div>
+    <div class="sim" id="playgroundSim" tabindex="0" role="group" aria-label="tmux prefix playground simulator: click to focus, then press prefix chords; Escape releases focus">
+      <div class="sim-bar">
+        <span class="sim-sessions" id="simSessions"><span class="cur">[alpha]</span> <span class="other">beta</span></span>
+        <span class="sim-windows" id="simWindows"><span class="cur">0:zsh*</span> <span class="other">1:logs-</span></span>
+        <span class="sim-right"><span class="sim-latch">[prefix]</span><span id="simClock">--:--</span></span>
+      </div>
+      <div class="sim-panes" id="simPanes">
+        <div class="sim-pane active"><span class="pane-label">0:zsh</span><span class="pane-id">%0</span><div class="pane-body">&nbsp;</div><div class="pane-num" aria-hidden="true">0</div></div>
+      </div>
+      <div class="sim-prompt" id="simPrompt"><span id="simPromptLabel"></span><input id="simPromptInput" type="text" autocomplete="off" spellcheck="false" aria-label="command prompt"></div>
+      <div class="sim-overlay" id="simOverlay" role="dialog" aria-label="picker">
+        <div class="pick-title" id="simPickTitle"></div>
+        <div class="pick-rows" id="simPickRows"></div>
+        <div class="pick-foot" id="simPickFoot"></div>
+      </div>
+      <div class="sim-splash" id="simSplash"></div>
+      <div class="sim-msg" id="simMsg" role="status"></div>
+      <div class="sim-hintstrip" id="simHintStrip">Click here, then press Prefix chords · stock prefix: Ctrl+b · Escape releases focus</div>
+    </div>
+  </div>
+
+  <p>Everything the simulator binds was read off a real server first: one throwaway <code>-L sim -f /dev/null</code>, <code>list-keys -T prefix</code> for the stock table, then §10's assembled file sourced in and <code>list-keys</code> again — the same method this guide uses everywhere. Two details the transcript settled: <kbd>&amp;</kbd> is <em>kill-window</em> with a y/n prompt (<kbd>,</kbd> is the rename chord), and under the opinionated map <kbd>l</kbd> becomes <code>select-pane -R</code> — so last-window loses its chord there, exactly the displacement §10 teaches for <kbd>-</kbd> and <kbd>r</kbd>. Press <kbd>?</kbd> inside the simulator to see the current map, displacements included.</p>
+
+  <div class="callout warn">
+    <strong>What the simulator simplifies — on purpose.</strong>
+    Panes are re-dealt by layout class (the five presets from §7); real splits carve the current pane in half, and §7's arithmetic is the honest account. The <code>[prefix]</code> latch fades after 750 ms so a stray latch never leaves you guessing — real tmux never times the prefix out; it stays armed until your next keypress (750 ms is <code>display-time</code>, the clock status-line messages use). Pane contents are painted, not run — no shell lives in a box. And any chord outside the modeled set answers <em>"not modeled here"</em> in the message line rather than silently doing nothing: honest over fake.
+  </div>
+
+  <noscript>
+    <h3>The same chords, without JavaScript</h3>
+    <p>The simulator above needs JavaScript. Without it, this is the same verified chord set as a static table — every row matches a binding read from <code>tmux list-keys -T prefix</code> on 3.7b, stock keymap:</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Chord</th><th>Stock binding</th><th>What it does</th><th>Taught in</th></tr></thead>
+      <tbody>
+        <tr><td><kbd>Prefix</kbd> <kbd>d</kbd></td><td><code>detach-client</code></td><td>Detach the client; the session keeps running</td><td><a href="#sessions">§5</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>s</kbd></td><td><code>choose-tree -Zs</code></td><td>Interactive session picker</td><td><a href="#sessions">§5</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>$</kbd></td><td><code>rename-session</code> via prompt</td><td>Rename the current session</td><td><a href="#sessions">§5</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>(</kbd> / <kbd>)</kbd></td><td><code>switch-client -p</code> / <code>-n</code></td><td>Previous / next session, no detach</td><td><a href="#sessions">§5</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>c</kbd></td><td><code>new-window</code></td><td>New window, made current</td><td><a href="#windows">§6</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>n</kbd> / <kbd>p</kbd></td><td><code>next-window</code> / <code>previous-window</code></td><td>Step through the window ring</td><td><a href="#windows">§6</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>0</kbd>–<kbd>9</kbd></td><td><code>select-window -t :=N</code></td><td>Jump straight to a window index</td><td><a href="#windows">§6</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>l</kbd></td><td><code>last-window</code></td><td>Back to the last-used window</td><td><a href="#windows">§6</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>w</kbd></td><td><code>choose-tree -Zw</code></td><td>Interactive window tree</td><td><a href="#windows">§6</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>&amp;</kbd></td><td><code>confirm-before kill-window</code></td><td>Kill the current window, y/n prompt</td><td><a href="#windows">§6</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>,</kbd></td><td><code>rename-window</code> via prompt</td><td>Rename the current window</td><td><a href="#windows">§6</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>.</kbd></td><td><code>move-window</code> via prompt</td><td>Move the window to a typed index</td><td><a href="#windows">§6</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>%</kbd></td><td><code>split-window -h</code></td><td>Split left-and-right</td><td><a href="#panes">§7</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>"</kbd></td><td><code>split-window</code></td><td>Split top-and-bottom</td><td><a href="#panes">§7</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>o</kbd></td><td><code>select-pane -t :.+</code></td><td>Next pane, in order</td><td><a href="#panes">§7</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>;</kbd></td><td><code>last-pane</code></td><td>Previously active pane</td><td><a href="#panes">§7</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>q</kbd></td><td><code>display-panes</code></td><td>Flash each pane's index</td><td><a href="#panes">§7</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>x</kbd></td><td><code>confirm-before kill-pane</code></td><td>Kill the current pane, y/n prompt</td><td><a href="#panes">§7</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>z</kbd></td><td><code>resize-pane -Z</code></td><td>Toggle zoom on the current pane</td><td><a href="#panes">§7</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>Space</kbd></td><td><code>next-layout</code></td><td>Cycle the preset layouts</td><td><a href="#panes">§7</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>!</kbd></td><td><code>break-pane</code></td><td>Promote the pane to its own window</td><td><a href="#panes">§7</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>?</kbd></td><td><code>list-keys -N</code></td><td>Show the key bindings</td><td><a href="#key-bindings">§11</a></td></tr>
+      </tbody>
+    </table></div>
+    <p class="tiny">The opinionated toggle in the interactive version swaps the prefix to <kbd>C-a</kbd> and rebinds splits to <kbd>|</kbd>/<kbd>-</kbd>, adds <kbd>r</kbd> = reload, <kbd>h</kbd><kbd>j</kbd><kbd>k</kbd><kbd>l</kbd> pane nav, and plain-arrow pane nav — the <a href="#configuration">§10</a> build plus its pane-nav block. The cheat sheet (<a href="#cheatsheet">§17</a>) repeats this table's cards.</p>
+  </noscript>
+
+  <p class="tiny">Sources: <a href="https://man.openbsd.org/tmux" target="_blank" rel="noopener">tmux(1) — DEFAULT KEY BINDINGS; choose-tree, confirm-before, command-prompt, display-panes, send-prefix</a> · every simulator binding read from <code>tmux list-keys -T prefix</code> and <code>-T root</code> on 3.7b, stock and §10-plus-pane-nav keymaps, throwaway <code>-L sim</code> server only, captured 2026-08-23 · timing (<code>display-time 750</code>, <code>repeat-time 500</code>, <code>display-panes-time 1000</code>) read from the same server's global session options</p>
 </section>
 
 <section id="clients">
@@ -1561,7 +1754,7 @@ tmux -L lab list-clients -F '#{client_width}x#{client_height}'</code></pre>
   </figure>
 
   <h3>Enter, exit, and the key that does neither</h3>
-  <p><kbd>Prefix</kbd> <kbd>[</kbd> enters copy-mode on the current pane; the binding underneath is plain <code>copy-mode</code>. The pane's border changes color while you are in it — the stock <code>pane-active-border-style</code> is a live conditional that turns yellow in a mode — so the state is visible from anywhere in the window. Two other roads in: with <code>mouse on</code> (<a href="#configuration">§10</a>), rolling the wheel up enters copy-mode scrolled back one page (the stock root-table binding routes <code>MouseDown1ScrollbarUp</code> to <code>copy-mode -u</code>), and scrolling with the wheel in a stock terminal does nothing <em>inside tmux</em>, because stock tmux ships <code>mouse off</code> — the wheel belongs to your terminal's own scrollback, which inside tmux is usually the wrong buffer.</p>
+  <p><kbd>Prefix</kbd> <kbd>[</kbd> enters copy-mode on the current pane; the binding underneath is plain <code>copy-mode</code>. The pane's border changes color while you are in it — the stock <code>pane-active-border-style</code> is a live conditional that turns yellow in a mode — so the state is visible from anywhere in the window. Two other roads in: with <code>mouse on</code> (<a href="#configuration">§10</a>), rolling the wheel up enters copy-mode scrolled back one page (the stock root-table binding routes <code>MouseDown1ScrollbarUp</code> to <code>copy-mode -u</code>), and scrolling with the wheel in a stock terminal does nothing <em>inside tmux</em>, because stock tmux ships <code>mouse off</code> — the wheel belongs to your terminal's own scrollback, which inside tmux is usually the wrong buffer. (The <a href="#playground">Prefix playground</a> after §7 rehearses the prefix latch this chord rides on; copy-mode itself is not modeled there.)</p>
   <p>Leaving is where the surprises live. The exits, verified key by key on 3.7b:</p>
   <div class="table-wrap"><table>
     <thead><tr><th>Key</th><th>vi table</th><th>emacs table</th><th>Verified how</th></tr></thead>
@@ -3423,6 +3616,549 @@ tmux -L try -f /dev/null new -s t   # throwaway server: stock config, surgically
     updateQuiz();
   });
   updateQuiz();
+})();
+
+// ---------------------------------------------------------------------
+// Prefix playground simulator (#playground). Second IIFE in this same
+// script block: no globals, strict. Every binding mirrors a list-keys
+// transcript captured on a throwaway -L sim server (tmux 3.7b) — the
+// section's Sources line names the run. Where the model simplifies, the
+// message line says "not modeled here" instead of faking a result.
+(() => {
+  'use strict';
+
+  const PG_KEY = 'tmuxGuide.playground';
+  const DISPLAY_MS = 750;   // display-time, verified stock on 3.7b
+  const PANES_MS = 1000;    // display-panes-time, verified stock
+
+  const sim = document.getElementById('playgroundSim');
+  if (!sim) return;
+  const $ = id => document.getElementById(id);
+  const els = {
+    sim,
+    sessions: $('simSessions'), windows: $('simWindows'), clock: $('simClock'),
+    panes: $('simPanes'), prompt: $('simPrompt'), promptLabel: $('simPromptLabel'),
+    promptInput: $('simPromptInput'), overlay: $('simOverlay'), pickTitle: $('simPickTitle'),
+    pickRows: $('simPickRows'), pickFoot: $('simPickFoot'), splash: $('simSplash'),
+    msg: $('simMsg'), hint: $('simHintStrip'),
+    configToggle: $('simConfigToggle'), reset: $('simReset'),
+  };
+  if (!els.windows || !els.panes || !els.msg) return;
+
+  const LAYOUTS = ['even-horizontal', 'even-vertical', 'main-horizontal', 'main-vertical', 'tiled'];
+
+  // ---- state: the object tree from §1 --------------------------------
+  let sessions = [];      // [{name, active, lastWin, windows:[…]}]
+  let curSession = 0;
+  let nextPaneId = 0;     // pane ids are server-global, creation order (§7)
+  let config = 'stock';
+  let latched = false, latchTimer = 0, msgTimer = 0, paneNumsTimer = 0, paneNumsOn = false;
+  let detached = false, exited = false, detachedFrom = null;
+  let mode = null;        // {kind:'confirm'|'prompt'|'picker', …}
+
+  const sess = () => sessions[curSession];
+  const baseIndex = () => (config === 'opinionated' ? 1 : 0);
+  const sortedWins = s => [...s.windows].sort((a, b) => a.index - b.index);
+  const curWin = () => sess().windows.find(w => w.index === sess().active) || sortedWins(sess())[0];
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  function makePane() { return { id: nextPaneId++ }; }
+
+  function seed() {
+    nextPaneId = 0;
+    sessions = [
+      { name: 'alpha', active: 0, lastWin: 1, windows: [
+        { index: 0, name: 'zsh', auto: true,  panes: [makePane()], active: 0, lastPane: null, layout: 0, zoomed: false },
+        { index: 1, name: 'logs', auto: false, panes: [makePane()], active: 0, lastPane: null, layout: 0, zoomed: false },
+      ] },
+      { name: 'beta', active: 0, lastWin: null, windows: [
+        { index: 0, name: 'zsh', auto: true, panes: [makePane()], active: 0, lastPane: null, layout: 0, zoomed: false },
+      ] },
+    ];
+    curSession = 0; latched = false; paneNumsOn = false; mode = null; detached = false; detachedFrom = null; exited = false;
+    clearTimeout(latchTimer); clearTimeout(paneNumsTimer);
+  }
+
+  // ---- messages (the status line's message area, display-time faded) --
+  function msg(text, kind) {
+    els.msg.textContent = text;
+    els.msg.className = 'sim-msg show' + (kind ? ' ' + kind : '');
+    clearTimeout(msgTimer);
+    msgTimer = setTimeout(() => { els.msg.className = 'sim-msg'; }, DISPLAY_MS);
+  }
+  const notModeled = what => msg(`not modeled here — ${what}`, 'warn');
+
+  // ---- window/pane mutations -----------------------------------------
+  function firstFreeIndex(s) {
+    const used = new Set(s.windows.map(w => w.index));
+    let i = baseIndex();
+    while (used.has(i)) i++;
+    return i;
+  }
+  function setWin(index) {
+    const s = sess();
+    if (s.active === index) return;
+    const w = s.windows.find(x => x.index === index);
+    if (!w) return;
+    s.lastWin = s.active; s.active = index;
+  }
+  function setPane(i) {
+    const w = curWin();
+    if (i === w.active || i < 0 || i >= w.panes.length) return;
+    w.lastPane = w.active; w.active = i;
+  }
+  function renumber(s) {
+    const activeObj = s.windows.find(w => w.index === s.active);
+    const lastObj = s.windows.find(w => w.index === s.lastWin);
+    sortedWins(s).forEach((w, i) => { w.index = baseIndex() + i; });
+    if (activeObj) s.active = activeObj.index;
+    if (lastObj) s.lastWin = lastObj.index;
+  }
+  function killSessionCore() {
+    // Only ever called for the client's own session (kill-window cascade).
+    // detach-on-destroy on (§5): the client is detached, not switched.
+    const name = sessions[curSession].name;
+    sessions.splice(curSession, 1);
+    if (!sessions.length) { exited = true; detached = false; return; }
+    curSession = Math.min(curSession, sessions.length - 1);
+    detached = true; detachedFrom = name;
+  }
+  function killWindow(w) {
+    const s = sess();
+    s.windows = s.windows.filter(x => x !== w);
+    if (s.active === w.index) {
+      const target = s.windows.find(x => x.index === s.lastWin) || sortedWins(s)[0];
+      s.active = target ? target.index : -1; s.lastWin = null;
+    } else if (s.lastWin === w.index) s.lastWin = null;
+    if (!s.windows.length) { killSessionCore(); return; }
+    if (config === 'opinionated') renumber(s);   // renumber-windows on
+  }
+  function killPaneAt(i) {
+    const w = curWin();
+    w.panes.splice(i, 1);
+    if (w.lastPane === i) w.lastPane = null;
+    else if (w.lastPane != null && w.lastPane > i) w.lastPane -= 1;
+    if (!w.panes.length) { killWindow(w); return; }  // last-one-out (§7)
+    w.zoomed = false;
+    w.active = Math.max(0, Math.min(w.active > i ? w.active - 1 : w.active, w.panes.length - 1));
+  }
+  function splitWindow() {
+    const w = curWin();
+    w.zoomed = false;
+    w.panes.splice(w.active + 1, 0, makePane());
+    w.lastPane = w.active; w.active += 1;
+  }
+  function newWindow() {
+    const s = sess();
+    s.windows.push({ index: firstFreeIndex(s), name: 'zsh', auto: true, panes: [makePane()], active: 0, lastPane: null, layout: 0, zoomed: false });
+    const list = sortedWins(s);
+    setWin(list[list.length - 1].index);
+  }
+  function stepWin(dir) {
+    const list = sortedWins(sess());
+    if (list.length < 2) return;
+    const pos = list.findIndex(w => w.index === sess().active);
+    setWin(list[(pos + dir + list.length) % list.length].index);
+  }
+  function selectWinN(n) {
+    const s = sess();
+    if (s.windows.some(w => w.index === n)) setWin(n);
+    else msg(`can't find window: =${n}`, 'error');   // real tmux error wording
+  }
+  function stepPane(dir) {
+    const w = curWin(); const n = w.panes.length;
+    if (n > 1) setPane((w.active + dir + n) % n);
+  }
+  function breakPane() {
+    const s = sess(); const w = curWin();
+    const pane = w.panes.splice(w.active, 1)[0];
+    const nw = { index: firstFreeIndex(s), name: 'zsh', auto: true, panes: [pane], active: 0, lastPane: null, layout: 0, zoomed: false };
+    s.windows.push(nw);
+    if (!w.panes.length) s.windows = s.windows.filter(x => x !== w);
+    else { w.active = Math.max(0, w.active - 1); w.lastPane = null; w.zoomed = false; }
+    s.lastWin = s.active; s.active = nw.index;
+  }
+
+  // ---- confirm-before / command-prompt --------------------------------
+  function confirmAsk(text, onYes) {
+    mode = { kind: 'confirm', text, onYes };
+    render();
+  }
+  function askInput(label, initial, onCommit) {
+    mode = { kind: 'prompt', label, onCommit };
+    render();
+    // Like real command-prompt -I "#W": the current value is prefilled
+    // with the cursor at the end — typed text appends (verified live:
+    // renaming window "zsh" by typing "scratch" yields "zshscratch").
+    els.promptInput.value = initial;
+    els.promptInput.focus();
+    els.promptInput.setSelectionRange(initial.length, initial.length);
+  }
+  function openPicker(title, foot, rows, cur, onPick) {
+    mode = { kind: 'picker', title, foot, rows, cur, onPick };
+    render();
+  }
+  function closeMode() {
+    mode = null;
+    if (document.activeElement === els.promptInput) sim.focus();
+  }
+
+  // ---- pickers (choose-tree styled) -----------------------------------
+  function windowFlags(s, w) {
+    let f = w.index === s.active ? '*' : (s.lastWin === w.index ? '-' : '');
+    if (w.zoomed) f += 'Z';
+    return f;
+  }
+  function openSessionPicker() {
+    const rows = sessions.map((s, i) => ({
+      k: `${i === curSession ? '* ' : ''}${s.name}`,
+      rest: `${sortedWins(s).length} window${sortedWins(s).length === 1 ? '' : 's'}`,
+    }));
+    openPicker('sessions (choose-tree -Zs)', '↑↓ move · Enter switch · q or Escape closes', rows, curSession, i => { curSession = i; });
+  }
+  function openWindowPicker() {
+    const rows = []; const targets = [];
+    sessions.forEach((s, si) => sortedWins(s).forEach(w => {
+      targets.push([si, w.index]);
+      rows.push({ k: `${si === curSession ? '' : s.name + ':'}${w.index}:${w.name}${windowFlags(s, w) || ' '}`, rest: si === curSession ? '' : s.name });
+    }));
+    const curRow = targets.findIndex(([si, wi]) => si === curSession && wi === sess().active);
+    openPicker('windows (choose-tree -Zw)', '↑↓ move · Enter select · q or Escape closes', rows, Math.max(0, curRow), i => {
+      const [si, wi] = targets[i];
+      curSession = si; setWin(wi);
+    });
+  }
+  function openKeymap() {
+    const rows = config === 'stock' ? [
+      ['C-b', 'prefix — press, release, then a key'],
+      ['c', 'new-window'], ['n / p', 'next-window / previous-window'],
+      ['0–9', 'select-window -t :=N'], ['l', 'last-window'], ['w', 'choose-tree -Zw'],
+      ['&', 'confirm-before kill-window'], [',', 'rename-window (prompt)'],
+      ['.', 'move-window (prompt)'], ['$', 'rename-session (prompt)'],
+      ['s', 'choose-tree -Zs'], ['( / )', 'switch-client -p / -n'], ['d', 'detach-client'],
+      ['%', 'split-window -h'], ['"', 'split-window'], ['o', 'select-pane -t :.+'],
+      [';', 'last-pane'], ['q', 'display-panes'], ['x', 'confirm-before kill-pane'],
+      ['z', 'resize-pane -Z'], ['Space', 'next-layout'], ['!', 'break-pane'],
+      ['M-1…M-5', 'select-layout (the five presets)'],
+      ['r', 'refresh-client — not modeled here (§8)'],
+      ['-', 'delete-buffer — not modeled here (§9)'],
+      ['C-←→↑↓', 'resize-pane — not modeled here (§7)'],
+    ] : [
+      ['C-a', 'prefix — press, release, then a key'],
+      ['C-a C-a', 'send-prefix — literal C-a to the pane'],
+      ['|', 'split-window -h -c "#{pane_current_path}"'],
+      ['-', 'split-window -v -c "#{pane_current_path}"  (displaces delete-buffer)'],
+      ['r', 'source-file + display-message "config reloaded"  (displaces refresh-client)'],
+      ['h / j / k / l', 'select-pane -L / -D / -U / -R'],
+      ['l (displaced)', 'last-window has no chord under this map — the cost §10 teaches'],
+      ['arrows', 'select-pane by direction, no prefix needed (root table)'],
+      ['c n p 0–9 w & , . $ s ( ) d % " o ; q x z Space ! ?', 'unchanged from stock — see the stock list'],
+      ['base-index 1 · renumber-windows on', 'new windows number from 1; kills compact the gaps'],
+    ];
+    openPicker(`prefix table — ${config} keymap (list-keys -N)`, 'Enter or Escape closes', rows.map(r => ({ k: r[0], rest: r[1] })), 0, null);
+  }
+
+  // ---- render ----------------------------------------------------------
+  function updateHint() {
+    const p = config === 'stock' ? 'Ctrl+b' : 'Ctrl+a';
+    els.hint.textContent = document.activeElement === sim
+      ? `focused · prefix is ${p} — press it, release, then the key · Escape releases focus`
+      : `Click here, then press Prefix chords · ${config} prefix: ${p} · Escape releases focus`;
+  }
+  function paneBox(w, i, spanStyle) {
+    return `<div class="sim-pane${i === w.active ? ' active' : ''}" data-pane="${i}"${spanStyle ? ` style="${spanStyle}"` : ''}>` +
+      `<span class="pane-label">${i}:zsh</span><span class="pane-id">%${w.panes[i].id}</span>` +
+      `<div class="pane-body">&nbsp;</div><div class="pane-num" aria-hidden="true">${i}</div></div>`;
+  }
+  function renderPanes() {
+    const w = curWin();
+    const n = w.panes.length;
+    let cols = '1fr', rows = '1fr';
+    const spanFor = i => {
+      if (w.zoomed || n < 2) return '';
+      const l = LAYOUTS[w.layout];
+      if (l === 'main-horizontal' && i === 0) return 'grid-column:1/-1;';
+      if (l === 'main-vertical' && i === 0) return 'grid-row:1/-1;';
+      return '';
+    };
+    if (!w.zoomed) {
+      const l = LAYOUTS[w.layout];
+      if (l === 'even-horizontal') { cols = `repeat(${n},1fr)`; }
+      else if (l === 'even-vertical') { rows = `repeat(${n},1fr)`; }
+      else if (l === 'main-horizontal') { cols = n > 1 ? `repeat(${n - 1},1fr)` : '1fr'; rows = '1.7fr 1fr'; }
+      else if (l === 'main-vertical') { cols = n > 1 ? '1.7fr 1fr' : '1fr'; rows = n > 1 ? `repeat(${n - 1},1fr)` : '1fr'; }
+      else { const c = Math.ceil(Math.sqrt(n)); cols = `repeat(${c},1fr)`; rows = `repeat(${Math.ceil(n / c)},1fr)`; }
+    }
+    els.panes.style.gridTemplateColumns = cols;
+    els.panes.style.gridTemplateRows = rows;
+    els.panes.classList.toggle('numbers', paneNumsOn);
+    const idxs = w.zoomed ? [w.active] : w.panes.map((_, i) => i);
+    els.panes.innerHTML = idxs.map(i => paneBox(w, i, spanFor(i))).join('');
+  }
+  function renderMode() {
+    const isLine = mode && (mode.kind === 'confirm' || mode.kind === 'prompt');
+    els.prompt.classList.toggle('show', !!isLine);
+    if (isLine) {
+      els.promptLabel.textContent = mode.kind === 'confirm' ? mode.text : mode.label;
+      els.promptInput.style.display = mode.kind === 'prompt' ? '' : 'none';
+    }
+    els.overlay.classList.toggle('show', !!mode && mode.kind === 'picker');
+    if (mode && mode.kind === 'picker') {
+      els.pickTitle.textContent = mode.title;
+      els.pickFoot.textContent = mode.foot || '';
+      els.pickRows.innerHTML = mode.rows.map((r, i) =>
+        `<div class="pick-row${i === mode.cur ? ' cur' : ''}" data-i="${i}" role="option" aria-selected="${i === mode.cur}"><span class="k">${esc(r.k)}</span><span>${esc(r.rest)}</span></div>`).join('');
+    }
+    els.splash.classList.toggle('show', detached || exited);
+    if (detached) els.splash.innerHTML = `<div><div class="big">[detached (from session ${esc(detachedFrom || sess().name)})]</div><div class="dim">the session keeps running in the server — press any key (or click) to re-attach</div></div>`;
+    else if (exited) els.splash.innerHTML = `<div><div class="big">[exited]</div><div class="dim">exit-empty on: the last session ended, so the server left with it — press any key (or click) to start a fresh one</div></div>`;
+  }
+  function render() {
+    els.clock.textContent = new Date().toTimeString().slice(0, 5);
+    sim.classList.toggle('latched', latched);
+    renderMode();
+    updateHint();
+    if (!sessions.length) {
+      els.sessions.innerHTML = ''; els.windows.innerHTML = ''; els.panes.innerHTML = '';
+      return;
+    }
+    const s = sess();
+    els.sessions.innerHTML = sessions.map((x, i) =>
+      i === curSession ? `<span class="cur">[${esc(x.name)}]</span>` : `<span class="other">${esc(x.name)}</span>`).join(' ');
+    els.windows.innerHTML = sortedWins(s).map(w => {
+      const cls = w.index === s.active ? 'cur' : 'other';
+      return `<span class="${cls}">${w.index}:${esc(w.name)}${windowFlags(s, w)}</span>`;
+    }).join(' ');
+    renderPanes();
+  }
+
+  // ---- keymaps — every entry verified via list-keys (§ Sources line) ---
+  const CONFIGS = {
+    stock: {
+      prefixKey: 'b',
+      chords: {
+        'c': newWindow,
+        'n': () => stepWin(1),
+        'p': () => stepWin(-1),
+        'l': () => { const s = sess(); if (s.lastWin != null) setWin(s.lastWin); },
+        '&': () => confirmAsk(`kill-window ${curWin().name}? (y/n)`, () => killWindow(curWin())),
+        '%': splitWindow,
+        '"': splitWindow,
+        'o': () => stepPane(1),
+        ';': () => { const w = curWin(); if (w.lastPane != null) setPane(w.lastPane); },
+        'q': () => { paneNumsOn = true; clearTimeout(paneNumsTimer); paneNumsTimer = setTimeout(() => { paneNumsOn = false; render(); }, PANES_MS); },
+        'x': () => confirmAsk(`kill-pane ${curWin().active}? (y/n)`, () => killPaneAt(curWin().active)),
+        'z': () => { const w = curWin(); w.zoomed = !w.zoomed; },
+        ' ': () => { const w = curWin(); w.layout = (w.layout + 1) % LAYOUTS.length; msg(`layout: ${LAYOUTS[w.layout]}`); },
+        '!': breakPane,
+        'w': openWindowPicker,
+        's': openSessionPicker,
+        'd': () => { detached = true; detachedFrom = null; },
+        '$': () => askInput('rename-session:', sess().name, v => { const t = v.trim(); if (t) sess().name = t; }),
+        ',': () => askInput('rename-window:', curWin().name, v => { const t = v.trim(); if (t) { curWin().name = t; curWin().auto = false; } }),
+        '.': () => askInput('move-window -t :', String(curWin().index), v => {
+          const n = parseInt(v, 10);
+          const s = sess(); const w = curWin();
+          if (!Number.isInteger(n) || n < 0) { msg('index expected', 'error'); return; }
+          if (s.windows.some(x => x.index === n && x !== w)) { msg(`index in use: ${n}`, 'error'); return; }
+          if (s.lastWin === w.index) s.lastWin = n;
+          w.index = n; s.active = n;
+        }),
+        ')': () => { if (sessions.length > 1) curSession = (curSession + 1) % sessions.length; },
+        '(': () => { if (sessions.length > 1) curSession = (curSession - 1 + sessions.length) % sessions.length; },
+        '?': openKeymap,
+        '[': () => notModeled('copy-mode lives in §9'),
+        ']': () => notModeled('paste-buffer lives in §9'),
+        'r': () => notModeled('refresh-client lives in §8'),
+        '-': () => notModeled('delete-buffer lives in §9'),
+        '|': () => notModeled('unbound in the stock prefix table'),
+        'C-ArrowLeft': () => notModeled('resize-pane — §7'),
+        'C-ArrowRight': () => notModeled('resize-pane — §7'),
+        'C-ArrowUp': () => notModeled('resize-pane — §7'),
+        'C-ArrowDown': () => notModeled('resize-pane — §7'),
+      },
+      root: {},   // stock: plain keys pass through to the pane (nothing modeled)
+    },
+    opinionated: {
+      prefixKey: 'a',
+      again: () => msg('C-a sent to the pane (send-prefix)'),
+      chords: null,   // built below from stock + deltas
+      root: {},       // built below
+    },
+  };
+
+  // §10's flagship build + the playground pane-nav block: same stock
+  // chords, plus the sourced deltas. Displacements are real (verified on
+  // the -L sim server): '-', 'r', and 'l' all change hands.
+  {
+    const o = CONFIGS.opinionated;
+    // 0–9: select-window -t :=N (verified) — bound once, shared by both maps
+    for (let d = 0; d <= 9; d++) CONFIGS.stock.chords[String(d)] =
+      () => { selectWinN(d); };
+    o.chords = { ...CONFIGS.stock.chords };   // stock table, then the sourced deltas on top
+    o.chords['|'] = splitWindow;
+    o.chords['-'] = splitWindow;
+    o.chords['r'] = () => msg('config reloaded');
+    o.chords['h'] = () => stepPane(-1);
+    o.chords['j'] = () => stepPane(1);
+    o.chords['k'] = () => stepPane(-1);
+    o.chords['l'] = () => stepPane(1);           // displaces last-window
+    o.chords['M-1'] = () => { curWin().layout = 0; msg('layout: even-horizontal'); };
+    o.chords['M-2'] = () => { curWin().layout = 1; msg('layout: even-vertical'); };
+    o.chords['M-3'] = () => { curWin().layout = 2; msg('layout: main-horizontal'); };
+    o.chords['M-4'] = () => { curWin().layout = 3; msg('layout: main-vertical'); };
+    o.chords['M-5'] = () => { curWin().layout = 4; msg('layout: tiled'); };
+    CONFIGS.stock.chords['M-1'] = o.chords['M-1'];
+    CONFIGS.stock.chords['M-2'] = o.chords['M-2'];
+    CONFIGS.stock.chords['M-3'] = o.chords['M-3'];
+    CONFIGS.stock.chords['M-4'] = o.chords['M-4'];
+    CONFIGS.stock.chords['M-5'] = o.chords['M-5'];
+    // root table: arrows navigate panes with no prefix (bind -n)
+    o.root['ArrowLeft'] = o.chords['h'];
+    o.root['ArrowRight'] = o.chords['l'];
+    o.root['ArrowUp'] = o.chords['k'];
+    o.root['ArrowDown'] = o.chords['j'];
+  }
+
+  // ---- keyboard routing -------------------------------------------------
+  function handleModeKey(e) {
+    const k = e.key;
+    if (mode.kind === 'confirm') {
+      if (k === 'y' || k === 'Y') { const m = mode; closeMode(); m.onYes(); }
+      else closeMode();
+      e.preventDefault();
+      render();
+      return;
+    }
+    if (mode.kind === 'prompt') { els.promptInput.focus(); return; }
+    if (mode.kind === 'picker') {
+      if (k === 'ArrowDown') { mode.cur = (mode.cur + 1) % mode.rows.length; e.preventDefault(); }
+      else if (k === 'ArrowUp') { mode.cur = (mode.cur - 1 + mode.rows.length) % mode.rows.length; e.preventDefault(); }
+      else if (k === 'Enter') {
+        const m = mode; closeMode();
+        if (m.onPick) m.onPick(m.cur);
+        e.preventDefault();
+      }
+      else if (k === 'q') { closeMode(); e.preventDefault(); render(); return; }
+      if (mode && mode.kind === 'picker') renderMode();
+      else render();
+      return;
+    }
+  }
+
+  sim.addEventListener('keydown', e => {
+    if (e.target === els.promptInput) return;   // the prompt has its own handler
+    const k = e.key;
+
+    if (k === 'Escape') {                        // never a keyboard trap
+      e.preventDefault();
+      if (exited) { exited = false; seed(); render(); msg('fresh server started'); }
+      else if (detached) { detached = false; render(); msg(`attached (session ${sess().name})`); }
+      else if (mode) { closeMode(); render(); }
+      else sim.blur();
+      return;
+    }
+    if (exited) { e.preventDefault(); exited = false; seed(); render(); msg('fresh server started'); return; }
+    if (detached) { e.preventDefault(); detached = false; render(); msg(`attached (session ${sess().name})`); return; }
+    if (mode) { handleModeKey(e); return; }
+
+    const conf = CONFIGS[config];
+    const isPrefix = e.ctrlKey && !e.altKey && !e.metaKey && k === conf.prefixKey;
+    if (isPrefix) {
+      e.preventDefault();
+      if (latched) {                             // second press: bound under opinionated (send-prefix), reset under stock
+        latched = false; clearTimeout(latchTimer);
+        if (conf.again) conf.again();
+      } else {
+        latched = true;
+        clearTimeout(latchTimer);
+        latchTimer = setTimeout(() => { latched = false; render(); }, DISPLAY_MS);
+      }
+      render();
+      return;
+    }
+    if (latched) {
+      latched = false; clearTimeout(latchTimer);
+      let key = k;
+      if (k === 'Space') key = ' ';
+      else if (k.startsWith('Arrow') && e.ctrlKey) key = 'C-' + k;
+      else if (e.altKey) key = 'M-' + k;
+      else if (k.length === 1) key = k.toLowerCase();
+      const act = conf.chords[key];
+      if (act) { e.preventDefault(); act(); }    // unbound → silent reset, like real tmux
+      render();
+      return;
+    }
+    const rootAct = conf.root[k];
+    if (rootAct) { e.preventDefault(); rootAct(); render(); }
+  });
+
+  els.promptInput.addEventListener('keydown', e => {
+    e.stopPropagation();
+    if (e.key === 'Enter') {
+      const m = mode; const v = els.promptInput.value;
+      closeMode();
+      if (m && m.kind === 'prompt') m.onCommit(v);
+      sim.focus(); render();
+    } else if (e.key === 'Escape') {
+      closeMode(); sim.focus(); render();
+    }
+  });
+
+  // click targets: overlay rows pick; splash re-attaches; panes select
+  // under the opinionated map (mouse on) and do nothing under stock.
+  sim.addEventListener('click', e => {
+    if (exited) { exited = false; seed(); render(); msg('fresh server started'); return; }
+    if (detached) { detached = false; render(); msg(`attached (session ${sess().name})`); return; }
+    if (mode && mode.kind === 'picker') {
+      const row = e.target.closest('.pick-row');
+      if (row) {
+        const i = Number(row.dataset.i);
+        const m = mode; closeMode();
+        if (m.onPick) m.onPick(i);
+        render();
+      }
+      return;
+    }
+    const pane = e.target.closest('.sim-pane');
+    if (pane && config === 'opinionated') setPane(Number(pane.dataset.pane));
+  });
+
+  sim.addEventListener('focus', render);
+  // Focus leaving the simulator drops the latch and closes transient
+  // prompts — but focus moving WITHIN it (the prompt input) must not,
+  // so guard on where focus landed (focusout.bubbles, unlike blur).
+  sim.addEventListener('focusout', e => {
+    if (e.relatedTarget && sim.contains(e.relatedTarget)) return;
+    latched = false; clearTimeout(latchTimer);
+    if (mode) closeMode();
+    render();
+  });
+
+  // ---- config toggle + reset -------------------------------------------
+  function applyConfig(announce) {
+    els.configToggle.textContent = `Config: ${config === 'stock' ? 'stock (C-b)' : 'opinionated (C-a)'}`;
+    els.configToggle.setAttribute('aria-pressed', config === 'opinionated' ? 'true' : 'false');
+    render();
+    if (announce) msg(config === 'stock'
+      ? 'prefix: C-b (stock keymap, list-keys -T prefix)'
+      : 'prefix: C-a (§10 flagship + pane-nav, sourced live)');
+  }
+  els.configToggle.addEventListener('click', () => {
+    config = config === 'stock' ? 'opinionated' : 'stock';
+    latched = false; clearTimeout(latchTimer);
+    if (mode) closeMode();
+    try { localStorage.setItem(PG_KEY, config); } catch (_) { /* session-only */ }
+    applyConfig(true);
+  });
+  els.reset.addEventListener('click', () => { seed(); render(); msg('state reseeded: alpha (2 windows) + beta'); });
+
+  // ---- init --------------------------------------------------------------
+  let saved = null;
+  try { saved = localStorage.getItem(PG_KEY); } catch (_) { /* storage unavailable */ }
+  if (saved === 'opinionated' || saved === 'stock') config = saved;
+  seed();
+  applyConfig(false);
 })();
 </script>
 </body>
