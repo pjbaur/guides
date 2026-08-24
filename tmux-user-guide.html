@@ -2006,7 +2006,7 @@ session=alpha window=zsh cmd=zsh path=/private/tmp</code></pre>
       <tr><td><code>#{window_flags}</code></td><td>The flag string <code>*-!#~ZM</code> from the decoder</td><td><a href="#windows">§6</a></td></tr>
       <tr><td><code>#{pane_id}</code> / <code>#{pane_index}</code></td><td>A pane's identity (<code>%N</code>) and its position</td><td><a href="#panes">§7</a></td></tr>
       <tr><td><code>#{pane_current_command}</code> / <code>#{pane_current_path}</code></td><td>What runs in the pane, and where</td><td><a href="#configuration">§10</a> (the <code>-c</code> split)</td></tr>
-      <tr><td><code>#{client_session}</code> / <code>#{client_termname}</code></td><td>What a client views, through which <code>$TERM</code></td><td><a href="#clients">§8</a></td></tr>
+      <tr><td><code>#{client_session}</code> / <code>#{client_termname}</code></td><td>What a client views, through which <code>$TERM</code></td><td><a href="#sessions">§5</a> / <a href="#clients">§8</a></td></tr>
       <tr><td><code>#{host_short}</code></td><td>The server host's short name</td><td>below, and <a href="#styling">§14</a></td></tr>
     </tbody>
   </table></div>
@@ -2074,7 +2074,7 @@ $ tmux -L t8 show-hooks -g | grep -c .
 57
 $ tmux -L t8 show-hooks -g | grep after-new-window
 after-new-window[0] run-shell "echo NEWWINDOW &gt;&gt; /tmp/t8-hook.log"</code></pre>
-  <p>No client was attached to <code>t8</code> at any point in that transcript — <code>after-*</code> hooks fire unconditionally, and <code>run-shell</code> works detached, which is what makes hooks scriptable infrastructure rather than UI sugar. <code>-g</code> installs the hook server-wide (every session); without it, the hook lands on the current or targeted session. <code>show-hooks -g</code> prints the whole catalog — 57 hook names on 3.7b — with unset hooks as bare names and your hooks carrying their commands. One catalog entry has a condition worth knowing before you rely on it: <code>pane-focus-in</code> fires only when the <code>focus-events</code> option is on, and stock is <code>off</code> — captured in the research run, along with the man page's one-line explanation. <code>set -g focus-events on</code> first, or hook the <code>after-*</code> events, which have no such dependency.</p>
+  <p>No client was attached to <code>t8</code> at any point in that transcript — <code>after-*</code> hooks fire unconditionally, and <code>run-shell</code> works detached, which is what makes hooks scriptable infrastructure rather than UI sugar. <code>-g</code> installs the hook server-wide (every session); without it, the hook lands on the current or targeted session. <code>show-hooks -g</code> prints the whole catalog — 57 hook names on 3.7b — with unset hooks as bare names and your hooks carrying their commands. The <code>[0]</code> is the hook's array index: hooks are array options, and the man page says setting one without specifying an index "clears the hook and sets the first member of the array" — which is exactly what <code>show-hooks</code> renders. One catalog entry has a condition worth knowing before you rely on it: <code>pane-focus-in</code> fires only when the <code>focus-events</code> option is on, and stock is <code>off</code> — captured in the research run, along with the man page's one-line explanation. <code>set -g focus-events on</code> first, or hook the <code>after-*</code> events, which have no such dependency.</p>
 
   <h3>pipe-pane: a pane, recorded honestly raw</h3>
   <p><code>pipe-pane</code> connects a pane's output stream to a shell command — a tee, running for the pane's life or until you stop it. Logging is the obvious use:</p>
@@ -2088,7 +2088,7 @@ PIPE-TEST-LINE^M
 $ tmux -L t8 pipe-pane -t gamma:pp.0
 $ echo "stop rc=$?"
 stop rc=0</code></pre>
-  <p class="tiny">Long runs of spaces elided for width; everything else verbatim, including the leading <code>e</code> that the shell echoed and backspaced. Stopping is the same command with no argument — rc 0, the tee is detached, the pane never noticed.</p>
+  <p class="tiny">Long runs of spaces elided for width; everything else verbatim, including the leading <code>e</code> that the shell echoed and backspaced. Stopping is the same command with no argument — rc 0, the tee is detached, the pane never noticed. The <code>pp</code> window was then killed (<code>kill-window -t gamma:pp</code>), which is why the popup listing below counts the server's six panes.</p>
   <p>Read what actually arrived: the <em>raw</em> stream. Bracketed-paste toggles (<code>^[[?2004l/h</code>), prompt color codes, the redraw — everything the pane's program ever wrote. That is the feature and the chore in one: a pipe-pane log is a faithful recording, not clean text. Filtering on read: <code>col -b</code> keeps the visible words but leaves sequence fragments behind (this run's <code>col -b</code> output still showed <code>?2004l</code>); a full CSI strip — <code>perl -pe 's/\e\[[0-9;?]*[a-zA-Z]//g'</code> — comes out clean. When you want clean text rather than a recording, that is <code>capture-pane -p</code>'s job (<a href="#copy-mode">§9</a>). One research-drift footnote for drivers: a keystroke sent while a pane is mid-redraw can be eaten — the research run's first attempt printed <code>cho hi</code> — so drive settled panes.</p>
 
   <figure class="diagram" id="hook-map">
@@ -2167,7 +2167,7 @@ stop rc=0</code></pre>
     <li><strong>The CLI form blocks.</strong> <code>tmux display-popup …</code> from a shell holds the calling command for at least the popup's lifetime — the research run watched one still blocked ten seconds after a three-second popup command had exited. Popups are for <em>bindings</em>, which return instantly.</li>
     <li><strong>Without <code>-E</code>, it outlives its command.</strong> The man page: <code>-E</code> closes the popup automatically when the command exits (two <code>-E</code>: only if it exited successfully); <code>-k</code> lets any key dismiss it, not just <kbd>Escape</kbd> and <kbd>Ctrl</kbd>+<kbd>c</kbd>. Forget <code>-E</code> and your <code>echo</code> popup sits there, output and all, until you dismiss it by hand.</li>
   </ul>
-  <p>The binding form, driven live on a real attached client (the same pty rig the research used), shows everything else worth knowing:</p>
+  <p>The binding form, driven live on a real attached client through a fresh pty rig in the research's style, shows everything else worth knowing:</p>
   <pre><code>$ tmux -L t8 bind -T prefix P display-popup -E -T 'popup demo' -h 40% -w 60% 'echo POPUP-BODY-TEXT; sleep 4'
 ### chord Prefix P pressed; the client's terminal received (ANSI stripped, spaces elided):
 "/tmp" 22:21 23-Aug-26┌─popup demo──────────────────────────…──┐││││…
@@ -2220,9 +2220,10 @@ echo "    tmux attach -t '$pick'"</code></pre>
 (no rows — server alive, no clients: §8's table)
 $ tmux -L t8 send-keys -t alpha:0.0 '~/bin/tss' Enter
 $ tmux -L t8 send-keys -t alpha:0.0 -l bet &amp;&amp; tmux -L t8 send-keys -t alpha:0.0 Enter
-$ tmux -L t8 capture-pane -p -t alpha:0.0 | grep 'no current' -A1
+$ tmux -L t8 capture-pane -p -t alpha:0.0 | grep -n 'no current' -A1
 10:no current client — attach instead:
 11:    tmux attach -t 'beta'</code></pre>
+  <p class="tiny">The numbers are capture-pane row numbers, via <code>grep -n</code> — same convention as the main tss transcript.</p>
   <p>And the form that ties the section together — the popup as the tmux-native launcher, fzf and all, one binding:</p>
   <pre><code>$ tmux -L t8 bind -T prefix P display-popup -E -h 60% -w 60% '~/bin/tss'
 ### real client, Prefix P, typed bet, Enter; the server says:
@@ -2265,7 +2266,7 @@ tmux -L lab new-session -d -s monitor</code></pre>
     <p><strong>7.</strong> The guard: detach with <kbd>Prefix</kbd> <kbd>d</kbd>, then from your plain shell drive the now-detached pane:</p>
     <pre><code>tmux -L lab send-keys -t scratch:0.0 'tss' Enter
 tmux -L lab send-keys -t scratch:0.0 -l monitor &amp;&amp; tmux -L lab send-keys -t scratch:0.0 Enter
-tmux -L lab capture-pane -p -t scratch:0.0 | grep 'no current' -A1</code></pre>
+tmux -L lab capture-pane -p -t scratch:0.0 | grep -n 'no current' -A1</code></pre>
     <p><strong>Expect:</strong> the two fallback lines — <code>no current client — attach instead:</code> and <code>tmux attach -t 'monitor'</code> — the same receipt as the section's. One honest footnote: the printed command is right <em>from inside a pane</em>, where bare <code>tmux</code> means this server; from your plain shell on a <code>-L lab</code> socket, run it with the flag: <code>tmux -L lab attach -t monitor</code>.</p>
 
     <p><strong>8.</strong> Optional, recommended: bind the popup launcher on this server and use it once — <kbd>Prefix</kbd> <kbd>P</kbd>, type, <kbd>Enter</kbd>:</p>
@@ -2371,7 +2372,7 @@ run '~/.tmux/plugins/tpm/tpm'               # MUST be the last line</code></pre>
   <pre><code>$ for o in status-left status-right status-left-length status-right-length \
       window-status-format window-status-current-format status-style \
       status-justify status-position; do tmux -L st show-options -gv $o; done
-[#{session_name}]
+[#{session_name}] 
 #{?window_bigger,[#{window_offset_x}#,#{window_offset_y}] ,}"#{=21:pane_title}" %H:%M %d-%b-%y
 10
 40
@@ -2380,7 +2381,7 @@ run '~/.tmux/plugins/tpm/tpm'               # MUST be the last line</code></pre>
 bg=green,fg=black
 left
 bottom</code></pre>
-  <p>Line by line, left to right. The left segment is the session name in brackets — the <code>[alpha]</code> you have read all guide. The right segment is a three-part template: a <em>conditional</em> offset marker that appears only when the window is larger than the client viewing it (<code>#{?window_bigger,…,}</code> — inside it, the comma between the two offsets is escaped as <code>#,</code>, the escaping <a href="#formats">§12</a> introduced), then the pane title truncated to 21 cells (<code>#{=21:pane_title}</code> — the truncation modifier, on a <em>variable</em>, as it requires), then a <code>strftime</code> time and date. Yes, the stock bar has been speaking §12 this whole time. The window list is a format pair — <code>#I:#W</code> plus the flags from <a href="#windows">§6</a>'s decoder — and the famous green is one style string: <code>bg=green,fg=black</code>.</p>
+  <p>Line by line, left to right. The left segment is the session name in brackets — the <code>[alpha]</code> you have read all guide — with a trailing space in the template, one cell of padding baked in: invisible in the bar, visible in the option. The right segment is a three-part template: a <em>conditional</em> offset marker that appears only when the window is larger than the client viewing it (<code>#{?window_bigger,…,}</code> — inside it, the comma between the two offsets is escaped as <code>#,</code>, the escaping <a href="#formats">§12</a> introduced), then the pane title truncated to 21 cells (<code>#{=21:pane_title}</code> — the truncation modifier, on a <em>variable</em>, as it requires), then a <code>strftime</code> time and date. Yes, the stock bar has been speaking §12 this whole time. The window list is a format pair — <code>#I:#W</code> plus the flags from <a href="#windows">§6</a>'s decoder — and the famous green is one style string: <code>bg=green,fg=black</code>.</p>
   <p>That render, off a real client on this section's <code>t8</code> server with the bar's options untouched (ANSI stripped): <code>[alpha] 0:zsh- 1:work*"/tmp" 22:21 23-Aug-26</code> — brackets, flags, truncated pane title in quotes, time. Which leaves the two numbers most people never notice:</p>
   <div class="callout warn">
     <strong>Drift: the stock left segment is capped at 10 cells.</strong>
@@ -2403,11 +2404,19 @@ default-terminal =&gt; tmux-256color</code></pre>
   <p>The one worth staring at is the active border — a <em>live conditional, nested two deep</em>: green normally, yellow when the pane is in a mode (that is <a href="#copy-mode">§9</a>'s copy-mode tell, and it is not hardcoded anywhere — it is this option), red while <code>synchronize-panes</code> is on (<a href="#panes">§7</a>'s danger state, telegraphed by the border before you type). A style value can be a full format, which means everything <a href="#formats">§12</a> taught applies to paint as well as text. The syntax itself is one line: <code>fg=</code> and <code>bg=</code> take a named colour (<code>green</code>), a 256-colour index (<code>colour121</code>), or a hex triple (<code>#ff8800</code>); attributes (<code>bold</code>, <code>noattr</code>, …) ride along comma-separated; <code>default</code> means "inherit." Which colours you may actually <em>send</em> is the next question.</p>
 
   <h3>256 colours, true colour, and what your client already negotiated</h3>
-  <p>The <code>$TERM</code> contract from <a href="#prereqs">§2</a> decides what the client's terminal can receive, and tmux resolves it into a feature list per client. The research attached two clients — one with <code>COLORTERM=truecolor</code> in its environment, one without — and asked:</p>
-  <pre><code>$ tmux -L tc list-clients -F '#{client_name} COLORTERM=#{client_colorterm} features=[#{client_termfeatures}]'
-/dev/ttys026 COLORTERM= features=[bpaste,ccolour,clipboard,cstyle,focus,RGB,title]
-/dev/ttys027 COLORTERM= features=[bpaste,ccolour,clipboard,cstyle,focus,RGB,title]</code></pre>
-  <p>Both clients resolved the <code>RGB</code> feature — on 3.7b, an <code>xterm-256color</code> client gets true colour with zero configuration. The famous <code>terminal-overrides *:RGB</code> dance from older tutorials is for the other cases; <code>Tc</code> is the older override spelling. For styling, the practical upshot: hex triples in your styles reach any normal client as-is, and 256-index colours work everywhere. And the empty <code>COLORTERM=</code> in both rows is a face of the drift from <a href="#formats">§12</a>: <code>#{client_colorterm}</code> is not a format variable on 3.7b — the feature list is the truth; there is no format that reads the environment variable directly.</p>
+  <p>The <code>$TERM</code> contract from <a href="#prereqs">§2</a> decides what the client's terminal can receive, and tmux resolves it into a feature list per client. What flips the <code>RGB</code> feature on was re-verified for this section with a controlled pair — two real attach clients on one throwaway server, identical <code>TERM=xterm-256color</code>, differing only in environment, receipts first:</p>
+  <pre><code>### receipts: each attach client's pid, its tty, and its COLORTERM (ps):
+pid 77319 on ttys013: COLORTERM=truecolor
+pid 77320 on ttys014: (no COLORTERM)
+$ tmux -L t8fix list-clients -F '#{client_name} features=[#{client_termfeatures}] COLORTERM=#{client_colorterm}'
+/dev/ttys013 features=[bpaste,ccolour,clipboard,cstyle,focus,RGB,title] COLORTERM=
+/dev/ttys014 features=[bpaste,ccolour,clipboard,cstyle,focus,title] COLORTERM=</code></pre>
+  <p>Read the two rows against the receipts: the client on <code>ttys013</code>, carrying <code>COLORTERM=truecolor</code>, resolved <code>RGB</code>; the identical client on <code>ttys014</code>, without it, did not — stably, in a second run that probed at 3 and again at 8 seconds, so it is not a query-timeout race. On these clients the gate is the environment variable, not the <code>TERM</code> name alone. In practice that is still "zero configuration": every modern terminal exports <code>COLORTERM=truecolor</code> itself, so a normal client arrives pre-qualified, and the famous <code>terminal-overrides *:RGB</code> dance (or the older <code>Tc</code> spelling) remains the fix for terminals that neither export it nor answer tmux's capability queries. Practical upshot for styling: hex triples reach clients that signal true colour, and 256-index colours work everywhere.</p>
+  <div class="callout warn">
+    <strong>Drift: an earlier research capture disagrees with this one — and the receipts decide.</strong>
+    The 2026-08-22 research run showed <code>RGB</code> on <em>both</em> of its two clients, one of which it described as lacking <code>COLORTERM</code>; this section's fresh run, with the environments proven per client via <code>ps eww</code>, could not reproduce that row — <code>TERM=xterm-256color</code> alone did not resolve <code>RGB</code>. When a capture without receipts and a controlled capture with them disagree, the guide teaches the one you can re-run. If your own terminal shows <code>RGB</code> without <code>COLORTERM</code> set, it answers tmux's startup queries — the other legitimate road in — and <code>list-clients -F '#{client_termfeatures}'</code> will tell you which side you are on.
+  </div>
+  <p>And the trailing <code>COLORTERM=</code> in both rows — empty even for the client whose environment demonstrably carries it — is a face of the drift from <a href="#formats">§12</a>: <code>#{client_colorterm}</code> is not a format variable on 3.7b. The feature list is the truth; no format reads the environment variable directly.</p>
 
   <h3>The window list: two slots and a separator</h3>
   <p>The window list is drawn from exactly two templates — <code>window-status-format</code> for ordinary windows, <code>window-status-current-format</code> for the current one (the only special-cased slot; everything else in the list is the same template repeated). Between entries goes <code>window-status-separator</code>, whose stock value is a single space — read off the live server: <code>show-options -gv window-status-separator</code> prints one blank-ish line, <code>[ ]</code> when wrapped in brackets to see it. Two posture options round out the family: <code>status-justify left|centre|right</code> moves the window list within the bar, <code>status-position top|bottom</code> moves the bar itself. And remember that <code>#W</code> in any of these templates tracks automatic renaming (<a href="#windows">§6</a>) — the list re-labels as programs come and go, on the same terms as the stock bar.</p>
@@ -2458,7 +2467,7 @@ demo · work22:23 </code></pre>
   <h3>The timer under the bar</h3>
   <p>One mechanism note to close the loop: the bar is re-evaluated on a timer — <code>status-interval</code>, stock 15 seconds — and on events that change what it shows. A <code>%H:%M</code> segment ticks with the timer; a <code>#{pane_current_command}</code> segment would update as programs change. <a href="#configuration">§10</a>'s opinionated build set it to 5 for a livelier clock; if your bar runs heavy commands through <code>#[…]</code>-wrapped <code>run-shell</code> tricks, that timer is the cost you are tuning. When the whole bar-as-config surface feels like more than you want to own, <a href="#plugins">§13</a>'s catppuccin row is the buy-versus-build version of this section — now you know exactly what you would be buying.</p>
 
-  <p class="tiny">Sources: <a href="https://man.openbsd.org/tmux" target="_blank" rel="noopener">tmux(1) — status-left, status-right, status-left-length/-right-length, status-style, status-justify, status-position, status-interval, window-status-format, window-status-current-format, window-status-separator, window-status-style, mode-style, pane-border-style, pane-active-border-style; STYLES; FORMATS</a> · <a href="https://raw.githubusercontent.com/tmux/tmux/master/CHANGES" target="_blank" rel="noopener">tmux CHANGES, master — "CHANGES FROM 3.7c TO 3.8" (theme system, paraphrase-grade summary), accessed 2026-08-22</a> · transcripts: research captures 2026-08-22 (defaults dump, both option blocks, RGB features, theme grep) and fresh <code>-L t8</code>/<code>-L t8x</code>/<code>-L cfg8</code> captures 2026-08-23 (long-name truncation render, separator default, host_short, both smoke tests and both bar renders via a pty client, theme-option error), throwaway servers only</p>
+  <p class="tiny">Sources: <a href="https://man.openbsd.org/tmux" target="_blank" rel="noopener">tmux(1) — status-left, status-right, status-left-length/-right-length, status-style, status-justify, status-position, status-interval, window-status-format, window-status-current-format, window-status-separator, window-status-style, mode-style, pane-border-style, pane-active-border-style; STYLES; FORMATS</a> · <a href="https://raw.githubusercontent.com/tmux/tmux/master/CHANGES" target="_blank" rel="noopener">tmux CHANGES, master — "CHANGES FROM 3.7c TO 3.8" (theme system, paraphrase-grade summary), accessed 2026-08-22</a> · transcripts: research captures 2026-08-22 (defaults dump, both option blocks, theme grep; the RGB features capture is superseded by the re-run below, per the drift card) and fresh <code>-L t8</code>/<code>-L t8x</code>/<code>-L t8fix</code>/<code>-L cfg8</code> captures 2026-08-23 (long-name truncation render, separator default, host_short, theme-option error, both smoke tests and both bar renders via a pty client, and the controlled two-client RGB run with <code>ps</code> pid-to-tty environment receipts plus its 3 s/8 s stability re-run), throwaway servers only</p>
 </section>
 
 <section id="capstone">
