@@ -33,6 +33,15 @@
     --terminal-muted: #c4a59f;
     --terminal-accent: #ff8a7d;
     --shadow: 0 8px 30px rgba(46,22,18,.08);
+    /* Playground chrome — theme-invariant (the sim terminal stays dark in
+       both themes), so defined once here rather than per theme block. */
+    --sim-bar-bg: rgba(255,138,125,.15);
+    --sim-bar-line: rgba(255,138,125,.3);
+    --sim-active-wash: rgba(255,138,125,.08);
+    --sim-pick-cur: rgba(255,138,125,.18);
+    --sim-prompt-bg: #e8c458;
+    --sim-prompt-ink: #241512;
+    --sim-overlay-bg: #241311;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -284,7 +293,7 @@
   .sim-bar {
     position: relative; display: flex; align-items: center; gap: 12px; flex: 0 0 auto;
     padding: 5px 10px; font-size: 12.5px; line-height: 1.5;
-    background: rgba(255,138,125,.15); border-bottom: 1px solid rgba(255,138,125,.3);
+    background: var(--sim-bar-bg); border-bottom: 1px solid var(--sim-bar-line);
   }
   .sim-sessions { white-space: nowrap; }
   .sim-sessions .cur { color: var(--terminal-ink); font-weight: 700; }
@@ -309,12 +318,12 @@
   .sim-prompt {
     position: absolute; left: 6px; right: 6px; bottom: 34px; z-index: 7; display: none;
     align-items: center; gap: 7px; padding: 5px 9px; font-size: 12.5px;
-    background: #e8c458; color: #241512; border-radius: 4px; box-shadow: var(--shadow);
+    background: var(--sim-prompt-bg); color: var(--sim-prompt-ink); border-radius: 4px; box-shadow: var(--shadow);
   }
   .sim-prompt.show { display: flex; }
   .sim-prompt input {
     flex: 1; min-width: 60px; background: transparent; border: 0; outline: 0;
-    color: inherit; font: inherit; caret-color: #241512; padding: 0;
+    color: inherit; font: inherit; caret-color: var(--sim-prompt-ink); padding: 0;
   }
   .sim-hintstrip {
     flex: 0 0 auto; padding: 4px 10px; font-size: 11.5px; color: var(--terminal-muted);
@@ -330,7 +339,7 @@
   }
   .sim-pane.active {
     border-color: var(--terminal-accent); box-shadow: inset 0 0 0 1px var(--terminal-accent);
-    background: rgba(255,138,125,.08);
+    background: var(--sim-active-wash);
   }
   .sim-pane .pane-label { color: var(--terminal-ink); font-weight: 700; }
   .sim-pane .pane-id { position: absolute; top: 6px; right: 9px; opacity: .65; font-size: 11px; }
@@ -344,7 +353,7 @@
   .sim-panes.numbers .pane-num { display: flex; }
   .sim-overlay {
     position: absolute; inset: 30px 16px 16px; z-index: 8; display: none; flex-direction: column;
-    max-height: calc(100% - 46px); background: #241311; border: 1px solid var(--terminal-accent);
+    max-height: calc(100% - 46px); background: var(--sim-overlay-bg); border: 1px solid var(--terminal-accent);
     border-radius: 8px; box-shadow: var(--shadow); overflow: hidden;
   }
   .sim-overlay.show { display: flex; }
@@ -355,7 +364,7 @@
   .sim-overlay .pick-rows { overflow-y: auto; padding: 4px 0; font-size: 12.5px; }
   .sim-overlay .pick-row { display: flex; gap: 10px; padding: 3px 12px; color: var(--terminal-muted); }
   .sim-overlay .pick-row .k { color: var(--terminal-ink); min-width: 7.5em; }
-  .sim-overlay .pick-row.cur { background: rgba(255,138,125,.18); color: var(--terminal-ink); }
+  .sim-overlay .pick-row.cur { background: var(--sim-pick-cur); color: var(--terminal-ink); }
   .sim-overlay .pick-row.cur .k { font-weight: 700; }
   .sim-overlay .pick-foot {
     flex: 0 0 auto; padding: 5px 12px; font-size: 11px; color: var(--terminal-muted);
@@ -1063,7 +1072,7 @@ $ tmux -L lab list-windows -t alpha -F '#{window_index}: #{window_name} #{window
       <tr><td><kbd>Prefix</kbd> <kbd>c</kbd></td><td><code>new-window</code></td><td>New window, made current</td></tr>
       <tr><td><kbd>Prefix</kbd> <kbd>,</kbd></td><td><code>rename-window</code> via prompt</td><td>Rename the current window</td></tr>
       <tr><td><kbd>Prefix</kbd> <kbd>n</kbd> / <kbd>p</kbd></td><td><code>next-window</code> / <code>previous-window</code></td><td>Step through the window ring</td></tr>
-      <tr><td><kbd>Prefix</kbd> <kbd>0</kbd>–<kbd>9</kbd></td><td><code>select-window -t :N</code></td><td>Jump straight to an index</td></tr>
+      <tr><td><kbd>Prefix</kbd> <kbd>0</kbd>–<kbd>9</kbd></td><td><code>select-window -t :=N</code></td><td>Jump straight to an index</td></tr>
       <tr><td><kbd>Prefix</kbd> <kbd>l</kbd></td><td><code>last-window</code></td><td>Back to the <code>-</code> window — the two-window ping-pong</td></tr>
       <tr><td><kbd>Prefix</kbd> <kbd>w</kbd></td><td><code>choose-tree -Zw</code></td><td>Interactive window (and session) tree</td></tr>
       <tr><td><kbd>Prefix</kbd> <kbd>'</kbd></td><td>prompt, then <code>select-window -t :N</code></td><td>Jump to a typed index</td></tr>
@@ -2184,7 +2193,7 @@ bind-key  -T prefix       z resize-pane -Z</code></pre>
       <tr><td><kbd>?</kbd> · <kbd>/</kbd></td><td>the lookups themselves</td><td><kbd>q</kbd> · <kbd>C-z</kbd></td><td>flash pane indexes · suspend client</td></tr>
     </tbody>
   </table></div>
-  <p class="tiny">Every command underneath these chords is in the per-section tables of <a href="#sessions">§5</a>–<a href="#copy-mode">§9</a>, and the cheat sheet (<a href="#cheatsheet">§17</a>) repeats them dense. The memorize column is roughly the simulator's (<a href="#mental-model">§1</a>'s playground) keymap — deliberately so.</p>
+  <p class="tiny">Every command underneath these chords is in the per-section tables of <a href="#sessions">§5</a>–<a href="#copy-mode">§9</a>, and the cheat sheet (<a href="#cheatsheet">§17</a>) repeats them dense. The memorize column is roughly the simulator's (the <a href="#playground">Prefix playground</a> after §7) keymap — deliberately so.</p>
 
   <p class="tiny">Sources: <a href="https://man.openbsd.org/tmux" target="_blank" rel="noopener">tmux(1) — bind-key, unbind-key, list-keys, key-table, escape-time, repeat-time; DEFAULT KEY BINDINGS</a> · <a href="https://github.com/tmux/tmux" target="_blank" rel="noopener">tmux source, tag 3.7b — tty-keys.c (escape-delay floor), accessed 2026-08-22</a> · transcripts: research captures 2026-08-22 (prefix and root tables, custom-binding round trip, escape-time measurements) and fresh <code>-L t7</code> captures 2026-08-23 (repeatable bindings, <code>bind -n</code> round trip, <code>list-keys z</code> lookup, option defaults), throwaway servers only</p>
 </section>
@@ -4088,7 +4097,7 @@ tmux -L try -f /dev/null new -s t   # throwaway server: stock config, surgically
     const isPrefix = e.ctrlKey && !e.altKey && !e.metaKey && k === conf.prefixKey;
     if (isPrefix) {
       e.preventDefault();
-      if (latched) {                             // second press: bound under opinionated (send-prefix), reset under stock
+      if (latched) {                             // second press: send-prefix under both keymaps (stock binds C-b C-b too)
         latched = false; clearTimeout(latchTimer);
         if (conf.again) conf.again();
       } else {
@@ -4104,7 +4113,13 @@ tmux -L try -f /dev/null new -s t   # throwaway server: stock config, surgically
       let key = k;
       if (k === 'Space') key = ' ';
       else if (k.startsWith('Arrow') && e.ctrlKey) key = 'C-' + k;
-      else if (e.altKey) key = 'M-' + k;
+      else if (e.altKey) {
+        // macOS composes Option+digit into a glyph (Option+1 reports key
+        // '¡'), so the digit comes from e.code, which keeps the physical
+        // key. Linux reports the plain digit — same code, same result.
+        const d = /^Digit([0-9])$/.exec(e.code);
+        key = 'M-' + (d ? d[1] : k);
+      }
       else if (k.length === 1) key = k.toLowerCase();
       const act = conf.chords[key];
       if (act) { e.preventDefault(); act(); }    // unbound → silent reset, like real tmux
