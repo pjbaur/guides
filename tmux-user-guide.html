@@ -958,7 +958,7 @@ exit=1</code></pre>
       <tr><td><kbd>Prefix</kbd> <kbd>D</kbd></td><td><code>choose-client -Z</code></td><td>Pick a client to detach — for when you are not the only one attached (<a href="#clients">§8</a>)</td></tr>
     </tbody>
   </table></div>
-  <p class="tiny">"Command underneath" is the shipped default binding, read off this machine's <code>tmux list-keys -T prefix</code>. <a href="#key-bindings">§11</a> teaches that table's key-table machinery; the cheat sheet (<a href="#cheatsheet">§17</a>) repeats these cards. Every chord above is wired into the <a href="#playground">Prefix playground</a> after §7 — a simulator you can drill without a server.</p>
+  <p class="tiny">"Command underneath" is the shipped default binding, read off this machine's <code>tmux list-keys -T prefix</code>. <a href="#key-bindings">§11</a> teaches that table's key-table machinery; the cheat sheet (<a href="#cheatsheet">§17</a>) repeats these cards. The <a href="#playground">Prefix playground</a> after §7 simulates every row here except <kbd>D</kbd> (it has no second client to pick from) — drill them without a server.</p>
 
   <h3>How sessions end</h3>
   <ul>
@@ -1419,7 +1419,7 @@ docs/tmux-guide guides
       <tr><td><kbd>Prefix</kbd> <kbd>m</kbd> / <kbd>M</kbd></td><td><code>select-pane -m</code> / <code>-M</code></td><td>Mark the current pane / clear the mark — the target for <code>swap-pane</code> and joins</td></tr>
     </tbody>
   </table></div>
-  <p class="tiny">Bindings verified against this machine's <code>tmux list-keys -T prefix</code> on 3.7b. Killing the last pane of a window takes the window with it — last-one-out, all the way up the tree. The <a href="#playground">Prefix playground</a> after this section wires this whole table to a simulated server.</p>
+  <p class="tiny">Bindings verified against this machine's <code>tmux list-keys -T prefix</code> on 3.7b. Killing the last pane of a window takes the window with it — last-one-out, all the way up the tree. The <a href="#playground">Prefix playground</a> after this section simulates the splits, focus, layout, zoom, kill, and break chords on a fake server; resize, swap, and mark answer "not modeled" there.</p>
 
   <div class="lab">
     <div class="lab-title">Lab 5 · Pane calisthenics</div>
@@ -3972,6 +3972,10 @@ tmux -L try -f /dev/null new -s t   # throwaway server: stock config, surgically
         'r': () => notModeled('refresh-client lives in §8'),
         '-': () => notModeled('delete-buffer lives in §9'),
         '|': () => notModeled('unbound in the stock prefix table'),
+        '{': () => notModeled('swap-pane -U lives in §7'),
+        '}': () => notModeled('swap-pane -D lives in §7'),
+        'm': () => notModeled('select-pane -m (mark) lives in §7'),
+        'M': () => notModeled('select-pane -M (unmark) lives in §7'),
         'C-ArrowLeft': () => notModeled('resize-pane — §7'),
         'C-ArrowRight': () => notModeled('resize-pane — §7'),
         'C-ArrowUp': () => notModeled('resize-pane — §7'),
