@@ -24,6 +24,7 @@ plane.
 | [`gastown-user-guide.html`](gastown-user-guide.html) | Steve Yegge's multi-agent coding orchestration system | 2026-07-11 |
 | [`gascity-user-guide.html`](gascity-user-guide.html) | Go orchestration-builder SDK for multi-agent workflows, successor to Gas Town | gascity ≈ v1.3.0 · 2026-07-09 |
 | [`cmux-user-guide.html`](cmux-user-guide.html) | Terminal workspace and pane orchestration | 2026-07-09 |
+| [`tmux-user-guide.html`](tmux-user-guide.html) | Terminal multiplexing — sessions that outlive your connection, the client/server model, panes, copy-mode, scripting | tmux 3.7b · 2026-08-22 |
 
 ## How they are built
 
@@ -49,8 +50,8 @@ found by running the tool.
 
 ## Known gaps
 
-[`guide-ui-review.md`](guide-ui-review.md) is a measured UI audit of all eleven
-guides — rendered in headless Chromium, not inferred from source. It documents
+[`guide-ui-review.md`](guide-ui-review.md) is a measured UI audit of the eleven
+guides that predate the tmux guide — rendered in headless Chromium, not inferred from source. It documents
 five open issues, the most significant being that four guides render **no
 navigation at all** below their mobile breakpoint. It includes the re-runnable
 audit script and an explicit list of what the audit does not cover.
