@@ -2364,7 +2364,7 @@ run '~/.tmux/plugins/tpm/tpm'               # MUST be the last line</code></pre>
     <li><strong>What it actually does.</strong> Read the <code>*.tmux</code> file. If what it binds and sets matches the README's claims, you have verified more than most users ever do — in five minutes, because there is nothing else to read.</li>
   </ul>
 
-  <p class="tiny">Sources (all docs-verified, fetched 2026-08-22, none installed or run here): <a href="https://github.com/tmux-plugins/tpm" target="_blank" rel="noopener">tmux-plugins/tpm — README plus code read from a scratch clone (loader script, option names, paths)</a> · <a href="https://github.com/tmux-plugins/tmux-resurrect" target="_blank" rel="noopener">tmux-plugins/tmux-resurrect — what is saved, keys</a> · <a href="https://github.com/tmux-plugins/tmux-continuum" target="_blank" rel="noopener">tmux-plugins/tmux-continuum — cadence, auto-restore</a> · <a href="https://github.com/sainnhe/tmux-fzf" target="_blank" rel="noopener">sainnhe/tmux-fzf — scope, requirements</a> · <a href="https://github.com/tmux-plugins/tmux-yank" target="_blank" rel="noopener">tmux-plugins/tmux-yank — keys, platform tools, no OSC 52 claim</a> · <a href="https://github.com/catppuccin/tmux" target="_blank" rel="noopener">catppuccin/tmux — flavors, modules, version pinning</a> · <a href="https://github.com/gpakosz/.tmux" target="_blank" rel="noopener">gpakosz/.tmux (Oh My Tmux!) — install shape, local-config rule</a> · mechanism cross-references: this guide's <a href="#configuration">§10</a>, <a href="#formats">§12</a>, <a href="#styling">§14</a></p>
+  <p class="tiny">Sources: all docs-verified (fetched 2026-08-22, none installed or run here) · <a href="https://github.com/tmux-plugins/tpm" target="_blank" rel="noopener">tmux-plugins/tpm — README plus code read from a scratch clone (loader script, option names, paths)</a> · <a href="https://github.com/tmux-plugins/tmux-resurrect" target="_blank" rel="noopener">tmux-plugins/tmux-resurrect — what is saved, keys</a> · <a href="https://github.com/tmux-plugins/tmux-continuum" target="_blank" rel="noopener">tmux-plugins/tmux-continuum — cadence, auto-restore</a> · <a href="https://github.com/sainnhe/tmux-fzf" target="_blank" rel="noopener">sainnhe/tmux-fzf — scope, requirements</a> · <a href="https://github.com/tmux-plugins/tmux-yank" target="_blank" rel="noopener">tmux-plugins/tmux-yank — keys, platform tools, no OSC 52 claim</a> · <a href="https://github.com/catppuccin/tmux" target="_blank" rel="noopener">catppuccin/tmux — flavors, modules, version pinning</a> · <a href="https://github.com/gpakosz/.tmux" target="_blank" rel="noopener">gpakosz/.tmux (Oh My Tmux!) — install shape, local-config rule</a> · mechanism cross-references: this guide's <a href="#configuration">§10</a>, <a href="#formats">§12</a>, <a href="#styling">§14</a></p>
 </section>
 
 <section id="styling">
@@ -3167,14 +3167,129 @@ tmux -L try -f /dev/null new -s t   # throwaway server: stock config, surgically
 </ul>
   </div>
   <p class="tiny">Every entry links to the section whose transcripts introduced it; cross-check definitions in <a href="#glossary">§18</a>, dense chords in <a href="#cheatsheet">§17</a>, symptoms in <a href="#troubleshooting">§16</a>. Verified anchors — every link on this page resolves to a section or figure id in this file.</p>
+  <p class="tiny">Sources: entry names and claims inherit from the sections they link to (<a href="#mental-model">§1</a>–<a href="#styling">§14</a>), each of which ends with its own evidence line; terminology cross-checked against <a href="https://man.openbsd.org/tmux" target="_blank" rel="noopener">tmux(1)</a> on 3.7b.</p>
 </section>
 
 <section id="quiz">
   <h2>20 · Quiz</h2>
+  <p class="lede">Eighteen cards, one per module of the course. Answer out loud before you reveal — the reveal button is a commitment device, not a shortcut — then mark yourself honestly: <em>Got it</em> or <em>Review</em>. The score line remembers your marks in this browser. The four checkpoint cards back in <a href="#sessions">§5</a> are practice and never count here; the denominator is this page's eighteen.</p>
+  <div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0/18 answered</div>
+  <div class="quiz-actions quiz-reset"><button id="quizReset" type="button">Reset score</button></div>
+
+  <div class="quiz-item" data-q="1">
+    <div class="quiz-q"><span class="qnum">Q1</span>Your SSH connection drops while you are attached, a compile running in a pane. Name what ends, what survives, and where the survivors live.</div>
+    <div class="quiz-answer">The client ends — a terminal plus one socket connection, nothing more. The session, its windows, panes, the compile, and the scrollback keep running inside the server, and <code>tmux attach</code> from anywhere re-enters exactly where you left. Detach, deliberate or accidental, removes a client and nothing else. (<a href="#mental-model">§1</a>)</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+  </div>
+  <div class="quiz-item" data-q="2">
+    <div class="quiz-q"><span class="qnum">Q2</span>A colleague calls tmux panes "tabs." Correct them: which object is the tab-like unit, what do panes actually multiply, and where do processes live?</div>
+    <div class="quiz-answer">The <em>window</em> is the tab-like unit — one full-screen view at a time, holding panes. Panes are simultaneous splits of one window, several visible at once. And the pane is the unit that holds a process: close the pane and the process running in it ends with it. (<a href="#mental-model">§1</a>)</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+  </div>
+  <div class="quiz-item" data-q="3">
+    <div class="quiz-q"><span class="qnum">Q3</span><code>ls /tmp/tmux-501/</code> still shows your socket after <code>kill-server</code>. Is a server alive? Give the three possible answers <code>tmux ls</code> can give, with exit statuses.</div>
+    <div class="quiz-answer">The file's existence tells you nothing — on macOS a dead server leaves its socket behind, a drift captured in this guide. Ask the server: no server → <code>no server running …</code>, exit 1; server with sessions → one line per session, exit 0; server alive with zero sessions (<code>exit-empty off</code>) → silence, exit 0. (<a href="#server">§4</a>)</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+  </div>
+  <div class="quiz-item" data-q="4">
+    <div class="quiz-q"><span class="qnum">Q4</span>Who starts the tmux server, what ends it, and why are your sessions gone after a reboot?</div>
+    <div class="quiz-answer">It starts itself, silently, on the first session creation, and by default exits when its last session ends (<code>exit-empty on</code>; turned off, it sits alive with zero sessions). It is a plain process, not a daemon — nothing registers it with <code>launchd</code>/<code>systemd</code> — and a reboot clears <code>/tmp</code> and the RAM your sessions lived in. (<a href="#server">§4</a>)</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+  </div>
+  <div class="quiz-item" data-q="5">
+    <div class="quiz-q"><span class="qnum">Q5</span>Two other clients are mirroring your session. One command to take it for yourself — and what do their terminals show afterward? Then you <code>kill-session</code> the one you are attached to: what happens to your client?</div>
+    <div class="quiz-answer"><code>tmux attach -d -t name</code> — <code>-d</code> detaches every other client as you arrive; their terminals fall back to their shells and the session itself never changed. Kill the session you are watching and <code>detach-on-destroy on</code> (the default) detaches your client too; set it <code>off</code> and the client switches to the most recently used survivor instead. (<a href="#sessions">§5</a>)</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+  </div>
+  <div class="quiz-item" data-q="6">
+    <div class="quiz-q"><span class="qnum">Q6</span>Why does <code>link-window -s alpha:1 -t beta:linked</code> fail, what is the working form, and what happens when you dissolve the window's last link?</div>
+    <div class="quiz-answer"><code>-t</code> addresses a slot by index — <code>session:index</code> — never a name to create; tmux looked for a window called <code>linked</code>, did not find it, and said exactly that. Working form: <code>-t beta:1</code>, putting the same window object into <code>beta</code> at index 1 while it stays <code>alpha:1</code>. A window may not be linked to zero sessions — the last link out is the window's death (or <code>-k</code>, to say so explicitly). (<a href="#windows">§6</a>)</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+  </div>
+  <div class="quiz-item" data-q="7">
+    <div class="quiz-q"><span class="qnum">Q7</span>A window in your status line reads <code>edit !-M</code>. Decode all three flags, and state the invariant about <code>*</code> and <code>-</code>.</div>
+    <div class="quiz-answer"><code>!</code> — a bell rang in that window; <code>-</code> — the last-used window before the current one; <code>M</code> — the window contains the marked pane (<code>select-pane -m</code>, cleared with <code>-M</code>). Invariant: exactly one <code>*</code> (current) and one <code>-</code> per session, always — and flags stack into one string per window. (<a href="#windows">§6</a>)</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+  </div>
+  <div class="quiz-item" data-q="8">
+    <div class="quiz-q"><span class="qnum">Q8</span>A window holds panes <code>%0</code>, <code>%1</code>, <code>%2</code> at indexes 0, 1, 2. You kill index 1. What does <code>list-panes</code> show afterward, and which of the two labels should scripts target?</div>
+    <div class="quiz-answer"><code>%0 index=0</code> and <code>%2 index=1</code> — <code>%1</code> is gone forever (ids are never reused) and <code>%2</code> slid down into the freed position, healing the split. Indexes are positions that renumber; ids are identities that survive every move. Scripts and bindings target <code>%N</code> — <code>#{pane_id}</code> from outside, <code>$TMUX_PANE</code> from inside. (<a href="#panes">§7</a>)</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+  </div>
+  <div class="quiz-item" data-q="9">
+    <div class="quiz-q"><span class="qnum">Q9</span>State the exact meaning of <code>-s</code> and <code>-t</code> in <code>break-pane</code>, why <code>-t alpha:1.2</code> and <code>-t alpha:1</code> each fail, and what happens when you omit <code>-s</code>.</div>
+    <div class="quiz-answer"><code>-s</code> is the pane to break; <code>-t</code> is the destination window — the reverse of intuition. A destination must not carry a pane suffix (<code>can't specify pane here</code>), and an occupied index is refused (<code>index in use:</code> — add <code>-a</code>/<code>-b</code> to place after/before it). Omit <code>-s</code> and the server breaks its <em>current</em> pane — with no client attached that belongs to the most recently used session, which may not be yours. <code>join-pane</code> flips back to pane-level flags. (<a href="#panes">§7</a>)</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+  </div>
+  <div class="quiz-item" data-q="10">
+    <div class="quiz-q"><span class="qnum">Q10</span>Client A (100x30) is attached; client B (60x20) attaches; then A resizes itself to 40x15. Give the window size after each step on stock 3.7b — and how you would opt into the old folklore rule.</div>
+    <div class="quiz-answer">100x29 → 60x19 → 40x14. <code>window-size latest</code>, the default, gives the window to the most recent client to attach or resize, however small; the height is one row under the terminal's because the status line eats it. Smallest-wins is opt-in: <code>set-option -t SESSION window-size smallest</code>. (<a href="#clients">§8</a>)</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+  </div>
+  <div class="quiz-item" data-q="11">
+    <div class="quiz-q"><span class="qnum">Q11</span>In vi copy-mode you make a selection and press <kbd>y</kbd>. What happens? What is the real copy key, what command does it run, and where does the copy land?</div>
+    <div class="quiz-answer">Nothing — plain <kbd>y</kbd> is unbound in <code>copy-mode-vi</code> on 3.7b (only <kbd>C-y</kbd>, which scrolls; it is a keymap styled after vim, not vim). <kbd>Enter</kbd> is the copy key, running <code>copy-pipe-and-cancel</code>: copy <em>and</em> leave in one keypress. The copy lands on the buffer stack — server-wide, newest first, shared by every session. Want the reflex back? <code>bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel</code>. (<a href="#copy-mode">§9</a>)</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+  </div>
+  <div class="quiz-item" data-q="12">
+    <div class="quiz-q"><span class="qnum">Q12</span>In vi copy-mode, what do <kbd>Escape</kbd> and <kbd>q</kbd> each do — and in which copy-mode table is <kbd>Escape</kbd> an exit?</div>
+    <div class="quiz-answer"><kbd>Escape</kbd> runs <code>clear-selection</code> only — a self-loop: you stay in the mode, and <code>#{pane_in_mode}</code> still reads 1. <kbd>q</kbd> cancels and leaves with nothing copied, in both tables. The exception is the emacs table, where <kbd>Escape</kbd> does cancel. The habit to take: <em>q to leave</em>. (<a href="#copy-mode">§9</a>)</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+  </div>
+  <div class="quiz-item" data-q="13">
+    <div class="quiz-q"><span class="qnum">Q13</span>On a running server you <code>set -g base-index 1</code>. A session created <em>before</em> the change gets a new window — index 0 or 1? What does that prove about how options inherit, and which part of the old session never changes?</div>
+    <div class="quiz-answer">Index 1. An option with no value of its own falls back to the global layer at the moment it is read — live, not copied at creation (the mid-flight prefix flip proved the same rule). What sticks is the <em>materialized</em> effect: the old session's already-allocated 0-based indexes stay 0-based; renumbering is what <code>move-window -r</code> and <code>renumber-windows</code> are for. (<a href="#configuration">§10</a>)</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+  </div>
+  <div class="quiz-item" data-q="14">
+    <div class="quiz-q"><span class="qnum">Q14</span>To undo a config you just sourced, you run <code>source-file /dev/null</code>. What happens to <code>prefix</code>, and what are the two honest ways to actually revert a setting?</div>
+    <div class="quiz-answer">Nothing — the file is a script, and sourcing an empty one ran zero commands; the earlier ones stand. Revert honestly by setting the option back explicitly, or by starting a fresh server, which falls back to factory defaults. (<a href="#configuration">§10</a>)</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+  </div>
+  <div class="quiz-item" data-q="15">
+    <div class="quiz-q"><span class="qnum">Q15</span>What does <code>bind -n C-l …</code> do that <code>bind C-l …</code> does not, and what is the rule for choosing root-table keys?</div>
+    <div class="quiz-answer"><code>-n</code> binds in the <em>root</em> table — it fires on the bare key with no prefix, in every pane on the server, and the program in the pane never sees the key again (<kbd>Ctrl</kbd>+<kbd>l</kbd> stops clearing your shell's screen, stops redrawing vim). Rule: root-table bindings belong on keys nothing you run cares about — or keys you have decided tmux owns. (<a href="#key-bindings">§11</a>)</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+  </div>
+  <div class="quiz-item" data-q="16">
+    <div class="quiz-q"><span class="qnum">Q16</span><code>list-sessions -F '#{session_name} created=#{session_created_string}'</code> prints <code>alpha created=</code>. Does the timestamp not exist, or is something else going on? Name the discipline.</div>
+    <div class="quiz-answer">Something else: unknown variables expand to nothing, silently — <code>#{session_created_string}</code> is not a variable on 3.7b, while <code>#{session_created}</code> is (convert externally with <code>date -r</code>). Before trusting silence, check the man page's FORMATS list (<code>#{client_colorterm}</code> is the same family) — and single-quote whole format strings so your shell passes them through untouched. (<a href="#formats">§12</a>)</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+  </div>
+  <div class="quiz-item" data-q="17">
+    <div class="quiz-q"><span class="qnum">Q17</span>tmux has no plugin system. Mechanically, what <em>is</em> a plugin, and why must TPM's <code>run '~/.tmux/plugins/tpm/tpm'</code> line come last in your config?</div>
+    <div class="quiz-answer">A plugin is a git repository whose <code>*.tmux</code> script your server executes — it runs <code>bind-key</code> and <code>set-option</code> exactly as your own config does; there is no plugin API. The <code>run</code> line is the loader's trigger: when it executes, TPM reads the <code>@plugin</code> options set above it and sources each plugin. Config after the line still runs — the file is a script — but too late to affect plugin setup, which is exactly why your overrides belong there. (<a href="#plugins">§13</a>)</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+  </div>
+  <div class="quiz-item" data-q="18">
+    <div class="quiz-q"><span class="qnum">Q18</span>Two identical clients, both <code>TERM=xterm-256color</code>; one carries <code>COLORTERM=truecolor</code> in its environment, one does not. Which resolves the <code>RGB</code> feature, how do you probe it, and why did §14's drift card have to correct an earlier capture?</div>
+    <div class="quiz-answer">The one with <code>COLORTERM=truecolor</code> — on these clients the gate is the environment variable, not the <code>TERM</code> name (the other legitimate road is a terminal that answers tmux's capability queries). Probe with <code>list-clients -F '#{client_termfeatures}'</code>; note <code>#{client_colorterm}</code> is not a format variable, so the feature list is the truth. The earlier capture lacked per-client receipts; a controlled run with <code>ps</code>-proven environments disagreed, and the guide teaches the run you can reproduce. (<a href="#styling">§14</a>)</div>
+    <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+  </div>
+
+  <p><strong>Aim for 16/18.</strong> Anything you marked <em>Review</em> carries its section link in the answer — follow it, re-read, and run that section's lab again. The questions are written against 3.7b behavior as captured in this guide, corrections and drifts included; if your machine answers differently, the section's transcript is the tiebreaker.</p>
+  <p class="tiny">Sources: every question cross-links the section that taught it, and each section's own Sources line carries the transcripts and man-page citations behind the answer. Chord and option claims verified against <code>tmux list-keys</code> and <code>show-options</code> on 3.7b.</p>
 </section>
 
 <section id="sources">
   <h2>21 · Sources</h2>
+  <p class="lede"><strong>Checked with tmux 3.7b · 2026-08-22 · latest stable at check: 3.7c · external links require network; the guide itself works offline</strong></p>
+  <p>The evidence hierarchy, top to bottom: transcripts captured live on this machine (tmux 3.7b, throwaway servers only), the tmux(1) manual for command and option syntax, tmux's own source when the manual is ambiguous, and project documentation for everything in <a href="#plugins">§13</a> — which was read, never run. Every section ends with its own Sources line naming exactly what backs it; this page is the consolidated index.</p>
+  <ul>
+    <li><a href="https://man.openbsd.org/tmux" target="_blank" rel="noopener">tmux(1) — OpenBSD manual</a> — best used for command syntax and the OPTIONS, FORMATS, STYLES, and DEFAULT KEY BINDINGS sections; this guide's most-cited source.</li>
+    <li><a href="https://github.com/tmux/tmux" target="_blank" rel="noopener">tmux GitHub repository</a> — best used for reading the source when the manual is ambiguous; the OSC 52 emission gates and the 500 ms escape-delay floor were verified in it (tag 3.7b).</li>
+    <li><a href="https://github.com/tmux/tmux/wiki" target="_blank" rel="noopener">tmux GitHub wiki</a> — best used for getting-started material, the FAQ, and install pointers beyond <a href="#install">§3</a>'s thirty seconds.</li>
+    <li><a href="https://raw.githubusercontent.com/tmux/tmux/master/CHANGES" target="_blank" rel="noopener">tmux CHANGES (master)</a> — best used for what changed between versions: the 3.8 theme system (<a href="#styling">§14</a>), when <code>-A</code> shipped (1.8), when the no-<code>-s</code> form landed (3.1).</li>
+    <li><a href="https://github.com/tmux/tmux/releases" target="_blank" rel="noopener">tmux releases</a> — best used for tarballs when you must build from source, and for seeing how far your distribution's package lags.</li>
+    <li><a href="https://formulae.brew.sh/formula/tmux" target="_blank" rel="noopener">Homebrew — tmux formula</a> — best used for the macOS install path and the currently packaged version.</li>
+    <li><a href="https://github.com/tmux-plugins/tpm" target="_blank" rel="noopener">tmux-plugins/tpm</a> — best used for the plugin manager's install steps and its <code>@plugin</code> option contract (docs-verified in <a href="#plugins">§13</a>, not run here).</li>
+    <li><a href="https://github.com/tmux-plugins/tmux-resurrect" target="_blank" rel="noopener">tmux-plugins/tmux-resurrect</a> — best used for the save/restore chords and exactly what a snapshot contains: structure, not scrollback.</li>
+    <li><a href="https://github.com/junegunn/fzf" target="_blank" rel="noopener">junegunn/fzf</a> — best used for the picker behind <a href="#formats">§12</a>'s <code>tss</code>: exit codes, search syntax, shell integration.</li>
+    <li><a href="https://man7.org/linux/man-pages/man7/signal.7.html" target="_blank" rel="noopener">signal(7) — Linux man-pages</a> — best used for SIGHUP semantics, the signal <a href="#prereqs">§2</a>'s honest pitch is built on.</li>
+    <li><a href="fzf-user-guide.html" target="_blank" rel="noopener">fzf: a user guide (this repo)</a> — further reading: the picker side of the partnership, from fuzzy-match syntax to reload-driven launchers.</li>
+    <li><a href="lazygit-user-guide.html" target="_blank" rel="noopener">lazygit: a user guide (this repo)</a> — further reading: a full-screen TUI that pairs naturally with one pane per concern.</li>
+  </ul>
+  <p class="tiny">Sources: this page is the consolidated index; each section's own Sources line (<a href="#mental-model">§1</a>–<a href="#quiz">§20</a>) names the specific man-page sections, source files, and transcript dates behind its claims.</p>
 </section>
 </main>
 </div>
@@ -3245,8 +3360,11 @@ tmux -L try -f /dev/null new -s t   # throwaway server: stock config, surgically
   }
 
   // The stylesheet ships .quiz-answer visible so the guide reads with JS off;
-  // the engine hides answers here and manages reveal from there.
+  // the engine hides answers here and manages reveal from there. Every .quiz-item
+  // gets reveal behavior — including §5's checkpoint cards — but only the graded
+  // cards inside #quiz (§20) count toward the score and its denominator.
   const quizItems = [...document.querySelectorAll('.quiz-item')];
+  const gradedItems = [...document.querySelectorAll('#quiz .quiz-item')];
   const quizScore = document.getElementById('quizScore');
   const quizReset = document.getElementById('quizReset');
   if (quizScore) quizScore.setAttribute('aria-live', 'polite');
@@ -3264,10 +3382,13 @@ tmux -L try -f /dev/null new -s t   # throwaway server: stock config, surgically
       const state = quizState[item.dataset.q];
       item.classList.toggle('correct', state === 'got');
       item.classList.toggle('missed', state === 'missed');
+    });
+    gradedItems.forEach(item => {
+      const state = quizState[item.dataset.q];
       if (state === 'got') got++;
       if (state === 'missed') missed++;
     });
-    if (quizScore) quizScore.textContent = `Score: ${got} learned · ${missed} review · ${got + missed}/${quizItems.length} answered`;
+    if (quizScore) quizScore.textContent = `Score: ${got} learned · ${missed} review · ${got + missed}/${gradedItems.length} answered`;
     try { localStorage.setItem(QUIZ_KEY, JSON.stringify(quizState)); } catch (_) { /* session-only */ }
   }
 
