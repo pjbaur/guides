@@ -355,12 +355,12 @@
   <p>tmux is not Terminal.app, iTerm2, or Alacritty, and it does not replace them. You run it <em>inside</em> a terminal. The terminal still draws every glyph on the screen. What tmux decides is <em>which</em> glyphs: it owns your programs and their layouts, composites them into one character grid, and hands that grid to the terminal to render. It is a window manager for terminals — the same relationship a tiling window manager has to your monitor.</p>
   <p>Four nouns do the work, nested one inside the next:</p>
   <ul>
-    <li><strong>Server</strong> — one long-lived process that owns everything: the sessions, the programs inside them, the scrollback.</li>
-    <li><strong>Session</strong> — a workspace. Holds windows.</li>
-    <li><strong>Window</strong> — one full-screen view inside a session. The tab-like unit. Holds panes.</li>
-    <li><strong>Pane</strong> — one pseudo-terminal running one program. The thing you actually type into.</li>
+    <li><strong><a href="#g-server">Server</a></strong> — one long-lived process that owns everything: the sessions, the programs inside them, the scrollback.</li>
+    <li><strong><a href="#g-session">Session</a></strong> — a workspace. Holds windows.</li>
+    <li><strong><a href="#g-window">Window</a></strong> — one full-screen view inside a session. The tab-like unit. Holds panes.</li>
+    <li><strong><a href="#g-pane">Pane</a></strong> — one pseudo-terminal running one program. The thing you actually type into.</li>
   </ul>
-  <p>One noun sits outside the nest: the <strong>client</strong> — a terminal plus a connection to the server. Part II gives each of these its own section. For now you only need the nesting and one rule: <strong>processes live in panes, panes live in windows, windows live in sessions, sessions live in the server, and clients live nowhere near any of it.</strong></p>
+  <p>One noun sits outside the nest: the <strong><a href="#g-client">client</a></strong> — a terminal plus a connection to the server. Part II gives each of these its own section. For now you only need the nesting and one rule: <strong>processes live in panes, panes live in windows, windows live in sessions, sessions live in the server, and clients live nowhere near any of it.</strong></p>
 
   <h3>One server, many clients</h3>
   <p>Every <code>tmux</code> command you type — <code>tmux new</code>, <code>tmux ls</code>, <code>tmux attach</code> — is a client process. It finds the server through a Unix socket in <code>/tmp/tmux-$(id -u)/</code> and talks to it. Most commands finish and exit at once; an attached client stays connected until you detach or close its terminal. The server starts itself the first time it is needed, keeps running after the last client has gone, and exits only when its last session ends. You will watch that entire lifecycle happen in sixty seconds in <a href="#install">§3</a>.</p>
@@ -482,7 +482,7 @@
   </table></div>
 
   <h3>$TERM: the capability contract</h3>
-  <p><code>$TERM</code> is not your terminal's name. It is the name programs use to look up capabilities — how many colors, how to move the cursor, whether the clipboard is reachable — in the terminfo database. Programs never ask your terminal what it can do; they ask <code>$TERM</code>.</p>
+  <p><a href="#g-term"><code>$TERM</code></a> is not your terminal's name. It is the name programs use to look up capabilities — how many colors, how to move the cursor, whether the clipboard is reachable — in the terminfo database. Programs never ask your terminal what it can do; they ask <code>$TERM</code>.</p>
   <p>tmux sits in the middle of every byte, so it does the only sensible thing: each pane gets a brand-new terminal with its own identity. From the outside, your terminal reports something like <code>xterm-256color</code> — this is how tmux itself describes a real attached client:</p>
   <pre><code>$ tmux list-clients
 /dev/ttys031: alpha [80x24 xterm-256color] (attached,focused,UTF-8)</code></pre>
@@ -499,7 +499,7 @@ default-terminal tmux-256color</code></pre>
   <p>Carry two consequences forward. Programs inside tmux are talking to <em>tmux</em>, not to your terminal — one terminal, two contracts, tmux bridging them. And every "the colors are wrong inside tmux" symptom is this contract breaking somewhere along that chain; <a href="#configuration">§10</a> repairs it properly.</p>
 
   <h3>SIGHUP: what actually happens when the terminal dies</h3>
-  <p>A terminal connection is a pseudo-terminal. Close the window, drop the SSH, let the laptop sleep mid-session: the pty hangs up, and the kernel delivers <strong>SIGHUP</strong> — the hangup signal — to the processes attached to it, delivered by process group. The shell owns the connection, so it gets the signal and exits. That much is standard Unix and always true.</p>
+  <p>A terminal connection is a pseudo-terminal. Close the window, drop the SSH, let the laptop sleep mid-session: the pty hangs up, and the kernel delivers <strong><a href="#g-sighup">SIGHUP</a></strong> — the hangup signal — to the processes attached to it, delivered by process group. The shell owns the connection, so it gets the signal and exits. That much is standard Unix and always true.</p>
   <p>What happens to the shell's <em>children</em> is the interesting part, and the folklore answer — "closing the terminal kills your jobs" — did not survive contact with the machine this guide was tested on. Real transcript: a bare interactive zsh on a pty, one backgrounded job, then the terminal closes:</p>
   <pre><code>### close the terminal (pty master)
 zsh exited rc=1
@@ -666,7 +666,7 @@ you              68328   0.0  0.0 34562324   2172   ??  Ss   11:09PM   0:00.02 t
   <p>That launch line's flags, once: <code>-L lab</code> names the socket (next sub-section), and <code>-f /dev/null</code> replaces the config file with nothing — stock tmux, zero user configuration. Every research transcript in this guide runs that way, so what you read is what an out-of-the-box tmux does. Your everyday server, with your config loaded, may differ where this guide says so.</p>
 
   <h3>The socket: where clients find the server</h3>
-  <p>Each server owns exactly one Unix socket — a special file that client processes connect to. They live in a per-user directory with mode 700; no other account can reach your servers:</p>
+  <p>Each server owns exactly one <a href="#g-socket">Unix socket</a> — a special file that client processes connect to. They live in a per-user directory with mode 700; no other account can reach your servers:</p>
   <pre><code>$ ls -la /tmp/tmux-$(id -u)/
 total 0
 drwx------@   5 you       wheel   160 Aug 22 23:09 .
@@ -778,7 +778,7 @@ no server running on /private/tmp/tmux-501/lab</code></pre>
 
   <div class="callout blue">
     <strong>Chord notation, from here on.</strong>
-    <a href="#install">§3</a> wrote the detach chord out in full. From now on it is compressed: <kbd>Prefix</kbd> <kbd>d</kbd> means press <kbd>Ctrl</kbd>+<kbd>b</kbd>, release it, then press <kbd>d</kbd>. The prefix behaves like a shift key for commands — always release it, never hold it.
+    <a href="#install">§3</a> wrote the detach chord out in full. From now on it is compressed: <kbd>Prefix</kbd> <kbd>d</kbd> means press <kbd>Ctrl</kbd>+<kbd>b</kbd>, release it, then press <kbd>d</kbd>. The <a href="#g-prefix">prefix</a> behaves like a shift key for commands — always release it, never hold it.
   </div>
 
   <h3>The fast pass</h3>
@@ -1160,7 +1160,7 @@ $ tmux -L lab list-panes -t alpha:1 -F '#{pane_index} #{pane_width}x#{pane_heigh
   <p>80 columns became 40 + 1 + 39: every divider eats one column. The right half's 24 rows became 12 + 1 + 11 the same way. Splits always halve <em>the pane being split</em> — the second split targeted the right pane, so the left pane never changed. Your window's numbers come from its size; the plumbing does not. The 80x24 itself is the <code>default-size</code> option talking, which matters more than it sounds — <a href="#clients">§8</a> shows who really decides a window's size.</p>
 
   <h3>Identity versus index</h3>
-  <p>Every pane has two labels, and conflating them is the root of most pane confusion. The <strong>index</strong> is a position: per window, starting at 0, in creation order — the number <kbd>Prefix</kbd> <kbd>q</kbd> flashes on each pane. The <strong>id</strong> (<code>%N</code>) is an identity: assigned server-wide in creation order, never reused, and it follows the pane through every move. Watch a pane keep its id while losing its index — three panes, then the middle one killed:</p>
+  <p>Every pane has two labels, and conflating them is the root of most pane confusion. The <strong><a href="#g-index">index</a></strong> is a position: per window, starting at 0, in creation order — the number <kbd>Prefix</kbd> <kbd>q</kbd> flashes on each pane. The <strong><a href="#g-pane-id">id</a></strong> (<code>%N</code>) is an identity: assigned server-wide in creation order, never reused, and it follows the pane through every move. Watch a pane keep its id while losing its index — three panes, then the middle one killed:</p>
   <pre><code>$ tmux -L t6 list-panes -t p:0 -F '#{pane_id} index=#{pane_index} #{pane_width}x#{pane_height}'
 %0 index=0 40x24
 %1 index=1 39x12
@@ -1208,7 +1208,7 @@ $ tmux -L lab list-panes -t alpha:1 -F '#{pane_index} #{pane_width}x#{pane_heigh
   <p>Pane 1 gained exactly the five rows pane 2 lost: boundary moved, cells conserved. From a keyboard, <kbd>Prefix</kbd> <kbd>Ctrl</kbd>+<kbd>↓</kbd> (and the other three arrows) resizes the current pane by one cell per press, repeatable within <code>repeat-time</code>.</p>
 
   <h3>Zoom: one pane, temporarily everything</h3>
-  <p><kbd>Prefix</kbd> <kbd>z</kbd> zooms the current pane to fill its window; the other panes keep running behind it, invisible. It is a toggle — <kbd>z</kbd> again restores the layout exactly. The research run zoomed pane 1 of the three-pane window:</p>
+  <p><kbd>Prefix</kbd> <kbd>z</kbd> <a href="#g-zoom">zooms</a> the current pane to fill its window; the other panes keep running behind it, invisible. It is a toggle — <kbd>z</kbd> again restores the layout exactly. The research run zoomed pane 1 of the three-pane window:</p>
   <pre><code>$ tmux -L lab resize-pane -Z -t alpha:1.1
 $ tmux -L lab list-panes -t alpha:1 -F '#{pane_index} #{pane_width}x#{pane_height} flags=#{pane_flags}'
 0 80x8 flags=
@@ -1498,7 +1498,7 @@ tmux -L lab list-clients -F '#{client_width}x#{client_height}'</code></pre>
 
 <section id="copy-mode">
   <h2>9 · Copy-mode &amp; buffers</h2>
-  <p class="lede">A pane is a terminal emulation, not a text file. The program inside it owns the keyboard and the visible grid; everything that scrolled off the top still exists, but only in a history buffer the server keeps on the pane's behalf. Reading that history needs keys — and every key already belongs to your program. tmux resolves the standoff by borrowing the keyboard back: a <em>mode</em>, entered on purpose, in which the same physical keys suddenly mean move, search, select, copy. This section is that mode, the buffer stack it feeds, and the two further leaps text must make to reach your system clipboard.</p>
+  <p class="lede">A pane is a terminal emulation, not a text file. The program inside it owns the keyboard and the visible grid; everything that scrolled off the top still exists, but only in a <a href="#g-scrollback">history buffer</a> the server keeps on the pane's behalf. Reading that history needs keys — and every key already belongs to your program. tmux resolves the standoff by borrowing the keyboard back: a <em>mode</em>, entered on purpose, in which the same physical keys suddenly mean move, search, select, copy. This section is that mode, the buffer stack it feeds, and the two further leaps text must make to reach your system clipboard.</p>
 
   <figure class="diagram" id="copy-map">
     <svg viewBox="0 0 960 440" role="img" aria-label="Three places copied text can live: inside the tmux server, a pane's scrollback (per pane) and the buffer stack (per server, shared by all sessions) sit side by side with copy and paste arrows between them; outside the server, the system clipboard box is reached only by an export arrow crossing the server boundary.">
@@ -1664,7 +1664,7 @@ buffer1: 35 bytes: "LAB7 line 1\nLAB7 line 2\nLAB7 line 3"</code></pre>
   <p class="tiny">Real round trip, 2026-08-23: the same command sequence every vi binding runs (each is <code>send-keys -X &lt;command&gt;</code> underneath), driven detached so the bytes could be captured. Note the byte count — 35, no trailing newline: <kbd>$</kbd> stops at the last line's end. An earlier attempt in the same run searched for just <code>LAB7</code>, landed on line 3 — the nearest match <em>above the cursor</em> — and copied "line 3 + prompt + blank" instead. Anchor your search on the first line's full text; Lab 7 makes you feel the difference.</p>
 
   <h3>The buffer stack: server-wide, newest on top</h3>
-  <p>Every copy lands in a <em>paste buffer</em>, and the buffers form a stack owned by the server — not the session, not the pane. All sessions on one server share one stack, newest listed first, each named <code>bufferN</code> with the highest N newest, up to <code>buffer-limit 50</code> before old ones fall off. The stack, worked end to end on a throwaway server:</p>
+  <p>Every copy lands in a <em><a href="#g-buffer">paste buffer</a></em>, and the buffers form a stack owned by the server — not the session, not the pane. All sessions on one server share one stack, newest listed first, each named <code>bufferN</code> with the highest N newest, up to <code>buffer-limit 50</code> before old ones fall off. The stack, worked end to end on a throwaway server:</p>
   <pre><code>$ tmux -L cp -f /dev/null new-session -d -s cp
 $ tmux -L cp set-buffer 'first' &amp;&amp; tmux -L cp set-buffer 'second' &amp;&amp; tmux -L cp list-buffers
 buffer1: 6 bytes: "second"
@@ -1940,7 +1940,7 @@ C-b</code></pre>
 
 <section id="key-bindings">
   <h2>11 · Key bindings &amp; tables</h2>
-  <p class="lede">Every keystroke tmux sees is looked up in a key table, and you already know three of them: the root table (keys without a prefix — mostly mouse events on 3.7b), the prefix table (every chord this guide has taught), and the copy-mode tables from <a href="#copy-mode">§9</a>. Bindings are data, not doctrine: list them, rebind them, stack commands, repeat them. This section is the machinery — and the two timer options, <code>escape-time</code> and <code>repeat-time</code>, that decide how tmux <em>feels</em> before it decides what a key meant.</p>
+  <p class="lede">Every keystroke tmux sees is looked up in a <a href="#g-key-table">key table</a>, and you already know three of them: the root table (keys without a prefix — mostly mouse events on 3.7b), the prefix table (every chord this guide has taught), and the copy-mode tables from <a href="#copy-mode">§9</a>. Bindings are data, not doctrine: list them, rebind them, stack commands, repeat them. This section is the machinery — and the two timer options, <code>escape-time</code> and <code>repeat-time</code>, that decide how tmux <em>feels</em> before it decides what a key meant.</p>
 
   <h3>bind, unbind, and the tables underneath</h3>
   <p><code>bind-key</code> adds a binding to a table; <code>unbind-key</code> removes one; <code>list-keys</code> prints a table whole. The defaults were never secrets — they are the output of <code>tmux list-keys -T prefix</code>, which is where every "command underneath" cell in this guide's chord tables came from. A full custom binding round trip, from the research run:</p>
@@ -1963,7 +1963,7 @@ bind-key -r -T prefix C-Down  resize-pane -D</code></pre>
   <p>The window is the <code>repeat-time</code> session option — <strong>500 ms</strong> stock, verified live (<code>show-options -gv repeat-time</code>). In practice: <kbd>Prefix</kbd> <kbd>↓</kbd> <kbd>↓</kbd> <kbd>↓</kbd> walks three panes with one prefix. The keyboard resize chords from <a href="#panes">§7</a> are where most people first feel it. Your own bindings opt in with <code>-r</code>: <code>bind -r H resize-pane -L 5</code> — and a binding that is <em>not</em> repeatable drops you back out of the prefix after one press, which is the difference between a resize chord that flows and one that fights you.</p>
 
   <h3>escape-time: why terminals send Esc slowly</h3>
-  <p>The arrow key <kbd>↑</kbd> arrives at tmux as the three bytes <code>ESC [ A</code>. A lone <kbd>Esc</kbd> arrives as one byte — <code>ESC</code> — that is a prefix of the same sequence. The two are indistinguishable until either more bytes arrive or time passes, so tmux waits: the man page defines <code>escape-time</code> as "the time in milliseconds for which tmux waits after an escape is input to determine if it is part of a function or meta key sequences." Every standalone <kbd>Esc</kbd> you press is delayed by that wait — every time, by up to the full value.</p>
+  <p>The arrow key <kbd>↑</kbd> arrives at tmux as the three bytes <code>ESC [ A</code>. A lone <kbd>Esc</kbd> arrives as one byte — <code>ESC</code> — that is a prefix of the same sequence. The two are indistinguishable until either more bytes arrive or time passes, so tmux waits: the man page defines <a href="#g-escape-time"><code>escape-time</code></a> as "the time in milliseconds for which tmux waits after an escape is input to determine if it is part of a function or meta key sequences." Every standalone <kbd>Esc</kbd> you press is delayed by that wait — every time, by up to the full value.</p>
   <p>Stock on this machine's 3.7b: <strong>10 ms</strong> — verified live alongside <code>repeat-time</code>. That is imperceptible and correct for a modern terminal. Raise it and you can watch the delay appear, measured on a real rig: a pane timestamping its input received a bare <kbd>Esc</kbd> <strong>1.200 s</strong> after it was sent with <code>escape-time 1200</code>. Anyone who has felt vim "lag on Esc" inside a badly configured tmux has felt this option — and the fix is the config from <a href="#configuration">§10</a>: ten milliseconds.</p>
   <div class="callout blue">
     <strong>A measurement honesty note, because it bit the author.</strong>
@@ -1994,7 +1994,7 @@ bind-key  -T prefix       z resize-pane -Z</code></pre>
 
 <section id="formats">
   <h2>12 · Formats &amp; scripting</h2>
-  <p class="lede">Every listing in this guide — <code>#{window_index}: #{window_name}</code>, <code>#{pane_id}</code>, <code>#{client_session}</code> — has been written in a small template language you have been reading for eleven sections without its name. It is called a format, variables spell <code>#{name}</code>, and this is the section where it becomes yours. Once the server's entire object tree renders as plain text on demand, tmux stops being an application you operate and becomes a database you can query — and script. The section ends with the payoff built and proven live: <code>tss</code>, a ten-line fzf session jumper that turns "which session was that" into one chord.</p>
+  <p class="lede">Every listing in this guide — <code>#{window_index}: #{window_name}</code>, <code>#{pane_id}</code>, <code>#{client_session}</code> — has been written in a small template language you have been reading for eleven sections without its name. It is called a <a href="#g-format">format</a>, variables spell <code>#{name}</code>, and this is the section where it becomes yours. Once the server's entire object tree renders as plain text on demand, tmux stops being an application you operate and becomes a database you can query — and script. The section ends with the payoff built and proven live: <code>tss</code>, a ten-line fzf session jumper that turns "which session was that" into one chord.</p>
 
   <h3>The format language, and its printf</h3>
   <p>A format is a template the server evaluates against a target object. <code>display-message -p</code> is its printf: <code>-p</code> prints the expanded template to stdout instead of flashing it in the status line, and <code>-t</code> names the object the variables read from. You have run this a dozen times already; once, on purpose, with four variables at once:</p>
@@ -2069,7 +2069,7 @@ pane knows itself: %1</code></pre>
   <p>Two languages, one pane: <code>#{pane_id}</code> asks the server about the target; <code>$TMUX_PANE</code> asks the environment from inside it — and both said <code>%1</code>. Scripts and bindings should target <code>%N</code>; humans reading listings can use either.</p>
 
   <h3>Hooks: events, with receipts</h3>
-  <p>A hook is a named event the server fires when something happens — a window created, a client detached, a pane focused. <code>set-hook</code> maps an event to a command; the command runs through <code>run-shell</code>, so it is a shell command with the full format language available. The receipt, because hooks are invisible when they work:</p>
+  <p>A <a href="#g-hook">hook</a> is a named event the server fires when something happens — a window created, a client detached, a pane focused. <code>set-hook</code> maps an event to a command; the command runs through <code>run-shell</code>, so it is a shell command with the full format language available. The receipt, because hooks are invisible when they work:</p>
   <pre><code>$ tmux -L t8 set-hook -g after-new-window 'run-shell "echo NEWWINDOW &gt;&gt; /tmp/t8-hook.log"'
 $ tmux -L t8 new-window -d -t gamma -n hookbait
 $ sleep 0.6 &amp;&amp; cat /tmp/t8-hook.log
@@ -2165,7 +2165,7 @@ stop rc=0</code></pre>
   </figure>
 
   <h3>display-popup: an overlay, with three honest limits</h3>
-  <p>A popup is a rectangular overlay the client draws over the session, running a command — tmux's native floating window, and the natural launcher for pickers. It is also where scripting meets the client/server line, and the line pushes back three times:</p>
+  <p>A <a href="#g-popup">popup</a> is a rectangular overlay the client draws over the session, running a command — tmux's native floating window, and the natural launcher for pickers. It is also where scripting meets the client/server line, and the line pushes back three times:</p>
   <ul>
     <li><strong>It needs a live client.</strong> A popup is drawn <em>on a client</em>, so with none attached the command refuses — <code>no current client</code>, exit 1, straight from the research run's detached attempt. Same family as <a href="#sessions">§5</a>'s <code>switch-client</code> refusal.</li>
     <li><strong>The CLI form blocks.</strong> <code>tmux display-popup …</code> from a shell holds the calling command for at least the popup's lifetime — the research run watched one still blocked ten seconds after a three-second popup command had exited. Popups are for <em>bindings</em>, which return instantly.</li>
@@ -2369,7 +2369,7 @@ run '~/.tmux/plugins/tpm/tpm'               # MUST be the last line</code></pre>
 
 <section id="styling">
   <h2>14 · Styling &amp; status line</h2>
-  <p class="lede">The status line is a format string — the language from <a href="#formats">§12</a> — rendered onto one row of your terminal on a timer. That is the entire secret. Copied dotfiles feel like magic only because nobody shows you the three option families underneath: <em>what the bar says</em> (templates), <em>how it is drawn</em> (styles), and <em>what sits under all of it</em> (the color and theme story, which on 3.7b has an honest ending). This section reads the stock bar line by line, then rebuilds it twice — a three-segment working bar, then a two-segment minimal one — each as a config you can paste, smoke-tested and rendered off a real client.</p>
+  <p class="lede">The <a href="#g-status-line">status line</a> is a format string — the language from <a href="#formats">§12</a> — rendered onto one row of your terminal on a timer. That is the entire secret. Copied dotfiles feel like magic only because nobody shows you the three option families underneath: <em>what the bar says</em> (templates), <em>how it is drawn</em> (<a href="#g-style">styles</a>), and <em>what sits under all of it</em> (the color and theme story, which on 3.7b has an honest ending). This section reads the stock bar line by line, then rebuilds it twice — a three-segment working bar, then a two-segment minimal one — each as a config you can paste, smoke-tested and rendered off a real client.</p>
 
   <h3>What the stock bar actually says</h3>
   <p>Every string below is a shipped default, read straight off a stock server in the research run:</p>
@@ -2994,65 +2994,64 @@ tmux -L try -f /dev/null new -s t   # throwaway server: stock config, surgically
   <h2>19 · Index</h2>
   <p class="lede">Terms, commands, options, format variables, and chords, alphabetical, each linked to the section that taught it. Commands and options are set in <code>code</code>; chords are what your fingers know. Definitions live in <a href="#glossary">§18</a>; this page is for jumping.</p>
   <div class="index-cols">
-    <ul>
-      <li><strong>A</strong></li>
+    <ul><li><strong>A</strong></li>
       <li><a href="#cheatsheet"><code>-A</code> (new-session)</a> — create-or-attach · §17</li>
       <li><a href="#windows">activity / silence monitoring</a> — §6</li>
-      <li><a href="#styling"><code>#[…]</code> inline styles</a> — §14</li>
-      <li><a href="#formats"><code>#{?cond,yes,no}</code> conditional</a> — §12</li>
       <li><a href="#plugins">adopt-vs-write decision rule</a> — §13</li>
       <li><a href="#sessions"><code>attach</code> / <code>attach-session</code></a> — §5</li>
       <li><a href="#clients"><code>attach -d</code> (steal)</a> · <code>attach -r</code> (read-only) — §8</li>
       <li><a href="#windows">automatic renaming</a> — §6</li>
-      <li><strong>B</strong></li>
+<li><strong>B</strong></li>
       <li><a href="#configuration"><code>base-index</code></a> — §10</li>
       <li><a href="#windows">bell flag (<code>!</code>)</a> — §6</li>
-      <li><a href="#server"><code>bind C-a send-prefix</code></a> — §4 · double-tap: §10</li>
+      <li><a href="#configuration"><code>bind C-a send-prefix</code></a> — §10</li>
       <li><a href="#key-bindings"><code>bind-key</code> / <code>unbind-key</code></a> — §11</li>
       <li><a href="#key-bindings"><code>bind -n</code> (root table)</a> — §11</li>
       <li><a href="#key-bindings"><code>bind -r</code> (repeatable)</a> — §11</li>
-      <li><a href="#styling">box-drawing artifacts</a> — §16</li>
+      <li><a href="#troubleshooting">box-drawing artifacts</a> — §16</li>
       <li><a href="#copy-mode">bracketed paste</a> — §9</li>
       <li><a href="#panes"><code>break-pane</code> / <kbd>Prefix</kbd> <kbd>!</kbd></a> — §7</li>
-      <li><a href="#copy-mode">buffer stack</a> — §9</li>
       <li><a href="#copy-mode"><code>buffer-limit</code></a> — §9</li>
+      <li><a href="#copy-mode">buffer stack</a> — §9</li>
       <li><a href="#clients">by-size window negotiation (<code>window-size</code>)</a> — §8</li>
-      <li><strong>C</strong></li>
-      <li><a href="#copy-mode"><code>capture-pane -p</code> / <code>-b</code></a> — §9</li>
-      <li><a href="#capstone">capstone (<code>projectx</code>)</a> — §15</li>
+<li><strong>C</strong></li>
+      <li><a href="#windows"><code>can't find window</code> (link target)</a> — §6</li>
       <li><a href="#prereqs">capability contract (<code>$TERM</code>)</a> — §2</li>
+      <li><a href="#capstone">capstone (<code>projectx</code>)</a> — §15</li>
+      <li><a href="#copy-mode"><code>capture-pane -p</code> / <code>-b</code></a> — §9</li>
       <li><a href="#copy-mode"><code>choose-buffer</code> / <kbd>Prefix</kbd> <kbd>=</kbd></a> — §9</li>
       <li><a href="#clients"><code>choose-client</code> / <kbd>Prefix</kbd> <kbd>D</kbd></a> — §8</li>
       <li><a href="#sessions"><code>choose-tree</code> / <kbd>Prefix</kbd> <kbd>s</kbd> <kbd>w</kbd></a> — §5</li>
       <li><a href="#sessions">chord notation</a> — §5</li>
       <li><a href="#copy-mode">clipboard, system</a> — §9 · over SSH: §16</li>
-      <li><a href="#styling">COLORTERM / <code>RGB</code> feature</a> — §14 · broken colors: §16</li>
+      <li><a href="#troubleshooting">colors, broken inside tmux</a> — §16</li>
       <li><a href="#formats">colors in <code>format</code> output (<code>##</code>)</a> — §12</li>
-      <li><a href="#windows">colors, broken inside tmux</a> — §16</li>
+      <li><a href="#styling">COLORTERM / <code>RGB</code> feature</a> — §14 · broken colors: §16</li>
       <li><a href="#configuration">config file as script / reload</a> — §10</li>
-      <li><a href="#windows"><code>can't find window</code> (link target)</a> — §6</li>
-      <li><a href="#copy-mode">copy keys (vi / emacs)</a> — §9 · card: §17</li>
       <li><a href="#copy-mode"><code>copy-command</code></a> — §9</li>
+      <li><a href="#copy-mode">copy keys (vi / emacs)</a> — §9 · card: §17</li>
       <li><a href="#copy-mode">copy-mode</a> — §9</li>
       <li><a href="#troubleshooting">copy-mode, stuck in</a> — §16</li>
-      <li><strong>D</strong></li>
+<li><strong>D</strong></li>
       <li><a href="#windows">dead pane / <code>zsh[dead]</code></a> — §6 · fix: §16</li>
       <li><a href="#copy-mode"><code>delete-buffer</code> / <kbd>Prefix</kbd> <kbd>-</kbd></a> — §9</li>
       <li><a href="#clients"><code>detach-client</code> / <kbd>Prefix</kbd> <kbd>d</kbd></a> — §8</li>
       <li><a href="#sessions"><code>detach-on-destroy</code></a> — §5</li>
-      <li><a href="#sessions"><code>detach-on-destroy</code></a> — §5</li>
       <li><a href="#formats"><code>display-message -p</code></a> — §12</li>
       <li><a href="#panes"><code>display-panes</code> / <kbd>Prefix</kbd> <kbd>q</kbd></a> — §7</li>
       <li><a href="#formats"><code>display-popup</code></a> — §12</li>
-      <li><strong>E</strong></li>
+<li><strong>E</strong></li>
       <li><a href="#key-bindings"><code>escape-time</code></a> — §11 · lag: §16</li>
       <li><a href="#server"><code>exit-empty</code></a> — §4</li>
-      <li><strong>F</strong></li>
-      <li><a href="#formats">format language</a> — §12</li>
-      <li><a href="#formats"><code>#{client_name}</code> / <code>#{client_tty}</code></a> — §8</li>
+<li><strong>F</strong></li>
+      <li><a href="#formats"><code>#{client_colorterm}</code> (not a variable)</a> — §12</li>
+      <li><a href="#clients"><code>#{client_name}</code> / <code>#{client_tty}</code></a> — §8</li>
       <li><a href="#clients"><code>#{client_termname}</code> / <code>#{client_termfeatures}</code></a> — §8 · §14</li>
       <li><a href="#clients"><code>#{client_width}</code> / <code>#{client_height}</code></a> — §8</li>
-      <li><a href="#styling"><code>#{client_colorterm}</code> (not a variable)</a> — §12</li>
+      <li><a href="#formats"><code>#{?cond,yes,no}</code> conditional</a> — §12</li>
+      <li><a href="#formats"><code>focus-events</code></a> — §12</li>
+      <li><a href="#formats">format language</a> — §12</li>
+      <li><a href="#formats">fzf picker (<code>tss</code>)</a> — §12 · capstone: §15</li>
       <li><a href="#formats"><code>#{host_short}</code></a> — §12</li>
       <li><a href="#formats"><code>#{pane_current_command}</code> / <code>#{pane_current_path}</code></a> — §12 · §10</li>
       <li><a href="#windows"><code>#{pane_dead}</code> / <code>#{pane_dead_status}</code></a> — §6</li>
@@ -3063,26 +3062,24 @@ tmux -L try -f /dev/null new -s t   # throwaway server: stock config, surgically
       <li><a href="#formats"><code>#{session_name}</code></a> — §12</li>
       <li><a href="#windows"><code>#{window_flags}</code></a> — §6</li>
       <li><a href="#windows"><code>#{window_index}</code> / <code>#{window_name}</code></a> — §6</li>
-      <li><a href="#formats"><code>focus-events</code></a> — §12</li>
-      <li><a href="#formats">fzf picker (<code>tss</code>)</a> — §12 · capstone: §15</li>
-      <li><strong>G</strong></li>
+<li><strong>G</strong></li>
       <li><a href="#configuration">global options (live fallback)</a> — §10</li>
-      <li><strong>H</strong></li>
+<li><strong>H</strong></li>
       <li><a href="#capstone"><code>has-session</code></a> — §15</li>
       <li><a href="#configuration"><code>history-limit</code></a> — §10 · scrollback: §9</li>
       <li><a href="#formats">hooks</a> — §12</li>
-      <li><strong>I</strong></li>
+<li><strong>I</strong></li>
       <li><a href="#panes">id vs index (panes)</a> — §7</li>
       <li><a href="#install">install (brew / apt)</a> — §3</li>
-      <li><strong>J</strong></li>
+<li><strong>J</strong></li>
       <li><a href="#panes"><code>join-pane</code></a> — §7</li>
-      <li><strong>K</strong></li>
+<li><strong>K</strong></li>
       <li><a href="#key-bindings">key tables (root / prefix / copy-mode)</a> — §11</li>
       <li><a href="#panes"><code>kill-pane</code> / <kbd>Prefix</kbd> <kbd>x</kbd></a> — §7</li>
       <li><a href="#install"><code>kill-server</code></a> — §3 · §4</li>
       <li><a href="#sessions"><code>kill-session</code></a> — §5</li>
       <li><a href="#windows"><code>kill-window</code> / <kbd>Prefix</kbd> <kbd>&amp;</kbd></a> — §6</li>
-      <li><strong>L</strong></li>
+<li><strong>L</strong></li>
       <li><a href="#server"><code>-L</code> (named socket)</a> — §4</li>
       <li><a href="#windows"><code>last-window</code> / <kbd>Prefix</kbd> <kbd>l</kbd></a> — §6</li>
       <li><a href="#panes">layouts / <code>next-layout</code></a> — §7</li>
@@ -3091,24 +3088,24 @@ tmux -L try -f /dev/null new -s t   # throwaway server: stock config, surgically
       <li><a href="#clients"><code>list-clients</code></a> — §8</li>
       <li><a href="#key-bindings"><code>list-keys</code> / <kbd>Prefix</kbd> <kbd>?</kbd></a> — §11</li>
       <li><a href="#formats"><code>list-panes -a</code></a> — §12</li>
-      <li><a href="#windows"><code>list-windows</code></a> — §6</li>
       <li><a href="#sessions"><code>list-sessions</code> (<code>ls</code>)</a> — §5</li>
-      <li><strong>M</strong></li>
+      <li><a href="#windows"><code>list-windows</code></a> — §6</li>
+<li><strong>M</strong></li>
       <li><a href="#panes">marked pane (<kbd>Prefix</kbd> <kbd>m</kbd> / <kbd>M</kbd>)</a> — §7</li>
       <li><a href="#copy-mode"><code>mode-keys</code> (vi / emacs)</a> — §9</li>
       <li><a href="#windows"><code>monitor-activity</code> / <code>monitor-silence</code></a> — §6</li>
       <li><a href="#configuration">mouse mode (<code>set -g mouse on</code>)</a> — §10 · scroll: §16</li>
       <li><a href="#windows"><code>move-window</code> / <code>swap-window</code></a> — §6</li>
-      <li><strong>N</strong></li>
+<li><strong>N</strong></li>
       <li><a href="#server">named server</a> — §4 · capstone: §15</li>
       <li><a href="#sessions"><code>new</code> / <code>new-session</code></a> — §5 · <code>-A</code>: §17</li>
       <li><a href="#windows"><code>new-window</code> / <kbd>Prefix</kbd> <kbd>c</kbd></a> — §6</li>
-      <li><a href="#windows">next/previous window (<kbd>n</kbd> / <kbd>p</kbd>)</a> — §6</li>
       <li><a href="#sessions">next/previous session (<kbd>(</kbd> / <kbd>)</kbd>)</a> — §5</li>
-      <li><a href="#windows"><code>no server running</code> (receipt)</a> — §3 · §4 · §16</li>
-      <li><strong>O</strong></li>
+      <li><a href="#windows">next/previous window (<kbd>n</kbd> / <kbd>p</kbd>)</a> — §6</li>
+      <li><a href="#server"><code>no server running</code> (receipt)</a> — §3 · §4 · §16</li>
+<li><strong>O</strong></li>
       <li><a href="#copy-mode">OSC 52</a> — §9 · async/skip: §12</li>
-      <li><strong>P</strong></li>
+<li><strong>P</strong></li>
       <li><a href="#panes">pane</a> — §7 · map: <a href="#pane-map">§7</a></li>
       <li><a href="#copy-mode"><code>paste-buffer -p</code> / <kbd>Prefix</kbd> <kbd>]</kbd></a> — §9</li>
       <li><a href="#configuration">pinning options (<code>mode-keys</code>, <code>escape-time</code>)</a> — §10</li>
@@ -3117,22 +3114,23 @@ tmux -L try -f /dev/null new -s t   # throwaway server: stock config, surgically
       <li><a href="#formats">popup</a> — §12</li>
       <li><a href="#sessions">prefix (<kbd>Ctrl</kbd>+<kbd>b</kbd>)</a> — §5 · remap: §10</li>
       <li><a href="#capstone"><code>projectx</code> script</a> — §15</li>
-      <li><strong>R</strong></li>
+<li><strong>R</strong></li>
       <li><a href="#copy-mode">raw vs bracketed paste</a> — §9</li>
       <li><a href="#clients"><code>refresh-client</code> / <kbd>Prefix</kbd> <kbd>r</kbd></a> — §8</li>
-      <li><a href="#windows">renumber / <code>move-window -r</code></a> — §6 · <code>renumber-windows</code>: §10</li>
-      <li><a href="#sessions">rename-session (<kbd>$</kbd>) / rename-window (<kbd>,</kbd>)</a> — §5 · §6</li>
-      <li><a href="#plugins">resurrect / continuum</a> — §13 · capstone stretch: §15</li>
-      <li><a href="#key-bindings"><code>repeat-time</code></a> — §11</li>
-      <li><a href="#troubleshooting"><code>respawn-pane -k</code></a> — §16</li>
-      <li><a href="#panes"><code>resize-pane</code> / <kbd>Prefix</kbd> <kbd>Ctrl</kbd>+arrows / <kbd>z</kbd></a> — §7</li>
       <li><a href="#windows"><code>remain-on-exit</code></a> — §6 · §16</li>
-      <li><a href="#styling">right segment cap (<code>status-right-length</code>)</a> — §14</li>
+      <li><a href="#sessions">rename-session (<kbd>$</kbd>) / rename-window (<kbd>,</kbd>)</a> — §5 · §6</li>
+      <li><a href="#windows">renumber / <code>move-window -r</code></a> — §6 · <code>renumber-windows</code>: §10</li>
+      <li><a href="#key-bindings"><code>repeat-time</code></a> — §11</li>
+      <li><a href="#panes"><code>resize-pane</code> / <kbd>Prefix</kbd> <kbd>Ctrl</kbd>+arrows / <kbd>z</kbd></a> — §7</li>
+      <li><a href="#troubleshooting"><code>respawn-pane -k</code></a> — §16</li>
+      <li><a href="#plugins">resurrect / continuum</a> — §13 · capstone stretch: §15</li>
       <li><a href="#formats"><code>run-shell</code></a> — §12</li>
-      <li><strong>S</strong></li>
+<li><strong>S</strong></li>
       <li><a href="#copy-mode">scrollback (per pane)</a> — §9</li>
+      <li><a href="#styling">segment length caps (<code>status-left-length</code>)</a> — §14</li>
       <li><a href="#panes"><code>select-pane</code> / <kbd>Prefix</kbd> <kbd>o</kbd> <kbd>;</kbd></a> — §7</li>
       <li><a href="#windows"><code>select-window</code> / <kbd>Prefix</kbd> <kbd>0</kbd>–<kbd>9</kbd></a> — §6</li>
+      <li><a href="#formats"><code>send-keys</code></a> — §12</li>
       <li><a href="#server">server</a> — §4 · object map: <a href="#object-map">§1</a></li>
       <li><a href="#server">server lifecycle (born on demand, dies with work)</a> — §4</li>
       <li><a href="#copy-mode"><code>set-buffer</code> / <code>show-buffer</code> / <code>-w</code></a> — §9</li>
@@ -3140,34 +3138,33 @@ tmux -L try -f /dev/null new -s t   # throwaway server: stock config, surgically
       <li><a href="#formats"><code>set-hook</code> / <code>show-hooks</code></a> — §12</li>
       <li><a href="#configuration"><code>set-option</code> / <code>show-options</code> (scopes)</a> — §10</li>
       <li><a href="#prereqs">SIGHUP</a> — §2</li>
-      <li><a href="#formats"><code>send-keys</code></a> — §12</li>
-      <li><a href="#copy-mode">silent unknown format variables</a> — §12</li>
+      <li><a href="#formats">silent unknown format variables</a> — §12</li>
       <li><a href="#server">socket directory (<code>/tmp/tmux-$UID/</code>)</a> — §4</li>
-      <li><a href="#formats"><code>source-file</code></a> — §10</li>
+      <li><a href="#configuration"><code>source-file</code></a> — §10</li>
       <li><a href="#panes"><code>split-window -h/-v</code> / <kbd>%</kbd> <kbd>"</kbd></a> — §7</li>
-      <li><a href="#styling">status line (templates, styles, timer)</a> — §14</li>
       <li><a href="#styling"><code>status-interval</code> (the timer)</a> — §14</li>
-      <li><a href="#styling">segment length caps (<code>status-left-length</code>)</a> — §14</li>
+      <li><a href="#styling">status line (templates, styles, timer)</a> — §14</li>
+      <li><a href="#styling">styles, inline (<code>#[…]</code>)</a> — §14</li>
       <li><a href="#clients">suspend-client / <kbd>Prefix</kbd> <kbd>Ctrl</kbd>+<kbd>z</kbd></a> — §8</li>
       <li><a href="#panes"><code>swap-pane</code> / <kbd>Prefix</kbd> <kbd>{</kbd> <kbd>}</kbd></a> — §7</li>
       <li><a href="#sessions"><code>switch-client</code></a> — §5 · scripted: §12</li>
       <li><a href="#panes"><code>synchronize-panes</code></a> — §7</li>
-      <li><strong>T</strong></li>
-      <li><a href="#prereqs">terminfo / <code>$TERM</code></a> — §2</li>
+<li><strong>T</strong></li>
       <li><a href="#styling"><code>terminal-overrides</code> / <code>terminal-features</code></a> — §14</li>
+      <li><a href="#prereqs">terminfo / <code>$TERM</code></a> — §2</li>
       <li><a href="#styling">theme option (3.8, not on 3.7b)</a> — §14</li>
       <li><a href="#server">throwaway server pattern (<code>-L x -f /dev/null</code>)</a> — §4 · §17</li>
       <li><a href="#panes">traps: break/join flags</a> — §7 · link target: §6</li>
       <li><a href="#troubleshooting">troubleshooting table</a> — §16</li>
       <li><a href="#styling">true colour / 256 colours</a> — §14 · §16</li>
-      <li><strong>U</strong></li>
+<li><strong>U</strong></li>
       <li><a href="#troubleshooting"><code>tmux -u</code> (force UTF-8)</a> — §16</li>
-      <li><strong>W</strong></li>
+<li><strong>W</strong></li>
       <li><a href="#windows">window</a> — §6 · flags: §6</li>
       <li><a href="#clients">window-size (<code>latest</code> / <code>smallest</code>)</a> — §8</li>
-      <li><strong>Z</strong></li>
+<li><strong>Z</strong></li>
       <li><a href="#panes">zoom / <kbd>Prefix</kbd> <kbd>z</kbd> / flag <code>Z</code></a> — §7</li>
-    </ul>
+</ul>
   </div>
   <p class="tiny">Every entry links to the section whose transcripts introduced it; cross-check definitions in <a href="#glossary">§18</a>, dense chords in <a href="#cheatsheet">§17</a>, symptoms in <a href="#troubleshooting">§16</a>. Verified anchors — every link on this page resolves to a section or figure id in this file.</p>
 </section>
