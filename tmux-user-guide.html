@@ -1005,7 +1005,7 @@ tmux -L lab new-session -d -s monitor</code></pre>
 
     <p><strong>2.</strong> Drop into the middle of the stack:</p>
     <pre><code>tmux -L lab attach -t scratch</code></pre>
-    <p><strong>Expect:</strong> <code>scratch</code> fills the terminal. The status line's left end now lists the sessions with <code>scratch</code> marked current — the same list <code>s</code> will offer.</p>
+    <p><strong>Expect:</strong> <code>scratch</code> fills the terminal. The status line's left end now reads <code>[scratch]</code> — the session name in brackets, per the stock <code>status-left</code>. It does not list the other sessions; the interactive list is what <code>s</code> will offer.</p>
 
     <p><strong>3.</strong> Tour without detaching — press <kbd>Prefix</kbd> <kbd>)</kbd> three times, slowly, watching the status line:</p>
     <p><strong>Expect:</strong> the current session advances <code>monitor</code> → <code>project</code> → back to <code>scratch</code>. The ring wraps, your terminal never detaches, and the third press lands you exactly where the tour began.</p>
@@ -1507,7 +1507,7 @@ tmux -L lab list-windows -t gym -F '#{window_index}: #{window_name} panes=#{wind
 
   <div class="callout warn">
     <strong>What the simulator simplifies — on purpose.</strong>
-    Panes are re-dealt by layout class (the five presets from §7); real splits carve the current pane in half, and §7's arithmetic is the honest account. The <code>[prefix]</code> latch fades after 750 ms so a stray latch never leaves you guessing — real tmux never times the prefix out; it stays armed until your next keypress (750 ms is <code>display-time</code>, the clock status-line messages use). Pane contents are painted, not run — no shell lives in a box. And any chord outside the modeled set answers <em>"not modeled here"</em> in the message line rather than silently doing nothing: honest over fake.
+    Panes are re-dealt by layout class (the five presets from §7); real splits carve the current pane in half, and §7's arithmetic is the honest account. The <code>[prefix]</code> latch fades after 750 ms so a stray latch never leaves you guessing — real tmux never times the prefix out; it stays armed until your next keypress (750 ms is <code>display-time</code>, the clock status-line messages use). Pane contents are painted, not run — no shell lives in a box. And any guide-taught chord the simulator does not model answers <em>"not modeled here"</em> in the message line rather than silently doing nothing: honest over fake.
   </div>
 
   <noscript>
@@ -1536,6 +1536,8 @@ tmux -L lab list-windows -t gym -F '#{window_index}: #{window_name} panes=#{wind
         <tr><td><kbd>Prefix</kbd> <kbd>x</kbd></td><td><code>confirm-before kill-pane</code></td><td>Kill the current pane, y/n prompt</td><td><a href="#panes">§7</a></td></tr>
         <tr><td><kbd>Prefix</kbd> <kbd>z</kbd></td><td><code>resize-pane -Z</code></td><td>Toggle zoom on the current pane</td><td><a href="#panes">§7</a></td></tr>
         <tr><td><kbd>Prefix</kbd> <kbd>Space</kbd></td><td><code>next-layout</code></td><td>Cycle the preset layouts</td><td><a href="#panes">§7</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>M-1</kbd>–<kbd>M-5</kbd></td><td><code>select-layout</code></td><td>Jump straight to a named preset layout</td><td><a href="#panes">§7</a></td></tr>
+        <tr><td><kbd>Prefix</kbd> <kbd>Prefix</kbd></td><td><code>send-prefix</code></td><td>Send the literal prefix key to the pane</td><td><a href="#configuration">§10</a></td></tr>
         <tr><td><kbd>Prefix</kbd> <kbd>!</kbd></td><td><code>break-pane</code></td><td>Promote the pane to its own window</td><td><a href="#panes">§7</a></td></tr>
         <tr><td><kbd>Prefix</kbd> <kbd>?</kbd></td><td><code>list-keys -N</code></td><td>Show the key bindings</td><td><a href="#key-bindings">§11</a></td></tr>
       </tbody>
@@ -1543,7 +1545,7 @@ tmux -L lab list-windows -t gym -F '#{window_index}: #{window_name} panes=#{wind
     <p class="tiny">The opinionated toggle in the interactive version swaps the prefix to <kbd>C-a</kbd> and rebinds splits to <kbd>|</kbd>/<kbd>-</kbd>, adds <kbd>r</kbd> = reload, <kbd>h</kbd><kbd>j</kbd><kbd>k</kbd><kbd>l</kbd> pane nav, and plain-arrow pane nav — the <a href="#configuration">§10</a> build plus its pane-nav block. The cheat sheet (<a href="#cheatsheet">§17</a>) repeats this table's cards.</p>
   </noscript>
 
-  <p class="tiny">Sources: <a href="https://man.openbsd.org/tmux" target="_blank" rel="noopener">tmux(1) — DEFAULT KEY BINDINGS; choose-tree, confirm-before, command-prompt, display-panes, send-prefix</a> · every simulator binding read from <code>tmux list-keys -T prefix</code> and <code>-T root</code> on 3.7b, stock and §10-plus-pane-nav keymaps, throwaway <code>-L sim</code> server only, captured 2026-08-23 · timing (<code>display-time 750</code>, <code>repeat-time 500</code>, <code>display-panes-time 1000</code>) read from the same server's global session options</p>
+  <p class="tiny">Sources: <a href="https://man.openbsd.org/tmux" target="_blank" rel="noopener">tmux(1) — DEFAULT KEY BINDINGS; choose-tree, confirm-before, command-prompt, display-panes, send-prefix</a> · every simulator binding read from <code>tmux list-keys -T prefix</code> and <code>-T root</code> on 3.7b, stock and §10-plus-pane-nav keymaps — the 29 chords, <kbd>M-1</kbd>–<kbd>M-5</kbd> layouts, the send-prefix double-tap, and the root-table arrows each captured — throwaway <code>-L sim</code> and <code>-L t11fix</code> servers only, 2026-08-23/24 · timings (<code>display-time 750</code>, <code>repeat-time 500</code>, <code>display-panes-time 1000</code>) from the same servers' global session options</p>
 </section>
 
 <section id="clients">
@@ -3774,9 +3776,15 @@ tmux -L try -f /dev/null new -s t   # throwaway server: stock config, surgically
     const pane = w.panes.splice(w.active, 1)[0];
     const nw = { index: firstFreeIndex(s), name: 'zsh', auto: true, panes: [pane], active: 0, lastPane: null, layout: 0, zoomed: false };
     s.windows.push(nw);
-    if (!w.panes.length) s.windows = s.windows.filter(x => x !== w);
-    else { w.active = Math.max(0, w.active - 1); w.lastPane = null; w.zoomed = false; }
-    s.lastWin = s.active; s.active = nw.index;
+    if (!w.panes.length) {
+      // last-one-out: the old window dies, so last-window has nothing to point at
+      s.windows = s.windows.filter(x => x !== w);
+      s.lastWin = null;
+    } else {
+      w.active = Math.max(0, w.active - 1); w.lastPane = null; w.zoomed = false;
+      s.lastWin = w.index;
+    }
+    s.active = nw.index;
   }
 
   // ---- confirm-before / command-prompt --------------------------------
@@ -3831,6 +3839,7 @@ tmux -L try -f /dev/null new -s t   # throwaway server: stock config, surgically
   function openKeymap() {
     const rows = config === 'stock' ? [
       ['C-b', 'prefix — press, release, then a key'],
+      ['C-b C-b', 'send-prefix — literal C-b to the pane'],
       ['c', 'new-window'], ['n / p', 'next-window / previous-window'],
       ['0–9', 'select-window -t :=N'], ['l', 'last-window'], ['w', 'choose-tree -Zw'],
       ['&', 'confirm-before kill-window'], [',', 'rename-window (prompt)'],
@@ -3840,6 +3849,7 @@ tmux -L try -f /dev/null new -s t   # throwaway server: stock config, surgically
       [';', 'last-pane'], ['q', 'display-panes'], ['x', 'confirm-before kill-pane'],
       ['z', 'resize-pane -Z'], ['Space', 'next-layout'], ['!', 'break-pane'],
       ['M-1…M-5', 'select-layout (the five presets)'],
+      ['M-6 / M-7', 'select-layout mirrored variants — not modeled here (§7)'],
       ['r', 'refresh-client — not modeled here (§8)'],
       ['-', 'delete-buffer — not modeled here (§9)'],
       ['C-←→↑↓', 'resize-pane — not modeled here (§7)'],
@@ -3936,6 +3946,7 @@ tmux -L try -f /dev/null new -s t   # throwaway server: stock config, surgically
   const CONFIGS = {
     stock: {
       prefixKey: 'b',
+      again: () => msg('C-b sent to the pane (send-prefix)'),   // verified: bind-key -T prefix C-b send-prefix
       chords: {
         'c': newWindow,
         'n': () => stepWin(1),
@@ -3976,6 +3987,8 @@ tmux -L try -f /dev/null new -s t   # throwaway server: stock config, surgically
         '}': () => notModeled('swap-pane -D lives in §7'),
         'm': () => notModeled('select-pane -m (mark) lives in §7'),
         'M': () => notModeled('select-pane -M (unmark) lives in §7'),
+        'M-6': () => notModeled('main-horizontal-mirrored layout — §7'),
+        'M-7': () => notModeled('main-vertical-mirrored layout — §7'),
         'C-ArrowLeft': () => notModeled('resize-pane — §7'),
         'C-ArrowRight': () => notModeled('resize-pane — §7'),
         'C-ArrowUp': () => notModeled('resize-pane — §7'),
