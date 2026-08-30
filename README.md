@@ -9,6 +9,24 @@ fonts, no analytics, no tracking. Diagrams are inline SVG, the theme toggle and
 quiz state live in `localStorage`, and the whole thing works offline and on a
 plane.
 
+## The hub page
+
+[`index.html`](index.html) is a terminal-themed home page linking every guide,
+with per-guide verification badges. Open it locally like any other guide, or
+host the whole directory as a static site — [`infra/`](infra/README.md) has an
+OpenTofu config for S3 static website hosting and the deploy commands.
+
+### Adding a guide
+
+1. Add an entry to [`guides.json`](guides.json) (file, name, subject,
+   verified-against, accent).
+2. Run `node scripts/build-index.mjs` — it re-bakes the cards into
+   `index.html` and warns about guide files missing from `guides.json`.
+3. Add the row to the table below and commit all three files.
+
+`node scripts/build-index.mjs --check` exits non-zero if `index.html` is
+stale, for use as a pre-commit check.
+
 ## The guides
 
 | Guide | Subject | Verified against |
