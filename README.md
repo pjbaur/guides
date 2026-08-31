@@ -3,6 +3,8 @@
 Single-file HTML guides for command-line tools. Each one is a complete study
 course and a long-term reference in the same document.
 
+**Browse them live: <https://pjbaur.github.io/guides/>**
+
 Every guide is **one `.html` file**. Open it in a browser — no build step, no
 server, no install. They make **zero external network requests**: no CDN, no
 fonts, no analytics, no tracking. Diagrams are inline SVG, the theme toggle and
