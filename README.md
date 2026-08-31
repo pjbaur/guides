@@ -14,20 +14,53 @@ plane.
 ## The hub page
 
 [`index.html`](index.html) is a terminal-themed home page linking every guide,
-with per-guide verification badges. Open it locally like any other guide, or
-host the whole directory as a static site — [`infra/`](infra/README.md) has an
-OpenTofu config for S3 static website hosting and the deploy commands.
+with per-guide verification badges — it is what the live site serves. Open it
+locally like any other guide, or host the directory as a static site.
+([`infra/`](infra/README.md) has an unapplied OpenTofu config for S3 static
+website hosting as an alternative to GitHub Pages.)
 
-### Adding a guide
+The guide cards inside `index.html` are **generated**: everything between the
+`GUIDES:BEGIN/END` markers is overwritten by the build script, so never edit
+that block by hand. Edit [`guides.json`](guides.json) instead and regenerate:
 
-1. Add an entry to [`guides.json`](guides.json) (file, name, subject,
-   verified-against, accent).
-2. Run `node scripts/build-index.mjs` — it re-bakes the cards into
-   `index.html` and warns about guide files missing from `guides.json`.
-3. Add the row to the table below and commit all three files.
+```sh
+node scripts/build-index.mjs
+```
 
-`node scripts/build-index.mjs --check` exits non-zero if `index.html` is
-stale, for use as a pre-commit check.
+Needs any recent Node (≥ 18), no packages. Each card is assembled from two
+sources: `name`, `subject`, `verified` and `accent` come from `guides.json`,
+while the card's italic title line is read from the guide file's own
+`<title>` tag — if a card reads wrong, fix whichever of the two is off.
+
+Fields per `guides.json` entry:
+
+- `file` — the guide's filename. Cards appear in array order.
+- `name` — short display name on the card.
+- `subject` — one-line description.
+- `verified` — badge text (e.g. `tmux 3.7b · 2026-08-22`), or `null` for the
+  "checked when written" badge.
+- `accent` — card color: one of `green`, `amber`, `cyan`, `magenta`, `blue`,
+  `violet`. Anything else silently falls back to green.
+
+The script warns in both directions: a `*-guide.html` file with no
+`guides.json` entry, and an entry whose file is missing from disk.
+
+### Adding, renaming or removing a guide
+
+1. Add, update or delete the entry in `guides.json`.
+2. Run `node scripts/build-index.mjs`.
+3. Update the table below, and commit `guides.json`, `index.html` and
+   `README.md` together.
+
+### Keeping the hub fresh
+
+GitHub Pages deploys `main` on every push, so a stale `index.html` goes live
+immediately. CI guards against that:
+[`.github/workflows/check-hub.yml`](.github/workflows/check-hub.yml) runs
+`node scripts/build-index.mjs --check` on every push and pull request. It
+fails when the baked cards don't match `guides.json`; the mismatch warnings
+above also fail the check (a plain run only prints them). The same `--check`
+command works as a local pre-commit hook.
 
 ## The guides
 
