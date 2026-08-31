@@ -9,6 +9,24 @@ fonts, no analytics, no tracking. Diagrams are inline SVG, the theme toggle and
 quiz state live in `localStorage`, and the whole thing works offline and on a
 plane.
 
+## The hub page
+
+[`index.html`](index.html) is a terminal-themed home page linking every guide,
+with per-guide verification badges. Open it locally like any other guide, or
+host the whole directory as a static site — [`infra/`](infra/README.md) has an
+OpenTofu config for S3 static website hosting and the deploy commands.
+
+### Adding a guide
+
+1. Add an entry to [`guides.json`](guides.json) (file, name, subject,
+   verified-against, accent).
+2. Run `node scripts/build-index.mjs` — it re-bakes the cards into
+   `index.html` and warns about guide files missing from `guides.json`.
+3. Add the row to the table below and commit all three files.
+
+`node scripts/build-index.mjs --check` exits non-zero if `index.html` is
+stale, for use as a pre-commit check.
+
 ## The guides
 
 | Guide | Subject | Verified against |
@@ -22,7 +40,7 @@ plane.
 | [`sqlite-shell-guide.html`](sqlite-shell-guide.html) | Opening, triaging, profiling and maintaining any SQLite database from the shell | — |
 | [`git-workflows-user-guide.html`](git-workflows-user-guide.html) | GitHub Flow, Git Flow, trunk-based and GitLab Flow — and choosing deliberately | — |
 | [`gastown-user-guide.html`](gastown-user-guide.html) | Steve Yegge's multi-agent coding orchestration system | 2026-07-11 |
-| [`gascity-user-guide.html`](gascity-user-guide.html) | Go orchestration-builder SDK for multi-agent workflows, successor to Gas Town | gascity ≈ v1.3.0 · 2026-07-09 |
+| [`gascity-user-guide.html`](gascity-user-guide.html) | Go orchestration-builder SDK for multi-agent workflows, successor to Gas Town | gascity v1.4.0 · 2026-08-09 |
 | [`cmux-user-guide.html`](cmux-user-guide.html) | Terminal workspace and pane orchestration | 2026-07-09 |
 | [`tmux-user-guide.html`](tmux-user-guide.html) | Terminal multiplexing — sessions that outlive your connection, the client/server model, panes, copy-mode, scripting | tmux 3.7b · 2026-08-22 |
 
