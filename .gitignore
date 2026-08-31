@@ -19,6 +19,13 @@ package-lock.json
 # caveman-compress keeps a human-readable backup beside each compressed file
 *.original.md
 
+# OpenTofu — provider binaries and local state stay out; the dependency
+# lock file (infra/.terraform.lock.hcl) IS committed
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.backup
+infra/*.tfvars
+
 # Editor / scratch
 *.swp
 *~
