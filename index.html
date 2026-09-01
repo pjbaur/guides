@@ -41,6 +41,7 @@
     --magenta: #c22357;
     --blue: #1a5fb4;
     --violet: #6d3fc4;
+    --red: #b3261e;
     --scanline-opacity: 0;
     --glow: transparent;
     color-scheme: light;
@@ -59,6 +60,7 @@
     --magenta: #ff5c8a;
     --blue: #6fb3ff;
     --violet: #b58cff;
+    --red: #ff4f58;
     --scanline-opacity: 0.05;
     --glow: rgba(74, 246, 38, 0.14);
     color-scheme: dark;
@@ -78,6 +80,7 @@
       --magenta: #ff5c8a;
       --blue: #6fb3ff;
       --violet: #b58cff;
+      --red: #ff4f58;
       --scanline-opacity: 0.05;
       --glow: rgba(74, 246, 38, 0.14);
       color-scheme: dark;
@@ -244,6 +247,7 @@
   .accent-magenta { --accent: var(--magenta); }
   .accent-blue    { --accent: var(--blue); }
   .accent-violet  { --accent: var(--violet); }
+  .accent-red     { --accent: var(--red); }
 
   /* ---------- meta docs ---------- */
   .meta-list { list-style: none; margin: 0; padding: 0; }
@@ -307,7 +311,7 @@
       <p class="comment"># no CDN, no fonts, no analytics. Each is a study course and a reference in</p>
       <p class="comment"># the same document, and the labs quote real output. Works on a plane. ✈</p>
       <p class="prompt"><b>paul@guides</b>:~$ ls guides/ | wc -l</p>
-      <p class="stdout"><!-- COUNT:BEGIN -->12<!-- COUNT:END --></p>
+      <p class="stdout"><!-- COUNT:BEGIN -->13<!-- COUNT:END --></p>
       <p class="prompt"><b>paul@guides</b>:~$ <span class="cursor" aria-hidden="true"></span></p>
     </div>
   </div>
@@ -421,6 +425,15 @@
     <p class="card-title">cmux Mastery Guide</p>
     <p class="card-subject">Terminal workspace and pane orchestration</p>
     <p class="card-meta"><span class="badge ok">✓ 2026-07-09</span></p>
+    </a>
+    </li>
+    <li class="card accent-red">
+    <a class="card-link" href="ups-user-guide.html">
+    <span class="card-cmd" aria-hidden="true">$ open ./ups-user-guide.html</span>
+    <h3 class="card-name">ups / nut</h3>
+    <p class="card-title">UPS Management on macOS</p>
+    <p class="card-subject">Keeping a Tripp Lite UPS honest from macOS - NUT's three-layer stack, launchd persistence, automated shutdown, battery calibration</p>
+    <p class="card-meta"><span class="badge ok">✓ NUT 2.8.5 · macOS 15.6 · 2026-09-01</span></p>
     </a>
     </li>
     <!-- GUIDES:END -->

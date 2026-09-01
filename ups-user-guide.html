@@ -1,0 +1,1678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UPS Management on macOS</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔋</text></svg>">
+<style>
+  :root {
+    --bg: #faf8f7;
+    --surface: #fdfcfb;
+    --surface2: #f3efed;
+    --ink: #16100f;
+    --ink2: #534b49;
+    --muted: #8b817e;
+    --line: #e5ddda;
+    --hairline: rgba(22,16,15,0.10);
+    --code-bg: #f1ebe8;
+    --accent: #b32d23;
+    --accent-wash: rgba(179,45,35,0.09);
+    --on-accent: #ffffff;
+    --warn: #9a6b00;
+    --warn-bg: rgba(250,178,25,0.13);
+    --danger: #a11d1d;
+    --danger-bg: rgba(179,45,35,0.08);
+    --blue: #2563b0;
+    --blue-bg: rgba(37,99,176,0.08);
+    --good: #1a7a3a;
+    --terminal: #1d1917;
+    --terminal-ink: #e8e2df;
+    --terminal-accent: #ff9d8f;
+    --lab-bg: rgba(179,45,35,0.05);
+    --s1: #b32d23;  /* red — NUT stack */
+    --s2: #2563b0;  /* blue — macOS native stack */
+    --s3: #1a7a3a;  /* green — power OK states */
+    --s4: #9a6b00;  /* amber — on-battery states */
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #131110;
+      --surface: #1c1918;
+      --surface2: #262120;
+      --ink: #f3efec;
+      --ink2: #c6beba;
+      --muted: #8f8683;
+      --line: #2e2927;
+      --hairline: rgba(255,255,255,0.10);
+      --code-bg: #262120;
+      --accent: #f0776a;
+      --accent-wash: rgba(240,119,106,0.12);
+      --on-accent: #1d0705;
+      --warn: #e5b348;
+      --warn-bg: rgba(229,179,72,0.10);
+      --danger: #f0776a;
+      --danger-bg: rgba(240,119,106,0.10);
+      --blue: #6ba3e8;
+      --blue-bg: rgba(107,163,232,0.10);
+      --good: #4fc073;
+      --terminal: #100e0d;
+      --terminal-ink: #e8e2df;
+      --terminal-accent: #ff9d8f;
+      --lab-bg: rgba(240,119,106,0.06);
+      --s1: #f0776a; --s2: #6ba3e8; --s3: #4fc073; --s4: #e5b348;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #faf8f7; --surface: #fdfcfb; --surface2: #f3efed;
+    --ink: #16100f; --ink2: #534b49; --muted: #8b817e;
+    --line: #e5ddda; --hairline: rgba(22,16,15,0.10);
+    --code-bg: #f1ebe8;
+    --accent: #b32d23; --accent-wash: rgba(179,45,35,0.09); --on-accent: #ffffff;
+    --warn: #9a6b00; --warn-bg: rgba(250,178,25,0.13);
+    --danger: #a11d1d; --danger-bg: rgba(179,45,35,0.08);
+    --blue: #2563b0; --blue-bg: rgba(37,99,176,0.08);
+    --good: #1a7a3a;
+    --terminal: #1d1917; --terminal-ink: #e8e2df; --terminal-accent: #ff9d8f;
+    --lab-bg: rgba(179,45,35,0.05);
+    --s1: #b32d23; --s2: #2563b0; --s3: #1a7a3a; --s4: #9a6b00;
+  }
+  :root[data-theme="dark"] {
+    --bg: #131110; --surface: #1c1918; --surface2: #262120;
+    --ink: #f3efec; --ink2: #c6beba; --muted: #8f8683;
+    --line: #2e2927; --hairline: rgba(255,255,255,0.10);
+    --code-bg: #262120;
+    --accent: #f0776a; --accent-wash: rgba(240,119,106,0.12); --on-accent: #1d0705;
+    --warn: #e5b348; --warn-bg: rgba(229,179,72,0.10);
+    --danger: #f0776a; --danger-bg: rgba(240,119,106,0.10);
+    --blue: #6ba3e8; --blue-bg: rgba(107,163,232,0.10);
+    --good: #4fc073;
+    --terminal: #100e0d; --terminal-ink: #e8e2df; --terminal-accent: #ff9d8f;
+    --lab-bg: rgba(240,119,106,0.06);
+    --s1: #f0776a; --s2: #6ba3e8; --s3: #4fc073; --s4: #e5b348;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg); color: var(--ink);
+    line-height: 1.62; font-size: 16px;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .skip-link {
+    position: absolute; left: -9999px; top: 0; z-index: 100;
+    background: var(--accent); color: var(--on-accent);
+    padding: 8px 16px; border-radius: 0 0 8px 0;
+  }
+  .skip-link:focus { left: 0; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- layout ---- */
+  .layout { display: flex; max-width: 1280px; margin: 0 auto; }
+  nav.toc {
+    position: sticky; top: 0; align-self: flex-start;
+    width: 250px; flex-shrink: 0; height: 100vh; overflow-y: auto;
+    padding: 24px 8px 24px 20px; border-right: 1px solid var(--line);
+  }
+  nav.toc .brand { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+  nav.toc .brand-sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+  nav.toc .part {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--muted); margin: 14px 0 3px; padding-left: 10px; font-weight: 700;
+  }
+  nav.toc a {
+    display: block; padding: 5px 10px; border-radius: 6px;
+    color: var(--ink2); font-size: 13.5px; margin-bottom: 1px;
+  }
+  nav.toc a:hover { background: var(--accent-wash); text-decoration: none; }
+  nav.toc a.active { background: var(--accent-wash); color: var(--accent); font-weight: 600; }
+  main { flex: 1; min-width: 0; padding: 32px 40px 80px; }
+
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    nav.toc {
+      position: static; width: 100%; height: auto;
+      border-right: none; border-bottom: 1px solid var(--line);
+      display: flex; flex-wrap: wrap; gap: 2px; padding: 12px 16px;
+    }
+    nav.toc .brand, nav.toc .brand-sub, nav.toc .part { width: 100%; }
+    main { padding: 24px 16px 60px; }
+  }
+  @media print {
+    nav.toc, .theme-toggle, .quiz-actions, .copy-btn { display: none !important; }
+    .quiz-answer { display: block !important; }
+    details { display: block; }
+    details > *:not(summary) { display: block !important; }
+    section, .lab { break-inside: avoid-page; }
+  }
+
+  .theme-toggle {
+    position: fixed; top: 14px; right: 16px; z-index: 10;
+    background: var(--surface); border: 1px solid var(--line); color: var(--ink2);
+    border-radius: 20px; padding: 5px 14px; font-size: 13px; cursor: pointer;
+    font-family: inherit;
+  }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ---- typography ---- */
+  h1 { font-size: 34px; line-height: 1.2; letter-spacing: -0.5px; }
+  h2 {
+    font-size: 24px; margin: 56px 0 12px; padding-top: 16px;
+    border-top: 1px solid var(--line); letter-spacing: -0.3px;
+  }
+  h3 { font-size: 17px; margin: 28px 0 8px; }
+  p { margin: 0 0 12px; color: var(--ink2); max-width: 78ch; }
+  p strong, li strong { color: var(--ink); }
+  ul, ol { margin: 0 0 14px 22px; color: var(--ink2); max-width: 74ch; }
+  li { margin-bottom: 5px; }
+  .lede { font-size: 18px; color: var(--ink2); max-width: 64ch; }
+
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.88em; background: var(--code-bg);
+    padding: 1px 5px; border-radius: 4px; color: var(--ink);
+  }
+  kbd {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.82em; background: var(--surface);
+    border: 1px solid var(--line); border-bottom-width: 3px;
+    border-radius: 5px; padding: 1px 6px; color: var(--ink);
+  }
+  pre {
+    position: relative;
+    background: var(--terminal); color: var(--terminal-ink);
+    padding: 14px 16px; border-radius: 10px; overflow-x: auto;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 13px; line-height: 1.55; margin: 0 0 14px;
+  }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+  pre .cmd { color: var(--terminal-accent); font-weight: 600; }
+  pre .comment { color: #918a86; }
+  pre .out { color: #b9b2ae; }
+  .copy-btn {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(255,255,255,0.08); color: var(--terminal-ink);
+    border: 1px solid rgba(255,255,255,0.18); border-radius: 6px;
+    font-size: 11px; padding: 3px 9px; cursor: pointer; font-family: inherit;
+  }
+  .copy-btn:hover { background: rgba(255,255,255,0.16); }
+
+  /* ---- components ---- */
+  .hero { padding: 34px 0 8px; }
+  .hero .eyebrow {
+    font-size: 12.5px; text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--muted); font-weight: 700; margin-bottom: 10px;
+  }
+  .hero h1 .accent-clause { color: var(--accent); }
+  .hero .subtitle { margin: 12px 0 18px; font-size: 17px; max-width: 70ch; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  .badge {
+    font-size: 12px; padding: 3px 11px; border-radius: 14px;
+    border: 1px solid var(--line); color: var(--ink2); background: var(--surface);
+  }
+  .badge.ok { border-color: var(--good); color: var(--good); }
+
+  .callout {
+    border: 1px solid var(--line); border-left: 4px solid var(--accent);
+    background: var(--accent-wash); border-radius: 8px;
+    padding: 12px 16px; margin: 0 0 14px; max-width: 78ch;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout strong:first-child { display: block; margin-bottom: 4px; color: var(--ink); }
+  .callout.warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .callout.danger { border-left-color: var(--danger); background: var(--danger-bg); }
+  .callout.blue { border-left-color: var(--blue); background: var(--blue-bg); }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 16px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th {
+    text-align: left; font-size: 11.5px; text-transform: uppercase;
+    letter-spacing: 0.7px; color: var(--muted); font-weight: 700;
+    padding: 8px 12px; border-bottom: 2px solid var(--line);
+  }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--line); color: var(--ink2); vertical-align: top; }
+  td code { white-space: nowrap; }
+  td:first-child { color: var(--ink); }
+
+  .lab {
+    border: 1px solid var(--line); border-radius: 12px;
+    background: var(--lab-bg); padding: 18px 20px; margin: 18px 0 22px;
+  }
+  .lab .lab-title { font-weight: 700; font-size: 16px; color: var(--ink); }
+  .lab .lab-meta { font-size: 12.5px; color: var(--muted); margin: 2px 0 12px; }
+  .lab ol { margin-left: 20px; }
+  .expect { font-size: 13.5px; color: var(--good); }
+  .expect::before { content: "Expect: "; font-weight: 700; }
+  .checkpoint {
+    border-top: 1px dashed var(--line); margin-top: 12px; padding-top: 10px;
+    font-size: 14px;
+  }
+  .checkpoint::before { content: "✓ Checkpoint — "; font-weight: 700; color: var(--good); }
+
+  figure.diagram { margin: 18px 0 22px; }
+  figure.diagram svg { width: 100%; height: auto; display: block; }
+  figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; max-width: 78ch; }
+  .d-label { font: 600 14px system-ui, sans-serif; fill: var(--ink); }
+  .d-small { font: 12px system-ui, sans-serif; fill: var(--ink2); }
+  .d-mono  { font: 12px ui-monospace, Menlo, monospace; fill: var(--ink2); }
+  .d-tiny  { font: 10.5px system-ui, sans-serif; fill: var(--muted); }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 0 0 16px; }
+  .card {
+    border: 1px solid var(--line); border-radius: 10px;
+    background: var(--surface); padding: 12px 14px; font-size: 14px;
+  }
+  .card .card-head { font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+  .card code { font-size: 0.85em; }
+
+  .step-list { counter-reset: step; list-style: none; margin-left: 0; }
+  .step-list > li {
+    counter-increment: step; position: relative;
+    padding-left: 42px; margin-bottom: 14px;
+  }
+  .step-list > li::before {
+    content: counter(step); position: absolute; left: 0; top: 0;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); color: var(--on-accent);
+    font-weight: 700; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .sources-line { font-size: 12.5px; color: var(--muted); margin: 14px 0 0; }
+  .sources-line a { color: var(--muted); text-decoration: underline; }
+
+  /* ---- simulator ---- */
+  .sim {
+    border: 1px solid var(--line); border-radius: 12px;
+    background: var(--surface); padding: 18px 20px; margin: 18px 0;
+  }
+  .sim-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .sim button {
+    font-family: inherit; font-size: 13.5px; padding: 7px 14px;
+    border-radius: 8px; border: 1px solid var(--line);
+    background: var(--surface2); color: var(--ink); cursor: pointer;
+  }
+  .sim button:hover { border-color: var(--accent); }
+  .sim button.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .sim button:disabled { opacity: 0.45; cursor: not-allowed; }
+  .sim-status-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+  .sim-stat {
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px;
+    background: var(--surface2); min-width: 120px;
+  }
+  .sim-stat .k { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); }
+  .sim-stat .v { font-family: ui-monospace, Menlo, monospace; font-size: 16px; font-weight: 700; }
+  .sim-stat .v.ol { color: var(--s3); }
+  .sim-stat .v.ob { color: var(--s4); }
+  .sim-stat .v.lb { color: var(--s1); }
+  .sim-log {
+    background: var(--terminal); color: var(--terminal-ink);
+    border-radius: 8px; padding: 10px 14px; height: 190px; overflow-y: auto;
+    font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; line-height: 1.6;
+  }
+  .sim-log .t { color: #918a86; }
+  .sim-log .ev-ol { color: #7ed695; }
+  .sim-log .ev-ob { color: #e5b348; }
+  .sim-log .ev-lb { color: #ff9d8f; font-weight: 700; }
+  .sim-battbar { height: 10px; border-radius: 5px; background: var(--surface2); border: 1px solid var(--line); overflow: hidden; margin: 6px 0 12px; }
+  .sim-battbar .fill { height: 100%; background: var(--s3); width: 100%; transition: width 0.3s, background 0.3s; }
+
+  /* ---- quiz ---- */
+  .quiz-score {
+    font-size: 14px; font-weight: 600; margin-bottom: 14px;
+    padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--surface); display: inline-block;
+  }
+  .quiz-item {
+    border: 1px solid var(--line); border-radius: 10px;
+    background: var(--surface); padding: 14px 16px; margin-bottom: 12px;
+  }
+  .quiz-item.got { border-color: var(--good); }
+  .quiz-item.missed { border-color: var(--warn); }
+  .quiz-q { font-weight: 600; color: var(--ink); max-width: 78ch; }
+  .qnum {
+    display: inline-block; background: var(--accent); color: var(--on-accent);
+    font-size: 12px; font-weight: 700; border-radius: 6px;
+    padding: 1px 8px; margin-right: 9px;
+  }
+  .quiz-answer { display: none; margin-top: 10px; color: var(--ink2); font-size: 14.5px; max-width: 76ch; }
+  .quiz-answer.open { display: block; }
+  .quiz-actions { margin-top: 10px; display: flex; gap: 8px; }
+  .quiz-actions button {
+    font-family: inherit; font-size: 12.5px; padding: 4px 12px;
+    border-radius: 7px; border: 1px solid var(--line);
+    background: var(--surface2); color: var(--ink); cursor: pointer;
+  }
+  .quiz-actions button:hover { border-color: var(--accent); }
+
+  /* ---- glossary & index ---- */
+  dl.glossary dt { font-weight: 700; color: var(--ink); margin-top: 12px; }
+  dl.glossary dd { margin-left: 0; color: var(--ink2); max-width: 76ch; }
+  .index-cols { columns: 3; column-gap: 28px; font-size: 13.5px; }
+  .index-cols ul { list-style: none; margin: 0 0 10px; }
+  .index-cols .idx-letter { font-weight: 700; color: var(--accent); margin-top: 6px; }
+  @media (max-width: 900px) { .index-cols { columns: 2; } }
+  @media (max-width: 600px) { .index-cols { columns: 1; } }
+
+  details {
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px 14px; margin: 0 0 12px; background: var(--surface);
+  }
+  summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+  details[open] summary { margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<button class="theme-toggle" type="button" aria-label="Cycle color theme">◐ auto</button>
+<div class="layout">
+
+<nav class="toc" aria-label="Table of contents">
+  <div class="brand">UPS Management on macOS</div>
+  <div class="brand-sub">Tripp Lite AVR900U · NUT 2.8.5 · Homebrew</div>
+  <div class="part">Foundations</div>
+  <a href="#mental-model">1 · Mental model</a>
+  <a href="#prereqs">2 · Prerequisite floor</a>
+  <a href="#hardware">3 · Know your hardware</a>
+  <div class="part">The NUT stack</div>
+  <a href="#install">4 · Install &amp; verify</a>
+  <a href="#drivers">5 · Choosing the driver</a>
+  <a href="#bring-up">6 · Manual bring-up</a>
+  <a href="#access-control">7 · upsd &amp; access control</a>
+  <div class="part">Automation</div>
+  <a href="#launchd">8 · Auto-start with launchd</a>
+  <a href="#shutdown">9 · Automated shutdown</a>
+  <div class="part">Operations</div>
+  <a href="#monitoring">10 · Monitoring, two stacks</a>
+  <a href="#battery">11 · Battery health</a>
+  <a href="#troubleshooting">12 · Troubleshooting</a>
+  <div class="part">Practice</div>
+  <a href="#simulator">13 · Power-event simulator</a>
+  <a href="#capstone">14 · Capstone</a>
+  <div class="part">Reference</div>
+  <a href="#cheat-sheet">15 · Cheat sheet</a>
+  <a href="#glossary">16 · Glossary</a>
+  <a href="#index">17 · Index</a>
+  <a href="#quiz">18 · Quiz</a>
+  <a href="#sources">19 · Sources</a>
+</nav>
+
+<main id="content">
+
+<header class="hero">
+  <div class="eyebrow">For the home-lab operator with one Mac and one UPS</div>
+  <h1>Power fails.<br><span class="accent-clause">Your shutdown shouldn't.</span></h1>
+  <p class="subtitle">Managing a Tripp Lite AVR900U from macOS with Network UPS Tools — drivers, daemons, launchd, automated shutdown, and the native macOS power stack.</p>
+  <div class="badges">
+    <span class="badge ok">✓ NUT 2.8.5 (Homebrew) tested</span>
+    <span class="badge ok">✓ macOS 15.6 (Sequoia)</span>
+    <span class="badge ok">✓ Tripp Lite AVR900U</span>
+    <span class="badge">single file · works offline</span>
+    <span class="badge">interactive power-event simulator</span>
+    <span class="badge">14-question self-quiz</span>
+  </div>
+</header>
+
+<section id="mental-model">
+<h2>1 · Mental model</h2>
+<p class="lede">A UPS is not a battery. It is a small computer with a battery attached, and managing it is a software problem: something on your Mac has to hear what the UPS is saying and act on it before the battery runs out. Everything in this guide is about building and trusting that listener.</p>
+
+<h3>Why UPS management exists</h3>
+<p>The AVR900U on your desk solves the easy problem by itself: when wall power dies, it switches to battery in milliseconds and your Mac never notices. But at 480&nbsp;W of load its battery lasts <strong>2.7 minutes</strong>. The hard problem is what happens in minute two of a long outage. Without management software, the battery empties, the UPS drops its outlets, and your machine loses power mid-write — exactly the event you bought the UPS to prevent. The UPS only buys time; software has to spend that time well, by saving state and shutting the machine down cleanly while power remains.</p>
+<p>That is the entire job description: <strong>detect the power event → decide how bad it is → shut down cleanly before the battery is gone</strong>. Every tool in this guide is one link in that chain.</p>
+
+<h3>The two stacks on your Mac</h3>
+<p>The AVR900U speaks USB HID "Power Device Class" — the same protocol family a laptop battery uses. Because of that, <em>two</em> independent software stacks on your Mac can manage it, and understanding their relationship is the single most load-bearing idea in this guide:</p>
+<ul>
+  <li><strong>The Apple stack (built in).</strong> When you plug in the UPS, macOS claims the HID device with its own drivers. <code>ioupsd</code> and <code>powerd</code> track it, a battery-style indicator appears, <code>pmset</code> can read it, and Energy Saver grows UPS shutdown options. Zero installation, minimal data, minimal control.</li>
+  <li><strong>The NUT stack (installed).</strong> Network UPS Tools is the open-source lingua franca of UPS management: a hardware driver, a network server (<code>upsd</code>), and a monitor (<code>upsmon</code>) that executes the shutdown decision. Rich data, scriptable, network-capable — but on macOS it must coexist with the Apple stack, which got to the USB device first.</li>
+</ul>
+
+<div class="callout">
+  <strong>The macOS twist</strong>
+  On Linux, NUT's <code>usbhid-ups</code> driver talks straight to the UPS over USB. On macOS, the kernel's HID drivers claim the device and will not let go — so NUT ships a macOS-specific driver, <code>macosx-ups</code>, that reads the UPS <em>through</em> Apple's power-management layer instead of fighting it. You run NUT on top of the Apple stack, not instead of it. This one fact explains most of the driver confusion in §5.
+</div>
+
+<h3>NUT's three-layer architecture</h3>
+<p>NUT splits UPS management into three processes with one job each. The separation looks like overkill for one Mac and one UPS — it exists because NUT also scales to server rooms where one UPS protects many machines — but you benefit from it even standalone, because each layer can be tested alone.</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 960 400" role="img" aria-label="NUT three-layer architecture on macOS: UPS hardware to macOS power layer to macosx-ups driver to upsd to upsc and upsmon clients">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+    </marker>
+  </defs>
+  <!-- UPS hardware -->
+  <rect x="20" y="150" width="170" height="100" rx="10" fill="var(--surface2)" stroke="var(--line)"/>
+  <text x="105" y="185" text-anchor="middle" class="d-label">Tripp Lite</text>
+  <text x="105" y="205" text-anchor="middle" class="d-label">AVR900U</text>
+  <text x="105" y="228" text-anchor="middle" class="d-tiny">USB HID Power Device</text>
+  <!-- macOS layer -->
+  <rect x="250" y="130" width="190" height="140" rx="10" fill="var(--blue-bg)" stroke="var(--s2)"/>
+  <text x="345" y="158" text-anchor="middle" class="d-label">macOS power layer</text>
+  <text x="345" y="182" text-anchor="middle" class="d-mono">IOKit HID drivers</text>
+  <text x="345" y="202" text-anchor="middle" class="d-mono">ioupsd · powerd</text>
+  <text x="345" y="230" text-anchor="middle" class="d-tiny">claims the USB device;</text>
+  <text x="345" y="246" text-anchor="middle" class="d-tiny">feeds pmset &amp; Energy Saver</text>
+  <!-- driver -->
+  <rect x="500" y="150" width="150" height="100" rx="10" fill="var(--accent-wash)" stroke="var(--s1)"/>
+  <text x="575" y="185" text-anchor="middle" class="d-label">Driver</text>
+  <text x="575" y="207" text-anchor="middle" class="d-mono">macosx-ups</text>
+  <text x="575" y="228" text-anchor="middle" class="d-tiny">hardware → NUT vars</text>
+  <!-- upsd -->
+  <rect x="700" y="150" width="120" height="100" rx="10" fill="var(--accent-wash)" stroke="var(--s1)"/>
+  <text x="760" y="185" text-anchor="middle" class="d-label">Server</text>
+  <text x="760" y="207" text-anchor="middle" class="d-mono">upsd</text>
+  <text x="760" y="228" text-anchor="middle" class="d-tiny">TCP 3493</text>
+  <!-- clients -->
+  <rect x="860" y="60" width="90" height="70" rx="10" fill="var(--surface2)" stroke="var(--line)"/>
+  <text x="905" y="88" text-anchor="middle" class="d-mono">upsc</text>
+  <text x="905" y="110" text-anchor="middle" class="d-tiny">queries</text>
+  <rect x="860" y="260" width="90" height="80" rx="10" fill="var(--accent-wash)" stroke="var(--s1)"/>
+  <text x="905" y="290" text-anchor="middle" class="d-mono">upsmon</text>
+  <text x="905" y="312" text-anchor="middle" class="d-tiny">decides &amp;</text>
+  <text x="905" y="326" text-anchor="middle" class="d-tiny">shuts down</text>
+  <!-- arrows -->
+  <line x1="190" y1="200" x2="245" y2="200" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="440" y1="200" x2="495" y2="200" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="650" y1="200" x2="695" y2="200" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="820" y1="175" x2="858" y2="105" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="820" y1="225" x2="858" y2="290" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="215" y="188" text-anchor="middle" class="d-tiny">USB</text>
+  <text x="470" y="188" text-anchor="middle" class="d-tiny">IOKit</text>
+  <text x="672" y="188" text-anchor="middle" class="d-tiny">socket</text>
+</svg>
+<figcaption>The NUT pipeline on macOS. Unlike Linux, the driver does not own the USB device — it reads UPS state from the same Apple power layer that feeds <code>pmset</code>. Everything downstream of the driver is identical to NUT on any other OS.</figcaption>
+</figure>
+
+<div class="table-wrap"><table>
+<tr><th>Layer</th><th>Process</th><th>One job</th><th>Config file</th></tr>
+<tr><td>Driver</td><td><code>macosx-ups</code> (via <code>upsdrvctl</code>)</td><td>Translate hardware state into NUT's standard variables (<code>battery.charge</code>, <code>ups.status</code>, …)</td><td><code>ups.conf</code></td></tr>
+<tr><td>Server</td><td><code>upsd</code></td><td>Publish those variables over TCP (port 3493) to authenticated clients</td><td><code>upsd.conf</code>, <code>upsd.users</code></td></tr>
+<tr><td>Monitor</td><td><code>upsmon</code></td><td>Watch <code>ups.status</code>, raise alerts, and run the shutdown when the battery is critical</td><td><code>upsmon.conf</code></td></tr>
+</table></div>
+
+<div class="callout blue">
+  <strong>Misconception: "NUT replaces the macOS power manager."</strong>
+  Tempting, because that is how it works on Linux. On macOS the Apple stack cannot be evicted — <code>ioupsd</code> keeps running and Energy Saver keeps its own shutdown rules. The better model: the Apple stack is the <em>sensor</em>, NUT is the <em>brain you can program</em>. They read the same hardware; only one of them takes orders from you. §10 teaches you to read both.
+</div>
+
+<h3>The vocabulary you need immediately</h3>
+<p>Three status tokens dominate every conversation about UPS state. They appear in <code>ups.status</code>, in upsmon's log lines, and throughout this guide:</p>
+<ul>
+  <li><strong>OL</strong> — <em>online</em>. Wall power is good; the battery is idle or charging. The normal state.</li>
+  <li><strong>OB</strong> — <em>on battery</em>. Wall power failed; you are now spending stored minutes. A countdown has started.</li>
+  <li><strong>LB</strong> — <em>low battery</em>. The battery is nearly empty. When upsmon sees <strong>OB&nbsp;+&nbsp;LB together</strong>, it triggers the shutdown. This pair is the tripwire the whole system is built around.</li>
+</ul>
+<p>Watch the transitions, not the states: <code>OL → OB</code> is an event you want to know about; <code>OB → LB</code> is an event your Mac must act on without you. The simulator in §13 lets you run this sequence as many times as you like without touching a plug.</p>
+<p class="sources-line">Sources: <a href="https://networkupstools.org/docs/user-manual.chunked/index.html" target="_blank" rel="noopener">NUT user manual</a> · <a href="https://networkupstools.org/docs/man/macosx-ups.html" target="_blank" rel="noopener">macosx-ups(8)</a></p>
+</section>
+
+<section id="prereqs">
+<h2>2 · Prerequisite floor</h2>
+<p class="lede">This guide assumes a working macOS terminal habit and nothing about UPS software. Check yourself against the floor before continuing — everything above it is taught in place.</p>
+
+<h3>Hard prerequisites</h3>
+<ul>
+  <li><strong>Shell basics.</strong> You can run commands, edit a file with <code>vim</code>/<code>nano</code>/VS Code, and read a man page.</li>
+  <li><strong>Homebrew.</strong> Installed and working; you know <code>brew install</code>, <code>brew list</code>, <code>brew services</code>.</li>
+  <li><strong>sudo.</strong> You have admin rights and understand why a daemon that shuts your Mac down needs root.</li>
+</ul>
+
+<h3>Soft prerequisites (taught just-in-time)</h3>
+<ul>
+  <li><strong>launchd.</strong> macOS's init system. §8 introduces exactly the plist vocabulary you need — no prior experience assumed.</li>
+  <li><strong>The macOS unified log.</strong> <code>log show</code> / <code>log stream</code> appear in §10 with worked commands you can copy.</li>
+  <li><strong>Electrical units.</strong> VA vs W is explained in §3 where it matters (load sizing).</li>
+</ul>
+
+<h3>Self-assessment</h3>
+<p>You are ready if you can answer all four without looking anything up:</p>
+<ol>
+  <li>What does <code>brew services list</code> show, conceptually?</li>
+  <li>What is the difference between a process run in your terminal and a daemon?</li>
+  <li>Why would <code>sudo pkill -f upsd</code> need <code>sudo</code>?</li>
+  <li>Where do Homebrew's config files live on an Intel Mac? (<code>/usr/local/etc/…</code>)</li>
+</ol>
+<p>If item 4 surprised you: this guide's paths are for <strong>Intel Macs</strong> (Homebrew prefix <code>/usr/local</code>), matching the machine it was verified on. On Apple Silicon substitute <code>/opt/homebrew</code> throughout — nothing else changes.</p>
+</section>
+
+<section id="hardware">
+<h2>3 · Know your hardware</h2>
+<p class="lede">You cannot size, test, or trust a UPS whose numbers you do not know. This section pins down what the AVR900U actually is — and what its marketing numbers mean for your shutdown deadline.</p>
+
+<h3>What the AVR900U is</h3>
+<div class="table-wrap"><table>
+<tr><th>Fact</th><th>Value</th><th>Why it matters</th></tr>
+<tr><td>Capacity</td><td>900 VA / 480 W</td><td>The hard ceiling on connected load. Watts is the number that limits you in practice.</td></tr>
+<tr><td>Topology</td><td>Line-interactive with AVR</td><td>Corrects brownouts/overvoltage via autotransformer <em>without</em> draining the battery — the battery is saved for real outages.</td></tr>
+<tr><td>Outlets</td><td>12 × NEMA 5-15R</td><td>Not all are battery-backed on AVR-series units — check the labels on the unit itself before trusting an outlet with your Mac.</td></tr>
+<tr><td>Runtime, full load (480 W)</td><td>≈ 2.7 min</td><td>Your worst-case shutdown budget.</td></tr>
+<tr><td>Runtime, half load (240 W)</td><td>≈ 10 min</td><td>The practical target: keep load near or below half.</td></tr>
+<tr><td>Battery</td><td>12 V VRLA (sealed lead-acid), replacement model RBC51</td><td>User-replaceable; recharges 10 → 90 % in about 8 hours.</td></tr>
+<tr><td>Interface</td><td>USB (HID Power Device Class)</td><td>Why macOS auto-recognizes it, and why driver choice on macOS is subtle (§5).</td></tr>
+</table></div>
+
+<h3>VA vs W — the sizing trap</h3>
+<p><strong>Watts</strong> measure real power your equipment draws; <strong>volt-amperes</strong> measure apparent power, which is always ≥ watts for the same load. Marketing leads with the bigger VA number. Size against watts: the AVR900U can carry 480&nbsp;W, full stop. A Mac, a display, and network gear typically sit well under that — but measure rather than guess. <code>system_profiler SPPowerDataType</code> tells you your Mac's adapter rating; a $15 plug-through power meter tells you the truth for the whole desk.</p>
+
+<div class="callout warn">
+  <strong>Runtime is not linear</strong>
+  Half the load gives you roughly 4× the runtime (2.7 min → 10 min), not 2×. Lead-acid batteries deliver less usable energy at higher discharge rates (the Peukert effect). Practical consequence: moving a laser printer or a second display off the battery-backed outlets buys disproportionately more shutdown time. Never put a laser printer on a UPS at all — its fuser pulls more than this entire UPS supplies.
+</div>
+
+<h3>What "line-interactive with AVR" buys you</h3>
+<p>Cheap standby UPSes do nothing until power fails. Online double-conversion units rebuild the sine wave continuously and cost 5× as much. The AVR900U sits between: its <strong>automatic voltage regulation</strong> boosts brownouts and trims overvoltage using a transformer tap, switching to battery only when voltage leaves the correctable range. For you this means two things: minor grid sag does not cycle (and age) the battery, and frequent audible relay clicks are a diagnostic signal — your wall voltage is wandering (§12).</p>
+<p class="sources-line">Sources: <a href="https://tripplite.eaton.com/avr-series-120v-900va-480w-ultra-compact-line-interactive-ups-usb-port~AVR900U" target="_blank" rel="noopener">Eaton/Tripp Lite AVR900U product page</a></p>
+</section>
+
+<section id="install">
+<h2>4 · Install &amp; verify</h2>
+<p class="lede">One formula installs the entire NUT toolbox — drivers for hundreds of UPS models, the server, the monitor, and the client tools. Your job in this section is smaller: confirm what you have and learn where everything lives.</p>
+
+<pre><code><span class="cmd">brew install nut</span></code></pre>
+
+<p>Verify the install and pin the version. Both transcripts below are real output from the machine this guide was written on:</p>
+<pre><code><span class="cmd">brew list --versions nut</span>
+<span class="out">nut 2.8.5</span>
+
+<span class="cmd">/usr/local/sbin/upsd -V</span>
+<span class="out">Network UPS Tools upsd 2.8.5 release</span></code></pre>
+<p>NUT 2.8.5 is the current stable release (April 2026). Homebrew tracks it closely, so <code>brew upgrade</code> keeps you current.</p>
+
+<h3>Where everything lives (Intel prefix)</h3>
+<div class="table-wrap"><table>
+<tr><th>Path</th><th>Contents</th></tr>
+<tr><td><code>/usr/local/etc/nut/</code></td><td>All configuration: <code>nut.conf</code>, <code>ups.conf</code>, <code>upsd.conf</code>, <code>upsd.users</code>, <code>upsmon.conf</code>, <code>upssched.conf</code> — each with a pristine <code>.sample</code> beside it</td></tr>
+<tr><td><code>/usr/local/sbin/</code></td><td>Daemons: <code>upsd</code>, <code>upsmon</code>, <code>upsdrvctl</code></td></tr>
+<tr><td><code>/usr/local/bin/</code></td><td>Clients and drivers: <code>upsc</code>, <code>upscmd</code>, <code>upsrw</code>, <code>upslog</code>, plus 67 hardware driver binaries including <code>macosx-ups</code>, <code>tripplite_usb</code>, and <code>usbhid-ups</code></td></tr>
+<tr><td><code>/usr/local/opt/nut/homebrew.mxcl.nut.plist</code></td><td>The launchd plist <code>brew services</code> uses — read §8 before trusting it</td></tr>
+</table></div>
+
+<div class="callout blue">
+  <strong>The four config files, one sentence each</strong>
+  <code>ups.conf</code> declares which UPS exists and which driver speaks to it. <code>upsd.conf</code> says where the server listens. <code>upsd.users</code> says who may connect and what they may do. <code>upsmon.conf</code> says what to monitor and what to do when it goes bad. (<code>nut.conf</code> only records the overall MODE — <code>standalone</code> for one Mac protecting itself.)
+</div>
+
+<h3>Set the mode</h3>
+<p>In <code>/usr/local/etc/nut/nut.conf</code>, one line matters:</p>
+<pre><code>MODE=standalone</code></pre>
+<p>Standalone means all three layers run on this Mac and protect this Mac. The other modes (<code>netserver</code>, <code>netclient</code>) exist for sharing one UPS across machines — out of scope for this guide, but the config you build here is the server half of that setup if you ever want it.</p>
+<p class="sources-line">Sources: <a href="https://formulae.brew.sh/formula/nut" target="_blank" rel="noopener">Homebrew nut formula</a> · <a href="https://networkupstools.org/docs/man/nut.conf.html" target="_blank" rel="noopener">nut.conf(5)</a></p>
+</section>
+
+<section id="drivers">
+<h2>5 · Choosing the driver</h2>
+<p class="lede">Three NUT drivers plausibly match a Tripp Lite USB unit, and picking by name leads you astray — the obvious choice, <code>tripplite_usb</code>, is wrong for this hardware on this OS. The right question is not "which driver mentions my brand?" but "who owns the USB device?"</p>
+
+<h3>The wrong question, then the right one</h3>
+<p><strong>The wrong question:</strong> "Which driver is for Tripp Lite?" — NUT has four with the brand in the name, segmented by protocol generation, not by brand loyalty.</p>
+<p><strong>The right question:</strong> "What does my unit speak, and can the driver even reach it?" The AVR900U speaks USB HID Power Device Class — the modern, standardized protocol. And on macOS, the kernel claims HID power devices at plug-in, which changes the answer entirely.</p>
+
+<h3>Decision matrix</h3>
+<div class="table-wrap"><table>
+<tr><th>Driver</th><th>Built for</th><th>On macOS with the AVR900U</th></tr>
+<tr><td><code>tripplite_usb</code></td><td>Legacy Tripp Lite units with USB product ID 0001 (protocols 0004/1001/2001/3003/3005 — OMNIVS, older SMART series)</td><td><strong>Wrong unit.</strong> The AVR900U is a modern HID-class device; the tripplite_usb man page itself redirects HID-compliant units to <code>usbhid-ups</code>.</td></tr>
+<tr><td><code>usbhid-ups</code></td><td>Any USB HID PDC UPS — the standard choice on Linux, including for modern Tripp Lite</td><td><strong>Right protocol, blocked path.</strong> macOS's kernel HID drivers claim the device, and NUT cannot detach them the way it can on Linux. Expect claim/permission failures.</td></tr>
+<tr><td><code>macosx-ups</code></td><td>macOS only: reads any UPS that Apple's own power layer recognizes</td><td><strong>The working answer.</strong> If the UPS shows up in Energy Saver / <code>pmset -g ps</code>, this driver can serve it to NUT. Monitoring-only — see the trade-off below.</td></tr>
+</table></div>
+
+<div class="callout">
+  <strong>The trade-off you accept with macosx-ups</strong>
+  It reads whatever Apple's abstraction exposes — charge, runtime, status — and no more. Input voltage, load percentage, and frequency are typically absent, and the driver cannot command the UPS (no beeper toggle, no outlet control, no deep battery test via <code>upscmd</code>). You trade telemetry depth for a driver that reliably coexists with the OS. For the actual mission — clean shutdown on outage — the variables it provides are sufficient.
+</div>
+
+<h3>Your working configuration</h3>
+<p>This is the live <code>/usr/local/etc/nut/ups.conf</code> from the verified machine — three lines of substance:</p>
+<pre><code>user = paulbaur
+
+[myups]
+    driver = macosx-ups
+    port = auto
+    model = AVR900U
+    desc = "Tripp Lite AVR900U via macOS"</code></pre>
+<ul>
+  <li><code>[myups]</code> — the UPS's NUT name; every later command addresses <code>myups@localhost</code>.</li>
+  <li><code>driver = macosx-ups</code> — the decision this section justified.</li>
+  <li><code>port = auto</code> — required by NUT's config grammar; ignored by this driver (there is no port to open — Apple's layer is the port).</li>
+  <li><code>model = AVR900U</code> — a regex matched against the power-source name; only needed to disambiguate if several UPSes are attached, harmless otherwise.</li>
+</ul>
+
+<div class="callout blue">
+  <strong>Misconception: "The driver failing means the UPS is unsupported."</strong>
+  A first attempt with <code>tripplite_usb -a myups -DD</code> fails against this unit — not because NUT lacks Tripp Lite support, but because that driver targets a different protocol generation <em>and</em> macOS holds the device. Driver errors about claiming/opening USB devices on macOS are almost never about the UPS model; they are about which stack owns the hardware. Reach for <code>macosx-ups</code> before concluding anything is broken.
+</div>
+<p class="sources-line">Sources: <a href="https://networkupstools.org/docs/man/macosx-ups.html" target="_blank" rel="noopener">macosx-ups(8)</a> · <a href="https://networkupstools.org/docs/man/tripplite_usb.html" target="_blank" rel="noopener">tripplite_usb(8)</a> · <a href="https://networkupstools.org/docs/man/usbhid-ups.html" target="_blank" rel="noopener">usbhid-ups(8)</a> · <a href="https://networkupstools.org/docs/man/ups.conf.html" target="_blank" rel="noopener">ups.conf(5)</a></p>
+</section>
+
+<section id="bring-up">
+<h2>6 · Manual bring-up</h2>
+<p class="lede">Before any launchd automation, bring the stack up by hand, one layer at a time, in foreground debug mode. When each layer runs where you can see it, failures point at themselves — and you learn the healthy transcript you will later compare sick systems against.</p>
+
+<h3>The bring-up order is the architecture</h3>
+<p>Driver first, then server, then queries. Each layer refuses to work without the one before it, so the order doubles as a diagnostic ladder: whichever step fails names the broken layer.</p>
+
+<div class="lab">
+<div class="lab-title">Lab 1 · Bring the stack up by hand</div>
+<div class="lab-meta">10 minutes · UPS must be attached via USB · two terminal windows · nothing persists after reboot</div>
+<ol>
+<li>Confirm macOS sees the UPS at all — the precondition for <code>macosx-ups</code>:
+<pre><code><span class="cmd">pmset -g ps</span></code></pre>
+<p class="expect">a line naming the UPS alongside any internal battery. With the UPS unplugged from USB you get only <code>Now drawing from 'AC Power'</code> and the internal battery — that is this guide's own state, captured on a machine with the UPS detached. No UPS line here means no NUT until the cable is sorted (§12).</p></li>
+<li>Start the driver in debug foreground (window 1):
+<pre><code><span class="cmd">sudo /usr/local/sbin/upsdrvctl -D start myups</span></code></pre>
+<p class="expect">debug chatter ending in a steady poll loop naming your power source. Errors about "no matching power source" mean the <code>model</code> regex in <code>ups.conf</code> matched nothing.</p></li>
+<li>Start the server in debug foreground (window 2):
+<pre><code><span class="cmd">sudo /usr/local/sbin/upsd -F -D</span></code></pre>
+<p class="expect">lines showing it reading <code>upsd.conf</code>, listening on <code>127.0.0.1</code> port 3493, and connecting to the driver's socket. <code>-F</code> keeps it in the foreground; <code>-D</code> makes it narrate.</p></li>
+<li>Query it (any window):
+<pre><code><span class="cmd">upsc myups@localhost</span></code></pre>
+<p class="expect">a sorted dump of every variable the driver publishes — <code>battery.charge</code>, <code>battery.runtime</code>, <code>ups.status</code>, <code>device.model</code>, and friends. Exact variables depend on what Apple's layer exposes for your unit; capture this healthy output somewhere, it is your baseline.</p></li>
+<li>Ask pointed questions — the form you will script with later:
+<pre><code><span class="cmd">upsc myups@localhost ups.status</span>
+<span class="cmd">upsc myups@localhost battery.charge</span>
+<span class="cmd">upsc myups@localhost battery.runtime</span>
+<span class="cmd">upsc myups@localhost device.model</span></code></pre>
+<p class="expect"><code>ups.status</code> prints <code>OL</code> on wall power; <code>battery.runtime</code> is in seconds.</p></li>
+<li>Tear down: <kbd>Ctrl</kbd>+<kbd>C</kbd> in both windows, then confirm nothing lingers:
+<pre><code><span class="cmd">ps aux | egrep "macosx-ups|upsd|upsmon" | grep -v egrep</span></code></pre>
+<p class="expect">no output.</p></li>
+</ol>
+<div class="checkpoint">you saw <code>ups.status: OL</code> from a stack you started, understood, and cleanly stopped.</div>
+</div>
+
+<h3>The failure signature worth memorizing</h3>
+<p>With <code>upsd</code> not running, every client fails identically. This is real output from this machine, captured with the stack down:</p>
+<pre><code><span class="cmd">upsc myups@localhost</span>
+<span class="out">Error: Connection failure: Connection refused</span></code></pre>
+<p>Read it precisely: <em>connection refused</em> means nothing is listening on port 3493 — a <code>upsd</code> problem (or upsd never started). A different error, <em>Driver not connected</em>, means upsd is fine but the driver layer is down. Two errors, two layers, no ambiguity. This distinction does half your future debugging for you.</p>
+<p class="sources-line">Sources: <a href="https://networkupstools.org/docs/man/upsdrvctl.html" target="_blank" rel="noopener">upsdrvctl(8)</a> · <a href="https://networkupstools.org/docs/man/upsd.html" target="_blank" rel="noopener">upsd(8)</a> · <a href="https://networkupstools.org/docs/man/upsc.html" target="_blank" rel="noopener">upsc(8)</a></p>
+</section>
+
+<section id="access-control">
+<h2>7 · upsd &amp; access control</h2>
+<p class="lede">upsd is a network server, which means it has opinions about who connects. For one Mac protecting itself the policy is short — listen on loopback only, one privileged account for the monitor — but you should understand each line you are trusting.</p>
+
+<h3>Listening: upsd.conf</h3>
+<p>The entire non-comment content of the working <code>/usr/local/etc/nut/upsd.conf</code>:</p>
+<pre><code>LISTEN 127.0.0.1 3493</code></pre>
+<p>Loopback only. No other machine can query this upsd, which is exactly right for standalone mode — the best network security is not being on the network. Port 3493 is NUT's IANA-registered port. If you one day serve LAN clients, you add a second <code>LISTEN</code> line with a LAN address; until then, leave it.</p>
+
+<h3>Accounts: upsd.users</h3>
+<p>upsmon must log in to upsd to be trusted with power-state decisions. One account, defined in <code>/usr/local/etc/nut/upsd.users</code> (password redacted here — the file on disk holds it in plain text):</p>
+<pre><code>[monmaster]
+    password = &lt;your-password&gt;
+    upsmon master</code></pre>
+<p>The <code>upsmon master</code> line grants the role, not just access: a <em>master</em> (called <em>primary</em> in NUT 2.8's newer terminology — both spellings work) is a machine drawing power from this UPS that coordinates the shutdown. The matching half lives in <code>upsmon.conf</code>:</p>
+<pre><code>MONITOR myups@localhost 1 monmaster &lt;your-password&gt; master</code></pre>
+<p>Read it as a sentence: monitor the UPS named <code>myups</code> on this machine, which feeds <strong>1</strong> power supply of mine, logging in as <code>monmaster</code> with this password, in the master role. The <code>1</code> matters on servers with redundant PSUs; on a desktop it is always 1.</p>
+
+<div class="callout warn">
+  <strong>Plain-text password hygiene</strong>
+  The password appears in two files. It guards a loopback-only service, so the threat is local users, not the network — but tighten the files anyway:
+  <pre><code><span class="cmd">sudo chmod 600 /usr/local/etc/nut/upsd.users /usr/local/etc/nut/upsmon.conf</span></code></pre>
+  Use a random string that appears nowhere else. It is a machine-to-machine credential; you will never type it again.
+</div>
+
+<div class="callout blue">
+  <strong>Misconception: "It's all localhost, why passwords at all?"</strong>
+  Because upsd will accept an instruction to declare a forced shutdown (FSD) from an authenticated master. Any local process that could reach an unauthenticated upsd could power down your machine. The password converts "anything on this Mac" into "processes that can read root-owned config" — a real boundary.
+</div>
+<p class="sources-line">Sources: <a href="https://networkupstools.org/docs/man/upsd.conf.html" target="_blank" rel="noopener">upsd.conf(5)</a> · <a href="https://networkupstools.org/docs/man/upsd.users.html" target="_blank" rel="noopener">upsd.users(5)</a> · <a href="https://networkupstools.org/docs/man/upsmon.conf.html" target="_blank" rel="noopener">upsmon.conf(5)</a></p>
+</section>
+
+<section id="launchd">
+<h2>8 · Auto-start with launchd</h2>
+<p class="lede">A UPS monitor you start by hand protects you only on days you remembered to start it. launchd — macOS's init system — is how the stack becomes furniture: running after every reboot, restarted after every crash, no terminal involved. This is also where Homebrew's convenience story quietly falls short, so look before you lean on it.</p>
+
+<h3>What <code>brew services</code> actually starts</h3>
+<p>The plist Homebrew ships for nut, verbatim from <code>/usr/local/opt/nut/homebrew.mxcl.nut.plist</code> on this machine (boilerplate keys trimmed):</p>
+<pre><code>&lt;key&gt;ProgramArguments&lt;/key&gt;
+&lt;array&gt;
+    &lt;string&gt;/usr/local/opt/nut/sbin/upsmon&lt;/string&gt;
+    &lt;string&gt;-D&lt;/string&gt;
+&lt;/array&gt;
+&lt;key&gt;RunAtLoad&lt;/key&gt;
+&lt;true/&gt;</code></pre>
+
+<div class="callout danger">
+  <strong>brew services nut starts one third of the stack</strong>
+  The plist runs <code>upsmon</code> only — the monitor. No driver, no upsd. A freshly rebooted Mac with <code>brew services start nut</code> has a monitor faithfully failing to connect to a server that never started. If you take only one fact from this section: <strong>the driver and upsd need their own launchd jobs</strong>, which Homebrew does not provide. You will write them below — it is ten minutes and you will understand every line.
+</div>
+
+<h3>launchd in ninety seconds</h3>
+<p>launchd supervises <em>jobs</em>, each described by a plist file. Files in <code>/Library/LaunchDaemons/</code> run as root at boot, before login — the right domain for power management. The keys you need: <code>Label</code> (unique job name), <code>ProgramArguments</code> (argv as an array), <code>RunAtLoad</code> (start when loaded), <code>KeepAlive</code> (restart if it exits). One rule shapes the design: <strong>launchd runs foreground processes</strong>. Daemons that background themselves confuse it — which is why every command below carries <code>-F</code>, NUT's "stay in the foreground" flag.</p>
+
+<h3>The three jobs</h3>
+<p>launchd offers no startup ordering between jobs, and none is needed: each NUT layer retries until the layer below appears. Write these three files (owner <code>root:wheel</code>, mode <code>644</code> — launchd refuses anything looser):</p>
+
+<p><strong>1 · The driver</strong> — <code>/Library/LaunchDaemons/org.nut.driver.plist</code>. Note it runs the driver binary directly with <code>-a myups</code> (pulling settings from <code>ups.conf</code>), not via <code>upsdrvctl</code>, which would exit after spawning and make launchd restart it forever:</p>
+<pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd"&gt;
+&lt;plist version="1.0"&gt;
+&lt;dict&gt;
+  &lt;key&gt;Label&lt;/key&gt;              &lt;string&gt;org.nut.driver&lt;/string&gt;
+  &lt;key&gt;ProgramArguments&lt;/key&gt;
+  &lt;array&gt;
+    &lt;string&gt;/usr/local/bin/macosx-ups&lt;/string&gt;
+    &lt;string&gt;-a&lt;/string&gt;&lt;string&gt;myups&lt;/string&gt;
+    &lt;string&gt;-F&lt;/string&gt;
+  &lt;/array&gt;
+  &lt;key&gt;RunAtLoad&lt;/key&gt;          &lt;true/&gt;
+  &lt;key&gt;KeepAlive&lt;/key&gt;          &lt;true/&gt;
+  &lt;key&gt;ThrottleInterval&lt;/key&gt;   &lt;integer&gt;30&lt;/integer&gt;
+&lt;/dict&gt;
+&lt;/plist&gt;</code></pre>
+
+<p><strong>2 · The server</strong> — <code>/Library/LaunchDaemons/org.nut.upsd.plist</code>. Same skeleton, different program:</p>
+<pre><code>&lt;key&gt;Label&lt;/key&gt;              &lt;string&gt;org.nut.upsd&lt;/string&gt;
+&lt;key&gt;ProgramArguments&lt;/key&gt;
+&lt;array&gt;
+  &lt;string&gt;/usr/local/sbin/upsd&lt;/string&gt;
+  &lt;string&gt;-F&lt;/string&gt;
+&lt;/array&gt;
+&lt;key&gt;RunAtLoad&lt;/key&gt;          &lt;true/&gt;
+&lt;key&gt;KeepAlive&lt;/key&gt;          &lt;true/&gt;
+&lt;key&gt;ThrottleInterval&lt;/key&gt;   &lt;integer&gt;30&lt;/integer&gt;</code></pre>
+
+<p><strong>3 · The monitor</strong> — <code>/Library/LaunchDaemons/org.nut.upsmon.plist</code>, replacing <code>brew services</code> so all three jobs live in one place, managed one way:</p>
+<pre><code>&lt;key&gt;Label&lt;/key&gt;              &lt;string&gt;org.nut.upsmon&lt;/string&gt;
+&lt;key&gt;ProgramArguments&lt;/key&gt;
+&lt;array&gt;
+  &lt;string&gt;/usr/local/sbin/upsmon&lt;/string&gt;
+  &lt;string&gt;-F&lt;/string&gt;
+&lt;/array&gt;
+&lt;key&gt;RunAtLoad&lt;/key&gt;          &lt;true/&gt;
+&lt;key&gt;KeepAlive&lt;/key&gt;          &lt;true/&gt;
+&lt;key&gt;ThrottleInterval&lt;/key&gt;   &lt;integer&gt;30&lt;/integer&gt;</code></pre>
+<p>upsmon must start as root: it keeps a tiny privileged stub alive to run the shutdown command, drops the rest of itself to an unprivileged user, and cannot arrange that from a user session. Running it from <code>/Library/LaunchDaemons</code> satisfies this naturally. If you previously ran <code>brew services start nut</code>, stop it first: <code>sudo brew services stop nut &amp;&amp; brew services stop nut</code> (clears both the root and user domains).</p>
+
+<div class="lab">
+<div class="lab-title">Lab 2 · Make the stack permanent</div>
+<div class="lab-meta">15 minutes + one reboot · UPS attached · requires Lab 1 to have succeeded first</div>
+<ol>
+<li>Create the three plists above, then fix ownership and mode — launchd silently ignores world-writable or wrongly-owned daemons:
+<pre><code><span class="cmd">sudo chown root:wheel /Library/LaunchDaemons/org.nut.*.plist</span>
+<span class="cmd">sudo chmod 644 /Library/LaunchDaemons/org.nut.*.plist</span></code></pre></li>
+<li>Validate the XML before loading — a typo here costs a confusing failure later:
+<pre><code><span class="cmd">plutil -lint /Library/LaunchDaemons/org.nut.*.plist</span></code></pre>
+<p class="expect"><code>OK</code> three times.</p></li>
+<li>Bootstrap all three into the system domain (modern launchctl; <code>load -w</code> is the legacy spelling):
+<pre><code><span class="cmd">sudo launchctl bootstrap system /Library/LaunchDaemons/org.nut.driver.plist</span>
+<span class="cmd">sudo launchctl bootstrap system /Library/LaunchDaemons/org.nut.upsd.plist</span>
+<span class="cmd">sudo launchctl bootstrap system /Library/LaunchDaemons/org.nut.upsmon.plist</span></code></pre></li>
+<li>Verify each job is alive:
+<pre><code><span class="cmd">sudo launchctl print system/org.nut.upsd | grep -E "state|pid"</span></code></pre>
+<p class="expect"><code>state = running</code> and a pid. Repeat for the other two labels.</p></li>
+<li>Prove the stack serves data with nobody's hands on it:
+<pre><code><span class="cmd">upsc myups@localhost ups.status</span></code></pre>
+<p class="expect"><code>OL</code></p></li>
+<li>The only test that counts — reboot, log back in, and query again before touching anything else:
+<pre><code><span class="cmd">upsc myups@localhost ups.status</span></code></pre>
+<p class="expect"><code>OL</code>, from daemons you did not start this boot.</p></li>
+</ol>
+<div class="checkpoint">a reboot no longer costs you your UPS protection. To undo any job later: <code>sudo launchctl bootout system/org.nut.&lt;name&gt;</code>.</div>
+</div>
+
+<div class="callout warn">
+  <strong>KeepAlive + a detached UPS = a respawn loop</strong>
+  If the UPS is unplugged from USB, the driver exits, and <code>KeepAlive</code> dutifully restarts it every <code>ThrottleInterval</code> (30 s here) forever. Harmless but noisy in the logs. If you detach the UPS for a long period, boot the driver job out; the throttle keeps the loop cheap in the meantime.
+</div>
+<p class="sources-line">Sources: <a href="https://networkupstools.org/docs/man/nutupsdrv.html" target="_blank" rel="noopener">nutupsdrv(8)</a> · <a href="https://networkupstools.org/docs/man/upsmon.html" target="_blank" rel="noopener">upsmon(8)</a> · <code>man launchd.plist</code>, <code>man launchctl</code> (local)</p>
+</section>
+
+<section id="shutdown">
+<h2>9 · Automated shutdown</h2>
+<p class="lede">Everything so far was plumbing. This is the payoff: the sequence that runs at 3&nbsp;a.m. while you sleep, taking your Mac from "power just failed" to "halted cleanly with minutes to spare." Build it, then test it on purpose, because an untested shutdown path is a hope, not a system.</p>
+
+<h3>The event chain, end to end</h3>
+<figure class="diagram">
+<svg viewBox="0 0 960 300" role="img" aria-label="Timeline of a power outage: OL to OB on outage, OB to OB+LB as battery drains, upsmon declares FSD and runs SHUTDOWNCMD, macOS halts, later power returns and the Mac restarts">
+  <defs>
+    <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+    </marker>
+  </defs>
+  <line x1="30" y1="70" x2="930" y2="70" stroke="var(--line)" stroke-width="2"/>
+  <!-- phase bands -->
+  <rect x="30"  y="58" width="150" height="24" rx="6" fill="var(--s3)" opacity="0.25"/>
+  <rect x="180" y="58" width="330" height="24" rx="6" fill="var(--s4)" opacity="0.25"/>
+  <rect x="510" y="58" width="250" height="24" rx="6" fill="var(--s1)" opacity="0.25"/>
+  <rect x="760" y="58" width="170" height="24" rx="6" fill="var(--s3)" opacity="0.25"/>
+  <text x="105" y="45" text-anchor="middle" class="d-label">OL</text>
+  <text x="345" y="45" text-anchor="middle" class="d-label">OB</text>
+  <text x="635" y="45" text-anchor="middle" class="d-label">OB + LB</text>
+  <text x="845" y="45" text-anchor="middle" class="d-label">power back</text>
+  <!-- events below -->
+  <g>
+    <line x1="180" y1="82" x2="180" y2="110" stroke="var(--muted)" stroke-width="1.5"/>
+    <text x="180" y="128" text-anchor="middle" class="d-small">wall power fails</text>
+    <text x="180" y="146" text-anchor="middle" class="d-tiny">UPS switches to battery &lt;10 ms</text>
+    <text x="180" y="162" text-anchor="middle" class="d-mono">upsmon: ONBATT</text>
+  </g>
+  <g>
+    <line x1="510" y1="82" x2="510" y2="110" stroke="var(--muted)" stroke-width="1.5"/>
+    <text x="510" y="128" text-anchor="middle" class="d-small">battery hits low threshold</text>
+    <text x="510" y="146" text-anchor="middle" class="d-mono">upsmon: LOWBATT → FSD</text>
+    <text x="510" y="162" text-anchor="middle" class="d-tiny">forced-shutdown flag latches</text>
+  </g>
+  <g>
+    <line x1="640" y1="82" x2="640" y2="190" stroke="var(--muted)" stroke-width="1.5"/>
+    <text x="640" y="208" text-anchor="middle" class="d-mono">SHUTDOWNCMD runs as root</text>
+    <text x="640" y="226" text-anchor="middle" class="d-small">macOS flushes disks and halts cleanly</text>
+    <text x="640" y="244" text-anchor="middle" class="d-tiny">UPS keeps discharging until empty — macosx-ups cannot cut UPS output</text>
+  </g>
+  <g>
+    <line x1="760" y1="82" x2="760" y2="110" stroke="var(--muted)" stroke-width="1.5"/>
+    <text x="762" y="128" text-anchor="start" class="d-small">wall power returns</text>
+    <text x="762" y="146" text-anchor="start" class="d-mono">pmset autorestart → Mac boots</text>
+  </g>
+</svg>
+<figcaption>One outage, start to finish. The two decisions you control are <em>when LB is declared</em> (threshold) and <em>what SHUTDOWNCMD does</em>. Everything else is machinery you have already built.</figcaption>
+</figure>
+
+<h3>upsmon.conf — the decision lines</h3>
+<p>Beyond the MONITOR line from §7, these are the settings that shape behavior (values shown are NUT's defaults, sane for a desktop):</p>
+<div class="table-wrap"><table>
+<tr><th>Directive</th><th>Default</th><th>Meaning</th></tr>
+<tr><td><code>SHUTDOWNCMD</code></td><td><code>"/sbin/shutdown -h +0"</code></td><td>What the root stub executes when shutdown is required. On macOS <code>/sbin/shutdown -h now</code> is the canonical clean halt.</td></tr>
+<tr><td><code>POLLFREQ</code></td><td>5</td><td>Seconds between status polls while online.</td></tr>
+<tr><td><code>POLLFREQALERT</code></td><td>5</td><td>Poll interval once on battery — tighten to 1–2 s if you want faster LB reaction.</td></tr>
+<tr><td><code>MINSUPPLIES</code></td><td>1</td><td>Power supplies that must be fed for the system to stay up. Desktop: 1.</td></tr>
+<tr><td><code>HOSTSYNC</code></td><td>15</td><td>Master's wait for slaves before proceeding — irrelevant standalone, harmless to leave.</td></tr>
+<tr><td><code>DEADTIME</code></td><td>15</td><td>Seconds of silence before a UPS is declared dead and assumed critical if it was on battery.</td></tr>
+</table></div>
+
+<p><strong>Who decides "low battery"?</strong> With <code>macosx-ups</code>, the LB flag arrives from Apple's power layer, which takes it from the UPS's own firmware threshold. You are trusting the AVR900U's definition of "low" — typically conservative, but on an aged battery "low" can be seconds from "empty." This is why §11's runtime calibration matters and why the belt-and-suspenders timer below exists.</p>
+
+<h3>Desktop notifications when events fire</h3>
+<p>upsmon can run a command on every event via <code>NOTIFYCMD</code>. Point it at a script that posts a macOS notification, and flag which events should call it (<code>EXEC</code>) versus only syslog:</p>
+<pre><code><span class="comment"># upsmon.conf</span>
+NOTIFYCMD /usr/local/etc/nut/notify.sh
+NOTIFYFLAG ONBATT   SYSLOG+EXEC
+NOTIFYFLAG ONLINE   SYSLOG+EXEC
+NOTIFYFLAG LOWBATT  SYSLOG+EXEC
+NOTIFYFLAG COMMBAD  SYSLOG+EXEC
+NOTIFYFLAG COMMOK   SYSLOG
+NOTIFYFLAG REPLBATT SYSLOG+EXEC</code></pre>
+<pre><code><span class="comment">#!/bin/sh</span>
+<span class="comment"># /usr/local/etc/nut/notify.sh — upsmon passes the message as $1</span>
+<span class="comment"># chmod +x; runs in upsmon's unprivileged context</span>
+/usr/bin/osascript -e "display notification \"$1\" with title \"UPS\" sound name \"Sosumi\""</code></pre>
+<div class="callout warn">
+  <strong>Notification caveat</strong>
+  <code>osascript</code> notifications come from a root daemon's context, and macOS increasingly gates UI from daemons; if nothing appears, the reliable fallback is logging plus a menu-bar tool, or a <code>terminal-notifier</code> install. Treat the notification as a courtesy — syslog and the shutdown path are the load-bearing parts.
+</div>
+
+<h3>Shutting down early: upssched</h3>
+<p>Waiting for LB spends the whole battery before acting. On a 2.7-minutes-at-full-load unit, a better policy is often <em>"if the outage lasts longer than N minutes, it is not a blip — shut down now, with margin."</em> That is <code>upssched</code>: upsmon forwards events to it, it runs timers, and cancels them if power returns:</p>
+<pre><code><span class="comment"># upsmon.conf — route events through upssched</span>
+NOTIFYCMD /usr/local/sbin/upssched
+NOTIFYFLAG ONBATT  SYSLOG+EXEC
+NOTIFYFLAG ONLINE  SYSLOG+EXEC
+
+<span class="comment"># upssched.conf</span>
+CMDSCRIPT /usr/local/etc/nut/upssched-cmd.sh
+PIPEFN /usr/local/var/state/ups/upssched.pipe
+LOCKFN /usr/local/var/state/ups/upssched.lock
+AT ONBATT myups@localhost START-TIMER onbatt-too-long 120
+AT ONLINE myups@localhost CANCEL-TIMER onbatt-too-long
+
+<span class="comment">#!/bin/sh — upssched-cmd.sh receives the timer name as $1</span>
+case "$1" in
+  onbatt-too-long)
+    logger -t upssched "On battery 120s; forcing early shutdown"
+    /usr/local/sbin/upsmon -c fsd
+    ;;
+esac</code></pre>
+<p>Two minutes on battery → forced shutdown, with the battery still half full instead of empty. Pick the timer from §3's runtime math: at your measured load, leave at least 2× the time a clean halt takes.</p>
+
+<h3>The second brain: macOS's own shutdown rules</h3>
+<p>With the UPS attached, the Apple stack keeps its own thresholds, visible and settable via <code>pmset</code>'s UPS flags (per <code>pmset(1)</code>: <code>haltlevel</code> %, <code>haltafter</code> minutes on UPS, <code>haltremain</code> minutes-left) and mirrored in Energy Saver's UPS options. Two brains can both order a shutdown; that is safe — the second order finds the system already halting — but make NUT the authority so behavior is in one config you version and test. Either disable Apple's thresholds or set them strictly <em>later</em> than NUT's, and check the current state with <code>pmset -g ups</code>.</p>
+
+<h3>Closing the loop: restart after power returns</h3>
+<p>Because <code>macosx-ups</code> is monitoring-only, it cannot tell the UPS to cut and restore outlet power the way Linux + <code>usbhid-ups</code> setups do. Sequence that follows a real outage: your Mac halts → UPS discharges to empty → outlets drop → wall power returns → outlets energize. For the Mac to come back on its own at that last step:</p>
+<pre><code><span class="cmd">sudo pmset -a autorestart 1</span>
+<span class="cmd">pmset -g | grep autorestart</span></code></pre>
+<p>This is macOS's "start up automatically after a power failure." Without it, the 3&nbsp;a.m. outage ends with a Mac that stays dark until you press the button.</p>
+
+<div class="callout danger">
+  <strong>Testing with <code>upsmon -c fsd</code> really shuts your Mac down</strong>
+  <code>sudo /usr/local/sbin/upsmon -c fsd</code> declares a forced shutdown: SHUTDOWNCMD runs within seconds, and by design the FSD flag cannot be un-latched without restarting upsd. This is the correct way to prove the shutdown path end-to-end — and the wrong thing to run with unsaved work open. Save everything, run it, watch the halt, boot, and check the logs. Schedule the first full test deliberately.
+</div>
+
+<div class="lab">
+<div class="lab-title">Lab 3 · Fire drill</div>
+<div class="lab-meta">20 minutes · UPS attached · work saved · does actually power-cycle your session</div>
+<ol>
+<li>Confirm the stack is up (<code>upsc myups@localhost ups.status</code> → <code>OL</code>) and <code>autorestart</code> is 1.</li>
+<li>Pull the UPS's <strong>wall plug</strong> (never the USB cable — that tests the wrong failure). Within POLLFREQALERT seconds:
+<pre><code><span class="cmd">upsc myups@localhost ups.status</span></code></pre>
+<p class="expect"><code>OB</code>, a notification if you wired §9's NOTIFYCMD, and an ONBATT line in the logs.</p></li>
+<li>Watch <code>battery.charge</code> fall for a minute, then restore wall power.
+<p class="expect">status returns to <code>OL</code> (often via a charging flag); ONLINE event logged. You have now seen the full OB round-trip without risking a shutdown.</p></li>
+<li>The real drill: save everything, then either wait out your upssched timer with the plug pulled, or trigger directly:
+<pre><code><span class="cmd">sudo /usr/local/sbin/upsmon -c fsd</span></code></pre>
+<p class="expect">clean halt within ~10 s.</p></li>
+<li>Boot, then read the sequence back from the unified log (§10's commands) and from <code>upsc</code>. Verify the timeline matches the diagram above.</li>
+</ol>
+<div class="checkpoint">you have watched your own Mac take the 3 a.m. decision correctly while you supervised. That is the difference between installed and protected.</div>
+</div>
+<p class="sources-line">Sources: <a href="https://networkupstools.org/docs/man/upsmon.html" target="_blank" rel="noopener">upsmon(8)</a> · <a href="https://networkupstools.org/docs/man/upsmon.conf.html" target="_blank" rel="noopener">upsmon.conf(5)</a> · <a href="https://networkupstools.org/docs/man/upssched.html" target="_blank" rel="noopener">upssched(8)</a> · <code>man pmset</code> (local)</p>
+</section>
+
+<section id="monitoring">
+<h2>10 · Monitoring — reading both stacks</h2>
+<p class="lede">When something is off — runtime seems short, the status looks stale, a shutdown fired that shouldn't have — you want testimony from two independent witnesses. Your Mac has them: NUT's view and Apple's view of the same hardware. When they agree, trust the reading. When they disagree, the disagreement itself is the diagnostic.</p>
+
+<h3>The NUT witness</h3>
+<pre><code><span class="comment"># full variable dump — the baseline you captured in Lab 1</span>
+<span class="cmd">upsc myups@localhost</span>
+
+<span class="comment"># one variable, script-friendly</span>
+<span class="cmd">upsc myups@localhost battery.charge</span>
+
+<span class="comment"># continuous CSV logging: one line per minute to a file</span>
+<span class="cmd">upslog -s myups@localhost -l ~/ups-log.txt -i 60</span>
+
+<span class="comment"># quick live watch in a spare terminal</span>
+<span class="cmd">while sleep 5; do printf '%s  %s  %s%%  %ss\n' "$(date +%T)" \
+  "$(upsc myups@localhost ups.status 2>/dev/null)" \
+  "$(upsc myups@localhost battery.charge 2>/dev/null)" \
+  "$(upsc myups@localhost battery.runtime 2>/dev/null)"; done</span></code></pre>
+
+<h3>The Apple witness</h3>
+<pre><code><span class="comment"># current power sources — the fastest health check</span>
+<span class="cmd">pmset -g ps</span>
+<span class="out">Now drawing from 'AC Power'
+ -InternalBattery-0 (id=9175139)	100%; charged; 0:00 remaining present: true</span>
+
+<span class="comment"># Apple's UPS shutdown thresholds (empty when no UPS is attached)</span>
+<span class="cmd">pmset -g ups</span>
+
+<span class="comment"># hardware detail: is the UPS even enumerated on USB?</span>
+<span class="cmd">system_profiler SPUSBDataType | grep -i -A10 "tripp\|ups"</span>
+<span class="cmd">system_profiler SPPowerDataType</span></code></pre>
+<p>The transcript above is this machine with the UPS detached — only the internal battery reports. A healthy attached UPS adds its own line to <code>pmset -g ps</code>. That presence/absence check settles the most fundamental question in seconds and needs no NUT at all.</p>
+
+<h3>Deep history: the unified log and <code>ioupsd</code></h3>
+<p>Apple's <code>ioupsd</code> narrates every UPS state change into the unified log. This is your black-box recorder: after any incident, the answer to "what did the Mac believe, and when?" is already on disk.</p>
+<pre><code><span class="comment"># live tail while you run a fire drill</span>
+<span class="cmd">log stream --predicate 'process == "ioupsd"'</span>
+
+<span class="comment"># reconstruct an incident: dump the last 3 hours to a file</span>
+<span class="cmd">log show --debug --last 3h --predicate 'process == "ioupsd"' > ~/macos-ups-log.txt</span></code></pre>
+<p>The dump is verbose — each <code>dispatchEvent</code> block repeats every HID property. The extractor below (a cleaned-up version of a script battle-tested on this machine's own logs) collapses it to one line per <em>state change</em>: charge, alarm, failure flag, charging flag, source, and runtime.</p>
+<pre><code><span class="cmd">UPS_DUMP="$HOME/macos-ups-log.txt"</span>
+<span class="cmd">perl -0777 -ne '
+  while (
+    /(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3})
+     [^\n]*dispatchEvent:\s*\{([^}]*)\}/sgx
+  ) {
+    $time  = $1;
+    $block = $2;
+
+    ($charge)   = $block =~ /"Current Capacity"\s*=\s*(\d+)/;
+    ($alarm)    = $block =~ /"Enable Audible Alarm"\s*=\s*(\d+)/;
+    ($failure)  = $block =~ /"Internal Failure"\s*=\s*(\d+)/;
+    ($charging) = $block =~ /"Is Charging"\s*=\s*(\d+)/;
+    ($source)   = $block =~ /"Power Source State"\s*=\s*"([^"]+)"/;
+    ($runtime)  = $block =~ /"Time to Empty"\s*=\s*(\d+)/;
+
+    next unless defined $charge &amp;&amp; defined $source;
+
+    $alarm    = "unavailable" unless defined $alarm;
+    $failure  = "unavailable" unless defined $failure;
+    $charging = "unavailable" unless defined $charging;
+    $runtime  = "unavailable" unless defined $runtime;
+
+    $state = "charge=$charge alarm=$alarm failure=$failure " .
+             "charging=$charging source=$source runtime=$runtime";
+
+    if ($state ne $previous) {
+      print "$time  $state\n";
+      $previous = $state;
+    }
+  }
+' "$UPS_DUMP"</span></code></pre>
+<p>Output reads like a flight recorder: a timestamped line each time anything changed. <code>Power Source State</code> flips between <code>"AC Power"</code> and <code>"Battery Power"</code> at the exact millisecond of each transfer — lay it beside upsmon's log and the two witnesses cross-examine each other.</p>
+
+<h3>Translation table — pmset instinct → NUT move</h3>
+<div class="table-wrap"><table>
+<tr><th>You'd reach for…</th><th>NUT equivalent</th><th>Why the NUT form wins</th></tr>
+<tr><td><code>pmset -g ps</code></td><td><code>upsc myups@localhost ups.status</code></td><td>Machine-readable tokens (OL/OB/LB) instead of prose; identical syntax against remote UPSes later.</td></tr>
+<tr><td><code>pmset -g batt</code> percentages</td><td><code>upsc myups@localhost battery.charge</code> / <code>battery.runtime</code></td><td>One variable per query — scriptable without parsing.</td></tr>
+<tr><td>Energy Saver UPS sliders</td><td><code>upsmon.conf</code> + <code>upssched</code> timers</td><td>Version-controllable, testable, comment-able; policies beyond "at N percent."</td></tr>
+<tr><td><code>log show … ioupsd</code> forensics</td><td><code>upslog</code> continuous CSV</td><td>Proactive recording at your chosen interval vs after-the-fact archaeology. (Keep both.)</td></tr>
+<tr><td>Menu-bar battery icon</td><td>the <code>while sleep 5</code> watch loop above</td><td>Shows OB/LB transitions and runtime, not just a percentage.</td></tr>
+</table></div>
+<p class="sources-line">Sources: <a href="https://networkupstools.org/docs/man/upslog.html" target="_blank" rel="noopener">upslog(8)</a> · <code>man pmset</code>, <code>man log</code> (local)</p>
+</section>
+
+<section id="battery">
+<h2>11 · Battery health &amp; maintenance</h2>
+<p class="lede">Every number in this guide silently assumes a healthy battery. Lead-acid chemistry guarantees that assumption expires: capacity fades slowly, then suddenly, and the UPS keeps reporting green right up until an outage proves otherwise. Maintenance is the practice of finding that out on your schedule instead of the grid's.</p>
+
+<h3>What you are maintaining</h3>
+<p>The AVR900U holds a 12&nbsp;V valve-regulated lead-acid (VRLA) battery — the sealed, maintenance-free descendant of a car battery. "Maintenance-free" means no fluid to top up; it does not mean immortal. Typical service life for this class is 3–5 years, shortened by heat (chemistry roughly doubles its aging rate per 8–10&nbsp;°C), deep discharges, and time spent sitting empty. Recharge after a full discharge takes about 8 hours to reach 90&nbsp;%.</p>
+
+<div class="callout blue">
+  <strong>Misconception: "100% charge means a healthy battery."</strong>
+  <code>battery.charge: 100</code> measures fullness, not capacity. An aged battery reaches "100&nbsp;%" of a shrunken tank. The number that exposes aging is <strong>runtime under a known load</strong> — which is why the calibration below is the one maintenance habit that matters.
+</div>
+
+<h3>Runtime calibration — twice a year</h3>
+<p>The point: measure how long the battery actually lasts at your real load, so LB thresholds and the §9 timer rest on today's battery, not the 2.7/10-minute numbers from the datasheet.</p>
+<div class="lab">
+<div class="lab-title">Lab 4 · Measured-runtime test</div>
+<div class="lab-meta">30 minutes · UPS attached · save your work first — this ends in a real shutdown if you let it run</div>
+<ol>
+<li>Start recorders on both witnesses: <code>upslog -s myups@localhost -l ~/calib-$(date +%F).csv -i 10</code> in one terminal, <code>log stream --predicate 'process == "ioupsd"'</code> in another.</li>
+<li>Note the starting reading: <code>upsc myups@localhost battery.charge battery.runtime</code>.</li>
+<li>Pull the UPS wall plug. Let it discharge at your normal working load.</li>
+<li>Either ride it down to the automated shutdown (the honest full test — your §9 machinery gets exercised too), or restore power at 40&nbsp;% if you only want a capacity data point without the halt.</li>
+<li>Afterwards, from the CSV: elapsed minutes from OB to LB (or to your cutoff), and whether the UPS's <code>battery.runtime</code> predictions tracked reality or flattered it.</li>
+</ol>
+<div class="checkpoint">you know this quarter's true runtime. If it dropped meaningfully since the last test, shorten the upssched timer now and budget for a battery.</div>
+</div>
+
+<h3>Replacement</h3>
+<ul>
+  <li><strong>When:</strong> measured runtime clearly declining, the unit's alarm/fault behavior signaling battery trouble, a <code>REPLBATT</code> event from upsmon, or age past ~4 years — whichever arrives first.</li>
+  <li><strong>What:</strong> the official replacement is Tripp Lite <strong>RBC51</strong>; the cell inside is a standard 12&nbsp;V sealed lead-acid block, and matching-spec third-party cells (12&nbsp;V, matching Ah, F2 terminals) are widely sold for this model.</li>
+  <li><strong>How:</strong> power down and unplug the unit, open the battery door per the unit's label, swap the connector, and give the new battery a full 24&nbsp;h charge before trusting it with a runtime test. Recycle the old cell — any auto-parts store takes sealed lead-acid.</li>
+  <li><strong>After:</strong> run Lab 4 again. A new battery that can't beat the old one's numbers is a warranty conversation.</li>
+</ul>
+
+<h3>Load discipline</h3>
+<p>Runtime maintenance has a second lever: what you plug in. Keep the battery side of the UPS for things that must survive the outage — the Mac, the display you need to see the shutdown, the router/modem if remote access matters. Move speakers, chargers, lamps, and anything with a motor or heater to the surge-only outlets or the wall. Recheck after every desk reshuffle; load creep is silent and §3's math says every watt removed pays back runtime with interest.</p>
+<p class="sources-line">Sources: <a href="https://tripplite.eaton.com/avr-series-120v-900va-480w-ultra-compact-line-interactive-ups-usb-port~AVR900U" target="_blank" rel="noopener">Eaton/Tripp Lite AVR900U product page</a> · <a href="https://networkupstools.org/docs/man/upsmon.conf.html" target="_blank" rel="noopener">upsmon.conf(5)</a> (REPLBATT)</p>
+</section>
+
+<section id="troubleshooting">
+<h2>12 · Troubleshooting</h2>
+<p class="lede">Almost every failure in this stack announces which layer it lives in, if you read the error precisely. Work the ladder from §6 — hardware visible → driver up → upsd answering → upsmon deciding — and each symptom below names its own rung.</p>
+
+<div class="table-wrap"><table>
+<tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr>
+<tr><td><code>upsc</code>: <code>Error: Connection failure: Connection refused</code></td><td><code>upsd</code> is not running (nothing listens on 3493).</td><td><code>sudo launchctl print system/org.nut.upsd</code>; if absent, bootstrap it (§8). Manual check: <code>sudo /usr/local/sbin/upsd -F -D</code> and read its complaint.</td></tr>
+<tr><td><code>upsc</code>: <code>Error: Driver not connected</code></td><td>upsd is fine; the driver layer is down or can't see the UPS.</td><td>Run the driver in debug: <code>sudo /usr/local/bin/macosx-ups -a myups -DD</code>. No power source found → check the USB cable and <code>pmset -g ps</code>.</td></tr>
+<tr><td>UPS absent from <code>pmset -g ps</code> and <code>system_profiler SPUSBDataType</code></td><td>macOS doesn't see the hardware — cable, port, or the UPS's USB interface.</td><td>Different cable (data-capable, not charge-only), different port, no hub. Until Apple's stack sees it, <code>macosx-ups</code> has nothing to read.</td></tr>
+<tr><td>Driver starts then exits; launchd respawns it every 30 s</td><td>UPS unplugged from USB while KeepAlive is set (§8's known loop).</td><td>Reattach the UPS, or <code>sudo launchctl bootout system/org.nut.driver</code> during long detachments.</td></tr>
+<tr><td><code>tripplite_usb</code> fails to claim/find the unit</td><td>Wrong driver for this hardware generation on this OS (§5).</td><td>Use <code>macosx-ups</code>. Not a hardware fault.</td></tr>
+<tr><td>Everything ran until a reboot; nothing after</td><td>Stack was hand-started, or only <code>brew services</code> (upsmon-only) survives boot.</td><td>Install all three launchd jobs (§8, Lab 2); confirm with <code>launchctl print</code> after reboot.</td></tr>
+<tr><td>Stale readings: charge/status frozen while reality changes</td><td>Driver wedged, or two driver instances fighting (manual + launchd).</td><td><code>ps aux | egrep "macosx-ups|upsd|upsmon" | grep -v egrep</code> — exactly one of each. Kill strays: <code>sudo pkill -f macosx-ups</code>; launchd relaunches its own cleanly.</td></tr>
+<tr><td>Shutdown fired "too early" during a blip</td><td>upssched timer shorter than your grid's ordinary flickers, or Apple's thresholds (the second brain, §9) firing first.</td><td>Read both logs (§10) to see who ordered it; lengthen the timer or defang <code>pmset -g ups</code> thresholds.</td></tr>
+<tr><td>Shutdown never fired in a real outage</td><td>The chain was broken somewhere and never tested end-to-end.</td><td>Run Lab 3's fire drill now; the logs from the failed night (§10's <code>log show</code>) tell you which link lied.</td></tr>
+<tr><td>Mac stayed off after power returned</td><td><code>autorestart</code> not set (§9).</td><td><code>sudo pmset -a autorestart 1</code>.</td></tr>
+<tr><td>UPS clicks (relay) frequently but never goes OB</td><td>AVR doing its job on wandering wall voltage (§3).</td><td>Normal in moderation. Constant clicking → wall voltage chronically out of range; worth an electrician's look.</td></tr>
+<tr><td><code>REPLBATT</code> events, or runtime collapsed since last calibration</td><td>Battery aging out.</td><td>§11 — replace, recharge 24 h, re-run Lab 4.</td></tr>
+</table></div>
+
+<div class="callout">
+  <strong>The universal first move</strong>
+  Two commands, ten seconds, before any theory: <code>pmset -g ps</code> (does the OS see the UPS?) and <code>upsc myups@localhost ups.status</code> (does NUT?). The four combinations of see/don't-see point at hardware, driver, server, or nothing wrong — respectively and unambiguously.
+</div>
+</section>
+
+<section id="simulator">
+<h2>13 · Power-event simulator</h2>
+<p class="lede">You cannot rehearse outages on demand — but the state machine that manages them is simple enough to carry in your head, and this simulator exists to put it there. It models a 480 W-class UPS with your stack attached: fail the wall power, watch status tokens flip, see upsmon's events fire, and learn the rhythm before the real thing tests you.</p>
+
+<div class="sim" id="upsSim">
+  <div class="sim-controls">
+    <button type="button" class="primary" id="simOutage">⚡ Fail wall power</button>
+    <button type="button" id="simRestore" disabled>🔌 Restore wall power</button>
+    <button type="button" id="simLoad">Load: 240 W</button>
+    <button type="button" id="simSched">upssched 120 s: on</button>
+    <button type="button" id="simReset">Reset</button>
+  </div>
+  <div class="sim-status-row" aria-live="polite">
+    <div class="sim-stat"><div class="k">ups.status</div><div class="v ol" id="simStatus">OL</div></div>
+    <div class="sim-stat"><div class="k">battery.charge</div><div class="v" id="simCharge">100%</div></div>
+    <div class="sim-stat"><div class="k">battery.runtime</div><div class="v" id="simRuntime">—</div></div>
+    <div class="sim-stat"><div class="k">system</div><div class="v" id="simSystem">up</div></div>
+  </div>
+  <div class="sim-battbar"><div class="fill" id="simBattFill"></div></div>
+  <div class="sim-log" id="simLog" aria-label="Simulated upsmon log"></div>
+</div>
+<p>Things worth trying deliberately: fail power at 240 W and watch how long the OB phase lasts with the early-shutdown timer on versus off; raise the load to 480 W and see the timer become the only thing standing between you and an LB race; restore power mid-countdown and watch the timer cancel — the exact behavior §9's <code>CANCEL-TIMER</code> line buys you. Time compression: one simulated minute ≈ two real seconds.</p>
+<div class="callout blue">
+  <strong>What the simulator deliberately gets wrong</strong>
+  It is a teaching model, not a replica: discharge is linearized from the AVR900U's two published runtime points, LB fires at a fixed 20&nbsp;%, and the halt is instant. Real batteries sag non-linearly (§3), real LB comes from firmware opinion (§9), and a real macOS halt takes seconds. The state <em>transitions</em> and the order of events are the faithful part — that is what you are here to internalize.
+</div>
+</section>
+
+<section id="capstone">
+<h2>14 · Capstone — the trusted-stack audit</h2>
+<p class="lede">The capstone is not a new build; it is proving the one you have. Run it after finishing the guide, and then again once a quarter — it exercises every layer, both witnesses, the automation, and the battery in one sitting, and ends with a written record you will thank yourself for.</p>
+
+<ol class="step-list">
+<li><strong>Cold-start proof.</strong> Reboot the Mac. Before opening anything else: <code>upsc myups@localhost ups.status</code> → <code>OL</code>. All three launchd jobs report <code>state = running</code> under <code>sudo launchctl print</code>. (§8)</li>
+<li><strong>Witness agreement.</strong> <code>pmset -g ps</code> shows the UPS; its charge agrees with <code>upsc</code>'s <code>battery.charge</code> within a point or two. Disagreement is your first finding. (§10)</li>
+<li><strong>Config review.</strong> Read all four config files end to end. Every line should be one you can explain; any you can't, this guide's §4–§9 name. Confirm modes/permissions on <code>upsd.users</code> and <code>upsmon.conf</code> are 600. (§7)</li>
+<li><strong>Event round-trip.</strong> Recorders on (Lab 4 step 1), pull the wall plug for 60 seconds, restore. Verify ONBATT and ONLINE appear in upsmon's log, the notification fired, and ioupsd's log shows the same transitions at the same timestamps. (§9, §10)</li>
+<li><strong>Fire drill.</strong> Work saved; run the full shutdown path — upssched timer or <code>sudo upsmon -c fsd</code> — and let the machine halt. Boot; confirm <code>autorestart</code> is still 1. (§9, Lab 3)</li>
+<li><strong>Runtime measurement.</strong> Lab 4 in full. Record date, load, minutes measured. Compare against last quarter; adjust the upssched timer if the battery has faded. (§11)</li>
+<li><strong>Write it down.</strong> Three lines in a log file next to your configs: date, measured runtime, anything that surprised you. The quarter-over-quarter trend of that file is your battery-replacement early-warning system.</li>
+</ol>
+<div class="callout">
+  <strong>Passing grade</strong>
+  Every step verified with output you saw, not remembered; zero steps skipped because "it worked last time." A stack that passes all seven is one you may stop thinking about for three months — which was the point of building it.
+</div>
+</section>
+
+<section id="cheat-sheet">
+<h2>15 · Cheat sheet</h2>
+<p class="lede">The working set, one glance. The universal starting pattern comes first — it answers "is everything okay?" in two lines and is the opening move of every §12 diagnosis.</p>
+
+<pre><code><span class="comment"># the universal starting pattern</span>
+<span class="cmd">pmset -g ps</span>                              <span class="comment"># does macOS see the UPS?</span>
+<span class="cmd">upsc myups@localhost ups.status</span>          <span class="comment"># does NUT? want: OL</span></code></pre>
+
+<div class="cards">
+<div class="card"><div class="card-head">Query</div>
+<code>upsc myups@localhost</code> — everything<br>
+<code>upsc myups@localhost battery.charge</code><br>
+<code>upsc myups@localhost battery.runtime</code><br>
+<code>upsc -l localhost</code> — list UPS names</div>
+<div class="card"><div class="card-head">Manual stack (debug)</div>
+<code>sudo upsdrvctl -D start myups</code><br>
+<code>sudo /usr/local/sbin/upsd -F -D</code><br>
+<code>sudo /usr/local/bin/macosx-ups -a myups -DD</code><br>
+<code>ps aux | egrep "macosx-ups|upsd|upsmon"</code></div>
+<div class="card"><div class="card-head">launchd</div>
+<code>sudo launchctl bootstrap system /Library/LaunchDaemons/org.nut.upsd.plist</code><br>
+<code>sudo launchctl print system/org.nut.upsd</code><br>
+<code>sudo launchctl bootout system/org.nut.upsd</code><br>
+<code>plutil -lint …plist</code></div>
+<div class="card"><div class="card-head">Apple stack</div>
+<code>pmset -g ps</code> · <code>pmset -g ups</code><br>
+<code>sudo pmset -a autorestart 1</code><br>
+<code>system_profiler SPUSBDataType</code><br>
+<code>log stream --predicate 'process == "ioupsd"'</code></div>
+<div class="card"><div class="card-head">Logging</div>
+<code>upslog -s myups@localhost -l FILE -i 60</code><br>
+<code>log show --debug --last 3h --predicate 'process == "ioupsd"' &gt; dump.txt</code><br>
+§10's perl extractor for state changes</div>
+<div class="card"><div class="card-head">Danger</div>
+<code>sudo upsmon -c fsd</code> — real shutdown, latched<br>
+Fire drill = pull <em>wall</em> plug, never USB<br>
+Config lives in <code>/usr/local/etc/nut/</code></div>
+</div>
+
+<div class="table-wrap"><table>
+<tr><th>Status token</th><th>Meaning</th><th>Your posture</th></tr>
+<tr><td><code>OL</code></td><td>Online, wall power good</td><td>Normal; ignore.</td></tr>
+<tr><td><code>OB</code></td><td>On battery — outage in progress</td><td>Countdown running; upssched timer armed.</td></tr>
+<tr><td><code>LB</code></td><td>Low battery</td><td>With OB: shutdown is imminent and automatic.</td></tr>
+<tr><td><code>CHRG</code> / <code>DISCHRG</code></td><td>Charging / discharging flags</td><td>Context alongside OL/OB.</td></tr>
+<tr><td><code>FSD</code></td><td>Forced shutdown declared</td><td>Too late to argue; it latches until upsd restarts.</td></tr>
+</table></div>
+</section>
+
+<section id="glossary">
+<h2>16 · Glossary</h2>
+<dl class="glossary">
+<dt id="g-avr">AVR — automatic voltage regulation</dt><dd>A line-interactive UPS's transformer trick: correcting brownouts/overvoltage without switching to battery. (<a href="#hardware">§3</a>)</dd>
+<dt id="g-driver">Driver (NUT)</dt><dd>The process that speaks to one UPS and translates its state into NUT's standard variables. Here: <code>macosx-ups</code>. (<a href="#drivers">§5</a>)</dd>
+<dt id="g-fsd">FSD — forced shutdown</dt><dd>upsmon's point of no return: the flag that commits every attached machine to shutting down. Latched by design until upsd restarts. (<a href="#shutdown">§9</a>)</dd>
+<dt id="g-hid">HID Power Device Class</dt><dd>The USB standard for batteries and UPSes. Why macOS auto-recognizes the AVR900U — and why the kernel claims it before NUT can. (<a href="#mental-model">§1</a>, <a href="#drivers">§5</a>)</dd>
+<dt id="g-ioupsd">ioupsd</dt><dd>Apple's UPS daemon; narrates UPS state changes into the unified log. The "Apple witness." (<a href="#monitoring">§10</a>)</dd>
+<dt id="g-launchd">launchd / LaunchDaemon</dt><dd>macOS's init system and its root-context boot jobs, defined by plists in <code>/Library/LaunchDaemons</code>. (<a href="#launchd">§8</a>)</dd>
+<dt id="g-lb">LB — low battery</dt><dd>Status token meaning the battery is nearly spent; OB+LB together triggers the automated shutdown. (<a href="#mental-model">§1</a>, <a href="#shutdown">§9</a>)</dd>
+<dt id="g-line-interactive">Line-interactive</dt><dd>UPS topology between cheap standby and expensive double-conversion: AVR for small deviations, battery for real failures. (<a href="#hardware">§3</a>)</dd>
+<dt id="g-master">Master / primary</dt><dd>The upsmon role for a machine powered by the UPS that coordinates shutdown. "Primary" is NUT 2.8's newer spelling. (<a href="#access-control">§7</a>)</dd>
+<dt id="g-mode">MODE=standalone</dt><dd>NUT's arrangement for one machine protecting itself with a local UPS — this guide's entire scope. (<a href="#install">§4</a>)</dd>
+<dt id="g-ob">OB — on battery</dt><dd>Status token: wall power failed, stored energy is being spent. (<a href="#mental-model">§1</a>)</dd>
+<dt id="g-ol">OL — online</dt><dd>Status token: wall power good. The state you want to be bored by. (<a href="#mental-model">§1</a>)</dd>
+<dt id="g-peukert">Peukert effect</dt><dd>Lead-acid batteries yield less energy at higher discharge rates — why half load gives ~4× runtime, not 2×. (<a href="#hardware">§3</a>)</dd>
+<dt id="g-pmset">pmset</dt><dd>macOS's power-management CLI: reads power sources, sets UPS thresholds and <code>autorestart</code>. (<a href="#monitoring">§10</a>, <a href="#shutdown">§9</a>)</dd>
+<dt id="g-rbc51">RBC51</dt><dd>Tripp Lite's replacement battery model for the AVR900U: 12 V sealed lead-acid. (<a href="#battery">§11</a>)</dd>
+<dt id="g-shutdowncmd">SHUTDOWNCMD</dt><dd>The command upsmon's root stub runs when shutdown is required — <code>/sbin/shutdown -h now</code> on macOS. (<a href="#shutdown">§9</a>)</dd>
+<dt id="g-upsc">upsc</dt><dd>NUT's query client: dumps a UPS's variables, or one variable, script-cleanly. (<a href="#bring-up">§6</a>)</dd>
+<dt id="g-upsd">upsd</dt><dd>NUT's data server: publishes driver state on TCP 3493 to authenticated clients. (<a href="#access-control">§7</a>)</dd>
+<dt id="g-upsdrvctl">upsdrvctl</dt><dd>Start/stop wrapper for NUT drivers listed in <code>ups.conf</code>. Not used under launchd, which runs the driver binary directly. (<a href="#bring-up">§6</a>, <a href="#launchd">§8</a>)</dd>
+<dt id="g-upslog">upslog</dt><dd>NUT's CSV logger — one status line per interval, ideal for calibration records. (<a href="#monitoring">§10</a>)</dd>
+<dt id="g-upsmon">upsmon</dt><dd>NUT's monitor: watches <code>ups.status</code>, fires notifications, and executes the shutdown decision via a privileged stub. (<a href="#shutdown">§9</a>)</dd>
+<dt id="g-upssched">upssched</dt><dd>Timer layer between upsmon events and actions — "on battery 120 s → shut down early," cancelled if power returns. (<a href="#shutdown">§9</a>)</dd>
+<dt id="g-va">VA vs W</dt><dd>Apparent vs real power. Size the UPS by watts (480 W here); VA is the marketing number. (<a href="#hardware">§3</a>)</dd>
+<dt id="g-vrla">VRLA — valve-regulated lead-acid</dt><dd>Sealed "maintenance-free" battery chemistry: no topping up, 3–5 year life, heat-sensitive. (<a href="#battery">§11</a>)</dd>
+</dl>
+</section>
+
+<section id="index">
+<h2>17 · Index</h2>
+<div class="index-cols">
+<ul><li class="idx-letter">A</li>
+<li><a href="#hardware">AVR (voltage regulation)</a></li>
+<li><a href="#shutdown">autorestart (pmset)</a></li>
+<li><a href="#hardware">AVR900U specifications</a></li>
+</ul>
+<ul><li class="idx-letter">B</li>
+<li><a href="#bring-up">baseline output (upsc)</a></li>
+<li><a href="#battery">battery replacement</a></li>
+<li><a href="#monitoring">battery.charge</a></li>
+<li><a href="#bring-up">battery.runtime</a></li>
+<li><a href="#launchd">brew services (upsmon-only trap)</a></li>
+<li><a href="#install">brew install nut</a></li>
+</ul>
+<ul><li class="idx-letter">C</li>
+<li><a href="#battery">calibration, runtime</a></li>
+<li><a href="#bring-up">Connection refused (diagnosis)</a></li>
+<li><a href="#install">config file layout</a></li>
+</ul>
+<ul><li class="idx-letter">D</li>
+<li><a href="#drivers">driver decision matrix</a></li>
+<li><a href="#bring-up">Driver not connected (diagnosis)</a></li>
+</ul>
+<ul><li class="idx-letter">E</li>
+<li><a href="#shutdown">Energy Saver thresholds</a></li>
+</ul>
+<ul><li class="idx-letter">F</li>
+<li><a href="#shutdown">fire drill</a></li>
+<li><a href="#shutdown">FSD (forced shutdown)</a></li>
+</ul>
+<ul><li class="idx-letter">I</li>
+<li><a href="#monitoring">ioupsd log mining</a></li>
+</ul>
+<ul><li class="idx-letter">K</li>
+<li><a href="#launchd">KeepAlive respawn loop</a></li>
+</ul>
+<ul><li class="idx-letter">L</li>
+<li><a href="#launchd">launchctl bootstrap / bootout</a></li>
+<li><a href="#launchd">LaunchDaemons plists</a></li>
+<li><a href="#mental-model">LB / OB / OL tokens</a></li>
+<li><a href="#battery">load discipline</a></li>
+<li><a href="#monitoring">log stream (ioupsd)</a></li>
+</ul>
+<ul><li class="idx-letter">M</li>
+<li><a href="#drivers">macosx-ups driver</a></li>
+<li><a href="#access-control">MONITOR line</a></li>
+<li><a href="#install">MODE=standalone</a></li>
+</ul>
+<ul><li class="idx-letter">N</li>
+<li><a href="#shutdown">NOTIFYCMD / notifications</a></li>
+<li><a href="#mental-model">NUT architecture</a></li>
+</ul>
+<ul><li class="idx-letter">P</li>
+<li><a href="#hardware">Peukert effect</a></li>
+<li><a href="#monitoring">perl state-change extractor</a></li>
+<li><a href="#monitoring">pmset -g ps / ups</a></li>
+<li><a href="#shutdown">POLLFREQ / POLLFREQALERT</a></li>
+</ul>
+<ul><li class="idx-letter">R</li>
+<li><a href="#battery">RBC51 battery</a></li>
+<li><a href="#battery">REPLBATT event</a></li>
+<li><a href="#hardware">runtime vs load curve</a></li>
+</ul>
+<ul><li class="idx-letter">S</li>
+<li><a href="#shutdown">SHUTDOWNCMD</a></li>
+<li><a href="#simulator">simulator, power-event</a></li>
+<li><a href="#monitoring">system_profiler checks</a></li>
+</ul>
+<ul><li class="idx-letter">T</li>
+<li><a href="#drivers">tripplite_usb (why not)</a></li>
+<li><a href="#troubleshooting">troubleshooting table</a></li>
+</ul>
+<ul><li class="idx-letter">U</li>
+<li><a href="#bring-up">upsc</a></li>
+<li><a href="#access-control">upsd.users / passwords</a></li>
+<li><a href="#launchd">upsmon privileges (root stub)</a></li>
+<li><a href="#shutdown">upsmon -c fsd</a></li>
+<li><a href="#shutdown">upssched timers</a></li>
+<li><a href="#monitoring">upslog CSV logging</a></li>
+<li><a href="#drivers">usbhid-ups (why not on macOS)</a></li>
+</ul>
+<ul><li class="idx-letter">V</li>
+<li><a href="#hardware">VA vs watts</a></li>
+<li><a href="#battery">VRLA battery care</a></li>
+</ul>
+</div>
+</section>
+
+<section id="quiz">
+<h2>18 · Quiz</h2>
+<p class="lede">Self-scored flashcards — answer out loud before revealing, then mark yourself honestly. Aim for 12/14; every answer links back to the section that taught it, and the two you miss are tonight's re-reading list.</p>
+<div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0/14 answered</div>
+
+<div class="quiz-item" data-q="1">
+  <div class="quiz-q"><span class="qnum">Q1</span>Two software stacks can manage the AVR900U on macOS. Name both and the relationship between them.</div>
+  <div class="quiz-answer">The Apple stack (IOKit HID drivers, <code>ioupsd</code>, <code>powerd</code>, <code>pmset</code>) and the NUT stack. On macOS they are not rivals: the kernel claims the USB device, so NUT's <code>macosx-ups</code> driver reads the UPS <em>through</em> Apple's layer. Apple is the sensor; NUT is the programmable brain. (<a href="#mental-model">§1</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="2">
+  <div class="quiz-q"><span class="qnum">Q2</span>NUT's three layers — name each process, its one job, and its config file.</div>
+  <div class="quiz-answer">Driver (<code>macosx-ups</code>, hardware → standard variables, <code>ups.conf</code>) → server (<code>upsd</code>, publishes on TCP 3493, <code>upsd.conf</code>/<code>upsd.users</code>) → monitor (<code>upsmon</code>, watches status and executes shutdown, <code>upsmon.conf</code>). (<a href="#mental-model">§1</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="3">
+  <div class="quiz-q"><span class="qnum">Q3</span>Which exact status combination triggers the automated shutdown?</div>
+  <div class="quiz-answer"><code>OB</code> + <code>LB</code> together — on battery <em>and</em> low battery. OB alone starts a countdown; LB alone (on wall power) is a battery-health complaint, not an emergency. (<a href="#mental-model">§1</a>, <a href="#shutdown">§9</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="4">
+  <div class="quiz-q"><span class="qnum">Q4</span>The AVR900U says "900 VA / 480 W." Which number do you size against, and why?</div>
+  <div class="quiz-answer">480 W. Watts measure real power drawn; VA is apparent power, always the larger, marketing-friendly number. The unit can carry 480 W of real load, full stop. (<a href="#hardware">§3</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="5">
+  <div class="quiz-q"><span class="qnum">Q5</span>Halving the load takes runtime from 2.7 to ~10 minutes — not 5.4. What's the effect called and what's the practical consequence?</div>
+  <div class="quiz-answer">The Peukert effect: lead-acid delivers less usable energy at higher discharge rates. Consequence: shedding load pays back runtime disproportionately — moving one appliance off battery outlets can double your shutdown budget. (<a href="#hardware">§3</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="6">
+  <div class="quiz-q"><span class="qnum">Q6</span>Why is <code>macosx-ups</code> the right driver here, when <code>usbhid-ups</code> speaks the AVR900U's exact protocol?</div>
+  <div class="quiz-answer">Because macOS's kernel claims HID power devices and NUT cannot detach it (unlike Linux). <code>macosx-ups</code> sidesteps the fight by reading Apple's power layer. The cost: monitoring-only, fewer variables, no UPS commands. (<a href="#drivers">§5</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="7">
+  <div class="quiz-q"><span class="qnum">Q7</span><code>upsc</code> says <code>Connection refused</code>. Same command, another day: <code>Driver not connected</code>. Which layer is broken in each case?</div>
+  <div class="quiz-answer">Connection refused → nothing listens on 3493 → <code>upsd</code> is down. Driver not connected → upsd is fine, the driver layer is down or can't see the UPS. Two errors, two layers, no ambiguity. (<a href="#bring-up">§6</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="8">
+  <div class="quiz-q"><span class="qnum">Q8</span>What does <code>brew services start nut</code> actually start, and why isn't it enough?</div>
+  <div class="quiz-answer">Only <code>upsmon</code> — Homebrew's plist runs the monitor and nothing else. After reboot you have a monitor connecting to a server that never started. The driver and upsd need their own LaunchDaemons. (<a href="#launchd">§8</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="9">
+  <div class="quiz-q"><span class="qnum">Q9</span>Why does the driver's launchd plist run <code>macosx-ups -a myups -F</code> directly instead of <code>upsdrvctl start</code>?</div>
+  <div class="quiz-answer">launchd supervises foreground processes. <code>upsdrvctl</code> spawns the driver and exits, so launchd would consider the job dead and restart it forever. The driver binary with <code>-F</code> stays in the foreground under launchd's supervision. (<a href="#launchd">§8</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="10">
+  <div class="quiz-q"><span class="qnum">Q10</span>What does <code>sudo upsmon -c fsd</code> do, and what is deliberately irreversible about it?</div>
+  <div class="quiz-answer">Declares a forced shutdown: SHUTDOWNCMD runs within seconds and the machine halts. The FSD flag latches in upsd by design — it cannot be cleared without restarting upsd, so a returning wall supply can't strand half a fleet mid-shutdown. (<a href="#shutdown">§9</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="11">
+  <div class="quiz-q"><span class="qnum">Q11</span>Waiting for LB is one shutdown policy. What better policy does <code>upssched</code> enable, and why does it fit a 2.7-minute UPS?</div>
+  <div class="quiz-answer">Time-based early shutdown: "on battery longer than N seconds → halt now, with battery to spare," cancelled if power returns. On a unit with minutes of runtime, acting at LB means acting with nearly nothing left; a 120 s timer halts with margin. (<a href="#shutdown">§9</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="12">
+  <div class="quiz-q"><span class="qnum">Q12</span>The outage ends at 4 a.m.; power is back. Why might your Mac still be off at 9 — and which single command prevents it?</div>
+  <div class="quiz-answer">Because <code>macosx-ups</code> can't command the UPS, the Mac halts and the UPS drains to empty; when wall power re-energizes the outlets, the Mac only boots if <code>sudo pmset -a autorestart 1</code> was set. (<a href="#shutdown">§9</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="13">
+  <div class="quiz-q"><span class="qnum">Q13</span>Why is <code>battery.charge: 100</code> not evidence of a healthy battery, and what measurement is?</div>
+  <div class="quiz-answer">Charge measures fullness of whatever capacity remains — an aged battery reports 100 % of a shrunken tank. The honest metric is measured runtime under your real load (Lab 4), trended quarter over quarter. (<a href="#battery">§11</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="14">
+  <div class="quiz-q"><span class="qnum">Q14</span>The universal starting pattern: which two commands, and what do the four see/don't-see combinations tell you?</div>
+  <div class="quiz-answer"><code>pmset -g ps</code> and <code>upsc myups@localhost ups.status</code>. Both see it → healthy. Neither → hardware/cable. Apple yes, NUT no → NUT stack (driver/upsd) down. Apple no, NUT yes → impossible-ish/stale data — restart the driver. (<a href="#troubleshooting">§12</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+</section>
+
+<section id="sources">
+<h2>19 · Sources</h2>
+<p>Checked with NUT 2.8.5 (Homebrew) on macOS 15.6 with a Tripp Lite AVR900U · 2026-09-01 · external links require network; the guide itself works offline. Command transcripts marked as real were captured on the verified machine; labs requiring a live UPS are marked in place.</p>
+<ul>
+  <li><a href="https://networkupstools.org/docs/user-manual.chunked/index.html" target="_blank" rel="noopener">NUT user manual</a> — best for the big picture: modes, architecture, configuration walk-throughs.</li>
+  <li><a href="https://networkupstools.org/docs/man/macosx-ups.html" target="_blank" rel="noopener">macosx-ups(8)</a> — best for this driver's exact capabilities and limits; short and worth reading whole.</li>
+  <li><a href="https://networkupstools.org/docs/man/usbhid-ups.html" target="_blank" rel="noopener">usbhid-ups(8)</a> — best for understanding what the standard HID driver would give you on Linux, and the variables the protocol defines.</li>
+  <li><a href="https://networkupstools.org/docs/man/tripplite_usb.html" target="_blank" rel="noopener">tripplite_usb(8)</a> — best for the protocol-generation split that makes it the wrong driver here.</li>
+  <li><a href="https://networkupstools.org/docs/man/upsmon.html" target="_blank" rel="noopener">upsmon(8)</a> and <a href="https://networkupstools.org/docs/man/upsmon.conf.html" target="_blank" rel="noopener">upsmon.conf(5)</a> — best for the shutdown decision machinery: privileges, FSD, NOTIFY events.</li>
+  <li><a href="https://networkupstools.org/docs/man/upssched.html" target="_blank" rel="noopener">upssched(8)</a> — best for timer-based policies beyond "wait for LB."</li>
+  <li><a href="https://networkupstools.org/docs/man/nutupsdrv.html" target="_blank" rel="noopener">nutupsdrv(8)</a> — best for the flags shared by every driver (<code>-F</code>, <code>-a</code>, <code>-D</code>), which the launchd jobs depend on.</li>
+  <li><a href="https://formulae.brew.sh/formula/nut" target="_blank" rel="noopener">Homebrew nut formula</a> — best for what the package installs and its service definition.</li>
+  <li><a href="https://tripplite.eaton.com/avr-series-120v-900va-480w-ultra-compact-line-interactive-ups-usb-port~AVR900U" target="_blank" rel="noopener">Eaton/Tripp Lite AVR900U product page</a> — best for the hardware numbers: runtime curve, battery, outlets, topology.</li>
+  <li><code>man pmset</code>, <code>man launchd.plist</code>, <code>man launchctl</code>, <code>man log</code> — local, always current for your macOS build; best for the Apple half of every workflow here.</li>
+</ul>
+</section>
+
+</main>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var root = document.documentElement;
+
+  /* ---- theme toggle: auto → dark → light ---- */
+  var toggle = document.querySelector('.theme-toggle');
+  var THEME_KEY = 'ups-guide-theme';
+  var themes = ['auto', 'dark', 'light'];
+  var labels = { auto: '◐ auto', dark: '● dark', light: '○ light' };
+  function applyTheme(t) {
+    if (t === 'auto') { root.removeAttribute('data-theme'); }
+    else { root.setAttribute('data-theme', t); }
+    toggle.textContent = labels[t];
+  }
+  var saved = null;
+  try { saved = localStorage.getItem(THEME_KEY); } catch (e) {}
+  var current = themes.indexOf(saved) >= 0 ? saved : 'auto';
+  applyTheme(current);
+  toggle.addEventListener('click', function () {
+    current = themes[(themes.indexOf(current) + 1) % themes.length];
+    applyTheme(current);
+    try { localStorage.setItem(THEME_KEY, current); } catch (e) {}
+  });
+
+  /* ---- copy buttons on every pre ---- */
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var clone = pre.cloneNode(true);
+      var b = clone.querySelector('.copy-btn');
+      if (b) b.remove();
+      var text = clone.textContent.replace(/^\s+|\s+$/g, '');
+      function done() { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1400); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, done);
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta); done();
+      }
+    });
+    pre.appendChild(btn);
+  });
+
+  /* ---- scrollspy ---- */
+  var tocLinks = document.querySelectorAll('nav.toc a[href^="#"]');
+  var byId = {};
+  tocLinks.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  var spy = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) {
+        tocLinks.forEach(function (a) { a.classList.remove('active'); });
+        var link = byId[en.target.id];
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-15% 0px -70% 0px' });
+  document.querySelectorAll('main section[id]').forEach(function (s) { spy.observe(s); });
+
+  /* ---- quiz ---- */
+  var QUIZ_KEY = 'ups-guide-quiz';
+  var quizState = {};
+  try { quizState = JSON.parse(localStorage.getItem(QUIZ_KEY) || '{}'); } catch (e) { quizState = {}; }
+  var items = document.querySelectorAll('.quiz-item');
+  var scoreEl = document.getElementById('quizScore');
+  function saveQuiz() { try { localStorage.setItem(QUIZ_KEY, JSON.stringify(quizState)); } catch (e) {} }
+  function renderScore() {
+    var got = 0, missed = 0;
+    Object.keys(quizState).forEach(function (k) {
+      if (quizState[k] === 'got') got++;
+      else if (quizState[k] === 'missed') missed++;
+    });
+    scoreEl.textContent = 'Score: ' + got + ' learned · ' + missed + ' review · ' +
+      (got + missed) + '/' + items.length + ' answered — aim for 12/' + items.length;
+  }
+  items.forEach(function (item) {
+    var q = item.getAttribute('data-q');
+    var answer = item.querySelector('.quiz-answer');
+    if (quizState[q]) item.classList.add(quizState[q]);
+    item.querySelector('.reveal').addEventListener('click', function () {
+      answer.classList.toggle('open');
+    });
+    item.querySelector('.got').addEventListener('click', function () {
+      quizState[q] = 'got';
+      item.classList.remove('missed'); item.classList.add('got');
+      answer.classList.add('open'); saveQuiz(); renderScore();
+    });
+    item.querySelector('.missed').addEventListener('click', function () {
+      quizState[q] = 'missed';
+      item.classList.remove('got'); item.classList.add('missed');
+      answer.classList.add('open'); saveQuiz(); renderScore();
+    });
+  });
+  renderScore();
+
+  /* ---- power-event simulator ---- */
+  var sim = document.getElementById('upsSim');
+  if (sim) {
+    var el = {
+      outage: document.getElementById('simOutage'),
+      restore: document.getElementById('simRestore'),
+      load: document.getElementById('simLoad'),
+      sched: document.getElementById('simSched'),
+      reset: document.getElementById('simReset'),
+      status: document.getElementById('simStatus'),
+      charge: document.getElementById('simCharge'),
+      runtime: document.getElementById('simRuntime'),
+      system: document.getElementById('simSystem'),
+      fill: document.getElementById('simBattFill'),
+      log: document.getElementById('simLog')
+    };
+    // Model: full-battery runtime in simulated seconds, linearized from the
+    // AVR900U's two published points: 480 W → 162 s, 240 W → 600 s.
+    var S = {};
+    var TICK_MS = 500, SIM_SECONDS_PER_TICK = 15, LB_AT = 20, SCHED_SECS = 120;
+    var timer = null;
+    function fullRuntime() { return S.load === 480 ? 162 : 600; }
+    function resetState() {
+      S = { wall: true, charge: 100, load: 240, sched: true, schedLeft: null,
+            system: 'up', outlets: true, clock: 0, lb: false };
+      el.log.innerHTML = '';
+      logLine('t', 'Simulator ready. Wall power good, battery full, load 240 W.');
+      render();
+    }
+    function fmtClock() {
+      var m = Math.floor(S.clock / 60), s = S.clock % 60;
+      return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    }
+    function logLine(cls, msg) {
+      var d = document.createElement('div');
+      d.innerHTML = '<span class="t">[' + fmtClock() + ']</span> ';
+      var span = document.createElement('span');
+      if (cls !== 't') span.className = cls;
+      span.textContent = msg;
+      d.appendChild(span);
+      el.log.appendChild(d);
+      el.log.scrollTop = el.log.scrollHeight;
+    }
+    function status() {
+      if (!S.outlets) return '— (outlets dead)';
+      if (S.wall) return S.charge < 100 ? 'OL CHRG' : 'OL';
+      return S.lb ? 'OB LB DISCHRG' : 'OB DISCHRG';
+    }
+    function render() {
+      var st = status();
+      el.status.textContent = st;
+      el.status.className = 'v ' + (st.indexOf('LB') >= 0 ? 'lb' : st.indexOf('OB') >= 0 ? 'ob' : 'ol');
+      el.charge.textContent = Math.round(S.charge) + '%';
+      var remain = Math.round(S.charge / 100 * fullRuntime());
+      el.runtime.textContent = S.wall ? '—' : remain + ' s';
+      el.system.textContent = S.system + (S.schedLeft !== null ? ' · timer ' + S.schedLeft + 's' : '');
+      el.fill.style.width = S.charge + '%';
+      el.fill.style.background = S.charge <= LB_AT ? 'var(--s1)' : S.wall ? 'var(--s3)' : 'var(--s4)';
+      el.outage.disabled = !S.wall || !S.outlets;
+      el.restore.disabled = S.wall;
+      el.load.textContent = 'Load: ' + S.load + ' W';
+      el.sched.textContent = 'upssched ' + SCHED_SECS + ' s: ' + (S.sched ? 'on' : 'off');
+    }
+    function halt(why) {
+      if (S.system !== 'up') return;
+      logLine('ev-lb', 'upsmon: executing SHUTDOWNCMD (' + why + ')');
+      S.system = 'halted'; S.schedLeft = null;
+      logLine('ev-lb', 'macOS: clean halt complete. UPS keeps discharging (macosx-ups cannot cut output).');
+    }
+    function tick() {
+      S.clock += SIM_SECONDS_PER_TICK;
+      if (!S.wall && S.outlets) {
+        S.charge -= 100 / fullRuntime() * SIM_SECONDS_PER_TICK;
+        if (S.charge <= 0) {
+          S.charge = 0; S.outlets = false;
+          logLine('ev-lb', 'Battery empty — UPS drops its outlets. Anything still running just lost power.');
+        }
+        if (!S.lb && S.charge > 0 && S.charge <= LB_AT) {
+          S.lb = true;
+          logLine('ev-lb', 'upsmon: LOWBATT — OB+LB, declaring FSD');
+          halt('low battery');
+        }
+        if (S.schedLeft !== null) {
+          S.schedLeft -= SIM_SECONDS_PER_TICK;
+          if (S.schedLeft <= 0) {
+            S.schedLeft = null;
+            logLine('ev-ob', 'upssched: timer expired — upsmon -c fsd (early shutdown, battery at ' + Math.round(S.charge) + '%)');
+            halt('upssched timer');
+          }
+        }
+      } else if (S.wall && S.charge < 100) {
+        S.charge = Math.min(100, S.charge + 0.4 * SIM_SECONDS_PER_TICK); // recharge accelerated for teaching
+      }
+      render();
+    }
+    el.outage.addEventListener('click', function () {
+      S.wall = false; S.lb = S.charge <= LB_AT;
+      logLine('ev-ob', 'Wall power FAILED. UPS transfers to battery (<10 ms). upsmon: ONBATT');
+      if (S.sched && S.system === 'up') {
+        S.schedLeft = SCHED_SECS;
+        logLine('ev-ob', 'upssched: START-TIMER onbatt-too-long ' + SCHED_SECS);
+      }
+      if (S.lb) halt('already low');
+      render();
+    });
+    el.restore.addEventListener('click', function () {
+      S.wall = true;
+      if (!S.outlets) {
+        S.outlets = true;
+        logLine('ev-ol', 'Wall power returned — outlets re-energize.');
+        if (S.system === 'halted') {
+          S.system = 'booting…';
+          logLine('ev-ol', 'pmset autorestart: Mac powers on by itself.');
+          setTimeout(function () { S.system = 'up'; render(); }, 2000);
+        }
+      } else {
+        logLine('ev-ol', 'Wall power returned. upsmon: ONLINE');
+        if (S.schedLeft !== null) {
+          S.schedLeft = null;
+          logLine('ev-ol', 'upssched: CANCEL-TIMER onbatt-too-long — no shutdown.');
+        }
+      }
+      S.lb = false;
+      render();
+    });
+    el.load.addEventListener('click', function () {
+      S.load = S.load === 240 ? 480 : 240;
+      logLine('t', 'Load set to ' + S.load + ' W (full runtime now ' + fullRuntime() + ' s).');
+      render();
+    });
+    el.sched.addEventListener('click', function () {
+      S.sched = !S.sched;
+      if (!S.sched && S.schedLeft !== null) S.schedLeft = null;
+      logLine('t', 'upssched early-shutdown timer ' + (S.sched ? 'enabled' : 'disabled') + '.');
+      render();
+    });
+    el.reset.addEventListener('click', resetState);
+    resetState();
+    timer = setInterval(tick, TICK_MS);
+  }
+})();
+</script>
+</body>
+</html>
