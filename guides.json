@@ -84,6 +84,13 @@
       "subject": "Terminal workspace and pane orchestration",
       "verified": "2026-07-09",
       "accent": "violet"
+    },
+    {
+      "file": "ups-user-guide.html",
+      "name": "ups / nut",
+      "subject": "Keeping a Tripp Lite UPS honest from macOS - NUT's three-layer stack, launchd persistence, automated shutdown, battery calibration",
+      "verified": "NUT 2.8.5 · macOS 15.6 · 2026-09-01",
+      "accent": "red"
     }
   ]
 }
