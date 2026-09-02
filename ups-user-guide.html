@@ -626,8 +626,9 @@
 </div>
 
 <h3>Your working configuration</h3>
-<p>This is the live <code>/usr/local/etc/nut/ups.conf</code> from the verified machine — three lines of substance:</p>
+<p>This is the live <code>/usr/local/etc/nut/ups.conf</code> from the verified machine — two global lines, then the device section:</p>
 <pre><code>user = paulbaur
+group = admin
 
 [myups]
     driver = macosx-ups
@@ -635,11 +636,22 @@
     model = AVR900U
     desc = "Tripp Lite AVR900U via macOS"</code></pre>
 <ul>
+  <li><code>user = paulbaur</code>, <code>group = admin</code> — the account the driver drops to once started, and the group it stamps on its socket so upsd can reach it. Both are overrides of NUT's compiled-in defaults, and both are needed on this machine — the callout below explains why.</li>
   <li><code>[myups]</code> — the UPS's NUT name; every later command addresses <code>myups@localhost</code>.</li>
   <li><code>driver = macosx-ups</code> — the decision this section justified.</li>
   <li><code>port = auto</code> — required by NUT's config grammar; ignored by this driver (there is no port to open — Apple's layer is the port).</li>
   <li><code>model = AVR900U</code> — a regex matched against the power-source name; only needed to disambiguate if several UPSes are attached, harmless otherwise.</li>
 </ul>
+
+<div class="callout warn">
+  <strong>Why <code>user</code> and <code>group</code> are both there</strong>
+  Homebrew's nut bottle is built with NUT's stock defaults: drop privileges to the account <code>nobody</code>, group <code>nobody</code>. But Homebrew's tree — <code>/usr/local/var/state/ups</code>, where the driver socket lives, and <code>/usr/local/etc/nut</code> — belongs to your user and the <code>admin</code> group, and <code>nobody</code> cannot enter either. <code>user = paulbaur</code> fixes that for the driver. It also trips a second mechanism: whenever the user is overridden, the driver hands its socket to the configured group so upsd can still connect. With <code>group</code> left at the default <code>nobody</code>, that hand-off is refused — you are not a member of <code>nobody</code> — and the driver starts anyway, with a warning that reads as harmless and is not. Real output from this machine before the fix:
+  <pre><code><span class="cmd">sudo /usr/local/sbin/upsdrvctl -D start myups</span>
+<span class="out">Listening on socket /usr/local/var/state/ups/macosx-ups-myups
+WARNING: Needed to fix group access to filesystem socket of this driver, but failed; run the driver with more debugging to see how exactly.
+Consumers of the socket, such as upsd data server, can fail to interact with the driver and represent the device: /usr/local/var/state/ups/macosx-ups-myups</span></code></pre>
+  <code>group = admin</code> names a group you belong to and the group the socket directory already carries; the hand-off succeeds and the warning disappears. The rule this leaves you with: <strong>the whole NUT stack on this machine runs as your user.</strong> The driver learns that from <code>ups.conf</code>; upsd does not read these two lines and has to be told separately — §6 and §8 show where.
+</div>
 
 <div class="callout blue">
   <strong>Misconception: "The driver failing means the UPS is unsupported."</strong>
@@ -664,10 +676,11 @@
 <p class="expect">a line naming the UPS alongside any internal battery. With the UPS unplugged from USB you get only <code>Now drawing from 'AC Power'</code> and the internal battery — that is this guide's own state, captured on a machine with the UPS detached. No UPS line here means no NUT until the cable is sorted (§12).</p></li>
 <li>Start the driver in debug foreground (window 1):
 <pre><code><span class="cmd">sudo /usr/local/sbin/upsdrvctl -D start myups</span></code></pre>
-<p class="expect">debug chatter ending in a steady poll loop naming your power source. Errors about "no matching power source" mean the <code>model</code> regex in <code>ups.conf</code> matched nothing.</p></li>
-<li>Start the server in debug foreground (window 2):
-<pre><code><span class="cmd">sudo /usr/local/sbin/upsd -F -D</span></code></pre>
-<p class="expect">lines showing it reading <code>upsd.conf</code>, listening on <code>127.0.0.1</code> port 3493, and connecting to the driver's socket. <code>-F</code> keeps it in the foreground; <code>-D</code> makes it narrate.</p></li>
+<p class="expect">the driver announces <code>Listening on socket /usr/local/var/state/ups/macosx-ups-myups</code> and upsdrvctl reports <code>successfully finished</code> — the driver has detached into the background, which is upsdrvctl's whole job (spawn, then exit). No <code>WARNING: Needed to fix group access…</code> line: if you see one, <code>group = admin</code> is missing from <code>ups.conf</code> (§5). Errors about "no matching power source" mean the <code>model</code> regex matched nothing. To watch the driver narrate in the foreground instead, run the binary directly: <code>sudo /usr/local/bin/macosx-ups -a myups -DD</code>.</p></li>
+<li>Start the server in debug foreground (window 2) — as yourself, <strong>no sudo</strong>:
+<pre><code><span class="cmd">/usr/local/sbin/upsd -F -D</span></code></pre>
+<p class="expect">lines showing it reading <code>upsd.conf</code>, then <code>listening on 127.0.0.1 port 3493</code>, then <code>Connected to UPS [myups]: macosx-ups-myups</code>. <code>-F</code> keeps it in the foreground; <code>-D</code> makes it narrate.</p>
+<p>Why no sudo: started as root, upsd drops to NUT's compiled-in account <code>nobody</code> before it enters the state directory — and <code>nobody</code> cannot enter <code>/usr/local/var/state/ups</code>, so it exits at once complaining it can't chdir there. Started as you, it stays you (its own log says so: <code>Can not become_user(nobody): not root initially, remaining UID=501</code>), and everything it needs — port 3493, the config files, the driver's socket — is already yours. If you must launch it from root, say who to become: <code>sudo /usr/local/sbin/upsd -u paulbaur -F -D</code>.</p></li>
 <li>Query it (any window):
 <pre><code><span class="cmd">upsc myups@localhost</span></code></pre>
 <p class="expect">a sorted dump of every variable the driver publishes — <code>battery.charge</code>, <code>battery.runtime</code>, <code>ups.status</code>, <code>device.model</code>, and friends. Exact variables depend on what Apple's layer exposes for your unit; capture this healthy output somewhere, it is your baseline.</p></li>
@@ -677,7 +690,7 @@
 <span class="cmd">upsc myups@localhost battery.runtime</span>
 <span class="cmd">upsc myups@localhost device.model</span></code></pre>
 <p class="expect"><code>ups.status</code> prints <code>OL</code> on wall power; <code>battery.runtime</code> is in seconds.</p></li>
-<li>Tear down: <kbd>Ctrl</kbd>+<kbd>C</kbd> in both windows, then confirm nothing lingers:
+<li>Tear down: <kbd>Ctrl</kbd>+<kbd>C</kbd> in the upsd window; <code>sudo /usr/local/sbin/upsdrvctl stop myups</code> for the driver (it detached in step 2, so there is nothing for Ctrl+C to hit); then confirm nothing lingers:
 <pre><code><span class="cmd">ps aux | egrep "macosx-ups|upsd|upsmon" | grep -v egrep</span></code></pre>
 <p class="expect">no output.</p></li>
 </ol>
@@ -768,11 +781,12 @@
 &lt;/dict&gt;
 &lt;/plist&gt;</code></pre>
 
-<p><strong>2 · The server</strong> — <code>/Library/LaunchDaemons/org.nut.upsd.plist</code>. Same skeleton, different program:</p>
+<p><strong>2 · The server</strong> — <code>/Library/LaunchDaemons/org.nut.upsd.plist</code>. Same skeleton, different program — plus <code>-u paulbaur</code>, which is not optional (explained under job 3):</p>
 <pre><code>&lt;key&gt;Label&lt;/key&gt;              &lt;string&gt;org.nut.upsd&lt;/string&gt;
 &lt;key&gt;ProgramArguments&lt;/key&gt;
 &lt;array&gt;
   &lt;string&gt;/usr/local/sbin/upsd&lt;/string&gt;
+  &lt;string&gt;-u&lt;/string&gt;&lt;string&gt;paulbaur&lt;/string&gt;
   &lt;string&gt;-F&lt;/string&gt;
 &lt;/array&gt;
 &lt;key&gt;RunAtLoad&lt;/key&gt;          &lt;true/&gt;
@@ -790,6 +804,7 @@
 &lt;key&gt;KeepAlive&lt;/key&gt;          &lt;true/&gt;
 &lt;key&gt;ThrottleInterval&lt;/key&gt;   &lt;integer&gt;30&lt;/integer&gt;</code></pre>
 <p>upsmon must start as root: it keeps a tiny privileged stub alive to run the shutdown command, drops the rest of itself to an unprivileged user, and cannot arrange that from a user session. Running it from <code>/Library/LaunchDaemons</code> satisfies this naturally. If you previously ran <code>brew services start nut</code>, stop it first: <code>sudo brew services stop nut &amp;&amp; brew services stop nut</code> (clears both the root and user domains).</p>
+<p>upsd is the mirror image. LaunchDaemons run as root, and upsd started as root drops to NUT's compiled-in <code>nobody</code> — an account that cannot enter Homebrew's state directory (§5), so the job exits immediately and <code>KeepAlive</code> respawns it every 30 s to exit again. <code>-u paulbaur</code> tells it to become you instead, which matches the driver (it takes the same instruction from <code>user =</code> in <code>ups.conf</code>) and the socket the driver leaves behind (owner you, group <code>admin</code>). Nothing upsd does needs root: port 3493 is unprivileged and every file it reads is yours. The driver job needs no such flag — it starts as root and reads its user from <code>ups.conf</code>. (launchd's own spelling is a <code>UserName</code> key set to <code>paulbaur</code>; either works. The flag keeps the reason visible next to the command.)</p>
 
 <div class="lab">
 <div class="lab-title">Lab 2 · Make the stack permanent</div>
@@ -1099,8 +1114,10 @@ esac</code></pre>
 
 <div class="table-wrap"><table>
 <tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr>
-<tr><td><code>upsc</code>: <code>Error: Connection failure: Connection refused</code></td><td><code>upsd</code> is not running (nothing listens on 3493).</td><td><code>sudo launchctl print system/org.nut.upsd</code>; if absent, bootstrap it (§8). Manual check: <code>sudo /usr/local/sbin/upsd -F -D</code> and read its complaint.</td></tr>
+<tr><td><code>upsc</code>: <code>Error: Connection failure: Connection refused</code></td><td><code>upsd</code> is not running (nothing listens on 3493).</td><td><code>sudo launchctl print system/org.nut.upsd</code>; if absent, bootstrap it (§8). Manual check: <code>/usr/local/sbin/upsd -F -D</code> (no sudo — §6) and read its complaint.</td></tr>
 <tr><td><code>upsc</code>: <code>Error: Driver not connected</code></td><td>upsd is fine; the driver layer is down or can't see the UPS.</td><td>Run the driver in debug: <code>sudo /usr/local/bin/macosx-ups -a myups -DD</code>. No power source found → check the USB cable and <code>pmset -g ps</code>.</td></tr>
+<tr><td>Driver starts but prints <code>WARNING: Needed to fix group access to filesystem socket of this driver, but failed</code></td><td><code>user =</code> is set in <code>ups.conf</code> but <code>group =</code> is not: the driver tries to chgrp its socket to the compiled-in <code>nobody</code> after it has already become you, and the kernel refuses (§5).</td><td>Add <code>group = admin</code> to the global section of <code>ups.conf</code>; <code>sudo upsdrvctl stop myups</code>, then start again. With <code>upsdrvctl -DD</code> the driver should report <code>Group access for this driver successfully fixed</code>.</td></tr>
+<tr><td>upsd exits at once complaining it can't chdir to <code>/usr/local/var/state/ups</code> (Permission denied) — or its launchd job respawns every 30 s</td><td>upsd was started as root without <code>-u</code>, dropped to <code>nobody</code>, and <code>nobody</code> cannot enter Homebrew's directories.</td><td>By hand: run it as yourself, <code>/usr/local/sbin/upsd -F -D</code>. In the plist: <code>-u paulbaur</code>, always (§8).</td></tr>
 <tr><td>UPS absent from <code>pmset -g ps</code> and <code>system_profiler SPUSBDataType</code></td><td>macOS doesn't see the hardware — cable, port, or the UPS's USB interface.</td><td>Different cable (data-capable, not charge-only), different port, no hub. Until Apple's stack sees it, <code>macosx-ups</code> has nothing to read.</td></tr>
 <tr><td>Driver starts then exits; launchd respawns it every 30 s</td><td>UPS unplugged from USB while KeepAlive is set (§8's known loop).</td><td>Reattach the UPS, or <code>sudo launchctl bootout system/org.nut.driver</code> during long detachments.</td></tr>
 <tr><td><code>tripplite_usb</code> fails to claim/find the unit</td><td>Wrong driver for this hardware generation on this OS (§5).</td><td>Use <code>macosx-ups</code>. Not a hardware fault.</td></tr>
@@ -1181,8 +1198,8 @@ esac</code></pre>
 <code>upsc myups@localhost battery.runtime</code><br>
 <code>upsc -l localhost</code> — list UPS names</div>
 <div class="card"><div class="card-head">Manual stack (debug)</div>
-<code>sudo upsdrvctl -D start myups</code><br>
-<code>sudo /usr/local/sbin/upsd -F -D</code><br>
+<code>sudo upsdrvctl -D start myups</code> · <code>sudo upsdrvctl stop myups</code><br>
+<code>/usr/local/sbin/upsd -F -D</code> — no sudo (from root: add <code>-u paulbaur</code>)<br>
 <code>sudo /usr/local/bin/macosx-ups -a myups -DD</code><br>
 <code>ps aux | egrep "macosx-ups|upsd|upsmon"</code></div>
 <div class="card"><div class="card-head">launchd</div>
@@ -1202,7 +1219,8 @@ esac</code></pre>
 <div class="card"><div class="card-head">Danger</div>
 <code>sudo upsmon -c fsd</code> — real shutdown, latched<br>
 Fire drill = pull <em>wall</em> plug, never USB<br>
-Config lives in <code>/usr/local/etc/nut/</code></div>
+Config lives in <code>/usr/local/etc/nut/</code><br>
+Whole stack runs as <em>you</em>: <code>user</code>/<code>group</code> in ups.conf, <code>-u</code> for upsd</div>
 </div>
 
 <div class="table-wrap"><table>
@@ -1296,6 +1314,7 @@ Config lives in <code>/usr/local/etc/nut/</code></div>
 <li><a href="#install">MODE=standalone</a></li>
 </ul>
 <ul><li class="idx-letter">N</li>
+<li><a href="#drivers">nobody (NUT's compiled-in account)</a></li>
 <li><a href="#shutdown">NOTIFYCMD / notifications</a></li>
 <li><a href="#mental-model">NUT architecture</a></li>
 </ul>
@@ -1320,7 +1339,9 @@ Config lives in <code>/usr/local/etc/nut/</code></div>
 <li><a href="#troubleshooting">troubleshooting table</a></li>
 </ul>
 <ul><li class="idx-letter">U</li>
+<li><a href="#drivers">ups.conf user / group</a></li>
 <li><a href="#bring-up">upsc</a></li>
+<li><a href="#launchd">upsd -u (run as your user)</a></li>
 <li><a href="#access-control">upsd.users / passwords</a></li>
 <li><a href="#launchd">upsmon privileges (root stub)</a></li>
 <li><a href="#shutdown">upsmon -c fsd</a></li>
@@ -1337,8 +1358,8 @@ Config lives in <code>/usr/local/etc/nut/</code></div>
 
 <section id="quiz">
 <h2>18 · Quiz</h2>
-<p class="lede">Self-scored flashcards — answer out loud before revealing, then mark yourself honestly. Aim for 12/14; every answer links back to the section that taught it, and the two you miss are tonight's re-reading list.</p>
-<div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0/14 answered</div>
+<p class="lede">Self-scored flashcards — answer out loud before revealing, then mark yourself honestly. Aim for 13/15; every answer links back to the section that taught it, and the two you miss are tonight's re-reading list.</p>
+<div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0/15 answered</div>
 
 <div class="quiz-item" data-q="1">
   <div class="quiz-q"><span class="qnum">Q1</span>Two software stacks can manage the AVR900U on macOS. Name both and the relationship between them.</div>
@@ -1410,11 +1431,16 @@ Config lives in <code>/usr/local/etc/nut/</code></div>
   <div class="quiz-answer"><code>pmset -g ps</code> and <code>upsc myups@localhost ups.status</code>. Both see it → healthy. Neither → hardware/cable. Apple yes, NUT no → NUT stack (driver/upsd) down. Apple no, NUT yes → impossible-ish/stale data — restart the driver. (<a href="#troubleshooting">§12</a>)</div>
   <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
 </div>
+<div class="quiz-item" data-q="15">
+  <div class="quiz-q"><span class="qnum">Q15</span>The driver starts with <code>WARNING: Needed to fix group access to filesystem socket…</code>, and <code>sudo upsd -F -D</code> exits on start. What single fact explains both, and what are the two fixes?</div>
+  <div class="quiz-answer">Homebrew's NUT is compiled to run as <code>nobody:nobody</code>, but Homebrew's directories belong to you and <code>admin</code>. Fix one: <code>group = admin</code> beside <code>user = paulbaur</code> in <code>ups.conf</code>, so the driver can hand its socket to a group you are in. Fix two: run upsd as you — no sudo by hand, <code>-u paulbaur</code> in the launchd plist. (<a href="#drivers">§5</a>, <a href="#launchd">§8</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
 </section>
 
 <section id="sources">
 <h2>19 · Sources</h2>
-<p>Checked with NUT 2.8.5 (Homebrew) on macOS 15.6 with a Tripp Lite AVR900U · 2026-09-01 · external links require network; the guide itself works offline. Command transcripts marked as real were captured on the verified machine; labs requiring a live UPS are marked in place.</p>
+<p>Checked with NUT 2.8.5 (Homebrew) on macOS 15.6 with a Tripp Lite AVR900U · 2026-09-02 · external links require network; the guide itself works offline. Command transcripts marked as real were captured on the verified machine; labs requiring a live UPS are marked in place.</p>
 <ul>
   <li><a href="https://networkupstools.org/docs/user-manual.chunked/index.html" target="_blank" rel="noopener">NUT user manual</a> — best for the big picture: modes, architecture, configuration walk-throughs.</li>
   <li><a href="https://networkupstools.org/docs/man/macosx-ups.html" target="_blank" rel="noopener">macosx-ups(8)</a> — best for this driver's exact capabilities and limits; short and worth reading whole.</li>
@@ -1510,7 +1536,7 @@ Config lives in <code>/usr/local/etc/nut/</code></div>
       else if (quizState[k] === 'missed') missed++;
     });
     scoreEl.textContent = 'Score: ' + got + ' learned · ' + missed + ' review · ' +
-      (got + missed) + '/' + items.length + ' answered — aim for 12/' + items.length;
+      (got + missed) + '/' + items.length + ' answered — aim for 13/' + items.length;
   }
   items.forEach(function (item) {
     var q = item.getAttribute('data-q');
