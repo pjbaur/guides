@@ -991,14 +991,26 @@ esac</code></pre>
 <span class="comment"># one variable, script-friendly</span>
 <span class="cmd">upsc myups@localhost battery.charge</span>
 
-<span class="comment"># continuous CSV logging: one line per minute to a file</span>
-<span class="cmd">upslog -s myups@localhost -l ~/ups-log.txt -i 60</span>
+<span class="comment"># continuous CSV logging: one line per minute to a file; -F keeps it in the foreground so Ctrl+C stops it</span>
+<span class="cmd">upslog -s myups@localhost -l ~/ups-log.csv -i 60 -F</span>
+
+<span class="comment"># same, but self-terminating: exit after 60 samples</span>
+<span class="cmd">upslog -s myups@localhost -l ~/ups-log.csv -i 60 -d 60</span>
 
 <span class="comment"># quick live watch in a spare terminal</span>
 <span class="cmd">while sleep 5; do printf '%s  %s  %s%%  %ss\n' "$(date +%T)" \
   "$(upsc myups@localhost ups.status 2>/dev/null)" \
   "$(upsc myups@localhost battery.charge 2>/dev/null)" \
   "$(upsc myups@localhost battery.runtime 2>/dev/null)"; done</span></code></pre>
+
+<div class="callout warn">
+  <strong>upslog detaches — know how to stop it</strong>
+  Given a log file (<code>-l</code> anything but <code>-</code>), upslog backgrounds itself and keeps writing after you close the terminal; only <code>-F</code> holds it in the foreground. It has no <code>-c stop</code> like upsd, and its pid file (<code>/usr/local/var/run/upslog.pid</code>) is not reliable — on this machine it named a pid that no longer existed while the real logger ran on. Stop it by name (it runs as you, so no sudo):
+  <pre><code><span class="cmd">pkill -x upslog</span>
+<span class="cmd">ps aux | grep '[u]pslog'</span>
+<span class="comment"># expect no output; then tidy: rm /usr/local/var/run/upslog.pid</span></code></pre>
+  And spell out the file name: <code>-l FILE</code> copied literally writes a file called <code>FILE</code> in whatever directory you started from. Prefer <code>-F</code> for interactive sessions and <code>-d &lt;count&gt;</code> for a bounded capture; a detached upslog is for a logger you mean to leave running for weeks.
+</div>
 
 <h3>The Apple witness</h3>
 <pre><code><span class="comment"># current power sources — the fastest health check</span>
@@ -1086,7 +1098,7 @@ esac</code></pre>
 <div class="lab-title">Lab 4 · Measured-runtime test</div>
 <div class="lab-meta">30 minutes · UPS attached · save your work first — this ends in a real shutdown if you let it run</div>
 <ol>
-<li>Start recorders on both witnesses: <code>upslog -s myups@localhost -l ~/calib-$(date +%F).csv -i 10</code> in one terminal, <code>log stream --predicate 'process == "ioupsd"'</code> in another.</li>
+<li>Start recorders on both witnesses: <code>upslog -s myups@localhost -l ~/calib-$(date +%F).csv -i 10 -F</code> in one terminal, <code>log stream --predicate 'process == "ioupsd"'</code> in another. (<code>-F</code> matters: without it upslog detaches and outlives the terminal — §10.)</li>
 <li>Note the starting reading: <code>upsc myups@localhost battery.charge battery.runtime</code>.</li>
 <li>Pull the UPS wall plug. Let it discharge at your normal working load.</li>
 <li>Either ride it down to the automated shutdown (the honest full test — your §9 machinery gets exercised too), or restore power at 40&nbsp;% if you only want a capacity data point without the halt.</li>
@@ -1123,6 +1135,7 @@ esac</code></pre>
 <tr><td><code>tripplite_usb</code> fails to claim/find the unit</td><td>Wrong driver for this hardware generation on this OS (§5).</td><td>Use <code>macosx-ups</code>. Not a hardware fault.</td></tr>
 <tr><td>Everything ran until a reboot; nothing after</td><td>Stack was hand-started, or only <code>brew services</code> (upsmon-only) survives boot.</td><td>Install all three launchd jobs (§8, Lab 2); confirm with <code>launchctl print</code> after reboot.</td></tr>
 <tr><td>Stale readings: charge/status frozen while reality changes</td><td>Driver wedged, or two driver instances fighting (manual + launchd).</td><td><code>ps aux | egrep "macosx-ups|upsd|upsmon" | grep -v egrep</code> — exactly one of each. Kill strays: <code>sudo pkill -f macosx-ups</code>; launchd relaunches its own cleanly.</td></tr>
+<tr><td>A CSV keeps growing after you closed the terminal that started <code>upslog</code></td><td>upslog backgrounds itself when logging to a file; its pid file can be stale.</td><td><code>pkill -x upslog</code>. Next time add <code>-F</code> (foreground) or <code>-d &lt;count&gt;</code> (bounded) — §10.</td></tr>
 <tr><td>Shutdown fired "too early" during a blip</td><td>upssched timer shorter than your grid's ordinary flickers, or Apple's thresholds (the second brain, §9) firing first.</td><td>Read both logs (§10) to see who ordered it; lengthen the timer or defang <code>pmset -g ups</code> thresholds.</td></tr>
 <tr><td>Shutdown never fired in a real outage</td><td>The chain was broken somewhere and never tested end-to-end.</td><td>Run Lab 3's fire drill now; the logs from the failed night (§10's <code>log show</code>) tell you which link lied.</td></tr>
 <tr><td>Mac stayed off after power returned</td><td><code>autorestart</code> not set (§9).</td><td><code>sudo pmset -a autorestart 1</code>.</td></tr>
@@ -1213,7 +1226,8 @@ esac</code></pre>
 <code>system_profiler SPUSBDataType</code><br>
 <code>log stream --predicate 'process == "ioupsd"'</code></div>
 <div class="card"><div class="card-head">Logging</div>
-<code>upslog -s myups@localhost -l FILE -i 60</code><br>
+<code>upslog -s myups@localhost -l ~/ups-log.csv -i 60 -F</code> (no <code>-F</code> → detaches)<br>
+<code>pkill -x upslog</code> — stop a detached logger<br>
 <code>log show --debug --last 3h --predicate 'process == "ioupsd"' &gt; dump.txt</code><br>
 §10's perl extractor for state changes</div>
 <div class="card"><div class="card-head">Danger</div>
@@ -1255,7 +1269,7 @@ Whole stack runs as <em>you</em>: <code>user</code>/<code>group</code> in ups.co
 <dt id="g-upsc">upsc</dt><dd>NUT's query client: dumps a UPS's variables, or one variable, script-cleanly. (<a href="#bring-up">§6</a>)</dd>
 <dt id="g-upsd">upsd</dt><dd>NUT's data server: publishes driver state on TCP 3493 to authenticated clients. (<a href="#access-control">§7</a>)</dd>
 <dt id="g-upsdrvctl">upsdrvctl</dt><dd>Start/stop wrapper for NUT drivers listed in <code>ups.conf</code>. Not used under launchd, which runs the driver binary directly. (<a href="#bring-up">§6</a>, <a href="#launchd">§8</a>)</dd>
-<dt id="g-upslog">upslog</dt><dd>NUT's CSV logger — one status line per interval, ideal for calibration records. (<a href="#monitoring">§10</a>)</dd>
+<dt id="g-upslog">upslog</dt><dd>NUT's CSV logger — one status line per interval, ideal for calibration records. Detaches when given a log file unless run with <code>-F</code>; stop with <code>pkill -x upslog</code>. (<a href="#monitoring">§10</a>)</dd>
 <dt id="g-upsmon">upsmon</dt><dd>NUT's monitor: watches <code>ups.status</code>, fires notifications, and executes the shutdown decision via a privileged stub. (<a href="#shutdown">§9</a>)</dd>
 <dt id="g-upssched">upssched</dt><dd>Timer layer between upsmon events and actions — "on battery 120 s → shut down early," cancelled if power returns. (<a href="#shutdown">§9</a>)</dd>
 <dt id="g-va">VA vs W</dt><dd>Apparent vs real power. Size the UPS by watts (480 W here); VA is the marketing number. (<a href="#hardware">§3</a>)</dd>
