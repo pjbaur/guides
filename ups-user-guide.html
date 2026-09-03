@@ -1002,6 +1002,7 @@ esac</code></pre>
   "$(upsc myups@localhost ups.status 2>/dev/null)" \
   "$(upsc myups@localhost battery.charge 2>/dev/null)" \
   "$(upsc myups@localhost battery.runtime 2>/dev/null)"; done</span></code></pre>
+<p>Three quirks of what <code>macosx-ups</code> hands you. <code>battery.charge</code> arrives in <strong>5-point steps</strong> — the AVR900U's gauge reports 65, 70, 75, never 68 — and when the true value sits near a boundary it flaps between neighbours every few seconds (65↔70 for an hour on this machine); read a flapping pair as the midpoint, not as a trend. <code>battery.runtime</code> is Apple's <em>Time to Empty</em> in seconds: load-dependent and, on this unit, wildly nonlinear (about 61 minutes reported at 100&nbsp;%, 9 minutes at 75&nbsp;%), so it is a warning light, not a health metric. <code>battery.voltage: 0.001</code> is a placeholder — the driver has no real voltage.</p>
 
 <div class="callout warn">
   <strong>upslog detaches — know how to stop it</strong>
@@ -1016,7 +1017,8 @@ esac</code></pre>
 <pre><code><span class="comment"># current power sources — the fastest health check</span>
 <span class="cmd">pmset -g ps</span>
 <span class="out">Now drawing from 'AC Power'
- -InternalBattery-0 (id=9175139)	100%; charged; 0:00 remaining present: true</span>
+ -InternalBattery-0 (id=9175139)	100%; charged; 0:00 remaining present: true
+ -AVR900U          (id=19136514)	65%; charging present: true</span>
 
 <span class="comment"># Apple's UPS shutdown thresholds (empty when no UPS is attached)</span>
 <span class="cmd">pmset -g ups</span>
@@ -1024,7 +1026,7 @@ esac</code></pre>
 <span class="comment"># hardware detail: is the UPS even enumerated on USB?</span>
 <span class="cmd">system_profiler SPUSBDataType | grep -i -A10 "tripp\|ups"</span>
 <span class="cmd">system_profiler SPPowerDataType</span></code></pre>
-<p>The transcript above is this machine with the UPS detached — only the internal battery reports. A healthy attached UPS adds its own line to <code>pmset -g ps</code>. That presence/absence check settles the most fundamental question in seconds and needs no NUT at all.</p>
+<p>The transcript above is this machine with the UPS attached: the internal battery and the UPS each get a line. The UPS's percentage is Apple's reading of the same HID gauge that NUT's <code>battery.charge</code> mirrors, so the two witnesses should agree to within one gauge step (see the traps below). With the UPS detached the line simply vanishes — that presence/absence check settles the most fundamental question in seconds and needs no NUT at all.</p>
 
 <h3>Deep history: the unified log and <code>ioupsd</code></h3>
 <p>Apple's <code>ioupsd</code> narrates every UPS state change into the unified log. This is your black-box recorder: after any incident, the answer to "what did the Mac believe, and when?" is already on disk.</p>
@@ -1050,7 +1052,7 @@ esac</code></pre>
     ($source)   = $block =~ /"Power Source State"\s*=\s*"([^"]+)"/;
     ($runtime)  = $block =~ /"Time to Empty"\s*=\s*(\d+)/;
 
-    next unless defined $charge &amp;&amp; defined $source;
+    next unless defined $charge &amp;&amp; defined $source &amp;&amp; defined $runtime;
 
     $alarm    = "unavailable" unless defined $alarm;
     $failure  = "unavailable" unless defined $failure;
@@ -1067,6 +1069,18 @@ esac</code></pre>
   }
 ' "$UPS_DUMP"</span></code></pre>
 <p>Output reads like a flight recorder: a timestamped line each time anything changed. <code>Power Source State</code> flips between <code>"AC Power"</code> and <code>"Battery Power"</code> at the exact millisecond of each transfer — lay it beside upsmon's log and the two witnesses cross-examine each other.</p>
+
+<div class="callout warn">
+  <strong>Three traps in the ioupsd log (all met on this machine)</strong>
+  <ul>
+    <li><strong>It is not only the UPS.</strong> <code>ioupsd</code> also tracks the batteries of Magic Keyboards, Trackpads and Mice — over Bluetooth, and on a Lightning cable as a USB HID device. Their <code>dispatchEvent</code> blocks carry <code>Current Capacity</code>, <code>Is Charging</code> and <code>Power Source State</code> but never <code>Time to Empty</code>, which is why the extractor above insists on <code>$runtime</code>. Real case: a tidy 1-point-per-three-minutes climb from 49 to 100&nbsp;% between 02:32 and 05:00 looked like the UPS recharging. It was a Magic Trackpad 2 on a charging cable; the UPS, in the same log, was drifting <em>down</em>.</li>
+    <li><strong>Five-point steps.</strong> The UPS gauge flaps between neighbours near a boundary (70↔65 every few seconds for over an hour). Only the second-to-second <code>Skipping duplicate element … IV: 65 … with key Current Capacity</code> lines carry the raw value; the extractor's change-detection shows the flapping as a burst of lines. Read the midpoint.</li>
+    <li><strong>The clock can lie.</strong> If the Mac loses power completely, its clock may stop; after boot, time is stepped and <code>log show</code> warns <code>Wall Clock adjustment detected</code>. Timestamps before the step are wrong, and <code>--start</code>/<code>--end</code> windows leak entries from outside the window. Prefer <code>--last</code>, and treat anything logged before the first post-boot minute as suspect.</li>
+  </ul>
+  A fast capacity-only trend, when you want the number and not the story (the trackpad trap applies — 1-point values are an accessory):
+  <pre><code><span class="cmd">log show --debug --last 12h --style compact --predicate 'process == "ioupsd" AND eventMessage CONTAINS "with key Current Capacity"' \
+  | sed -E 's/^([0-9-]+ [0-9:]+)\.[0-9]+ .*IV: ([0-9]+)\).*/\1 \2/' | awk '$3 != p { print; p = $3 }'</span></code></pre>
+</div>
 
 <h3>Translation table — pmset instinct → NUT move</h3>
 <div class="table-wrap"><table>
@@ -1090,6 +1104,20 @@ esac</code></pre>
 <div class="callout blue">
   <strong>Misconception: "100% charge means a healthy battery."</strong>
   <code>battery.charge: 100</code> measures fullness, not capacity. An aged battery reaches "100&nbsp;%" of a shrunken tank. The number that exposes aging is <strong>runtime under a known load</strong> — which is why the calibration below is the one maintenance habit that matters.
+</div>
+
+<div class="callout danger">
+  <strong>The signature of a battery that will not take charge</strong>
+  A healthy VRLA on this charger is back near 90&nbsp;% within about 8 hours of a discharge. This is the opposite, recorded on this machine (UPS gauge via ioupsd; the Mac was dark 21:42–00:19 after losing power, and the UPS discharged somewhere in that gap):
+  <div class="table-wrap"><table>
+  <tr><th>Time</th><th>Gauge</th><th>Runtime est.</th><th>Reported state</th></tr>
+  <tr><td>Sep 1, 20:03</td><td>100&nbsp;%</td><td>~61 min</td><td>AC Power, not charging (full)</td></tr>
+  <tr><td>Sep 2, 00:19 (boot)</td><td>80&nbsp;%</td><td>9 min</td><td>AC Power, <code>Is Charging = 1</code></td></tr>
+  <tr><td>02:30</td><td>75↔80</td><td>8–9 min</td><td>AC Power, charging</td></tr>
+  <tr><td>05:41</td><td>70↔75</td><td>8 min</td><td>AC Power, charging</td></tr>
+  <tr><td>07:20</td><td>65↔70</td><td>6–8 min</td><td>AC Power, charging, <code>Internal Failure = 0</code></td></tr>
+  </table></div>
+  Eight hours on wall power with the charger flagged on, no fault flagged, and the gauge <em>fell</em> 13 points. Two explanations survive: the battery no longer accepts charge (age, sulfation, a weak cell), or the charger itself has failed. Both mean the same for you today — the runtime you have is whatever <code>battery.runtime</code> says <em>now</em>, not the spec sheet — and the decision rule is the same: <strong>24 hours on AC without reaching 90&nbsp;% → replace the battery</strong> (RBC51 — see <em>Replacement</em>, below). If it is climbing, it was a slow recovery; confirm with Lab 4's 40&nbsp;% cut-off variant. Note what upsmon did <em>not</em> do: no <code>REPLBATT</code>, no <code>LB</code>. The gauge trend, logged by upslog or the extractor above, was the only witness.
 </div>
 
 <h3>Runtime calibration — twice a year</h3>
@@ -1140,6 +1168,7 @@ esac</code></pre>
 <tr><td>Shutdown never fired in a real outage</td><td>The chain was broken somewhere and never tested end-to-end.</td><td>Run Lab 3's fire drill now; the logs from the failed night (§10's <code>log show</code>) tell you which link lied.</td></tr>
 <tr><td>Mac stayed off after power returned</td><td><code>autorestart</code> not set (§9).</td><td><code>sudo pmset -a autorestart 1</code>.</td></tr>
 <tr><td>UPS clicks (relay) frequently but never goes OB</td><td>AVR doing its job on wandering wall voltage (§3).</td><td>Normal in moderation. Constant clicking → wall voltage chronically out of range; worth an electrician's look.</td></tr>
+<tr><td><code>battery.charge</code> flat or falling for hours while <code>ups.status</code> says <code>OL CHRG</code></td><td>Battery not accepting charge, or charger fault (§11's signature). No <code>REPLBATT</code>, no <code>LB</code> — the trend is the only symptom.</td><td>Confirm with the ioupsd extractor (§10): <code>charging=1</code>, <code>failure=0</code>, charge down. Give it 24 h on AC; short of 90&nbsp;% → replace the RBC51. Until then treat runtime as today's <code>battery.runtime</code>, not the spec.</td></tr>
 <tr><td><code>REPLBATT</code> events, or runtime collapsed since last calibration</td><td>Battery aging out.</td><td>§11 — replace, recharge 24 h, re-run Lab 4.</td></tr>
 </table></div>
 
@@ -1183,7 +1212,7 @@ esac</code></pre>
 
 <ol class="step-list">
 <li><strong>Cold-start proof.</strong> Reboot the Mac. Before opening anything else: <code>upsc myups@localhost ups.status</code> → <code>OL</code>. All three launchd jobs report <code>state = running</code> under <code>sudo launchctl print</code>. (§8)</li>
-<li><strong>Witness agreement.</strong> <code>pmset -g ps</code> shows the UPS; its charge agrees with <code>upsc</code>'s <code>battery.charge</code> within a point or two. Disagreement is your first finding. (§10)</li>
+<li><strong>Witness agreement.</strong> <code>pmset -g ps</code> shows the UPS; its charge agrees with <code>upsc</code>'s <code>battery.charge</code> within one 5-point gauge step (§10). Disagreement is your first finding. On a laptop, also read the <code>InternalBattery</code> line: charged or charging while the UPS is on wall power. A Mac whose own battery drains while it claims <em>Using AC</em> is telling you its charger is not on a battery-backed outlet, or the hub between them is not passing power. (§10)</li>
 <li><strong>Config review.</strong> Read all four config files end to end. Every line should be one you can explain; any you can't, this guide's §4–§9 name. Confirm modes/permissions on <code>upsd.users</code> and <code>upsmon.conf</code> are 600. (§7)</li>
 <li><strong>Event round-trip.</strong> Recorders on (Lab 4 step 1), pull the wall plug for 60 seconds, restore. Verify ONBATT and ONLINE appear in upsmon's log, the notification fired, and ioupsd's log shows the same transitions at the same timestamps. (§9, §10)</li>
 <li><strong>Fire drill.</strong> Work saved; run the full shutdown path — upssched timer or <code>sudo upsmon -c fsd</code> — and let the machine halt. Boot; confirm <code>autorestart</code> is still 1. (§9, Lab 3)</li>
@@ -1290,6 +1319,8 @@ Whole stack runs as <em>you</em>: <code>user</code>/<code>group</code> in ups.co
 <li><a href="#battery">battery replacement</a></li>
 <li><a href="#monitoring">battery.charge</a></li>
 <li><a href="#bring-up">battery.runtime</a></li>
+<li><a href="#monitoring">battery gauge (5-point steps)</a></li>
+<li><a href="#battery">battery that won't charge (signature)</a></li>
 <li><a href="#launchd">brew services (upsmon-only trap)</a></li>
 <li><a href="#install">brew install nut</a></li>
 </ul>
@@ -1311,6 +1342,7 @@ Whole stack runs as <em>you</em>: <code>user</code>/<code>group</code> in ups.co
 </ul>
 <ul><li class="idx-letter">I</li>
 <li><a href="#monitoring">ioupsd log mining</a></li>
+<li><a href="#monitoring">ioupsd accessory-battery trap</a></li>
 </ul>
 <ul><li class="idx-letter">K</li>
 <li><a href="#launchd">KeepAlive respawn loop</a></li>
@@ -1367,13 +1399,16 @@ Whole stack runs as <em>you</em>: <code>user</code>/<code>group</code> in ups.co
 <li><a href="#hardware">VA vs watts</a></li>
 <li><a href="#battery">VRLA battery care</a></li>
 </ul>
+<ul><li class="idx-letter">W</li>
+<li><a href="#monitoring">Wall Clock adjustment (log show)</a></li>
+</ul>
 </div>
 </section>
 
 <section id="quiz">
 <h2>18 · Quiz</h2>
-<p class="lede">Self-scored flashcards — answer out loud before revealing, then mark yourself honestly. Aim for 13/15; every answer links back to the section that taught it, and the two you miss are tonight's re-reading list.</p>
-<div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0/15 answered</div>
+<p class="lede">Self-scored flashcards — answer out loud before revealing, then mark yourself honestly. Aim for 14/16; every answer links back to the section that taught it, and the two you miss are tonight's re-reading list.</p>
+<div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0/16 answered</div>
 
 <div class="quiz-item" data-q="1">
   <div class="quiz-q"><span class="qnum">Q1</span>Two software stacks can manage the AVR900U on macOS. Name both and the relationship between them.</div>
@@ -1450,11 +1485,16 @@ Whole stack runs as <em>you</em>: <code>user</code>/<code>group</code> in ups.co
   <div class="quiz-answer">Homebrew's NUT is compiled to run as <code>nobody:nobody</code>, but Homebrew's directories belong to you and <code>admin</code>. Fix one: <code>group = admin</code> beside <code>user = paulbaur</code> in <code>ups.conf</code>, so the driver can hand its socket to a group you are in. Fix two: run upsd as you — no sudo by hand, <code>-u paulbaur</code> in the launchd plist. (<a href="#drivers">§5</a>, <a href="#launchd">§8</a>)</div>
   <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
 </div>
+<div class="quiz-item" data-q="16">
+  <div class="quiz-q"><span class="qnum">Q16</span>Eight hours of <code>OL CHRG</code>, <code>Internal Failure = 0</code>, and <code>battery.charge</code> went 80 → 65. upsmon said nothing. What is it, what do you do, and why did upsmon stay quiet?</div>
+  <div class="quiz-answer">A battery that no longer accepts charge (or a dead charger). Rule: 24 h on AC without reaching 90&nbsp;% → replace the RBC51; meanwhile the real runtime is today's <code>battery.runtime</code>. upsmon only reacts to status tokens (OB, LB, REPLBATT) and the UPS raised none — the gauge trend, caught by upslog or the ioupsd extractor, was the only witness. (<a href="#battery">§11</a>, <a href="#monitoring">§10</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
 </section>
 
 <section id="sources">
 <h2>19 · Sources</h2>
-<p>Checked with NUT 2.8.5 (Homebrew) on macOS 15.6 with a Tripp Lite AVR900U · 2026-09-02 · external links require network; the guide itself works offline. Command transcripts marked as real were captured on the verified machine; labs requiring a live UPS are marked in place.</p>
+<p>Checked with NUT 2.8.5 (Homebrew) on macOS 15.6 with a Tripp Lite AVR900U · 2026-09-03 · external links require network; the guide itself works offline. Command transcripts marked as real were captured on the verified machine; labs requiring a live UPS are marked in place.</p>
 <ul>
   <li><a href="https://networkupstools.org/docs/user-manual.chunked/index.html" target="_blank" rel="noopener">NUT user manual</a> — best for the big picture: modes, architecture, configuration walk-throughs.</li>
   <li><a href="https://networkupstools.org/docs/man/macosx-ups.html" target="_blank" rel="noopener">macosx-ups(8)</a> — best for this driver's exact capabilities and limits; short and worth reading whole.</li>
@@ -1550,7 +1590,7 @@ Whole stack runs as <em>you</em>: <code>user</code>/<code>group</code> in ups.co
       else if (quizState[k] === 'missed') missed++;
     });
     scoreEl.textContent = 'Score: ' + got + ' learned · ' + missed + ' review · ' +
-      (got + missed) + '/' + items.length + ' answered — aim for 13/' + items.length;
+      (got + missed) + '/' + items.length + ' answered — aim for 14/' + items.length;
   }
   items.forEach(function (item) {
     var q = item.getAttribute('data-q');
