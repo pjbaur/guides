@@ -40,7 +40,7 @@ Fields per `guides.json` entry:
 - `verified` — badge text (e.g. `tmux 3.7b · 2026-08-22`), or `null` for the
   "checked when written" badge.
 - `accent` — card color: one of `green`, `amber`, `cyan`, `magenta`, `blue`,
-  `violet`. Anything else silently falls back to green.
+  `violet`, `red`, `lime`. Anything else silently falls back to green.
 
 The script warns in both directions: a `*-guide.html` file with no
 `guides.json` entry, and an entry whose file is missing from disk.
@@ -78,6 +78,7 @@ command works as a local pre-commit hook.
 | [`gascity-user-guide.html`](gascity-user-guide.html) | Go orchestration-builder SDK for multi-agent workflows, successor to Gas Town | gascity v1.4.0 · 2026-08-09 |
 | [`cmux-user-guide.html`](cmux-user-guide.html) | Terminal workspace and pane orchestration | 2026-07-09 |
 | [`tmux-user-guide.html`](tmux-user-guide.html) | Terminal multiplexing — sessions that outlive your connection, the client/server model, panes, copy-mode, scripting | tmux 3.7b · 2026-08-22 |
+| [`bw150-user-guide.html`](bw150-user-guide.html) | ATorch BW150 electronic load — wiring, every mode, battery capacity and health, charger and cable tests, cycling, the apps | firmware 1.1.0 · screens 2026-09-05 |
 
 ## How they are built
 
