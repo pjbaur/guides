@@ -91,6 +91,13 @@
       "subject": "Keeping a Tripp Lite UPS honest from macOS - NUT's three-layer stack, launchd persistence, automated shutdown, battery calibration",
       "verified": "NUT 2.8.5 · macOS 15.6 · 2026-09-03",
       "accent": "red"
+    },
+    {
+      "file": "bw150-user-guide.html",
+      "name": "bw150 load",
+      "subject": "ATorch BW150 150 W electronic load - wiring, every mode, battery capacity and health, charger and cable tests, cycling, the apps, and a virtual front panel",
+      "verified": "firmware 1.1.0 · screens 2026-09-05",
+      "accent": "lime"
     }
   ]
 }
