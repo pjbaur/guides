@@ -1109,9 +1109,14 @@
   <text x="365" y="250" text-anchor="middle" class="d-mono">A−</text>
   <path d="M170,110 L250,110 L250,98 L330,98" fill="none" stroke="var(--danger)" stroke-width="4"/>
   <path d="M170,232 L250,232 L250,245 L330,245" fill="none" stroke="var(--ink)" stroke-width="4"/>
+  <!-- jumpers at the block: A+ → V+ (red), A− → V− (black) -->
+  <path d="M332,108 C304,112 304,143 332,147" fill="none" stroke="var(--danger)" stroke-width="2.5"/>
+  <path d="M332,236 C304,232 304,200 332,196" fill="none" stroke="var(--ink)" stroke-width="2.5"/>
+  <text x="296" y="132" text-anchor="end" class="d-tiny">jumper</text>
+  <text x="296" y="220" text-anchor="end" class="d-tiny">jumper</text>
   <text x="250" y="86" text-anchor="middle" class="d-tiny">clip lead ≈ 20–50 mΩ</text>
-  <text x="250" y="290" text-anchor="middle" class="d-tiny">voltage read on the same wires</text>
-  <text x="250" y="306" text-anchor="middle" class="d-tiny">→ reads low by I × R_lead</text>
+  <text x="250" y="290" text-anchor="middle" class="d-tiny">V+/V− jumpered to A+/A− at the block:</text>
+  <text x="250" y="306" text-anchor="middle" class="d-tiny">reads the block, not the cell → low by I × R_lead</text>
   <!-- divider -->
   <line x1="480" y1="50" x2="480" y2="310" stroke="var(--line)" stroke-dasharray="4 4"/>
   <!-- right: 4-wire -->
@@ -1135,7 +1140,7 @@
   <text x="740" y="290" text-anchor="middle" class="d-tiny">dashed: sense wires, ~0 A,</text>
   <text x="740" y="306" text-anchor="middle" class="d-tiny">clipped at the cell terminals</text>
 </svg>
-<figcaption><b>Two wires versus four.</b> In 2-wire the voltmeter shares the wires with the current and reads the drop across your clips as if it were the cell sagging. In 4-wire a second pair of leads carries no current, so the drop across them is nil and the reading is the cell's own terminal voltage. The manual's phrasing: 4-wire "is not affected by the voltage drop of the wire" and is "recommended that buyers with a certain circuit basis use".</figcaption>
+<figcaption><b>Two wires versus four, redrawn from the manual.</b> In 2-wire the cell goes to A+ and A−, and two short jumpers at the terminal block tie V+ to A+ and V− to A−, so the voltmeter reads the block: the cell's voltage minus the drop across your clips, which it reports as if the cell were sagging. In 4-wire the jumpers come off and a second pair of leads runs from the cell terminals to V+ and V−; those leads carry no current, so the drop across them is nil and the reading is the cell's own terminal voltage. The manual's phrasing: 4-wire "is not affected by the voltage drop of the wire" and is "recommended that buyers with a certain circuit basis use".</figcaption>
 </figure>
 
 <div class="table-wrap"><table>
@@ -1149,10 +1154,10 @@
 <h3 id="hookup">6.2 · Hooking up</h3>
 <ol class="recipe">
   <li><strong>Load off, source disconnected.</strong> Never wire live. Hold <kbd class="long">OK</kbd> to return to the menu if a mode is open.</li>
-  <li><strong>Current pair first.</strong> Red clip or wire to <code>A+</code>, black to <code>A−</code>. For 2-wire the manual says this pair is "connected to the 2 terminals [A+] and [A−]" and nothing else. Tighten the screws; a loose terminal is a resistor.</li>
-  <li><strong>Sense pair second (4-wire).</strong> A second red lead from the battery's positive terminal to <code>V+</code>, a second black lead from the negative terminal to <code>V−</code>. Clip the sense leads on the cell terminals themselves, not on the current clips.</li>
+  <li><strong>Current pair first.</strong> Red clip or wire to <code>A+</code>, black to <code>A−</code>. The manual: the cell "must be connected to the 2 terminals [A+] and [A−]". Tighten the screws; a loose terminal is a resistor.</li>
+  <li><strong>Sense pair second, one of two ways.</strong> <em>2-wire:</em> two short jumper wires at the block, <code>A+</code> to <code>V+</code> and <code>A−</code> to <code>V−</code>, as in the manual's diagram. <em>4-wire:</em> no jumpers; a second red lead from the battery's positive terminal to <code>V+</code>, a second black lead from the negative terminal to <code>V−</code>, clipped on the cell terminals themselves, not on the current clips. Either way <code>V+</code>/<code>V−</code> must be connected to something, or the voltmeter has nothing to read.</li>
   <li><strong>Probe.</strong> Tape the NTC probe to the cell body. <code>ETS:Wait..</code> becomes a temperature within a few seconds.</li>
-  <li><strong>Check before you press.</strong> Open the mode. With the load still <code>OFF</code>, <code>Vol</code> should show the cell's resting voltage. If it shows zero, a sense wire is missing or loose; if it is negative or the buzzer complains, polarity is reversed.
+  <li><strong>Check before you press.</strong> Open the mode. With the load still <code>OFF</code>, <code>Vol</code> should show the cell's resting voltage. If it shows zero, <code>V+</code>/<code>V−</code> are open: a jumper or a sense lead is missing or loose. If it is negative or the buzzer complains, polarity is reversed.
     <span class="expect"><b>Expect:</b> a rested 18650 reads 3.6 to 4.2 V; a 12 V lead-acid block 12.4 to 12.9 V; a NiMH AA 1.25 to 1.4 V.</span></li>
 </ol>
 
@@ -1169,7 +1174,7 @@
 <p>Three kinds of thing plug into the terminal block, and each has its own wiring habit:</p>
 <ul>
   <li><strong>Bare cells</strong> go in a four-wire fixture (the 20 A battery box or the 5-in-1 holder). Both bring out four wires: two thick for current, two thin for sense. Match colour to terminal and you are done.</li>
-  <li><strong>USB sources</strong> (chargers, power banks, cables) go through the <em>measuring line adapter board</em>: plug the source in on one side, run its two output wires to A+ and A−. It is a 2-wire connection by nature; USB testing lives at currents where that is acceptable (§10).</li>
+  <li><strong>USB sources</strong> (chargers, power banks, cables) go through the <em>measuring line adapter board</em>: plug the source in on one side, run its two output wires to A+ and A−, and keep the A+→V+ and A−→V− jumpers in place. It is a 2-wire connection by nature; USB testing lives at currents where that is acceptable (§10).</li>
   <li><strong>Fast-charge negotiation</strong> goes through the trigger board, which hands the negotiated voltage to the load over four wires: A+, V+, V−, A− (§10.3).</li>
 </ul>
 
@@ -1177,11 +1182,11 @@
   <div class="lab-title"><span class="n">Lab 3 ·</span> Watch your clips lie</div>
   <div class="lab-meta">10 minutes · one charged 18650 · stock clips and a 4-wire fixture · CC mode</div>
   <ol class="recipe">
-    <li>Put the cell in the fixture. Wire A+ / A− from the fixture's thick leads and leave V+ / V− empty. Open <strong>CC</strong>, set <code>Is=02.0000A</code>, cutoff 3.0 V (§9 for why).
+    <li>Put the cell in the fixture. Wire A+ / A− from the fixture's thick leads, and jumper V+ to A+ and V− to A− at the block (the manual's 2-wire hookup). Leave the fixture's thin sense leads unconnected for now. Open <strong>CC</strong>, set <code>Is=02.0000A</code>, cutoff 3.0 V (§9 for why).
       <span class="expect"><b>Expect:</b> <code>Vol</code> shows the resting voltage with the load <code>OFF</code>.</span></li>
     <li>Tap <kbd>OK</kbd>. Read <code>Vol</code> after ten seconds, then tap <kbd>OK</kbd> to stop. Write the number down.
       <span class="expect"><b>Expect:</b> <code>Cur:002.000A</code>, <code>Vol</code> a few hundred millivolts below resting.</span></li>
-    <li>Now add the sense leads to V+ / V− at the cell terminals. Tap <kbd>OK</kbd>, wait ten seconds, read <code>Vol</code>, stop.
+    <li>Now remove the two jumpers and connect the fixture's thin sense leads to V+ / V− instead, so the sense point moves from the block to the cell terminals. Tap <kbd>OK</kbd>, wait ten seconds, read <code>Vol</code>, stop.
       <span class="expect inferred"><b>Expected from physics:</b> the 4-wire <code>Vol</code> is higher than the 2-wire one by roughly 2 A × your lead resistance, so 40 to 100 mV with typical clips. The difference is the lie.</span></li>
     <li>Divide the difference by 2 A. That is your lead resistance, and now you know it.</li>
   </ol>
@@ -1721,7 +1726,7 @@
 <p class="lede">Most BW150 problems are wiring, most of the rest are settings, and the remainder are the apps. Find the symptom, apply the fix, and if the fix is "check the clips" do it before reading further.</p>
 <div class="table-wrap"><table>
 <tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr>
-<tr><td><code>Vol</code> reads 0.000 with a cell connected</td><td>4-wire sense leads not connected, or the current pair is on V+/V−</td><td>Current on A+/A−, sense on V+/V− at the cell. For 2-wire use A+/A− only.</td></tr>
+<tr><td><code>Vol</code> reads 0.000 with a cell connected</td><td>V+/V− open: 2-wire jumpers missing, 4-wire sense leads not connected, or the current pair is on V+/V−</td><td>Current on A+/A−. Then either jumper V+ to A+ and V− to A− at the block (2-wire) or run sense leads from the cell to V+/V− (4-wire). §6.2.</td></tr>
 <tr><td>Load starts and stops within a second</td><td>Cutoff voltage above the cell's voltage, or Limit time set very short</td><td>Hold <kbd class="long">Setup</kbd> and check the cutoff; Settings 05 for the timer.</td></tr>
 <tr><td>Title shows <code>UREG</code> and <code>Cur</code> is 0</td><td>Load is on with no source, or the source cannot supply the setpoint</td><td>Expected with nothing connected (§7.2). With a source: lower the setpoint, check the source's limit, check the clips.</td></tr>
 <tr><td><code>OPP!</code></td><td>Power above Settings 13, or above the derating band for this voltage</td><td>Reduce the setpoint. Above 36 V you have 60 W; above 80 V, 45 W (§3.3).</td></tr>
@@ -1749,7 +1754,7 @@
 <p class="lede">Everything you need at the terminal block, with the section that explains it in brackets.</p>
 <div class="cards">
   <div class="card"><h4>Universal starting pattern (§7.1)</h4><ul>
-    <li>Load off. Wire: A+/A− current, V+/V− sense at the cell.</li>
+    <li>Load off. Wire: A+/A− current. V+/V− sense at the cell (4-wire) or jumpered to A+/A− at the block (2-wire). Never open.</li>
     <li>Probe on the cell. <code>Vol</code> reads resting voltage.</li>
     <li>Menu → mode → <kbd>OK</kbd>. <kbd>Setup</kbd> → digits → <kbd>OK</kbd>.</li>
     <li><kbd class="long">Setup</kbd> → cutoff → confirm.</li>
