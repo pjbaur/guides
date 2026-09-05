@@ -605,7 +605,7 @@
     <p>Battery labels shout milliamp-hours (mAh). A milliamp-hour is a count of charge: 1000 mAh means the cell can push 1 A for one hour, or 0.5 A for two. It says nothing about voltage, so 3000 mAh at 3.7 V (an 18650) and 3000 mAh at 1.2 V (a NiMH AA) are not remotely the same amount of work. Watt-hours (Wh) are energy: voltage times current, summed over time. The BW150 shows both, as <span class="lcd" style="padding:0 6px;font-size:13px"><span class="c">Cap</span></span> in mAh and <span class="lcd" style="padding:0 6px;font-size:13px"><span class="w">Ene</span></span> in Wh. When you compare cells, compare Wh.</p>
 
     <h4>C-rate turns "how hard" into a number</h4>
-    <p>1C means a current that would empty the rated capacity in one hour: 2.6 A for a 2600 mAh cell. 0.5C is half that (about two hours), 0.2C is a gentle five-hour drain and is the rate most consumer cells are rated at. Discharging faster gives you <em>less</em> measured capacity, because more energy is lost as heat inside the cell. So a capacity figure without its C-rate and cutoff voltage is a rumour, not a measurement.</p>
+    <p>1C means a current that would empty the rated capacity in one hour: 2.6 A for a 2600 mAh cell. 0.5C is half that (about two hours); 0.2C is a gentle five-hour drain and is the rate most consumer cells are rated at. Discharging faster gives you <em>less</em> measured capacity, because more energy is lost as heat inside the cell. So a capacity figure without its C-rate and cutoff voltage is a rumour, not a measurement.</p>
 
     <h4>Internal resistance is why voltage sags</h4>
     <p>Every cell has a small resistance in series with its ideal voltage. Under load the terminal voltage drops by <code>I × R_internal</code>. A healthy 18650 sits around 20 to 60 mΩ; a tired one climbs past 100 mΩ, sags harder, gets hotter and hits cutoff sooner. The BW150's BRT mode measures this directly (§9), and it is the fastest single health check you can do.</p>
@@ -624,7 +624,7 @@
 </details>
 
 <h3 id="the-four-rules">1.2 · The four rules</h3>
-<p>Choose which quantity the BW150 pins and the source has to live with it. Everything else on the device is either a preset recipe built from these four (BRT, PT, CT, the cycle modes) or a way to display them (the curve tiles).</p>
+<p>Choose which quantity the BW150 pins, and the source has to live with it. Everything else on the device is either a preset recipe built from these four (BRT, PT, CT, the cycle modes) or a way to display them (the curve tiles).</p>
 
 <div class="table-wrap"><table>
 <tr><th>Mode</th><th>What the load pins</th><th>What the source decides</th><th>Built for</th><th>Battery?</th></tr>
@@ -636,7 +636,7 @@
 
 <div class="callout bite">
   <strong>CV and CP cannot test a battery</strong>
-  The manual says it in red twice and means it. In CV the load tries to hold a voltage <em>below</em> the battery's own, which means "draw whatever current it takes", which for a healthy cell is far past 25 A. In CP a discharging battery's voltage falls, so the load raises current to keep the product constant, right up to the same cliff. Batteries get CC; CV and CP are for sources with a current limit of their own.
+  The manual says it in red twice and means it. In CV the load tries to hold a voltage <em>below</em> the battery's own. That means "draw whatever current it takes", and for a healthy cell that is far past 25 A. In CP a discharging battery's voltage falls, so the load raises current to keep the product constant, right up to the same cliff. Batteries get CC; CV and CP are for sources with a current limit of their own.
 </div>
 
 <figure class="diagram">
@@ -687,7 +687,7 @@
 
 <div class="callout">
   <strong>Misconception: "mAh is the size of the battery"</strong>
-  Tempting, because it is the only number printed on the wrapper. But mAh depends on the current you drew and the voltage you stopped at, and it ignores voltage entirely. The better model: <em>Wh at a stated C-rate and cutoff</em> is the size; mAh is a convenient shorthand that only works when comparing identical chemistries tested identically. The BW150 gives you both, so write both down.
+  Tempting, because it is the only number printed on the wrapper. But mAh depends on the current you drew and the cutoff you stopped at, and the figure itself carries no voltage. The better model: <em>Wh at a stated C-rate and cutoff</em> is the size; mAh is a convenient shorthand that only works when comparing identical chemistries tested identically. The BW150 gives you both, so write both down.
 </div>
 
 <h3 id="what-you-can-do">1.4 · What you will be able to do</h3>
@@ -820,7 +820,7 @@
 <tr><td><strong>Power in</strong></td><td>DC 5.5 mm barrel jack, Type-C labelled <em>CC port</em></td><td>Powering the BW150 itself. Not for the thing you are testing.</td></tr>
 <tr><td><strong>DUT block</strong></td><td>Green 4-way screw terminal: A+, V+, V−, A− (I+/I− on some silkscreens)</td><td>The device under test. A = current path; V = voltage sense.</td></tr>
 <tr><td><strong>Module header</strong></td><td>4 pins: S, GND, CTL+, D</td><td>The charging-control module for CDC/CDCDC/CDxN (§11).</td></tr>
-<tr><td><strong>Probe socket</strong></td><td>2-pin ETS connector, silk "B3435-10K"</td><td>The external temperature probe. <code>ETS:Wait..</code> on screen means none plugged in.</td></tr>
+<tr><td><strong>Probe socket</strong></td><td>2-pin ETS connector, silk "B3435-10K"</td><td>The external temperature probe. <code>ETS:Wait..</code> on screen means none is plugged in.</td></tr>
 <tr><td><strong>Screen</strong></td><td>2.4″ colour LCD</td><td>Menu, setpoint, meters, stop rules, status, temperatures and fan speed.</td></tr>
 <tr><td><strong>Controls and data</strong></td><td>Setup, −, +, Start/OK buttons; HID Type-C; radios; buzzer</td><td>Everything you do by hand, plus the PC link and the apps.</td></tr>
 </table></div>
@@ -829,7 +829,7 @@
 <p>No adapter is in the box. The manual lists three ways to power the board, all of which go into the top-left corner, and then adds in yellow that a DC 12 V supply is "needed to work". Read that as: 5 V will light it up, 12 V is what it was designed around.</p>
 <div class="table-wrap"><table>
 <tr><th>Input</th><th>Connector</th><th>Notes</th></tr>
-<tr><td>DC 5.5 to 12 V supply</td><td>DC 5.5 mm barrel</td><td><strong>Recommended.</strong> Required by the cycling modes (the CDC wiring diagram says "Insert DC12V power supply"). Any clean 12 V wall adapter with a 5.5 mm plug.</td></tr>
+<tr><td>DC 12 V supply</td><td>DC 5.5 mm barrel</td><td><strong>Recommended.</strong> Required by the cycling modes (the CDC wiring diagram says "Insert DC12V power supply"). Any clean 12 V wall adapter with a 5.5 mm plug.</td></tr>
 <tr><td>USB 5 V / 2 A charger</td><td>Type-C "CC port"</td><td>Works for the basic modes and for looking around the menus.</td></tr>
 <tr><td>QC or PD charger negotiating 12 V</td><td>Type-C "CC port"</td><td>The board requests 12 V from a fast charger. Same effect as the barrel jack if the charger cooperates.</td></tr>
 </table></div>
@@ -986,7 +986,7 @@
     <li>Read the footer while the fan runs.
       <span class="expect"><b>Expect:</b> <code>MOS.T</code> a few degrees below CPU temperature, <code>Fan.S</code> somewhere around 700 to 800 RPM at idle.</span></li>
   </ol>
-  <div class="checkpoint"><strong>Checkpoint:</strong> you can name every number in the header and footer, and you know which two tiles you never need (Developing, and the download QR).</div>
+  <div class="checkpoint"><strong>Checkpoint:</strong> you can name every number in the header and footer, and you know which tile you never need (Developing) and which boot screen you can always skip (the download QR).</div>
 </div>
 <p class="sources-line">Sources: nine boot-sequence captures 2026-09-05 · BW150 User Manual §3 (main functional interface) · §9 (background introduction).</p>
 </section>
@@ -1020,7 +1020,7 @@
 <p>Setpoints are edited one digit at a time. The magenta underline on the screen (visible in the CC capture in §7 under the second digit of <code>01.0000</code>) marks the digit that <kbd>+</kbd>/<kbd>−</kbd> will change. <kbd>Setup</kbd> moves the underline to the next digit and wraps around. To set 2.500 A from 1.000 A: tap <kbd>Setup</kbd> until the units digit is underlined, tap <kbd>+</kbd> once, tap <kbd>Setup</kbd> to reach the first decimal, tap <kbd>+</kbd> five times, then <kbd>OK</kbd>.</p>
 
 <h3 id="simulator">5.3 · Virtual front panel</h3>
-<p>A working replica of the navigation, with a pretend battery on the terminals so the meters move. Click a button for a short press, hold it for a long press. Keyboard: <kbd>←</kbd> <kbd>→</kbd> are − and +, <kbd>Enter</kbd> is OK, <kbd>S</kbd> is Setup; hold a key for a long press. The simulation runs sixty times faster than real life so a capacity test takes minutes, not hours.</p>
+<p>A working replica of the navigation, with a pretend battery on the terminals so the meters move. Click a button for a short press, hold it for a long press. Keyboard: <kbd>←</kbd> <kbd>→</kbd> are − and +, <kbd>Enter</kbd> is OK, <kbd>S</kbd> is Setup; hold a key for a long press. The simulation runs sixty times faster than real life, so a capacity test takes minutes, not hours.</p>
 
 <div class="sim" id="sim" aria-label="BW150 virtual front panel">
   <div class="sim-grid">
@@ -1070,7 +1070,7 @@
   <div class="lab-meta">6 minutes · terminal block empty · practise on the simulator first, then repeat on the board</div>
   <ol class="recipe">
     <li>From the main menu move the cursor to <strong>CC</strong> and tap <kbd>OK</kbd>.
-      <span class="expect"><b>Expect:</b> the CC screen: <code>CC Is=01.0000A</code> at the top, all meters at zero, <code>Res:9999.99Ω</code>, big magenta <code>OFF</code>.</span></li>
+      <span class="expect"><b>Expect:</b> the CC screen, with <code>CC Is=01.0000A</code> at the top, all meters at zero, <code>Res:9999.99Ω</code>, big magenta <code>OFF</code>.</span></li>
     <li>Tap <kbd>Setup</kbd>. Tap <kbd>Setup</kbd> again until the underline sits on the first decimal digit. Tap <kbd>+</kbd> five times. Tap <kbd>OK</kbd>.
       <span class="expect"><b>Expect:</b> <code>Is=01.5000A</code>.</span></li>
     <li>Hold <kbd class="long">Setup</kbd>. Set the discharge cutoff to 3.0 V and confirm.
@@ -1140,7 +1140,7 @@
   <text x="740" y="290" text-anchor="middle" class="d-tiny">dashed: sense wires, ~0 A,</text>
   <text x="740" y="306" text-anchor="middle" class="d-tiny">clipped at the cell terminals</text>
 </svg>
-<figcaption><b>Two wires versus four, redrawn from the manual.</b> In 2-wire the cell goes to A+ and A−, and two short jumpers at the terminal block tie V+ to A+ and V− to A−, so the voltmeter reads the block: the cell's voltage minus the drop across your clips, which it reports as if the cell were sagging. In 4-wire the jumpers come off and a second pair of leads runs from the cell terminals to V+ and V−; those leads carry no current, so the drop across them is nil and the reading is the cell's own terminal voltage. The manual's phrasing: 4-wire "is not affected by the voltage drop of the wire" and is "recommended that buyers with a certain circuit basis use".</figcaption>
+<figcaption><b>Two wires versus four, redrawn from the manual.</b> In 2-wire the cell goes to A+ and A−, and two short jumpers at the terminal block tie V+ to A+ and V− to A−, so the voltmeter reads the block: the cell's voltage minus the drop across your clips, which it reports as if the cell were sagging. In 4-wire the jumpers come off and a second pair of leads runs from the cell terminals to V+ and V−; those leads carry no current, so the drop across them is nil and the reading is the cell's own terminal voltage. The manual's phrasing: 4-wire "is not affected by the voltage drop of the wire", and it is "recommended that buyers with a certain circuit basis use" it.</figcaption>
 </figure>
 
 <div class="table-wrap"><table>
@@ -1173,7 +1173,7 @@
 <h3 id="fixtures">6.3 · Fixtures and adapter boards</h3>
 <p>Three kinds of thing plug into the terminal block, and each has its own wiring habit:</p>
 <ul>
-  <li><strong>Bare cells</strong> go in a four-wire fixture (the 20 A battery box or the 5-in-1 holder). Both bring out four wires: two thick for current, two thin for sense. Match colour to terminal and you are done.</li>
+  <li><strong>Bare cells</strong> go in a 4-wire fixture (the 20 A battery box or the 5-in-1 holder). Both bring out four wires: two thick for current, two thin for sense. Match colour to terminal and you are done.</li>
   <li><strong>USB sources</strong> (chargers, power banks, cables) go through the <em>measuring line adapter board</em>: plug the source in on one side, run its two output wires to A+ and A−, and keep the A+→V+ and A−→V− jumpers in place. It is a 2-wire connection by nature; USB testing lives at currents where that is acceptable (§10).</li>
   <li><strong>Fast-charge negotiation</strong> goes through the trigger board, which hands the negotiated voltage to the load over four wires: A+, V+, V−, A− (§10.3).</li>
 </ul>
@@ -1258,7 +1258,7 @@
   <ol class="recipe">
     <li>Open <strong>CC</strong>, set <code>Is=01.0000A</code>, cutoff 3.0 V. Confirm <code>Vol</code> reads the resting voltage.</li>
     <li>Tap <kbd>OK</kbd> and start a stopwatch. At five minutes tap <kbd>OK</kbd>.
-      <span class="expect inferred"><b>Expected from arithmetic:</b> <code>Cap</code> ≈ 000083 mAh (1 A × 5/60 h), <code>Ene</code> ≈ 0.30 Wh (about 3.6 V × 0.083 Ah), footer time <code>000:05:00</code> give or take your reflexes.</span></li>
+      <span class="expect inferred"><b>Expected from arithmetic:</b> <code>Cap</code> ≈ 000083 mAh (1 A × 5/60 h), <code>Ene</code> ≈ 0.30 Wh (about 3.6 V × 0.083 Ah), footer time <code>000:05:00</code>, give or take your reflexes.</span></li>
     <li>Compare <code>Cap</code> with 1000 mAh × (elapsed hours). Anything off by more than a couple of percent means the current was not what you set (check <code>Cur</code> during the run) or the timing was.</li>
   </ol>
   <div class="checkpoint"><strong>Checkpoint:</strong> you have confirmed with your own stopwatch that Cap is the integral of Cur, and that Ene is the integral of Pwr. From here on you can trust the integrators and spend your attention on the wiring.</div>
@@ -1290,7 +1290,7 @@
 
 <div class="callout bite">
   <strong>CV on a battery is a dead short with extra steps</strong>
-  Set <code>Vs</code> to 3.0 V on a 4.1 V cell and the load will try to pull the terminals down to 3.0 V. The only way to do that is to draw current until the cell's internal resistance drops the voltage 1.1 V, which for a 40 mΩ cell means asking for 27 A. The over-current alarm at 25 A will probably save the load. The cell was never consulted.
+  Set <code>Vs</code> to 3.0 V on a 4.1 V cell and the load will try to pull the terminals down to 3.0 V. The only way to do that is to draw current until the cell's internal resistance drops the voltage by 1.1 V, which for a 40 mΩ cell means asking for 27 A. The over-current alarm at 25 A will probably save the load. The cell was never consulted.
 </div>
 
 <div class="lab">
@@ -1321,7 +1321,7 @@
 <tr><td>NiMH (AA, AAA, packs)</td><td class="num">1.2 V</td><td class="num">1.40–1.45 V</td><td class="num">1.0 V per cell (0.9 V for a rating)</td><td class="num">0.2C</td><td>Self-discharges; test soon after charging.</td></tr>
 <tr><td>Alkaline (AA, AAA, 9 V)</td><td class="num">1.5 V</td><td class="num">1.60 V</td><td class="num">0.9 V per cell</td><td class="num">low, tens of mA</td><td>Capacity collapses at high current; test at what the gadget draws.</td></tr>
 <tr><td>Lead-acid, 12 V (6 cells)</td><td class="num">12.0 V</td><td class="num">12.7–12.9 V rested</td><td class="num">10.5 V (1.75 V/cell)</td><td class="num">0.05C–0.1C (C/20 for the rating)</td><td>Slow tests. A 7 Ah block at C/10 is 0.7 A for ten hours.</td></tr>
-<tr><td>Coin cell (CR2032)</td><td class="num">3.0 V</td><td class="num">3.2–3.3 V</td><td class="num">2.0 V</td><td class="num">≈ 1 mA</td><td>Below the BW150's comfortable range; readings at 1 mA are two counts of resolution.</td></tr>
+<tr><td>Coin cell (CR2032)</td><td class="num">3.0 V</td><td class="num">3.2–3.3 V</td><td class="num">2.0 V</td><td class="num">≈ 1 mA</td><td>Below the BW150's comfortable range; readings at 1 mA are a single count of resolution.</td></tr>
 </table></div>
 <p>The "rating" cutoffs are what manufacturers use; the "to set" cutoffs are what a hobbyist who wants the cell back should use. The difference is a few percent of capacity and a great deal of cycle life.</p>
 
@@ -1374,12 +1374,12 @@
 </div>
 
 <h3 id="brt">9.2 · BRT: internal resistance in ninety seconds</h3>
-<p>BRT is a recipe, not a rule. Select it, wire the cell four-wire, tap <kbd>OK</kbd>, and the BW150 steps the current up through a ladder (the manual's screen shows 0.1, 0.2, 0.4 … 1.8 A), records the voltage at each step, fits the slope and prints a single number: "Analog AC integrated average internal resistance", 53 mΩ in the vendor's example. The manual's guidance: "small battery tests low current internal resistance, big battery tests high current internal resistance", which is its way of saying the ladder scales with what the cell can supply.</p>
+<p>BRT is a recipe, not a rule. Select it, wire the cell 4-wire, tap <kbd>OK</kbd>, and the BW150 steps the current up through a ladder (the manual's screen shows 0.1, 0.2, 0.4 … 1.8 A), records the voltage at each step, fits the slope and prints a single number: "Analog AC integrated average internal resistance", 53 mΩ in the vendor's example. The manual's guidance: "small battery tests low current internal resistance, big battery tests high current internal resistance", which is its way of saying the ladder scales with what the cell can supply.</p>
 <div class="table-wrap"><table>
 <tr><th>18650 internal resistance</th><th>Verdict</th></tr>
 <tr><td class="num">20–40 mΩ</td><td>New or excellent. High-drain cells sit at the bottom of this range.</td></tr>
 <tr><td class="num">40–80 mΩ</td><td>Normal for a capacity-oriented cell, or a good cell with a few hundred cycles on it.</td></tr>
-<tr><td class="num">80–150 mΩ</td><td>Aging. Expect sag under load and reduced capacity at 1C. Fine for low-drain use.</td></tr>
+<tr><td class="num">80–150 mΩ</td><td>Ageing. Expect sag under load and reduced capacity at 1C. Fine for low-drain use.</td></tr>
 <tr><td class="num">&gt; 150 mΩ</td><td>Tired or damaged. Retire it from anything that draws real current.</td></tr>
 </table></div>
 <p>These bands are hobbyist rules of thumb for 18650-class cells measured this way, not vendor specifications; a large prismatic cell or a lead-acid block has its own scale. The value depends on temperature and on state of charge, so compare BRT numbers only between cells tested the same way on the same afternoon.</p>
@@ -1404,15 +1404,15 @@
   <ol class="recipe">
     <li>Charge the cell fully on its own charger and let it rest 30 minutes. Note the resting voltage.
       <span class="expect"><b>Expect:</b> 4.15–4.20 V for a healthy Li-ion cell.</span></li>
-    <li>Fixture, four wires, probe taped to the cell body. In Settings set <em>14 · Over_Temp Ext.T</em> to 45 °C (§12) so the load bails out if the cell heats.</li>
+    <li>Fixture, four wires, probe taped to the cell body. In Settings set <em>14 · Over_Temp Ext.T</em> to 45 °C (§12) so the load bails out if the cell heats up.</li>
     <li>Open <strong>CC</strong>. Set <code>Is</code> to 0.5C (1.300 A for a 2600 mAh cell; use the planner). Hold <kbd class="long">Setup</kbd> and set the cutoff to 3.0 V.
       <span class="expect"><b>Expect:</b> <code>Run Stop: &lt;003.0V …</code>, <code>ETS:</code> showing room temperature, <code>Vol</code> showing the resting voltage.</span></li>
     <li>Tap <kbd>OK</kbd>. Watch the first minute: <code>Cur</code> at setpoint, <code>Vol</code> dropping by roughly <code>I × R_internal</code> and then sloping gently.
       <span class="expect inferred"><b>Expected from physics:</b> an immediate dip of 50–100 mV for a 40–80 mΩ cell, then a slow decline through 3.7 V around the halfway mark and a knee below 3.4 V near the end.</span></li>
     <li>Come back in two hours. The load has stopped at the cutoff. Record <code>Cap</code>, <code>Ene</code>, elapsed time, the current, the cutoff, and the peak <code>ETS</code>.</li>
-    <li>Interpret: <code>Cap</code> ÷ rated capacity is the state of health. Above 90 % is a good cell, 80–90 % is an aging cell, below 80 % is a cell for low-drain duty or recycling.</li>
+    <li>Interpret: <code>Cap</code> ÷ rated capacity is the state of health. Above 90 % is a good cell; 80–90 % is an ageing cell; below 80 % is a cell for low-drain duty or recycling.</li>
   </ol>
-  <div class="checkpoint"><strong>Checkpoint:</strong> a line in your log that reads like a datasheet: "Cell X · 0.5C (1.30 A) · 3.0 V cutoff · 2 411 mAh · 8.72 Wh · 1 h 51 m · peak 31 °C · 46 mΩ". Anything less is a rumour.</div>
+  <div class="checkpoint"><strong>Checkpoint:</strong> a line in your log that reads like a datasheet, such as "Cell X · 0.5C (1.30 A) · 3.0 V cutoff · 2 411 mAh · 8.72 Wh · 1 h 51 m · peak 31 °C · 46 mΩ". Anything less is a rumour.</div>
 </div>
 
 <div class="callout bite">
@@ -1422,7 +1422,7 @@
 
 <div class="callout blue">
   <strong>Misconception: "a faster test is just a faster test"</strong>
-  A cell tested at 1C reports less capacity than the same cell at 0.2C, sometimes 5–10 % less, because <code>I² × R_internal</code> of energy became heat inside the cell instead of Wh at the terminals. Neither number is wrong; they answer different questions. Rate the cell at 0.2C, qualify it for a job at the job's current, and always write the rate next to the number.
+  A cell tested at 1C reports less capacity than the same cell at 0.2C, sometimes 5–10 % less, because <code>I² × R_internal</code> losses turn energy into heat inside the cell instead of delivering it as Wh at the terminals. Neither number is wrong; they answer different questions. Rate the cell at 0.2C, qualify it for a job at the job's current, and always write the rate next to the number.
 </div>
 <p class="sources-line">Sources: BW150 User Manual §5 (BRT) · §11, §12 (fixtures and cell types) · chemistry voltages are standard values, not from the manual.</p>
 </section>
@@ -1443,12 +1443,12 @@
 </ol>
 
 <h3 id="ct">10.2 · CT: cable resistance from a voltage drop</h3>
-<p>CT measures a cable by putting it between a stiff 5 V source and the load, then drawing current until the voltage at the load end has dropped by a set amount. The vendor's screen shows steps of 0.1 to 0.7 V of drop, the current that caused each, and the resistance that implies (<code>R = ΔV ÷ I</code>). It ends with seven numbers: an average cable resistance and the current the cable can pass at 0.3 V, 0.5 V and 0.7 V of drop. That last trio is the practical one: a cable that only carries 1 A before it drops half a volt is a cable that will make a fast charger fall back to 5 W.</p>
+<p>CT measures a cable by putting it between a stiff 5 V source and the load, then drawing current until the voltage at the load end has dropped by a set amount. The vendor's screen shows steps of 0.1 to 0.7 V of drop, the current that caused each, and the resistance that implies (<code>R = ΔV ÷ I</code>). It ends with four numbers: an average cable resistance and the current the cable can pass at 0.3 V, 0.5 V and 0.7 V of drop. That last trio is the practical one: a cable that only carries 1 A before it drops half a volt is a cable that will make a fast charger fall back to 5 W.</p>
 <ol class="recipe">
   <li>Source: a USB-A charger you trust (its PT result from 10.1 tells you it is stiff). Cable under test from the charger to the adapter board's matching socket. Adapter board wires to <code>A+</code> / <code>A−</code>.</li>
   <li>Open <strong>CT</strong>. Tap <kbd>OK</kbd>.
     <span class="expect"><b>Expect:</b> the empty (no-load) voltage, then one row per drop step, then "Cable average resistance assessment" in mΩ and the three current-at-drop lines.</span></li>
-  <li>Repeat with a second cable. The difference between a good and a bad cable is usually 3× or more, which is why this test is worth doing on every cable you own once.</li>
+  <li>Repeat with a second cable. The difference between a good and a bad cable is usually 3× or more, which is why this test is worth doing once on every cable you own.</li>
 </ol>
 
 <h3 id="trigger">10.3 · The trigger board: asking for 9, 12, 15, 20 or 28 V</h3>
@@ -1494,7 +1494,7 @@
 <tr><th>Mode</th><th>Menu label</th><th>Sequence</th><th>Use</th></tr>
 <tr><td><strong>CDC</strong></td><td>Charge-discharge-3</td><td>Charge → discharge → charge (three phases)</td><td>One measured discharge from a known full state, ending full. The standard "test and return it charged" run.</td></tr>
 <tr><td><strong>CDCDC</strong></td><td>Charge-discharge-5</td><td>Charge → discharge → charge → discharge → charge (five phases)</td><td>Two measured discharges to see if a cell settles after a first cycle, ending full.</td></tr>
-<tr><td><strong>CDxN</strong></td><td>Charge-discharge-n</td><td>N cycles, 1 to 99, each logged to a row of the CD-Cyclic table</td><td>Aging and burn-in. The screen lists GROUP, CAP (mAh), ELE (Wh) and TIME (h) per cycle.</td></tr>
+<tr><td><strong>CDxN</strong></td><td>Charge-discharge-n</td><td>N cycles, 1 to 99, each logged to a row of the CD-Cyclic table</td><td>Ageing and burn-in. The screen lists GROUP, CAP (mAh), ELE (Wh) and TIME (h) per cycle.</td></tr>
 </table></div>
 
 <h3 id="cycle-wiring">11.2 · Wiring the module</h3>
@@ -1692,7 +1692,7 @@
 </ol>
 <h3>Phase C · Recharge and rest (charger time + 30 minutes)</h3>
 <ol class="recipe">
-  <li>Dedicated charger to full. Rest 30 minutes. Record the resting voltage again; it should match Phase A within 20 mV.</li>
+  <li>Dedicated charger to full. Rest 30 minutes. Record the resting voltage again; it should match Phase A to within 20 mV.</li>
 </ol>
 <h3>Phase D · Working capacity at 1C (about 1 hour)</h3>
 <ol class="recipe">
@@ -1744,7 +1744,7 @@
 <tr><td>Cycle mode never switches to discharge</td><td>Board on USB 5 V; module lead not seated; charge cutoff current never reached</td><td>12 V barrel power; reseat the 4-pin lead; set Settings 11 above your charger's termination current.</td></tr>
 <tr><td>Fan loud at idle</td><td>Normal; it is a CPU cooler on a 150 W load</td><td>Nothing. A fan that stops is the problem.</td></tr>
 </table></div>
-<p class="sources-line">Sources: BW150 User Manual §6 (software FAQ), §10 (alarms) · captures 2026-09-05 · the rest is this guide's own experience of loads and wiring.</p>
+<p class="sources-line">Sources: BW150 User Manual §6 (software FAQ), §10 (alarms) · captures 2026-09-05 · the rest is general electronic-load and wiring practice rather than observation of this unit.</p>
 </section>
 
 
@@ -2089,7 +2089,7 @@
 <!-- ============================================================ 20 -->
 <section id="sources">
 <h2>20 · Sources <span class="tag">Where every claim came from</span></h2>
-<p class="small">Written against the vendor's <em>BW150 User Manual</em> (a 19-page Microsoft Print-to-PDF export of "BW150 User Manual.docx", dated 2024-12-24) and fourteen photographs of one unit running firmware 1.1.0 "BenFang System", taken 2026-09-05. The author of this file did not operate the hardware. Every "Expect" line is traced to a capture, to the manual, or to arithmetic, and is labelled <em>Observed</em> or <em>Expected</em> when it is an inference rather than a documented fact. Battery chemistry voltages, resistance bands and C-rate practice are standard hobbyist values, not the vendor's. External links require a network; the guide itself works offline.</p>
+<p class="small">Written against the vendor's <em>BW150 User Manual</em> (a 19-page Microsoft Print-to-PDF export of "BW150 User Manual.docx", dated 2024-12-24) and fourteen photographs of one unit running firmware 1.1.0 "BenFang System", taken 2026-09-05. The author of this file did not operate the hardware. Every "Expect" line is traced to a capture, to the manual, or to arithmetic, and is labelled <em>Observed</em> when it comes from a capture and <em>Expected</em> when it is an inference rather than a documented fact. Battery chemistry voltages, resistance bands and C-rate practice are standard hobbyist values, not the vendor's. External links require a network; the guide itself works offline.</p>
 <ul>
   <li><strong>BW150 User Manual (PDF, ATorch, Dec 2024).</strong> The primary source: structure diagram, power options, wiring diagram, mode descriptions, settings map, alarm table, accessory list, DL24B-XSP16 page. Best used for the photographs this guide could only redraw.</li>
   <li><a href="http://en.atorch.cn/" target="_blank" rel="noopener">en.atorch.cn</a> — the vendor site the manual's download links point to. Best used for the firmware <code>.bin</code> and the current PC software. Domain as printed in the manual; not verified for this guide.</li>
@@ -2276,7 +2276,7 @@
       var fit = 'yes', cls = 'ok', note = c.note;
       if (i > OCP) { fit = 'no: ' + i.toFixed(1) + ' A > 25 A OCP'; cls = 'bad'; note = 'Lower the C-rate. The over-current alarm sits at 25 A.'; }
       else if (pPeak > pAllowed) { fit = 'no: ' + pPeak.toFixed(0) + ' W > ' + pAllowed + ' W'; cls = 'bad'; note = 'Above the ' + pAllowed + ' W ceiling for ' + c.full + ' V (§3.3). Lower the C-rate or test modules under 36 V.'; }
-      else if (wire === '2' && i > 10) { fit = 'no: clips are 10 A'; cls = 'bad'; note = 'The stock 2-wire cable is rated 10 A. Use the 20 A four-wire fixture.'; }
+      else if (wire === '2' && i > 10) { fit = 'no: clips are 10 A'; cls = 'bad'; note = 'The stock 2-wire cable is rated 10 A. Use the 20 A 4-wire fixture.'; }
       else if (wire === '2' && i > 1) { fit = 'yes, but 2-wire'; cls = 'warn'; note = 'At ' + i.toFixed(2) + ' A your clips add roughly ' + (i * 30).toFixed(0) + ' mV of error (30 mΩ assumed). Sense at the cell on V+/V− for a figure you would write down.'; }
       else if (i < 0.05) { cls = 'warn'; note = note + ' At ' + (i * 1000).toFixed(1) + ' mA the current resolution (1 mA) is a large fraction of the setpoint.'; }
       plFit.textContent = fit; plFit.className = 'v ' + cls;
