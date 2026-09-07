@@ -394,7 +394,7 @@
   @media (max-width: 820px) { .sim-grid { grid-template-columns: minmax(0, 1fr); } .sim-screen { min-height: 0; } }
   .sim-screen { aspect-ratio: 4 / 3; padding: 10px 12px; font-size: 13px; line-height: 1.4; display: flex; flex-direction: column; min-height: 240px; }
   .sim-screen .hd { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--lcd-magenta); padding-bottom: 3px; margin-bottom: 5px; font-size: 16px; font-weight: 700; }
-  .sim-screen .hd .cur { text-decoration: underline; text-decoration-color: var(--lcd-magenta); text-decoration-thickness: 3px; }
+  .sim-screen .cur { text-decoration: underline; text-decoration-color: var(--lcd-magenta); text-decoration-thickness: 3px; }
   .sim-screen .body { display: grid; grid-template-columns: 1.35fr 1fr; gap: 8px; flex: 1; }
   .sim-screen .vals div { display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; }
   .sim-screen .side { border-left: 1px solid var(--lcd-line); padding-left: 8px; font-size: 11.5px; line-height: 1.4; }
@@ -683,7 +683,7 @@
 
 <h3 id="the-diary">1.3 · The diary: six meters and four tripwires</h3>
 <p>Every measurement screen on the BW150 has the same anatomy (dissected in §7): the setpoint at the top, six readouts on the left, the stop conditions on the right. The six readouts split into three <em>meters</em> that show right now (<code>Vol</code>, <code>Cur</code>, <code>Pwr</code>), one <em>derived</em> value (<code>Res</code> = V ÷ I, which reads 9999.99 Ω when nothing is connected) and two <em>integrators</em> that accumulate since you pressed start (<code>Ene</code> in Wh and <code>Cap</code> in mAh). The integrators are the product; the meters are how you check the product is being made honestly.</p>
-<p>The four tripwires are the rules under which the device stops on its own: a <strong>cutoff voltage</strong> (the "empty" line for a battery), an <strong>over-power</strong> limit, an <strong>over-temperature</strong> limit for the MOSFET, and an optional <strong>time limit</strong>. They show on the screen as <code>Run Stop: &lt;003.0V &gt;0150W &gt;100°C</code> and <code>Limit time: OFF</code>. Set the cutoff wrong and the device will happily discharge a lithium cell into a paperweight; §9 gives the numbers.</p>
+<p>The four tripwires are the rules under which the device stops on its own: a <strong>cutoff voltage</strong> (the "empty" line for a battery), an <strong>over-power</strong> limit, an <strong>over-temperature</strong> limit for the MOSFET, and an optional <strong>time limit</strong>. They show on the screen as <code>Run Stop: &lt;003.0V &gt;0150W &gt;100°C</code> and <code>Limit time: OFF</code>, and are edited right there by holding <kbd class="long">Setup</kbd> (§5.3). Set the cutoff wrong and the device will happily discharge a lithium cell into a paperweight; §9 gives the numbers.</p>
 
 <div class="callout">
   <strong>Misconception: "mAh is the size of the battery"</strong>
@@ -1006,7 +1006,7 @@
 <tr><th>Where you are</th><th><kbd>+</kbd> / <kbd>−</kbd></th><th><kbd>OK</kbd> short</th><th><kbd class="long">OK</kbd></th><th><kbd>Setup</kbd> short</th><th><kbd class="long">Setup</kbd></th></tr>
 <tr><td>Boot screens</td><td>Select left / right</td><td>Enter, Next</td><td>—</td><td>—</td><td>—</td></tr>
 <tr><td>Main menu</td><td>Move the green cursor</td><td>Open the tile</td><td>—</td><td>—</td><td>—</td></tr>
-<tr><td>Measurement screen</td><td>Change the selected digit (while editing)</td><td><strong>Start / stop</strong> the load</td><td>Back to main menu</td><td>Edit the setpoint; press again to move to the next digit</td><td>Open this mode's parameter page (cutoff, limits)</td></tr>
+<tr><td>Measurement screen</td><td>Change the selected digit (while editing); change the highlighted field (in cursor mode)</td><td><strong>Start / stop</strong> the load. In cursor mode: move to the next field</td><td>Back to main menu</td><td>Edit the setpoint; press again to move to the next digit. In cursor mode: move to the next field</td><td>Enter cursor mode on this screen: <code>BAT</code> group first, then Run Stop and Limit time (§5.3)</td></tr>
 <tr><td>Settings list</td><td>Move up / down</td><td>Enter item; confirm value</td><td>Back</td><td>—</td><td>—</td></tr>
 </table></div>
 <p>"Short" is a tap. "Long" is holding until the screen reacts, about a second. The device makes no sound to tell you the long press registered; watch the display.</p>
@@ -1017,9 +1017,17 @@
 </div>
 
 <h3 id="editing">5.2 · Editing a number, digit by digit</h3>
-<p>Setpoints are edited one digit at a time. The magenta underline on the screen (visible in the CC capture in §7 under the second digit of <code>01.0000</code>) marks the digit that <kbd>+</kbd>/<kbd>−</kbd> will change. <kbd>Setup</kbd> moves the underline to the next digit and wraps around. To set 2.500 A from 1.000 A: tap <kbd>Setup</kbd> until the units digit is underlined, tap <kbd>+</kbd> once, tap <kbd>Setup</kbd> to reach the first decimal, tap <kbd>+</kbd> five times, then <kbd>OK</kbd>.</p>
+<p>Setpoints are edited one digit at a time. The magenta underline on the screen (visible in the CC capture in §7 under the second digit of <code>01.0000</code>) marks the digit that <kbd>+</kbd>/<kbd>−</kbd> will change. Each digit wraps on its own: <kbd>+</kbd> on a 9 gives 0, <kbd>−</kbd> on a 0 gives 9, and nothing carries into the neighbour. <kbd>Setup</kbd> moves the underline to the next digit and wraps around. To set 2.500 A from 1.000 A: tap <kbd>Setup</kbd> until the units digit is underlined, tap <kbd>+</kbd> once, tap <kbd>Setup</kbd> to reach the first decimal, tap <kbd>+</kbd> five times, then <kbd>OK</kbd>.</p>
 
-<h3 id="simulator">5.3 · Virtual front panel</h3>
+<h3 id="cursor-mode">5.3 · Cursor mode: the recording group, the tripwires and the timer</h3>
+<p>The cutoff voltage, the power and temperature limits, the time limit and the <code>BAT</code> recording group are all edited on the measurement screen itself. Hold <kbd class="long">Setup</kbd> and the <code>BAT</code> number in the footer lights up: <kbd>+</kbd>/<kbd>−</kbd> pick the group, 01 to 10. Each further tap of <kbd>Setup</kbd> moves the cursor one place along the right-hand panel: through the digits of the Run Stop voltage (<code>&lt;003.0V</code>), then the wattage (<code>&gt;0150W</code>), then the temperature (<code>&gt;100°C</code>), then the hours and the minutes of <code>Limit time</code>, and finally to <strong>Save</strong>. <kbd>OK</kbd> does the same as <kbd>Setup</kbd> here: it steps to the next field, it does not start the load. At every stop, <kbd>+</kbd>/<kbd>−</kbd> change the value under the cursor, and every field wraps at its ends: a digit goes 9 → 0, <code>BAT</code> goes 10 → 01, minutes go 59 → 00.</p>
+<p>Two ways out. Step onto Save and press once more, and the device leaves cursor mode with the new values. Or leave the buttons alone for five seconds, and it exits and saves whatever is on the screen by itself. That second exit is also the trap: if you are interrupted mid-edit, whatever was showing at the five-second mark is what got saved. Read the panel back before you start the load.</p>
+<div class="callout bite">
+  <strong>Same button, two different edits</strong>
+  A tap of <kbd>Setup</kbd> edits the setpoint at the top of the screen and ends with <kbd>OK</kbd>. A hold of <kbd class="long">Setup</kbd> edits the stop rules at the side and ends at Save, or on its own after five idle seconds; <kbd>OK</kbd> only steps to the next field there. The same cutoff and time limit also live in the settings list as items 09 and 05 (§12); cursor mode is the short route.
+</div>
+
+<h3 id="simulator">5.4 · Virtual front panel</h3>
 <p>A working replica of the navigation, with a pretend battery on the terminals so the meters move. Click a button for a short press, hold it for a long press. Keyboard: <kbd>←</kbd> <kbd>→</kbd> are − and +, <kbd>Enter</kbd> is OK, <kbd>S</kbd> is Setup; hold a key for a long press. The simulation runs sixty times faster than real life, so a capacity test takes minutes, not hours.</p>
 
 <div class="sim" id="sim" aria-label="BW150 virtual front panel">
@@ -1031,7 +1039,7 @@
     <div class="sim-panel">
       <h4>Front panel</h4>
       <div class="sim-buttons">
-        <button class="sim-btn" id="simSetup" type="button">Setup<small>edit · hold: params</small></button>
+        <button class="sim-btn" id="simSetup" type="button">Setup<small>edit · hold: cursor</small></button>
         <button class="sim-btn" id="simMinus" type="button">−<small>down</small></button>
         <button class="sim-btn" id="simPlus" type="button">+<small>up</small></button>
         <button class="sim-btn" id="simOk" type="button">OK<small>start · hold: back</small></button>
@@ -1062,7 +1070,7 @@
 
 <div class="callout blue">
   <strong>What the simulator gets right and wrong</strong>
-  Right: the menu order, the two press lengths, digit editing, the stop rules, and the <code>UREG</code> screen when the load is on with nothing to regulate (§7.2). Wrong, on purpose: the pretend cells are simple models with a fixed internal resistance, the parameter page is trimmed to the four values that matter, and the real device has more pages (curve, settings sub-items) than are worth replicating here. Learn the grammar here; learn the numbers on the board.
+  Right: the menu order, the two press lengths, digit editing, cursor mode with its five-second timeout, the stop rules, and the <code>UREG</code> screen when the load is on with nothing to regulate (§7.2). Wrong, on purpose: the pretend cells are simple models with a fixed internal resistance, the five-second timeout runs in real time whatever the speed setting, and the real device has more pages (curve, settings sub-items) than are worth replicating here. Learn the grammar here; learn the numbers on the board.
 </div>
 
 <div class="lab">
@@ -1073,8 +1081,8 @@
       <span class="expect"><b>Expect:</b> the CC screen, with <code>CC Is=01.0000A</code> at the top, all meters at zero, <code>Res:9999.99Ω</code>, big magenta <code>OFF</code>.</span></li>
     <li>Tap <kbd>Setup</kbd>. Tap <kbd>Setup</kbd> again until the underline sits on the first decimal digit. Tap <kbd>+</kbd> five times. Tap <kbd>OK</kbd>.
       <span class="expect"><b>Expect:</b> <code>Is=01.5000A</code>.</span></li>
-    <li>Hold <kbd class="long">Setup</kbd>. Set the discharge cutoff to 3.0 V and confirm.
-      <span class="expect"><b>Expect:</b> the right-hand panel reads <code>Run Stop: &lt;003.0V &gt;0150W &gt;100°C</code>.</span></li>
+    <li>Hold <kbd class="long">Setup</kbd> until <code>BAT</code> lights up. Tap <kbd>Setup</kbd> to walk the cursor onto the Run Stop voltage and set 3.0 V with <kbd>+</kbd>/<kbd>−</kbd>. Then take your hands off the buttons and count to five, or tap on to Save and press <kbd>OK</kbd>.
+      <span class="expect"><b>Expect:</b> the highlight disappears and the right-hand panel reads <code>Run Stop: &lt;003.0V &gt;0150W &gt;100°C</code>.</span></li>
     <li>With nothing connected, tap <kbd>OK</kbd> once.
       <span class="expect"><b>Expect:</b> the title changes to <code>UREG</code>, the status to <code>ON</code>, and every meter stays at zero. The load is on with nothing to regulate.</span></li>
     <li>Tap <kbd>OK</kbd> again, then hold <kbd class="long">OK</kbd>.
@@ -1082,7 +1090,7 @@
   </ol>
   <div class="checkpoint"><strong>Checkpoint:</strong> you can reach any digit of the setpoint in under five taps and you know what <code>UREG</code> means before it ever surprises you.</div>
 </div>
-<p class="sources-line">Sources: Key Tip capture · button-cluster photo · CC and UREG captures 2026-09-05 · BW150 User Manual §9.</p>
+<p class="sources-line">Sources: Key Tip capture · button-cluster photo · CC and UREG captures 2026-09-05 · cursor-mode behaviour observed on the unit 2026-09-06 · BW150 User Manual §9.</p>
 </section>
 
 <!-- ============================================================ 6 -->
@@ -1215,12 +1223,12 @@
       <li><strong>Res</strong> (orange): V ÷ I, computed. 9999.99 Ω means no current is flowing.</li>
       <li><strong>Ene</strong> (white): energy integrated since start, in Wh. The honest number.</li>
       <li><strong>Cap</strong> (cyan): charge integrated since start, in mAh. The label number.</li>
-      <li><strong>Run Stop.</strong> The tripwires: <code>&lt;003.0V</code> stop below this voltage, <code>&gt;0150W</code> stop above this power, <code>&gt;100°C</code> stop above this MOSFET temperature.</li>
-      <li><strong>Limit time.</strong> <code>OFF</code>, or a countdown after which the load stops on its own (Settings 05).</li>
+      <li><strong>Run Stop.</strong> The tripwires: <code>&lt;003.0V</code> stop below this voltage, <code>&gt;0150W</code> stop above this power, <code>&gt;100°C</code> stop above this MOSFET temperature. Edited in place: hold <kbd class="long">Setup</kbd> (§5.3).</li>
+      <li><strong>Limit time.</strong> <code>OFF</code>, or a countdown in hours and minutes after which the load stops on its own (Settings 05, or cursor mode, §5.3).</li>
       <li><strong>CPU.T / MOS.T.</strong> Processor and MOSFET temperatures. MOS.T is the one that matters under load.</li>
       <li><strong>FAN.Speed.</strong> RPM. It rises with MOS.T; a sudden drop to zero is a fan failure and a reason to stop.</li>
       <li><strong>ON / OFF.</strong> Whether the load is sinking current right now. Magenta OFF, yellow ON.</li>
-      <li><strong>Footer.</strong> <code>BAT 02</code> is the recording group (ten exist), <code>000:00:00</code> is elapsed run time in h:mm:ss, <code>ETS:Wait..</code> is the external probe status (a temperature once a probe is plugged in).</li>
+      <li><strong>Footer.</strong> <code>BAT 02</code> is the recording group (ten exist; chosen in cursor mode, §5.3), <code>000:00:00</code> is elapsed run time in h:mm:ss, <code>ETS:Wait..</code> is the external probe status (a temperature once a probe is plugged in).</li>
     </ol>
   </div>
 </div>
@@ -1230,8 +1238,8 @@
   <li>Wire the source (4-wire for a battery, §6). From the main menu open <strong>CC</strong>.
     <span class="expect"><b>Expect:</b> <code>Vol</code> shows the resting voltage, <code>OFF</code> in magenta.</span></li>
   <li>Set the current: <kbd>Setup</kbd> to enter edit, <kbd>Setup</kbd> to walk the digits, <kbd>+</kbd>/<kbd>−</kbd> to change, <kbd>OK</kbd> to confirm.</li>
-  <li>Hold <kbd class="long">Setup</kbd> for the parameter page and set the discharge cutoff voltage for your chemistry (§9.1). Confirm.
-    <span class="expect"><b>Expect:</b> <code>Run Stop</code> now shows your cutoff.</span></li>
+  <li>Hold <kbd class="long">Setup</kbd> for cursor mode (§5.3). Pick the <code>BAT</code> group the run should be filed under, tap <kbd>Setup</kbd> onto the Run Stop voltage and set the cutoff for your chemistry (§9.1). Tap on to Save and press <kbd>OK</kbd>, or wait five seconds.
+    <span class="expect"><b>Expect:</b> the highlight clears and <code>Run Stop</code> shows your cutoff.</span></li>
   <li>Tap <kbd>OK</kbd>. Watch the first ten seconds.
     <span class="expect"><b>Expect:</b> <code>ON</code>, <code>Cur</code> equals the setpoint, <code>Vol</code> dips and settles, the fan speeds up, <code>Cap</code> starts counting.</span></li>
   <li>Leave it. The load stops itself at the cutoff and the integrators freeze. Read <code>Cap</code>, <code>Ene</code> and the elapsed time from the footer, and write all three down with the current and the cutoff.</li>
@@ -1239,7 +1247,7 @@
 
 <div class="callout warn">
   <strong>Which of the ten recording groups you are writing into</strong>
-  The footer's <code>BAT 01</code> … <code>BAT 10</code> names one of ten result slots the manual mentions only as "battery measurement data recording groups: 10 groups". The captures in this guide show <code>BAT 01</code> on one run and <code>BAT 02</code> on another, so the slot does advance, but the manual never says how it is chosen. Treat the number as a label for the run you are looking at, and keep your own log; <em>Settings 19 · Zero All Data</em> wipes every slot.
+  The footer's <code>BAT 01</code> … <code>BAT 10</code> names one of ten result slots the manual mentions only as "battery measurement data recording groups: 10 groups". You choose the slot yourself: hold <kbd class="long">Setup</kbd> on the measurement screen and, while <code>BAT</code> is highlighted, <kbd>+</kbd>/<kbd>−</kbd> step through 01 to 10 (§5.3). Pick the slot before you start, write down which one you used, and keep your own log; <em>Settings 19 · Zero All Data</em> wipes every slot.
 </div>
 
 <h3 id="ureg">7.2 · UREG: the load is on, but nothing is home</h3>
@@ -1597,11 +1605,11 @@
 <tr><td class="num">02</td><td>Display Brightness</td><td>Backlight while active</td><td class="num">8</td><td>Leave it; the screen is small.</td></tr>
 <tr><td class="num">03</td><td>Standby Brightness</td><td>Backlight after the standby timer</td><td class="num">1</td><td>1, so you can still see it is running.</td></tr>
 <tr><td class="num">04</td><td>Enter Standby Time</td><td>Idle time before dimming</td><td class="num">59</td><td>—</td></tr>
-<tr><td class="num">05</td><td>Limit Time Discharge</td><td>Run for a fixed time, then stop; shows as <code>Limit time</code> on the measurement screen. Manual range 01:00 to 99:59</td><td class="num">59:00</td><td>OFF unless you want a timed run.</td></tr>
+<tr><td class="num">05</td><td>Limit Time Discharge</td><td>Run for a fixed time, then stop; shows as <code>Limit time</code> on the measurement screen, where cursor mode can also set it in hours and minutes (§5.3). Manual range 01:00 to 99:59</td><td class="num">59:00</td><td>OFF unless you want a timed run.</td></tr>
 <tr><td class="num">06</td><td>Ext_temp Calibration</td><td>Offset applied to the probe reading</td><td>—</td><td>Set only against a thermometer you trust.</td></tr>
 <tr><td class="num">07</td><td>Voltage Calibrate Ref</td><td>Reference correction for the voltmeter</td><td class="num">0.0000 V</td><td>Do not touch without a reference meter and a note of the old value.</td></tr>
 <tr><td class="num">08</td><td>Current Calibrate Ref</td><td>Reference correction for the ammeter</td><td class="num">0.0000 A</td><td>Same.</td></tr>
-<tr><td class="num">09</td><td>Discharge Cutoff Volt</td><td>Default stop voltage; also reachable from the mode's parameter page</td><td>—</td><td>Set per chemistry (§9.1). This is the setting that saves cells.</td></tr>
+<tr><td class="num">09</td><td>Discharge Cutoff Volt</td><td>Default stop voltage; also editable on the measurement screen in cursor mode (§5.3)</td><td>—</td><td>Set per chemistry (§9.1). This is the setting that saves cells.</td></tr>
 <tr><td class="num">10</td><td>Charging Cutoff Volt</td><td>Charge-phase end voltage for cycle modes</td><td>—</td><td>4.20 V for Li-ion, 3.65 V for LiFePO4.</td></tr>
 <tr><td class="num">11</td><td>Charging Cutoff Amp</td><td>Charge-phase end current for cycle modes</td><td class="num">&lt; 0.05 A</td><td>0.05–0.10 A; matches a charger's taper.</td></tr>
 <tr><td class="num">12</td><td>Over_Current Protect</td><td>OCP alarm threshold</td><td class="num">25.00 A</td><td>Lower it to your cable's rating: 10 A with the stock clips.</td></tr>
@@ -1727,7 +1735,7 @@
 <div class="table-wrap"><table>
 <tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr>
 <tr><td><code>Vol</code> reads 0.000 with a cell connected</td><td>V+/V− open: 2-wire jumpers missing, 4-wire sense leads not connected, or the current pair is on V+/V−</td><td>Current on A+/A−. Then either jumper V+ to A+ and V− to A− at the block (2-wire) or run sense leads from the cell to V+/V− (4-wire). §6.2.</td></tr>
-<tr><td>Load starts and stops within a second</td><td>Cutoff voltage above the cell's voltage, or Limit time set very short</td><td>Hold <kbd class="long">Setup</kbd> and check the cutoff; Settings 05 for the timer.</td></tr>
+<tr><td>Load starts and stops within a second</td><td>Cutoff voltage above the cell's voltage, or Limit time set very short</td><td>Hold <kbd class="long">Setup</kbd> and walk the cursor over the cutoff and <code>Limit time</code> (§5.3), then on to Save.</td></tr>
 <tr><td>Title shows <code>UREG</code> and <code>Cur</code> is 0</td><td>Load is on with no source, or the source cannot supply the setpoint</td><td>Expected with nothing connected (§7.2). With a source: lower the setpoint, check the source's limit, check the clips.</td></tr>
 <tr><td><code>OPP!</code></td><td>Power above Settings 13, or above the derating band for this voltage</td><td>Reduce the setpoint. Above 36 V you have 60 W; above 80 V, 45 W (§3.3).</td></tr>
 <tr><td><code>OCP!</code></td><td>Current above Settings 12</td><td>Reduce the setpoint. In CV or CP on a battery this is the alarm saving you (§8).</td></tr>
@@ -1757,7 +1765,7 @@
     <li>Load off. Wire: A+/A− current. V+/V− sense at the cell (4-wire) or jumpered to A+/A− at the block (2-wire). Never open.</li>
     <li>Probe on the cell. <code>Vol</code> reads resting voltage.</li>
     <li>Menu → mode → <kbd>OK</kbd>. <kbd>Setup</kbd> → digits → <kbd>OK</kbd>.</li>
-    <li><kbd class="long">Setup</kbd> → cutoff → confirm.</li>
+    <li><kbd class="long">Setup</kbd> → BAT · cutoff · limits · Save (or hands off 5 s).</li>
     <li><kbd>OK</kbd>. Watch a minute. Log Cap · Ene · time · rate · cutoff.</li>
   </ul></div>
   <div class="card"><h4>Button grammar (§5)</h4><ul>
@@ -1765,7 +1773,7 @@
     <li><kbd>OK</kbd> open · start / stop · confirm</li>
     <li><kbd class="long">OK</kbd> back to menu (stops the load)</li>
     <li><kbd>Setup</kbd> edit setpoint · next digit</li>
-    <li><kbd class="long">Setup</kbd> parameter page</li>
+    <li><kbd class="long">Setup</kbd> cursor mode: BAT, Run Stop, Limit time, Save · <kbd>OK</kbd> or <kbd>Setup</kbd> next field · idle 5 s saves</li>
     <li>Boot: <kbd class="long">+</kbd> skips the self-test</li>
   </ul></div>
   <div class="card"><h4>Cutoffs to set (§9.1)</h4><ul>
@@ -1825,6 +1833,7 @@
   <dt id="g-cc-port">CC port</dt><dd>The Type-C socket that powers the BW150 from a USB or QC/PD charger. Unrelated to CC mode and not a test input. (<a href="#power">§3.2</a>)</dd>
   <dt id="g-cdc">CDC · CDCDC · CDxN</dt><dd>Cycle modes: charge-discharge-charge (3 phases), five phases, and N cycles from 1 to 99. All need the charging-control module. (<a href="#cycle-modes">§11.1</a>)</dd>
   <dt id="g-module">Charging-control module</dt><dd>A separately sold relay board on the S/GND/CTL+/D header that switches the cell between a dedicated charger and the load during cycle modes. Needs 12 V board power. (<a href="#cycle-wiring">§11.2</a>)</dd>
+  <dt id="g-cursor">Cursor mode</dt><dd>The in-place editor for the <code>BAT</code> group, the Run Stop values and <code>Limit time</code>: hold Setup; tap Setup or OK to move; end at Save, or wait five seconds. (<a href="#cursor-mode">§5.3</a>)</dd>
   <dt id="g-ct">CT</dt><dd>Cable test. Draws current through a cable until the load-end voltage has dropped by set steps, reporting resistance and the current at 0.3, 0.5 and 0.7 V of drop. (<a href="#ct">§10.2</a>)</dd>
   <dt id="g-cutoff">Cutoff voltage</dt><dd>The voltage at which a discharge stops on its own; shown as <code>&lt;003.0V</code> under Run Stop. The setting that decides whether a cell survives the test. (<a href="#the-diary">§1.3</a>, <a href="#chemistry">§9.1</a>)</dd>
   <dt id="g-derating">Derating</dt><dd>The load's self-imposed power ceiling that falls with input voltage: 150 W under 36 V, 60 W above, 45 W above 80 V. (<a href="#derating">§3.3</a>)</dd>
@@ -1840,7 +1849,7 @@
   <dt id="g-opp">OPP · OCP · OTP</dt><dd>Over-power, over-current and over-temperature protection: the alarms. (<a href="#alarms">§3.4</a>)</dd>
   <dt id="g-pd">PD · QC · AFC · FCP</dt><dd>Fast-charging protocols (USB Power Delivery, Qualcomm Quick Charge, Samsung Adaptive Fast Charging, Huawei Fast Charge Protocol) that the trigger board can negotiate. (<a href="#trigger">§10.3</a>)</dd>
   <dt id="g-pt">PT</dt><dd>Power tester. Ramps the load on a DC source and reports rated and maximum current and power, as relative figures. (<a href="#pt">§10.1</a>)</dd>
-  <dt id="g-group">Recording group</dt><dd><code>BAT 01</code> to <code>BAT 10</code> in the footer: one of ten result slots. Cleared by Settings 19. (<a href="#run-cc">§7.1</a>)</dd>
+  <dt id="g-group">Recording group</dt><dd><code>BAT 01</code> to <code>BAT 10</code> in the footer: one of ten result slots, chosen in cursor mode. Cleared by Settings 19. (<a href="#cursor-mode">§5.3</a>, <a href="#run-cc">§7.1</a>)</dd>
   <dt id="g-res">Res 9999.99 Ω</dt><dd>The resistance readout when no current flows: the device's spelling of "open circuit". (<a href="#the-diary">§1.3</a>)</dd>
   <dt id="g-setpoint">Setpoint</dt><dd>The value of the pinned quantity: <code>Is</code>, <code>Vs</code>, <code>Rs</code> or <code>Ps</code> at the top of the screen. Edited digit by digit. (<a href="#editing">§5.2</a>)</dd>
   <dt id="g-smartlife">Smart Life · Tuya</dt><dd>The cloud app (two brandings of the same thing) for the BW150's 2.4 GHz WiFi channel: remote view and control, no export. (<a href="#wifi">§13.3</a>)</dd>
@@ -1882,6 +1891,7 @@
     <li><a href="#cv-cr-cp">CP mode</a></li>
     <li><a href="#cv-cr-cp">CR mode</a></li>
     <li><a href="#mental-model">C-rate</a></li>
+    <li><a href="#cursor-mode">Cursor mode (hold Setup)</a></li>
     <li><a href="#curves">Curve tiles (CC~ …)</a></li>
     <li><a href="#chemistry">Cutoff voltages</a></li>
     <li><a href="#cv-cr-cp">CV mode</a></li>
@@ -1951,6 +1961,7 @@
     <li><a href="#pt">PT mode</a></li>
   </ul>
   <div class="letter">R</div><ul>
+    <li><a href="#cursor-mode">Recording group, choosing</a></li>
     <li><a href="#run-cc">Recording groups</a></li>
     <li><a href="#the-diary">Res 9999.99 Ω</a></li>
     <li><a href="#cycle-settings">Rest time (setting 16)</a></li>
@@ -1969,6 +1980,7 @@
   </ul>
   <div class="letter">T</div><ul>
     <li><a href="#alarms">Temperature probe</a></li>
+    <li><a href="#cursor-mode">Time limit, setting on screen</a></li>
     <li><a href="#hookup">Terminal block</a></li>
     <li><a href="#derating">Tips screen (max power)</a></li>
     <li><a href="#trigger">Trigger board</a></li>
@@ -2031,7 +2043,7 @@
 </div>
 <div class="quiz-item" data-q="6">
   <div class="quiz-q"><span class="qnum">Q6</span>On the measurement screen: what does a short OK do, what does a long OK do, and what does a long Setup do?</div>
-  <div class="quiz-answer">Short OK starts or stops the load; long OK returns to the main menu (stopping the load); long Setup opens the mode's parameter page for the cutoff and limits. (<a href="#grammar">§5.1</a>)</div>
+  <div class="quiz-answer">Short OK starts or stops the load; long OK returns to the main menu (stopping the load); long Setup enters cursor mode on the same screen, starting at the <code>BAT</code> group, so the stop rules and time limit are edited in place. Setup or OK step to the next field, the last stop is Save, and five idle seconds also save. (<a href="#grammar">§5.1</a>, <a href="#cursor-mode">§5.3</a>)</div>
   <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
 </div>
 <div class="quiz-item" data-q="7">
@@ -2307,7 +2319,7 @@
     var S, timer = null, TICK = 250;
     function fresh() {
       return { screen: 'menu', cursor: 1, mode: 'CC', set: { CC: 1.0, CV: 5.0, CR: 10.0, CP: 10.0 }, editing: false, digit: 0,
-               running: false, cutoff: 3.0, opp: 150, otpMos: 100, limitMin: 0, paramIdx: 0, sIdx: 0,
+               running: false, cutoff: 3.0, opp: 150, otpMos: 100, limitH: 0, limitM: 0, bat: 1, cur: -1, curUntil: 0, sIdx: 0,
                t: 0, cap: 0, ene: 0, soc: 1.0, V: 0, I: 0, mosT: 25.5, cellT: 22.0, stop: '', msg: '', unreg: false, tile: '' };
     }
     function dut() {
@@ -2349,6 +2361,7 @@
     function tick() {
       var speed = parseFloat(speedSel.value), dt = TICK / 1000 * speed;
       var d = dut();
+      if (S.cur >= 0 && Date.now() >= S.curUntil) exitCursor(); /* five real seconds idle: save and leave */
       if (S.running) {
         var op = solve(d);
         S.V = op.V; S.I = op.I; S.unreg = op.unreg;
@@ -2357,13 +2370,13 @@
         else if (P > S.opp) { halt('OPP!', 'over-power: ' + P.toFixed(1) + ' W > ' + S.opp + ' W'); }
         else if (P > pMax(S.V)) { halt('OPP!', 'derated: ' + P.toFixed(1) + ' W > ' + pMax(S.V) + ' W allowed at ' + S.V.toFixed(1) + ' V'); }
         else if (S.I > 0 && S.V < S.cutoff) { halt('STOP', 'cutoff reached: ' + S.V.toFixed(3) + ' V < ' + S.cutoff.toFixed(1) + ' V'); }
-        else if (S.limitMin > 0 && S.t / 60 >= S.limitMin) { halt('STOP', 'time limit ' + S.limitMin + ' min reached'); }
+        else if (limitSec() > 0 && S.t >= limitSec()) { halt('STOP', 'time limit ' + limitStr() + ' reached'); }
         else {
           S.t += dt; S.cap += S.I * dt / 3600 * 1000; S.ene += P * dt / 3600;
           if (d.kind === 'cell') { S.soc = Math.max(0, S.soc - S.I * dt / 3600 / d.ah); S.cellT += (22 + S.I * S.I * d.r * 60 - S.cellT) * 0.01 * Math.min(speed, 60) / 60; }
           if (S.mosT > S.otpMos) halt('OTP!(t Mos)', 'MOSFET over-temperature');
         }
-      } else if (S.screen === 'measure' || S.screen === 'params') {
+      } else if (S.screen === 'measure') {
         var idle = solve0(d); S.V = idle; S.I = 0; S.unreg = false;
       }
       var targetT = 25.5 + (S.running ? S.V * S.I * 0.45 : 0);
@@ -2388,6 +2401,22 @@
       }
       return f.p + out + '<span class="w" style="font-size:12px">' + f.u + '</span>';
     }
+    function limitSec() { return S.limitH * 3600 + S.limitM * 60; }
+    function limitStr() { return limitSec() > 0 ? pad(S.limitH, 2) + ':' + pad(S.limitM, 2) : 'OFF'; }
+    /* cursor mode: field n gets the magenta underline when S.cur === n */
+    function hlDigits(str, base) {
+      var out = '', di = 0;
+      for (var i = 0; i < str.length; i++) {
+        if (str[i] >= '0' && str[i] <= '9') { out += S.cur === base + di ? '<span class="cur">' + str[i] + '</span>' : str[i]; di++; }
+        else out += str[i];
+      }
+      return out;
+    }
+    function hlField(str, idx) { return S.cur === idx ? '<span class="cur">' + str + '</span>' : str; }
+    function limitHtml() {
+      if (S.cur < 0 && limitSec() === 0) return 'OFF';
+      return hlField(pad(S.limitH, 2), 12) + ':' + hlField(pad(S.limitM, 2), 13);
+    }
     function fan() { return pad(Math.round(650 + Math.max(0, S.mosT - 25) * 40), 4) + 'RPM'; }
     function ets() { var d = dut(); return d.kind === 'cell' ? S.cellT.toFixed(1) + '°C' : 'Wait..'; }
     function render() {
@@ -2410,22 +2439,20 @@
           '<div class="o"><span>Res:</span><span>' + fmtNum(R, 4, 2) + '<small>Ω</small></span></div>' +
           '<div class="w"><span>Ene:</span><span>' + S.ene.toFixed(5) + '<small>Wh</small></span></div>' +
           '<div class="c"><span>Cap:</span><span>' + pad(Math.round(S.cap), 6) + '<small>mAh</small></span></div></div>';
-        h += '<div class="side"><div class="w">Run Stop:</div><div class="w">&lt;' + fmtNum(S.cutoff, 3, 1) + 'V &gt;' + pad(S.opp, 4) + 'W</div><div class="w">&gt;' + S.otpMos + '°C</div>' +
-          '<div class="w" style="margin-top:6px">Limit time:</div><div class="w" style="text-align:center">' + (S.limitMin ? pad(S.limitMin, 2) + ':00' : 'OFF') + '</div>' +
+        h += '<div class="side"><div class="w">Run Stop:</div><div class="w">&lt;' + hlDigits(fmtNum(S.cutoff, 3, 1), 1) + 'V &gt;' + hlDigits(pad(S.opp, 4), 5) + 'W</div><div class="w">&gt;' + hlDigits(pad(S.otpMos, 3), 9) + '°C</div>' +
+          '<div class="w" style="margin-top:6px">Limit time:</div><div class="w" style="text-align:center">' + limitHtml() + '</div>' +
           '<div class="w" style="margin-top:6px">CPU.T: 030.0°C</div><div class="w">MOS.T: ' + fmtNum(S.mosT, 3, 1) + '°C</div>' +
           '<div class="w" style="margin-top:4px;text-align:center">FAN.Speed</div><div class="c" style="text-align:center">' + fan() + '</div>' +
           '<div class="st ' + (S.running ? 'y' : 'm') + '">' + (S.running ? 'ON' : 'OFF') + '</div></div></div>';
-        h += '<div class="ft"><span class="w">BAT 01 ' + fmtTime(S.t) + '</span><span class="m">ETS:<span class="y">' + ets() + '</span></span></div>';
-        h += '<div class="msg' + (S.stop && S.stop !== 'STOP' ? ' err' : '') + '">' + (S.msg || (S.running && S.unreg ? 'on, but nothing to regulate' : '')) + '</div>';
-        help.innerHTML = S.editing
+        h += '<div class="ft"><span class="w">BAT ' + hlField(pad(S.bat, 2), 0) + ' ' + fmtTime(S.t) + '</span>' + (S.cur >= 0 ? '<span class="w">' + hlField('Save', CUR_SAVE) + '</span>' : '') + '<span class="m">ETS:<span class="y">' + ets() + '</span></span></div>';
+        var msg = S.msg || (S.running && S.unreg ? 'on, but nothing to regulate' : '');
+        if (S.cur >= 0) msg = (msg || (S.cur === CUR_SAVE ? 'on Save: OK or Setup keeps the values' : 'cursor mode')) + ' · saves in ' + Math.max(1, Math.ceil((S.curUntil - Date.now()) / 1000)) + ' s';
+        h += '<div class="msg' + (S.stop && S.stop !== 'STOP' ? ' err' : '') + '">' + msg + '</div>';
+        help.innerHTML = S.cur >= 0
+          ? 'Cursor mode. <kbd>+</kbd>/<kbd>−</kbd> change the highlighted field · <kbd>Setup</kbd> or <kbd>OK</kbd> next field · Save at the end, or hands off for 5 s.'
+          : S.editing
           ? 'Editing. <kbd>+</kbd>/<kbd>−</kbd> change the underlined digit · <kbd>Setup</kbd> next digit · <kbd>OK</kbd> confirm.'
-          : '<kbd>OK</kbd> start / stop · <kbd>Setup</kbd> edit setpoint · hold <kbd>Setup</kbd> parameters · hold <kbd>OK</kbd> back to menu.';
-      } else if (S.screen === 'params') {
-        var rows = [['Discharge cutoff', fmtNum(S.cutoff, 3, 1) + ' V'], ['Over power', pad(S.opp, 4) + ' W'], ['Over temp MOS', S.otpMos + ' °C'], ['Limit time', S.limitMin ? S.limitMin + ' min' : 'OFF']];
-        h += '<div class="hd"><span class="o">' + S.mode + ' parameters</span><span class="d">hold OK = back</span></div><div class="list">';
-        rows.forEach(function (r, i) { h += '<div class="' + (i === S.paramIdx ? 'sel' : 'w') + '"><span>' + r[0] + '</span><span>' + r[1] + '</span></div>'; });
-        h += '</div><div class="msg">' + S.msg + '</div>';
-        help.innerHTML = '<kbd>+</kbd>/<kbd>−</kbd> change the highlighted value · <kbd>Setup</kbd> next row · <kbd>OK</kbd> confirm and return.';
+          : '<kbd>OK</kbd> start / stop · <kbd>Setup</kbd> edit setpoint · hold <kbd>Setup</kbd> cursor mode (BAT, cutoff, limits) · hold <kbd>OK</kbd> back to menu.';
       } else if (S.screen === 'settings') {
         var start = Math.max(0, Math.min(S.sIdx - 3, SETTINGS.length - 8));
         h += '<div class="hd"><span class="o">BenFang Sys Settings</span></div><div class="list">';
@@ -2448,18 +2475,31 @@
       logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight;
       while (logEl.children.length > 40) logEl.removeChild(logEl.firstChild);
     }
-    function adjustDigit(dir) {
-      var f = FMT[S.mode], s = fmtNum(S.set[S.mode], f.ints, f.decs).replace('.', '');
-      var place = Math.pow(10, f.ints - 1 - S.digit), max = Math.pow(10, f.ints) - Math.pow(10, -f.decs);
-      var v = S.set[S.mode] + dir * place;
-      if (v < 0) v = 0; if (v > max) v = max;
-      S.set[S.mode] = Math.round(v * Math.pow(10, f.decs)) / Math.pow(10, f.decs);
+    /* one digit of a fixed-format number wraps 9 -> 0 / 0 -> 9 on its own; nothing carries */
+    function wrapDigit(value, ints, decs, idx, dir) {
+      var s = fmtNum(value, ints, decs).replace('.', '').split('');
+      s[idx] = String((parseInt(s[idx], 10) + dir + 10) % 10);
+      var joined = s.join('');
+      return parseFloat(decs ? joined.slice(0, ints) + '.' + joined.slice(ints) : joined);
     }
-    function adjustParam(dir) {
-      if (S.paramIdx === 0) S.cutoff = Math.max(0, Math.round((S.cutoff + dir * 0.1) * 10) / 10);
-      else if (S.paramIdx === 1) S.opp = Math.max(5, Math.min(150, S.opp + dir * 5));
-      else if (S.paramIdx === 2) S.otpMos = Math.max(40, Math.min(100, S.otpMos + dir * 5));
-      else S.limitMin = Math.max(0, S.limitMin + dir * 5);
+    function adjustDigit(dir) {
+      var f = FMT[S.mode];
+      S.set[S.mode] = wrapDigit(S.set[S.mode], f.ints, f.decs, S.digit, dir);
+    }
+    /* cursor-mode fields: 0 BAT · 1-4 cutoff digits · 5-8 OPP digits · 9-11 OTP digits · 12 limit hours · 13 limit minutes · 14 Save */
+    var CUR_SAVE = 14;
+    function adjustCursor(dir) {
+      var c = S.cur;
+      if (c === 0) S.bat = ((S.bat - 1 + dir + 10) % 10) + 1;
+      else if (c <= 4) S.cutoff = wrapDigit(S.cutoff, 3, 1, c - 1, dir);
+      else if (c <= 8) S.opp = wrapDigit(S.opp, 4, 0, c - 5, dir);
+      else if (c <= 11) S.otpMos = wrapDigit(S.otpMos, 3, 0, c - 9, dir);
+      else if (c === 12) S.limitH = (S.limitH + dir + 100) % 100;
+      else if (c === 13) S.limitM = (S.limitM + dir + 60) % 60;
+    }
+    function exitCursor(viaSave) {
+      S.cur = -1; S.msg = '';
+      log((viaSave ? 'Save' : 'Cursor mode timed out') + ': BAT ' + pad(S.bat, 2) + ' · cutoff ' + S.cutoff.toFixed(1) + ' V · OPP ' + S.opp + ' W · OTP ' + S.otpMos + ' °C · limit ' + limitStr());
     }
     function press(btn, long) {
       S.msg = S.screen === 'measure' && S.stop ? S.msg : '';
@@ -2473,27 +2513,29 @@
           else { S.screen = 'other'; S.tile = t.k; S.msg = t.k === 'DEV' ? 'This feature is currently under development, please stay tuned.' : t.l; log('Opened ' + t.k + ' (not simulated).'); }
         }
       } else if (S.screen === 'measure') {
-        if (btn === 'ok' && long) { S.running = false; S.editing = false; S.screen = 'menu'; log('Long OK: back to menu, load off.'); }
+        if (btn === 'ok' && long) { S.running = false; S.editing = false; S.cur = -1; S.screen = 'menu'; log('Long OK: back to menu, load off.'); }
+        else if (S.cur >= 0) { /* cursor mode: every press restarts the five-second clock */
+          S.curUntil = Date.now() + 5000;
+          if (btn === 'setup' && long) { /* already there */ }
+          else if (btn === 'setup' || btn === 'ok') { if (S.cur === CUR_SAVE) exitCursor(true); else S.cur++; }
+          else if (btn === 'plus') adjustCursor(1);
+          else if (btn === 'minus') adjustCursor(-1);
+        }
         else if (btn === 'ok') {
           if (S.editing) { S.editing = false; log('Setpoint confirmed: ' + FMT[S.mode].p + S.set[S.mode].toFixed(FMT[S.mode].decs) + FMT[S.mode].u); }
           else if (S.running) { S.running = false; S.I = 0; S.msg = ''; S.stop = ''; log('Stopped by OK. Cap ' + Math.round(S.cap) + ' mAh · Ene ' + S.ene.toFixed(3) + ' Wh · ' + fmtTime(S.t)); }
           else { S.running = true; S.stop = ''; S.msg = ''; S.t = 0; S.cap = 0; S.ene = 0; log('Started ' + S.mode + ' at ' + FMT[S.mode].p + S.set[S.mode].toFixed(FMT[S.mode].decs) + FMT[S.mode].u + (dut().kind === 'none' ? ' with nothing connected.' : '.')); }
         }
-        else if (btn === 'setup' && long) { S.editing = false; S.screen = 'params'; S.paramIdx = 0; log('Long Setup: parameter page.'); }
+        else if (btn === 'setup' && long) { S.editing = false; S.cur = 0; S.curUntil = Date.now() + 5000; log('Long Setup: cursor mode, BAT highlighted.'); }
         else if (btn === 'setup') { if (!S.editing) { S.editing = true; S.digit = 0; } else { S.digit = (S.digit + 1) % (FMT[S.mode].ints + FMT[S.mode].decs); } }
         else if (S.editing) { adjustDigit(btn === 'plus' ? 1 : -1); }
-      } else if (S.screen === 'params') {
-        if (btn === 'ok') { S.screen = 'measure'; log('Parameters: cutoff ' + S.cutoff.toFixed(1) + ' V · OPP ' + S.opp + ' W · OTP ' + S.otpMos + ' °C · limit ' + (S.limitMin || 'OFF')); }
-        else if (btn === 'setup' && !long) S.paramIdx = (S.paramIdx + 1) % 4;
-        else if (btn === 'plus') adjustParam(1);
-        else if (btn === 'minus') adjustParam(-1);
       } else if (S.screen === 'settings') {
         if (btn === 'ok' && long) { S.screen = 'menu'; }
         else if (btn === 'plus') S.sIdx = (S.sIdx + 1) % SETTINGS.length;
         else if (btn === 'minus') S.sIdx = (S.sIdx + SETTINGS.length - 1) % SETTINGS.length;
         else if (btn === 'ok') {
           if (S.sIdx === 22) { S.screen = 'menu'; log('Settings: Exit.'); }
-          else if (S.sIdx === 8) { S.msg = 'Cutoff is edited on the mode\'s parameter page in this replica (hold Setup).'; }
+          else if (S.sIdx === 8) { S.msg = 'Cutoff is edited on the measurement screen in this replica (hold Setup).'; }
           else if (S.sIdx === 21) { S.msg = 'Prompt Info Switch → OFF. The boot monologue is silenced.'; log('Settings 22: Prompt Info OFF.'); }
           else if (S.sIdx === 18 || S.sIdx === 19) { S.msg = 'Not replicated. On the real device this erases with one OK.'; }
           else { S.msg = '(' + SETTINGS[S.sIdx] + ': value page not replicated)'; }
