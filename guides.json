@@ -5,7 +5,7 @@
       "file": "file-search-macos-user-guide.html",
       "name": "file search",
       "subject": "Index vs walk, name vs contents — the four regex dialects, Spotlight's token rules, and which of six tools answers the question you actually asked",
-      "verified": "macOS 15.6 · fd 10.5.0 · rg 15.2.0 · 2026-09-10",
+      "verified": "macOS 15.6 · fd 10.5.0 · rg 15.2.0 · ugrep 7.8.4 · 2026-09-10",
       "accent": "amber"
     },
     {
