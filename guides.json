@@ -2,6 +2,13 @@
   "_comment": "Source of truth for the hub page (index.html). Add an entry here when a new guide lands, then run: node scripts/build-index.mjs. TODO(s3-migration): once the site is hosted exclusively on S3, serve this file as-is and have index.html fetch it at runtime instead of baking cards in at build time.",
   "guides": [
     {
+      "file": "file-search-macos-user-guide.html",
+      "name": "file search",
+      "subject": "Index vs walk, name vs contents — the four regex dialects, Spotlight's token rules, and which of six tools answers the question you actually asked",
+      "verified": "macOS 15.6 · fd 10.5.0 · rg 15.2.0 · 2026-09-10",
+      "accent": "amber"
+    },
+    {
       "file": "tmux-user-guide.html",
       "name": "tmux",
       "subject": "Terminal multiplexing — sessions that outlive your connection, the client/server model, panes, copy-mode, scripting",
