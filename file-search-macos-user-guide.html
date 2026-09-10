@@ -413,7 +413,8 @@ details[open] summary{margin-bottom:.6rem;border-bottom:1px solid var(--line);pa
     <span class="badge">fd 10.5.0</span>
     <span class="badge">ripgrep 15.2.0 (+pcre2 10.45)</span>
     <span class="badge">BSD grep 2.6.0-FreeBSD</span>
-    <span class="badge">ag 2.2.0</span>
+    <span class="badge">ugrep 7.8.4 · GNU grep 3.12</span>
+    <span class="badge">ag 2.2.0 · ack 3.10.0</span>
     <span class="badge">verified 2026-09-10</span>
     <span class="badge">single file · works offline</span>
     <span class="badge">regex playground · query builder · real benchmarks</span>
@@ -449,8 +450,8 @@ account is permitted to see, and it costs I/O proportional to the size of the tr
 <div class="callout myth">
 <strong>Misconception: "indexed" means "fast"</strong>
 <p>It means <em>precomputed</em>, which is not the same thing. <code>locate</code> is
-indexed and took <strong>4.79&nbsp;s</strong> on the machine this guide was written on,
-while <code>fd</code> walked 39,798 files in <strong>128&nbsp;ms</strong>
+indexed and took <strong>4.35&nbsp;s</strong> on the machine this guide was written on,
+while <code>fd</code> walked 39,798 files in <strong>121&nbsp;ms</strong>
 (§<a href="#benchmarks">15</a>). An index only wins when the alternative is walking
 something much bigger than the answer.</p>
 </div>
@@ -519,7 +520,7 @@ of your files when they were written.</p>
   <text class="d-tm" x="522" y="282">POSIX, everywhere, single-threaded</text>
   <text class="d-mono" x="522" y="312">rg PATTERN</text>
   <text class="d-tm" x="522" y="332">parallel · same skip rules as fd · SIMD literals</text>
-  <text class="d-tm" x="522" y="348">17× faster than grep -r here (§15)</text>
+  <text class="d-tm" x="522" y="348">20× faster than BSD grep -r here (§15)</text>
 
   <text class="d-tm" x="110" y="392">Cheap: names come free with the walk.</text>
   <text class="d-tm" x="500" y="392">Expensive: every candidate file must be opened and read.</text>
@@ -783,6 +784,7 @@ question with a surprising answer.</p>
 <tr><td><code>mdfind</code>, <code>mdls</code>, <code>mdutil</code>, <code>mdimport</code></td><td><code>/usr/bin/</code></td><td class="yes">yes</td><td>Spotlight client tools</td></tr>
 <tr><td><code>fd</code></td><td>Homebrew</td><td class="no">no</td><td><code>brew install fd</code></td></tr>
 <tr><td><code>rg</code></td><td>Homebrew</td><td class="no">no</td><td><code>brew install ripgrep</code></td></tr>
+<tr><td><code>ugrep</code>, <code>ggrep</code></td><td>Homebrew or MacPorts</td><td class="no">no</td><td>optional but recommended — see §<a href="#rivals">10</a></td></tr>
 </tbody>
 </table>
 </div>
@@ -791,7 +793,10 @@ question with a surprising answer.</p>
 <span class="cmd">brew</span> <span class="arg">install</span> fd ripgrep
 
 <span class="comment"># optional, but this guide uses it in §14</span>
-<span class="cmd">brew</span> <span class="arg">install</span> fzf</code></pre>
+<span class="cmd">brew</span> <span class="arg">install</span> fzf
+
+<span class="comment"># worth adding once you have read §10: the fastest grep here, and the portable one</span>
+<span class="cmd">brew</span> <span class="arg">install</span> ugrep grep    <span class="comment"># "grep" installs GNU grep as ggrep</span></code></pre>
 
 <div class="callout blue">
 <strong>Apple silicon vs Intel</strong>
@@ -1323,7 +1328,7 @@ right and wrong.</p>
   <text class="d-mono2" x="32" y="286">locate PATTERN</text>
   <path d="M228,281 L296,281 L296,214" class="d-stroke" marker-end="url(#ar2)"/>
   <text class="d-t2" x="330" y="272">Linear scan of the whole file, substring match.</text>
-  <text class="d-tm" x="330" y="292">4.79 s here — an index, but not a fast one. Nothing is sorted for lookup.</text>
+  <text class="d-tm" x="330" y="292">4.35 s here — an index, but not a fast one. Nothing is sorted for lookup.</text>
 </svg>
 <figcaption>Two facts in this picture do most of the damage: the walk runs as
 <code>nobody</code>, and it happens weekly. Nothing about <code>locate</code> is
@@ -1510,18 +1515,30 @@ usage: grep [-abcdDEFGHhIiJLlMmnOopqRSsUVvwXxZz] [-A num] [-B num] [-C[num]]
 	[--null] [pattern] [file ...]</span>
 <span class="comment"># exit status 2 — "an error occurred", not "no match"</span></code></pre>
 
-<p>If you need Perl-compatible regex from a grep-shaped tool on macOS, the answer is
-<code>rg -P</code> (§<a href="#ripgrep">9</a>), <code>pcre2grep</code>, or
-<code>brew install grep</code> which installs GNU grep as <code>ggrep</code>. It is not
-<code>grep</code>.</p>
+<p>If you need Perl-compatible regex from a grep-shaped tool on macOS the answer is
+<code>rg -P</code> (§<a href="#ripgrep">9</a>), <code>ugrep -P</code>, <code>ggrep -P</code>
+or <code>pcre2grep</code> — all four verified working here (§<a href="#rivals">10</a>). It
+is never <code>grep</code>.</p>
+
+<pre><code><span class="cmd">printf</span> <span class="str">'foobar\nfoobaz\n'</span> | <span class="cmd">ggrep</span> <span class="arg">-P</span> <span class="str">'foo(?=bar)'</span>   <span class="out">→ foobar</span>
+<span class="cmd">printf</span> <span class="str">'foobar\nfoobaz\n'</span> | <span class="cmd">ugrep</span> <span class="arg">-P</span> <span class="str">'foo(?=bar)'</span>   <span class="out">→ foobar</span></code></pre>
 
 <h3>Gap 2: <code>-r</code> and <code>-R</code> are the same flag</h3>
 
 <p>On GNU grep, <code>-r</code> recurses without following symlinked directories and
 <code>-R</code> follows them. On macOS the man page lists them on one line —
 <code>-R, -r, --recursive</code> — and behaviour confirms it: neither descends into a
-symlinked directory. A script that relies on <code>-R</code> following links silently
-searches less than the author intended.</p>
+symlinked directory. Both sides, measured against the same symlinked directory:</p>
+
+<pre><code><span class="comment"># src/linkdir is a symlink to a sibling directory holding one matching file</span>
+<span class="cmd">grep</span>  <span class="arg">-r</span> <span class="str">'TIMEOUT in linked'</span> src/   <span class="out">→ (nothing, rc=1)</span>
+<span class="cmd">grep</span>  <span class="arg">-R</span> <span class="str">'TIMEOUT in linked'</span> src/   <span class="out">→ (nothing, rc=1)</span>   <span class="comment">← BSD: same flag</span>
+<span class="cmd">ggrep</span> <span class="arg">-r</span> <span class="str">'TIMEOUT in linked'</span> src/   <span class="out">→ (nothing, rc=1)</span>
+<span class="cmd">ggrep</span> <span class="arg">-R</span> <span class="str">'TIMEOUT in linked'</span> src/   <span class="out">→ src/linkdir/deep.txt:TIMEOUT in linked dir</span></code></pre>
+
+<p>A script that relies on <code>-R</code> following links searches less than its author
+intended the moment it runs on macOS — silently, with exit status 1, which looks exactly
+like "no matches".</p>
 
 <div class="callout blue">
 <strong>A folklore correction</strong>
@@ -1536,17 +1553,23 @@ beats repeating what a 2004-era man page implies.</p>
 <h3>Gap 3 (in your favour): <code>egrep</code> is not deprecated here</h3>
 
 <p>GNU grep from 3.8 onwards warns that <code>egrep</code> is obsolescent every time you
-run it. BSD grep does not — verified here, where the command is silent and exits 0:</p>
+run it. BSD grep does not. Both halves measured on this machine — first BSD, silent and
+exit 0:</p>
 
 <pre><code><span class="cmd">echo</span> foo | <span class="cmd">/usr/bin/egrep</span> <span class="str">'o+'</span>
 <span class="out">foo</span>
 <span class="comment"># no warning, exit status 0</span></code></pre>
 
-<p>So <code>egrep</code> is perfectly safe on macOS today — but a script written with it
-will start emitting warnings the moment it runs on a modern Linux box or under Homebrew's
-<code>ggrep</code>. Write <code>grep -E</code> and the question never arises. (The GNU
-side of that sentence comes from GNU's documentation, not from this machine: no GNU grep
-was installed to test against.)</p>
+<p>…then GNU grep 3.12, installed alongside as <code>ggrep</code>, on the same input:</p>
+
+<pre><code><span class="cmd">echo</span> foo | <span class="cmd">gegrep</span> <span class="str">'o+'</span>
+<span class="out"><span class="hl">gegrep: warning: gegrep is obsolescent; using ggrep -E</span>
+foo</span>
+<span class="comment"># warning on stderr, match still printed, exit status 0</span></code></pre>
+
+<p>So <code>egrep</code> is perfectly safe on macOS today — and the same script starts
+emitting warnings the moment it runs on a modern Linux box or through
+<code>ggrep</code>. Write <code>grep -E</code> and the question never arises.</p>
 
 <h3>The flags worth memorising</h3>
 
@@ -1668,9 +1691,25 @@ dictionary.</p>
 <tr><td><strong>BRE</strong> — POSIX basic</td><td><code>grep</code>, <code>grep -G</code>, <code>sed</code></td><td>system <code>regex(3)</code></td><td>quantifiers and groups must be <em>escaped</em> to be operators</td></tr>
 <tr><td><strong>ERE</strong> — POSIX extended</td><td><code>grep -E</code>, <code>egrep</code>, <code>find -E</code>, <code>awk</code></td><td>system <code>regex(3)</code></td><td>escape a metacharacter to make it literal — the modern convention</td></tr>
 <tr><td><strong>Rust regex</strong></td><td><code>rg</code>, <code>fd</code></td><td><code>regex</code> crate (finite automata)</td><td>ERE-like plus Perl classes, minus anything needing backtracking</td></tr>
-<tr><td><strong>PCRE2</strong></td><td><code>rg -P</code>, <code>pcre2grep</code></td><td>PCRE2 10.45, JIT enabled</td><td>the full Perl vocabulary, including lookaround</td></tr>
+<tr><td><strong>PCRE2</strong></td><td><code>rg -P</code>, <code>ugrep -P</code>, <code>ggrep -P</code>, <code>pcre2grep</code></td><td>PCRE2 10.45, JIT enabled</td><td>the full Perl vocabulary, including lookaround</td></tr>
 </tbody>
 </table>
+</div>
+
+<div class="callout blue">
+<strong>Which binary speaks which dialect by default</strong>
+<p>The dialect is a property of the <em>command</em>, not of the machine. On a Mac with
+the §<a href="#rivals">10</a> tools installed:</p>
+<ul>
+<li><code>grep</code> → BRE · <code>grep -E</code> → ERE · no PCRE2 at all</li>
+<li><code>ggrep</code> → BRE · <code>ggrep -E</code> → ERE · <code>ggrep -P</code> → PCRE2</li>
+<li><code>ugrep</code> → <strong>ERE by default</strong> (not BRE — pass <code>-G</code> for that) · <code>ugrep -P</code> → PCRE2</li>
+<li><code>rg</code> → Rust regex · <code>rg -P</code> → PCRE2</li>
+<li><code>fd</code> → Rust regex, matched against the whole path</li>
+</ul>
+<p>That <code>ugrep</code> line is the trap: <code>ugrep 'a+'</code> behaves like
+<code>grep -E 'a+'</code>, so a pattern that was safely literal under <code>grep</code>
+becomes a quantifier.</p>
 </div>
 
 <h3>The measured truth table</h3>
@@ -1828,8 +1867,9 @@ not supported.</span></li>
 <p class="thesis"><code>rg</code> is faster than <code>grep -r</code> for two reasons, and
 only one of them is speed. It searches in parallel with a vectorised literal scanner —
 and it refuses to search most of the files <code>grep</code> would have opened. On the
-benchmark in §<a href="#benchmarks">15</a> it was <strong>17× faster</strong>, and part
-of that margin is work it declined to do.</p>
+benchmark in §<a href="#benchmarks">15</a> it was <strong>20× faster than BSD
+<code>grep -r</code></strong>, and part of that margin is work it declined to do. It is
+not the fastest tool in that table, though — see §<a href="#rivals">10</a>.</p>
 
 <h3>The five filters, in the order they apply</h3>
 
@@ -2061,74 +2101,159 @@ That is why --hidden is rarely what you want on a repo; -g '!.git/*' pairs well 
 
 <!-- ══════════════════════════════════════════════════ 10 -->
 <section id="rivals">
-<h2><span class="num">10 ·</span> The rival greps — do you need any of them?</h2>
+<h2><span class="num">10 ·</span> The rival greps — one of them wins</h2>
 
-<p class="thesis">Short answer: no. The long answer is worth five minutes, because knowing
-<em>why</em> each one existed tells you what ripgrep inherited, and one of them —
-<code>ggrep</code> — is still the right tool for exactly one job.</p>
+<p class="thesis">This section originally said "you do not need any of these." Then they
+were installed and measured, and one of them beat <code>ripgrep</code> by a factor of four
+while returning a byte-identical result set. The lesson is the one §<a href="#benchmarks">15</a>
+keeps making: run the benchmark on your own corpus, and be willing to be wrong.</p>
+
+<pre><code><span class="cmd">ack</span> <span class="arg">--version</span>    <span class="out">→ ack v3.10.0 (standard build), running under Perl v5.34.3</span>
+<span class="cmd">ggrep</span> <span class="arg">--version</span>  <span class="out">→ ggrep (GNU grep) 3.12</span>
+<span class="cmd">ugrep</span> <span class="arg">--version</span>  <span class="out">→ ugrep 7.8.4 x86_64-apple-darwin24.6.0; -P:pcre2jit;
+                    -z:zlib,bzip2,lzma,lz4,zstd,7z,tar/pax/cpio/zip</span></code></pre>
+
+<div class="callout blue">
+<strong>Where these came from</strong>
+<p>On the machine this guide was verified against they arrived from <strong>MacPorts</strong>
+(<code>/opt/local/bin</code>), not Homebrew. Either works; the Homebrew spellings are
+<code>brew install ack</code>, <code>brew install grep</code> (which installs GNU grep as
+<code>ggrep</code>) and <code>brew install ugrep</code>. Worth confirming afterwards that
+nothing shadowed the system tools — here <code>/opt/local/bin</code> sits <em>ahead</em> of
+<code>/usr/local/bin</code> in <code>PATH</code>, yet bare <code>grep</code> still resolves
+to <code>/usr/bin/grep</code> because none of these packages installs an unprefixed
+<code>grep</code>. Check yours with <code>which -a grep</code>.</p>
+</div>
+
+<h3>Measured, on the same corpus</h3>
+
+<p>Same query, same 39,798-file tree, same method as §<a href="#benchmarks">15</a>: best of
+three warm runs, output to <code>/dev/null</code>.</p>
 
 <div class="table-wrap">
 <table>
-<thead><tr><th>Tool</th><th>Install</th><th>Its pitch</th><th>Verdict</th></tr></thead>
+<thead><tr><th>Command</th><th class="num-col">Best of 3</th><th class="num-col">Lines</th><th class="num-col">Files</th><th>vs <code>rg</code></th></tr></thead>
 <tbody>
-<tr><td><code>ack</code></td><td><code>brew install ack</code></td><td>Perl, 2005. First to skip VCS directories by default and to filter by language type.</td><td>Historically important, comprehensively superseded. Perl startup alone costs more than a whole rg run.</td></tr>
-<tr><td><code>ag</code> (the_silver_searcher)</td><td><code>brew install the_silver_searcher</code></td><td>C rewrite of ack, ~2013. Made "fast + gitignore-aware" the expectation.</td><td>Still works, still fine — and <strong>2× slower than rg</strong> on the benchmark below. Upstream has been quiet for years.</td></tr>
-<tr><td><code>ugrep</code></td><td><code>brew install ugrep</code></td><td>Full POSIX/GNU grep compatibility plus PCRE, fuzzy matching, archive search and an interactive TUI (<code>ug --query</code>).</td><td>The one genuinely different offer: it is a <em>drop-in grep</em> with extras, where rg is a different tool wearing similar clothes. Worth trying if you want <code>-P</code>, fuzzy search and zip/tar searching in one binary.</td></tr>
-<tr><td><code>ggrep</code> (GNU grep)</td><td><code>brew install grep</code></td><td>The actual GNU implementation, installed under a <code>g</code> prefix.</td><td><strong>Keep this one.</strong> When a script must run identically on macOS and Linux, or a colleague's <code>-P</code>/<code>-z</code>/<code>--include</code> incantation must work verbatim, <code>ggrep</code> ends the argument.</td></tr>
+<tr><td><code>ugrep -r 'func NewClient' ~/go</code></td><td class="num-col">129 ms</td><td class="num-col">88</td><td class="num-col">71</td><td class="yes"><strong>4.0× faster</strong></td></tr>
+<tr><td><code>ugrep -r --ignore-files …</code></td><td class="num-col">126 ms</td><td class="num-col">88</td><td class="num-col">71</td><td class="yes">4.1× faster</td></tr>
+<tr><td><code>rg 'func NewClient' ~/go</code></td><td class="num-col">515 ms</td><td class="num-col">88</td><td class="num-col">71</td><td>baseline</td></tr>
+<tr><td><code>ag 'func NewClient' ~/go</code></td><td class="num-col">1,221 ms</td><td class="num-col">88</td><td class="num-col">71</td><td class="mid">2.4× slower</td></tr>
+<tr><td><code>ggrep -rI 'func NewClient' ~/go</code></td><td class="num-col">2,100 ms</td><td class="num-col">88</td><td class="num-col">71</td><td class="mid">4.1× slower</td></tr>
+<tr><td><code>ack 'func NewClient' ~/go</code></td><td class="num-col">5,453 ms</td><td class="num-col">88</td><td class="num-col">71</td><td class="no">10.6× slower</td></tr>
+<tr><td><code>grep -rI 'func NewClient' ~/go</code> (BSD)</td><td class="num-col">10,169 ms</td><td class="num-col">88</td><td class="num-col">71</td><td class="no">19.7× slower</td></tr>
 </tbody>
 </table>
-</div>
-
-<h3>Measured, on this machine</h3>
-
-<p>Same query, same 39,798-file corpus, best of three warm runs. Full method in
-§<a href="#benchmarks">15</a>.</p>
-
-<div class="table-wrap">
-<table>
-<thead><tr><th>Command</th><th class="num-col">Time</th><th class="num-col">Matching lines</th><th>Note</th></tr></thead>
-<tbody>
-<tr><td><code>rg 'func NewClient' ~/go</code></td><td class="num-col">639 ms</td><td class="num-col">88</td><td>defaults on</td></tr>
-<tr><td><code>rg -uu 'func NewClient' ~/go</code></td><td class="num-col">727 ms</td><td class="num-col">88</td><td>filters off — same answer here</td></tr>
-<tr><td><code>ag 'func NewClient' ~/go</code></td><td class="num-col">1,286 ms</td><td class="num-col">88</td><td>2.0× slower than rg</td></tr>
-<tr><td><code>grep -rI 'func NewClient' ~/go</code></td><td class="num-col">11,111 ms</td><td class="num-col">88</td><td>17.4× slower than rg</td></tr>
-</tbody>
-</table>
-</div>
-
-<p>All four agree on the answer. The spread is entirely in how the work is done:
-<code>grep</code> is single-threaded and opens every file;
-<code>ag</code> and <code>rg</code> are parallel and skip most of them;
-<code>rg</code> additionally uses SIMD literal prefilters
-(<code>rg --version</code> reports <code>simd(runtime):+SSE2,+SSSE3,+AVX2</code>).</p>
-
-<div class="callout warn">
-<strong>Two footnotes from testing this on a real machine</strong>
-<p><code>ack</code>, <code>ugrep</code> and <code>ggrep</code> were <em>not</em> installed
-on the machine this guide was verified against, so their rows above are sourced from their
-own documentation, not measured. Do not treat those verdicts as benchmarks.</p>
-<p>And a name collision worth knowing: <code>pt</code> is the name of the
-"platinum searcher", but on a Mac with <code>brew install tcl-tk</code> the command
-<code>pt</code> is Tcl's parser-tools front-end
-(<code>/usr/local/Cellar/tcl-tk/…/bin/pt</code>). Run <code>type -a pt</code> before you
-believe a benchmark you ran against it.</p>
 </div>
 
 <div class="callout ok">
-<strong>Opinionated default</strong>
-<p>Install <code>ripgrep</code> and <code>grep</code> (as <code>ggrep</code>). Use
-<code>rg</code> for everything interactive; reach for <code>ggrep</code> only when
-portability with Linux is the actual requirement. Skip <code>ack</code> and
-<code>ag</code> on a new machine — they solve a problem <code>rg</code> already solved
-better. Add <code>ugrep</code> only if its fuzzy or archive search answers a question you
-really have.</p>
+<strong>The ugrep result is real, not an artefact</strong>
+<p>The obvious suspicion is that <code>ugrep</code> won by searching less. It did not — it
+searched <em>more</em>:</p>
+<pre><code><span class="cmd">ugrep</span> <span class="arg">-r</span> <span class="arg">--stats</span> <span class="str">'func NewClient'</span> ~/go
+<span class="out">Searched 36644 files in 8673 directories in 0.73 seconds with 12 threads: 71 matching (0.1938%)
+Searched 20397063 lines: 88 matching (0.0004314%)</span>
+
+<span class="cmd">rg</span> <span class="arg">--stats</span> <span class="str">'func NewClient'</span> ~/go
+<span class="out">32365 files searched</span></code></pre>
+<p>36,644 files against 32,365, and the two result sets are identical — <code>comm</code>
+over the sorted <code>-l</code> output gives 71 shared, 0 unique to either. Every one of
+the seven tools above agrees on 88 matching lines in 71 files.</p>
+</div>
+
+<h3>What each one is actually for</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Tool</th><th>Its pitch</th><th>Verdict, having run it</th></tr></thead>
+<tbody>
+<tr><td><code>ugrep</code></td><td>A POSIX-compatible grep with PCRE2, fuzzy matching, archive search, an indexer and an interactive TUI.</td><td class="yes"><strong>Install it.</strong> Fastest here, does things nothing else in this guide can, and its options are grep's.</td></tr>
+<tr><td><code>ggrep</code> (GNU grep 3.12)</td><td>The implementation the internet's grep advice assumes.</td><td class="yes"><strong>Install it.</strong> Not for speed — for <code>-P</code>, for <code>-R</code> actually following symlinks, and for scripts that must behave identically on Linux.</td></tr>
+<tr><td><code>ag</code></td><td>The 2013 C rewrite of ack that made "fast and gitignore-aware" the expectation.</td><td class="mid">Works, but nothing here is its best. Skip on a new machine.</td></tr>
+<tr><td><code>ack</code> 3.10.0</td><td>Perl, 2005. The first tool to skip VCS directories and filter by language.</td><td class="no">Historically important, 10.6× slower than rg and 42× slower than ugrep. Its <code>--type</code> ideas live on in <code>rg -t</code>.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>The filtering models differ, and that changes answers</h3>
+
+<p>Run each against the §<a href="#install">3</a> sandbox and the disagreement is the whole
+story. <code>TIMEOUT</code> appears in seven files:</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th class="num-col">Files</th><th>Skips</th></tr></thead>
+<tbody>
+<tr><td><code>rg -l TIMEOUT .</code></td><td class="num-col">4</td><td><code>.gitignore</code> + global excludes + dotfiles</td></tr>
+<tr><td><code>ugrep -r -l --ignore-files TIMEOUT .</code></td><td class="num-col">4</td><td>same four files as ripgrep — identical set</td></tr>
+<tr><td><code>ugrep -r -l TIMEOUT .</code></td><td class="num-col">6</td><td>dotfiles only — <strong>no gitignore awareness by default</strong></td></tr>
+<tr><td><code>ack -l TIMEOUT .</code></td><td class="num-col">7</td><td>VCS <em>directories</em>, but not <code>.gitignore</code> and not dotfiles</td></tr>
+<tr><td><code>ggrep -rl TIMEOUT . --exclude-dir=.git</code></td><td class="num-col">7</td><td>nothing but what you name</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout warn">
+<strong>Two <code>ugrep</code> defaults that are not grep's</strong>
+<p><strong>It defaults to extended regex, not basic.</strong> <code>ugrep 'a+'</code> behaves
+like <code>grep -E 'a+'</code>; POSIX <code>grep 'a+'</code> would match a literal plus.
+For true drop-in behaviour pass <code>-G</code>:</p>
+<pre><code><span class="cmd">printf</span> <span class="str">'aaa\na+b\ncat\n'</span> | <span class="cmd">ugrep</span> <span class="str">'a+'</span>      <span class="out">→ aaa · a+b · cat</span>
+<span class="cmd">printf</span> <span class="str">'aaa\na+b\ncat\n'</span> | <span class="cmd">ugrep</span> <span class="arg">-G</span> <span class="str">'a+'</span>   <span class="out">→ a+b</span></code></pre>
+<p><strong>It ignores your <code>.gitignore</code> unless you ask.</strong> Add
+<code>--ignore-files</code> and it lands on exactly ripgrep's answer. If you are switching
+from <code>rg</code>, put that in an alias or you will get more results than you expect.</p>
+</div>
+
+<h3>What ugrep does that nothing else here does</h3>
+
+<p><strong>Search inside archives.</strong> <code>-z</code> descends into zip, tar, 7z and
+the compressed variants — and reports the member path:</p>
+
+<pre><code><span class="cmd">zip</span> <span class="arg">-q</span> arch.zip docs/notes.md
+<span class="cmd">ugrep</span> <span class="arg">-z</span> <span class="arg">-r</span> <span class="str">'TIMEOUT'</span> arch.zip
+<span class="out">arch.zip{docs/notes.md}:Set TIMEOUT in the config.</span>
+
+<span class="comment"># ripgrep's -z handles gz/bz2/xz streams, not archive members:</span>
+<span class="cmd">rg</span> <span class="arg">-z</span> <span class="str">'TIMEOUT'</span> arch.zip
+<span class="out">binary file matches (found "\0" byte around offset 5)</span></code></pre>
+
+<p><strong>Fuzzy matching.</strong> <code>-Z</code> takes an edit distance, so a
+transposition still matches:</p>
+
+<pre><code><span class="cmd">printf</span> <span class="str">'NewClient\nNewCleint\nNewClientsPool\n'</span> | <span class="cmd">ugrep</span> <span class="arg">-Z2</span> <span class="str">'NewClient'</span>
+<span class="out">NewClient
+NewCleint          <span class="hl">← two transposed letters, still found</span>
+NewClientsPool</span></code></pre>
+
+<p>It also ships <code>ug --query</code>, an interactive full-screen search (the
+<code>ug</code> command is <code>ugrep</code> with a user config file), and
+<code>ugrep-indexer</code>, which builds an index to accelerate repeated searches over a
+fixed tree — a fourth point on the index-versus-walk axis from
+§<a href="#mental-model">1</a>.</p>
+
+<div class="callout ok">
+<strong>Revised opinionated default</strong>
+<p>Install <strong>ripgrep</strong>, <strong>ugrep</strong> and <strong>GNU grep</strong>.
+Keep <code>rg</code> as the daily driver — its gitignore behaviour is right by default, its
+output is the friendliest, and 575 ms is not a number you can feel. Reach for
+<code>ugrep</code> when you need an archive searched, a fuzzy match, a genuine
+grep-compatible flag set, or raw speed over a very large tree. Keep <code>ggrep</code> for
+portability and <code>-P</code>. Skip <code>ack</code> and <code>ag</code>.</p>
+</div>
+
+<div class="callout warn">
+<strong>A name collision worth knowing</strong>
+<p><code>pt</code> is the name of the "platinum searcher", but on a Mac with
+<code>tcl-tk</code> installed the command <code>pt</code> is Tcl's parser-tools front-end.
+Run <code>type -a pt</code> before you believe a benchmark you ran against it.</p>
 </div>
 
 <p class="srcline"><strong>Sources:</strong>
-<a href="https://github.com/ggreer/the_silver_searcher" target="_blank" rel="noopener">ggreer/the_silver_searcher</a> ·
-<a href="https://beyondgrep.com/" target="_blank" rel="noopener">ack — beyondgrep.com</a> ·
 <a href="https://github.com/Genivia/ugrep" target="_blank" rel="noopener">Genivia/ugrep</a> ·
-<a href="https://formulae.brew.sh/formula/grep" target="_blank" rel="noopener">Homebrew formula: grep (installs ggrep)</a></p>
+<a href="https://ugrep.com/" target="_blank" rel="noopener">ugrep user manual</a> ·
+<a href="https://www.gnu.org/software/grep/manual/grep.html" target="_blank" rel="noopener">GNU grep manual</a> ·
+<a href="https://beyondgrep.com/" target="_blank" rel="noopener">ack — beyondgrep.com</a> ·
+<a href="https://github.com/ggreer/the_silver_searcher" target="_blank" rel="noopener">ggreer/the_silver_searcher</a></p>
 </section>
 
 <!-- ══════════════════════════════════════════════════ 11 -->
@@ -3022,7 +3147,9 @@ lesson.</p>
 <p>Intel Mac, macOS 15.6 (24G84), APFS internal SSD. Corpus:
 <code>~/go</code> — 39,798 files, 3.0 GB, 22,079 of them <code>.go</code>. Each command
 run three times with output to <code>/dev/null</code>; the <strong>best</strong> time is
-reported. The page cache was warmed first with a full <code>find</code> pass, so these are
+reported. Every figure in both tables below comes from a <em>single</em> sitting, so the
+tools are comparable with each other even though absolute numbers drift a few percent
+between sittings. The page cache was warmed first with a full <code>find</code> pass, so these are
 warm-cache numbers — a cold run costs several times more for the walkers and roughly
 nothing for the index queries.</p>
 
@@ -3032,10 +3159,10 @@ nothing for the index queries.</p>
 <table>
 <thead><tr><th>Command</th><th class="num-col">Best of 3</th><th class="num-col">Results</th><th>What it really did</th></tr></thead>
 <tbody>
-<tr><td><code>fd -HI --glob '*.pb.go' ~/go</code></td><td class="num-col">128 ms</td><td class="num-col">3,888</td><td>parallel walk, glob anchored to the basename</td></tr>
-<tr><td><code>mdfind -onlyin ~/go -name .pb.go</code></td><td class="num-col">226 ms</td><td class="num-col">3,891</td><td>index lookup; <code>-name</code> is a substring match</td></tr>
-<tr><td><code>find ~/go -name '*.pb.go'</code></td><td class="num-col">788 ms</td><td class="num-col">3,888</td><td>single-threaded walk</td></tr>
-<tr><td><code>locate '.pb.go'</code></td><td class="num-col">4,790 ms</td><td class="num-col">3,952</td><td>linear scan of 11.2 M names across the <em>whole disk</em></td></tr>
+<tr><td><code>fd -HI --glob '*.pb.go' ~/go</code></td><td class="num-col">121 ms</td><td class="num-col">3,888</td><td>parallel walk, glob anchored to the basename</td></tr>
+<tr><td><code>mdfind -onlyin ~/go -name .pb.go</code></td><td class="num-col">209 ms</td><td class="num-col">3,891</td><td>index lookup; <code>-name</code> is a substring match</td></tr>
+<tr><td><code>find ~/go -name '*.pb.go'</code></td><td class="num-col">629 ms</td><td class="num-col">3,888</td><td>single-threaded walk</td></tr>
+<tr><td><code>locate '.pb.go'</code></td><td class="num-col">4,352 ms</td><td class="num-col">3,952</td><td>linear scan of 11.2 M names across the <em>whole disk</em></td></tr>
 </tbody>
 </table>
 </div>
@@ -3059,32 +3186,43 @@ three slightly different questions, and only one of them was the question you as
 <table>
 <thead><tr><th>Command</th><th class="num-col">Best of 3</th><th class="num-col">Result</th><th>vs <code>rg</code></th></tr></thead>
 <tbody>
-<tr><td><code>mdfind -onlyin ~/go 'func NewClient'</code></td><td class="num-col">449 ms</td><td class="num-col">726 files</td><td>a different question entirely</td></tr>
-<tr><td><code>rg 'func NewClient' ~/go</code></td><td class="num-col">639 ms</td><td class="num-col">88 lines / 71 files</td><td>baseline</td></tr>
-<tr><td><code>rg -uu 'func NewClient' ~/go</code></td><td class="num-col">727 ms</td><td class="num-col">88 lines</td><td>1.1× slower, same answer</td></tr>
-<tr><td><code>ag 'func NewClient' ~/go</code></td><td class="num-col">1,286 ms</td><td class="num-col">88 lines</td><td>2.0× slower</td></tr>
-<tr><td><code>grep -rI 'func NewClient' ~/go</code></td><td class="num-col">11,111 ms</td><td class="num-col">88 lines</td><td><strong>17.4× slower</strong></td></tr>
+<tr><td><code>ugrep -r 'func NewClient' ~/go</code></td><td class="num-col">129 ms</td><td class="num-col">88 lines / 71 files</td><td class="yes">4.0× faster</td></tr>
+<tr><td><code>mdfind -onlyin ~/go 'func NewClient'</code></td><td class="num-col">321 ms</td><td class="num-col">726 files</td><td>a different question entirely</td></tr>
+<tr><td><code>rg 'func NewClient' ~/go</code></td><td class="num-col">515 ms</td><td class="num-col">88 lines / 71 files</td><td>baseline</td></tr>
+<tr><td><code>rg -uu 'func NewClient' ~/go</code></td><td class="num-col">691 ms</td><td class="num-col">88 lines</td><td>1.3× slower, same answer</td></tr>
+<tr><td><code>ag 'func NewClient' ~/go</code></td><td class="num-col">1,221 ms</td><td class="num-col">88 lines</td><td>2.4× slower</td></tr>
+<tr><td><code>ggrep -rI 'func NewClient' ~/go</code></td><td class="num-col">2,100 ms</td><td class="num-col">88 lines</td><td>4.1× slower</td></tr>
+<tr><td><code>ack 'func NewClient' ~/go</code></td><td class="num-col">5,453 ms</td><td class="num-col">88 lines</td><td>10.6× slower</td></tr>
+<tr><td><code>grep -rI 'func NewClient' ~/go</code> (BSD)</td><td class="num-col">10,169 ms</td><td class="num-col">88 lines</td><td><strong>19.7× slower</strong></td></tr>
 </tbody>
 </table>
 </div>
 
-<p>Three points hide in that table.</p>
+<p>Four points hide in that table.</p>
 
-<p><strong>One.</strong> <code>mdfind</code> looks like the winner and is not competing.
-Its 726 files are documents containing the words <em>func</em> and <em>NewClient</em>
-somewhere; the greps found 88 specific lines. Comparing their times is comparing a library
-catalogue to a book.</p>
+<p><strong>One.</strong> <code>mdfind</code> looks competitive and is not competing. Its
+726 files are documents containing the words <em>func</em> and <em>NewClient</em>
+somewhere; the greps found 88 specific lines in 71 files. Comparing their times is
+comparing a library catalogue to a book.</p>
 
-<p><strong>Two.</strong> <code>rg -uu</code> — every filter disabled — is only 1.1×
-slower than default <code>rg</code> here, because <code>~/go</code> has few ignored files.
-On a JavaScript monorepo with a 400 MB <code>node_modules</code>, that same flag is the
+<p><strong>Two.</strong> Every grep-shaped tool here agrees: <strong>88 matching lines in
+71 files</strong>, no exceptions. An 80-fold spread in time and not one disagreement about
+the answer. When a search tool is slow it is doing the same work badly, not doing different
+work.</p>
+
+<p><strong>Three.</strong> <code>rg -uu</code> — every filter disabled — is 1.3× slower
+than default <code>rg</code> here, because <code>~/go</code> has few ignored files. On a
+JavaScript monorepo with a 400 MB <code>node_modules</code>, that same flag is the
 difference between one second and thirty. The filters, not the threads, are ripgrep's
 biggest lever on real projects.</p>
 
-<p><strong>Three.</strong> <code>grep</code>'s 17× deficit is not incompetence. It is
-single-threaded, opens every file, and has no literal prefilter.
-<code>rg --version</code> reports <code>simd(runtime):+SSE2,+SSSE3,+AVX2</code>; that is
-where a large part of the gap lives, and it is the same gap on any platform.</p>
+<p><strong>Four.</strong> BSD <code>grep</code>'s 20× deficit is not incompetence, it is
+architecture: single-threaded, opens every file, no literal prefilter. GNU grep 3.12 closes
+about five-sixths of that gap without changing the model at all. The rest of the distance —
+<code>rg</code> and <code>ugrep</code> — is parallelism plus SIMD literal scanning
+(<code>rg --version</code> reports <code>simd(runtime):+SSE2,+SSSE3,+AVX2</code>).
+That <code>ugrep</code> is four times faster again than <code>rg</code> on this corpus is
+the result that made §<a href="#rivals">10</a> get rewritten.</p>
 
 <div class="callout warn">
 <strong>What these numbers cannot tell you</strong>
@@ -3093,7 +3231,7 @@ where a large part of the gap lives, and it is the same gap on any platform.</p>
 are dominated by disk, and the ranking compresses.</li>
 <li><strong>Your corpus.</strong> A tree of 40,000 small Go files behaves nothing like 200
 video files or a 12 GB Xcode DerivedData folder.</li>
-<li><strong>Index freshness.</strong> <code>mdfind</code>'s 449 ms assumes Spotlight is
+<li><strong>Index freshness.</strong> <code>mdfind</code>'s 321 ms assumes Spotlight is
 caught up. Right after copying 50 GB in, it is not, and it will answer confidently
 anyway.</li>
 <li><strong>Apple silicon.</strong> This was an Intel Mac. Expect the walkers to close the
@@ -3211,7 +3349,10 @@ a search that should have worked came back empty.</figcaption>
 <tr><td>A string in the project you are standing in</td><td><code>rg PATTERN</code></td><td>fast, respects <code>.gitignore</code>, gives line numbers</td></tr>
 <tr><td>…including ignored and hidden files</td><td><code>rg -uu PATTERN</code></td><td>the filters, not the speed, are what changed the answer</td></tr>
 <tr><td>A string in one known file</td><td><code>grep -n PATTERN file</code></td><td>no reason to reach further</td></tr>
-<tr><td>A regex with lookahead or a backreference</td><td><code>rg -P PATTERN</code></td><td>the only PCRE2 on a stock-plus-Homebrew Mac</td></tr>
+<tr><td>A regex with lookahead or a backreference</td><td><code>rg -P PATTERN</code></td><td>also <code>ugrep -P</code> / <code>ggrep -P</code> if installed (§<a href="#rivals">10</a>)</td></tr>
+<tr><td>A string inside a zip, tar or 7z</td><td><code>ugrep -z -r PATTERN ARCHIVE</code></td><td>the only tool here that searches archive members</td></tr>
+<tr><td>A string you might be misspelling</td><td><code>ugrep -Z2 PATTERN</code></td><td>fuzzy matching by edit distance; nothing else here has it</td></tr>
+<tr><td>Raw throughput over a very large tree</td><td><code>ugrep -r --ignore-files</code></td><td>4× faster than <code>rg</code> here, identical results (§<a href="#benchmarks">15</a>)</td></tr>
 <tr><td>A filename inside a tree you can name</td><td><code>fd PATTERN DIR</code></td><td>current, parallel, smart case</td></tr>
 <tr><td>Filenames, then act on each one</td><td><code>find … -exec … {} +</code> or <code>fd … -X</code></td><td>batching without an <code>xargs</code> quoting bug</td></tr>
 <tr><td>A file by size, kind, tag, author, EXIF, duration</td><td><code>mdfind "kMDItem… "</code></td><td>nothing else has that metadata at all</td></tr>
@@ -3231,12 +3372,12 @@ a search that should have worked came back empty.</figcaption>
 <table>
 <thead><tr><th>Linux instinct</th><th>macOS move</th><th>Why it is different</th></tr></thead>
 <tbody>
-<tr><td><code>grep -P '\d+'</code></td><td><code>grep -E '[[:digit:]]+'</code>, or <code>rg '\d+'</code></td><td>BSD grep has no <code>-P</code> (but <code>\d</code> itself works)</td></tr>
+<tr><td><code>grep -P '\d+'</code></td><td><code>rg -P</code>, <code>ugrep -P</code> or <code>ggrep -P</code></td><td>BSD grep has no <code>-P</code> — though <code>\d</code> itself works without it</td></tr>
 <tr><td><code>find . -printf '%p\n'</code></td><td><code>find . -print</code>, or <code>gfind</code></td><td><code>-printf</code> is a GNU extension</td></tr>
 <tr><td><code>find -regextype posix-extended</code></td><td><code>find -E . -regex …</code></td><td>the flag moves in front of the path</td></tr>
 <tr><td><code>updatedb</code> then <code>locate</code></td><td><code>sudo /usr/libexec/locate.updatedb</code></td><td>weekly job, runs as <code>nobody</code>, ships disabled</td></tr>
 <tr><td><code>locate</code> finds everything</td><td><code>mdfind</code> finds everything</td><td>on macOS the whole-machine index is Spotlight's, not <code>locate</code>'s</td></tr>
-<tr><td><code>grep -R</code> follows symlinks</td><td>it does not, here</td><td><code>-r</code> and <code>-R</code> are one flag on BSD grep</td></tr>
+<tr><td><code>grep -R</code> follows symlinks</td><td>it does not, here — use <code>ggrep -R</code></td><td><code>-r</code> and <code>-R</code> are one flag on BSD grep; measured in §<a href="#grep">7</a></td></tr>
 <tr><td><code>ls -l</code> tells you everything</td><td><code>mdls FILE</code></td><td>macOS keeps a second, richer set of facts about every file</td></tr>
 </tbody>
 </table>
@@ -3379,7 +3520,7 @@ symptom to mechanism to fix. Work down it in order — the cheap checks are firs
 <tr><td><code>mdfind</code> misses part of a word</td><td>token prefix matching — never mid-token</td><td><code>"kMDItemTextContent == '*frag*'c"</code>, or pipe to <code>rg</code></td></tr>
 <tr><td>A quoted <code>mdfind</code> phrase returns nothing</td><td>quoting disables prefix matching; tokens must match exactly</td><td>drop the quotes, or use the raw wildcard form</td></tr>
 <tr><td>Nothing finds anything in <code>$TMPDIR</code></td><td><code>/private/var/folders</code> is pruned from both indexes</td><td>use <code>fd</code>/<code>rg</code>, or work under <code>$HOME</code></td></tr>
-<tr><td>Search misses files inside a symlinked directory</td><td>nothing here follows symlinks by default</td><td><code>fd -L</code> · <code>rg -L</code> · <code>find -L</code> (BSD <code>grep -R</code> will not)</td></tr>
+<tr><td>Search misses files inside a symlinked directory</td><td>nothing here follows symlinks by default</td><td><code>fd -L</code> · <code>rg -L</code> · <code>find -L</code> · <code>ggrep -R</code> (BSD <code>grep -R</code> will not)</td></tr>
 </tbody>
 </table>
 </div>
@@ -3393,7 +3534,7 @@ symptom to mechanism to fix. Work down it in order — the cheap checks are firs
 <tr><td><code>find: retry.js: unknown primary or operator</code></td><td>unquoted glob expanded by the shell</td><td>quote the pattern: <code>-name '*.js'</code></td></tr>
 <tr><td><code>zsh: no matches found: *.js</code></td><td>same, but nothing matched, so zsh aborted</td><td>quote it</td></tr>
 <tr><td><code>find: -printf: unknown primary or operator</code></td><td>GNU-only predicate on BSD find</td><td><code>-print</code>, or <code>brew install findutils</code> → <code>gfind</code></td></tr>
-<tr><td><code>grep: invalid option -- P</code></td><td>BSD grep has no PCRE</td><td><code>rg -P</code> · <code>pcre2grep</code> · <code>ggrep -P</code></td></tr>
+<tr><td><code>grep: invalid option -- P</code></td><td>BSD grep has no PCRE</td><td><code>rg -P</code> · <code>ugrep -P</code> · <code>ggrep -P</code> · <code>pcre2grep</code></td></tr>
 <tr><td><code>grep: repetition-operator operand invalid</code></td><td>lookahead written for PCRE, run through ERE</td><td><code>rg -P</code></td></tr>
 <tr><td><code>grep: invalid backreference number</code></td><td><code>(ab)\1</code> in BRE, or <code>\(ab\)\1</code> in ERE</td><td>match the escaping to the dialect (§<a href="#regex">8</a>)</td></tr>
 <tr><td><code>rg: regex parse error … look-around … is not supported</code></td><td>Rust regex has no backtracking</td><td><code>rg -P</code>, exactly as the message says</td></tr>
@@ -3427,8 +3568,10 @@ symptom to mechanism to fix. Work down it in order — the cheap checks are firs
 <table>
 <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
 <tbody>
-<tr><td><code>grep -r</code> takes minutes</td><td>single-threaded, opens everything</td><td><code>rg</code> — 17× here (§<a href="#benchmarks">15</a>)</td></tr>
+<tr><td><code>grep -r</code> takes minutes</td><td>single-threaded, opens everything</td><td><code>rg</code> is 20× faster here, <code>ugrep -r</code> 79× (§<a href="#benchmarks">15</a>)</td></tr>
 <tr><td><code>rg</code> is slow on one project</td><td>a giant vendored or build directory is not ignored</td><td>add it to <code>.ignore</code>; check with <code>rg --files | wc -l</code></td></tr>
+<tr><td><code>ugrep</code> returns more than <code>rg</code> did</td><td>it does not read <code>.gitignore</code> unless told</td><td><code>ugrep -r --ignore-files</code> — lands on ripgrep's exact set (§<a href="#rivals">10</a>)</td></tr>
+<tr><td>A pattern that was literal under <code>grep</code> becomes a quantifier under <code>ugrep</code></td><td><code>ugrep</code> defaults to ERE, not BRE</td><td><code>ugrep -G</code>, or write the pattern for ERE</td></tr>
 <tr><td><code>locate</code> takes five seconds</td><td>linear scan of an 11-million-name file</td><td>expected; use <code>fd</code> if you know the tree</td></tr>
 <tr><td><code>mdfind</code> is slow right after a big copy</td><td>Spotlight is still importing</td><td><code>mdutil -s /</code>; wait, or <code>mdimport -r</code> a specific path</td></tr>
 <tr><td>Fans spin up for hours after plugging in a drive</td><td>first-time indexing of that volume</td><td>expected once; <code>sudo mdutil -i off /Volumes/NAME</code> if you never search it</td></tr>
@@ -3552,6 +3695,21 @@ symptom to mechanism to fix. Work down it in order — the cheap checks are firs
 <li>single-quote the query so <code>$time</code> survives</li>
 <li><code>InRange()</code> is documented and broken — use two comparisons</li>
 <li><code>kMDItemContentTypeTree</code> &gt; <code>kMDItemContentType</code></li>
+</ul>
+</div>
+
+<div class="card">
+<h4>ugrep &amp; ggrep</h4>
+<ul>
+<li><code>ugrep -r PAT DIR</code> — <strong>ERE by default</strong></li>
+<li><code>ugrep -G</code> — BRE, the true drop-in</li>
+<li><code>ugrep -r --ignore-files</code> — obey .gitignore</li>
+<li><code>ugrep -P</code> · <code>ggrep -P</code> — PCRE2</li>
+<li><code>ugrep -z -r PAT file.zip</code> — inside archives</li>
+<li><code>ugrep -Z2 PAT</code> — fuzzy, edit distance 2</li>
+<li><code>ug --query</code> — interactive TUI</li>
+<li><code>ggrep -R</code> — actually follows symlinks</li>
+<li><code>ugrep -r --stats</code> — files/lines scanned</li>
 </ul>
 </div>
 
@@ -3743,6 +3901,7 @@ Invisible to <code>grep</code>. (§<a href="#prerequisites">2</a>)</dd>
 
 <div class="index-letter">A–C</div>
 <div>ack → <a href="#rivals">§10</a></div>
+<div>archive search → <a href="#rivals">§10</a></div>
 <div>ag (silver searcher) → <a href="#rivals">§10</a></div>
 <div>alias, grep → <a href="#install">§3</a></div>
 <div>anchoring → <a href="#prerequisites">§2</a></div>
@@ -3774,7 +3933,7 @@ Invisible to <code>grep</code>. (§<a href="#prerequisites">2</a>)</dd>
 <div><code>fzf</code> → <a href="#pipelines">§14</a></div>
 
 <div class="index-letter">G–L</div>
-<div><code>ggrep</code> → <a href="#rivals">§10</a></div>
+<div><code>ggrep</code> (GNU grep) → <a href="#rivals">§10</a>, <a href="#grep">§7</a></div>
 <div>gitignore chain → <a href="#ripgrep">§9</a></div>
 <div>globs vs regex → <a href="#prerequisites">§2</a></div>
 <div><code>grep</code> → <a href="#grep">§7</a></div>
@@ -3809,6 +3968,7 @@ Invisible to <code>grep</code>. (§<a href="#prerequisites">2</a>)</dd>
 <div><code>RIPGREP_CONFIG_PATH</code> → <a href="#ripgrep">§9</a></div>
 <div><code>rg</code> (ripgrep) → <a href="#ripgrep">§9</a></div>
 <div>Rust regex crate → <a href="#regex">§8</a></div>
+<div>fuzzy matching → <a href="#rivals">§10</a></div>
 <div><code>.savedSearch</code> → <a href="#spotlight-gui">§11</a></div>
 <div><code>set -e</code> and grep → <a href="#grep">§7</a></div>
 <div>Smart Folder → <a href="#spotlight-gui">§11</a></div>
@@ -3823,7 +3983,9 @@ Invisible to <code>grep</code>. (§<a href="#prerequisites">2</a>)</dd>
 <div>token matching → <a href="#mdfind">§12</a></div>
 <div>troubleshooting → <a href="#troubleshooting">§18</a></div>
 <div><code>type -a</code> → <a href="#install">§3</a></div>
-<div><code>ugrep</code> → <a href="#rivals">§10</a></div>
+<div><code>ugrep</code> → <a href="#rivals">§10</a>, <a href="#regex">§8</a></div>
+<div><code>ugrep -z</code> (archives) → <a href="#rivals">§10</a></div>
+<div><code>ugrep -Z</code> (fuzzy) → <a href="#rivals">§10</a></div>
 <div>UTI → <a href="#query-language">§13</a></div>
 <div>volumes, unindexed → <a href="#mdfind">§12</a></div>
 <div>wildcards, Spotlight → <a href="#query-language">§13</a></div>
@@ -3836,11 +3998,11 @@ Invisible to <code>grep</code>. (§<a href="#prerequisites">2</a>)</dd>
 <section id="quiz">
 <h2><span class="num">22 ·</span> Quiz</h2>
 
-<p class="thesis">Sixteen questions, self-scored. Answer out loud before you reveal —
-recognising an answer is not the same as producing one. Aim for 14 of 16 before you call
+<p class="thesis">Seventeen questions, self-scored. Answer out loud before you reveal —
+recognising an answer is not the same as producing one. Aim for 15 of 17 before you call
 this learned.</p>
 
-<div id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0/16 answered</div>
+<div id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0/17 answered</div>
 <p><button class="reveal" type="button" id="quizReset" style="font:600 .78rem var(--sans);padding:.4rem .8rem;border-radius:6px;border:1px solid var(--line2);background:var(--surface2);color:var(--ink2);cursor:pointer">Reset quiz</button></p>
 
 <div class="quiz-item" data-q="1">
@@ -3939,6 +4101,12 @@ this learned.</p>
   <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
 </div>
 
+<div class="quiz-item" data-q="17">
+  <div class="quiz-q"><span class="qnum">Q17</span>Seven grep-shaped tools searched the same 39,798-file tree with a 79-fold spread in time. How many different answers did they return?</div>
+  <div class="quiz-answer">One. All seven found 88 matching lines in the same 71 files — <code>ugrep</code>, <code>rg</code>, <code>ag</code>, <code>ggrep</code>, <code>ack</code> and BSD <code>grep</code> agreed exactly. Speed differences here are the same work done better, not different work. The tools that <em>do</em> disagree disagree for a filtering or matching-model reason: <code>rg</code> obeys <code>.gitignore</code>, <code>ugrep</code> does not unless told, and <code>mdfind</code> is answering a different question altogether. (<a href="#rivals">§10</a>, <a href="#benchmarks">§15</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+
 </section>
 
 <!-- ══════════════════════════════════════════════════ 23 -->
@@ -3950,11 +4118,14 @@ this learned.</p>
 <p>Every transcript, timing and count in this guide was produced on one machine —
 <strong>macOS 15.6 (24G84), Intel, APFS</strong> — on <strong>2026-09-10</strong>, with
 <code>fd 10.5.0</code>, <code>ripgrep 15.2.0</code> (PCRE2 10.45, JIT),
-<code>grep (BSD grep, GNU compatible) 2.6.0-FreeBSD</code>, <code>ag 2.2.0</code> and
+<code>grep (BSD grep, GNU compatible) 2.6.0-FreeBSD</code>, <code>ugrep 7.8.4</code>,
+<code>ggrep (GNU grep) 3.12</code>, <code>ag 2.2.0</code>, <code>ack v3.10.0</code> and
 <code>fzf 0.74.3</code>. Where behaviour contradicted the documentation, the guide records
-what happened and says so. <code>ack</code>, <code>ugrep</code> and <code>ggrep</code>
-were <em>not</em> installed and their descriptions come from their own docs, not from
-measurement.</p>
+what happened and says so.</p>
+<p>§<a href="#rivals">10</a> was written before <code>ack</code>, <code>ugrep</code> and
+<code>ggrep</code> were installed, said they were not worth having, and was rewritten after
+measuring them — <code>ugrep</code> turned out to be the fastest tool in the guide. The
+first version is not preserved; the revision is the point.</p>
 <p>External links need a network; the guide itself does not, and makes zero external
 requests.</p>
 </div>
@@ -3993,8 +4164,10 @@ requests.</p>
   <span class="why">Best used for: what <code>rg -P</code> unlocks — lookaround, backreferences, named groups, possessive quantifiers.</span></li>
 <li><a href="https://www.gnu.org/software/grep/manual/grep.html" target="_blank" rel="noopener">GNU grep manual</a>
   <span class="why">Best used for: knowing what the internet's grep advice assumes, and therefore which parts will not work until you <code>brew install grep</code>.</span></li>
-<li><a href="https://github.com/ggreer/the_silver_searcher" target="_blank" rel="noopener">ggreer/the_silver_searcher</a> · <a href="https://beyondgrep.com/" target="_blank" rel="noopener">ack</a> · <a href="https://github.com/Genivia/ugrep" target="_blank" rel="noopener">Genivia/ugrep</a>
-  <span class="why">Best used for: judging §10 for yourself. ugrep's is the one worth reading if you want a genuine drop-in grep replacement with PCRE and fuzzy matching.</span></li>
+<li><a href="https://github.com/Genivia/ugrep" target="_blank" rel="noopener">Genivia/ugrep</a> · <a href="https://ugrep.com/" target="_blank" rel="noopener">ugrep user manual</a>
+  <span class="why">Best used for: the archive (<code>-z</code>), fuzzy (<code>-Z</code>), indexer and interactive-query features that make §10 recommend it, and the full list of the grep options it is compatible with.</span></li>
+<li><a href="https://github.com/ggreer/the_silver_searcher" target="_blank" rel="noopener">ggreer/the_silver_searcher</a> · <a href="https://beyondgrep.com/" target="_blank" rel="noopener">ack</a>
+  <span class="why">Best used for: the history §10 compresses — ack invented the VCS-aware, type-filtered search that every tool here now assumes.</span></li>
 <li><a href="https://github.com/junegunn/fzf" target="_blank" rel="noopener">junegunn/fzf</a>
   <span class="why">Best used for: the <code>--preview</code>, <code>--bind</code> and <code>reload</code> options the §14 shell functions depend on.</span></li>
 </ul>
@@ -4135,7 +4308,7 @@ requests.</p>
       });
       score.textContent = 'Score: ' + got + ' learned · ' + missed + ' review · ' +
         (got + missed) + '/' + items.length + ' answered' +
-        (got >= 14 ? ' — target reached' : '');
+        (got >= 15 ? ' — target reached' : '');
     }
     items.forEach(function (it) {
       var q = it.getAttribute('data-q');

@@ -66,7 +66,7 @@ command works as a local pre-commit hook.
 
 | Guide | Subject | Verified against |
 |---|---|---|
-| [`file-search-macos-user-guide.html`](file-search-macos-user-guide.html) | Finding files on macOS: `mdfind`, `fd`, `locate`, `find`, `grep`/`egrep`, `ripgrep`, plus Spotlight and Finder — index vs walk, name vs contents, four regex dialects | macOS 15.6 · fd 10.5.0 · rg 15.2.0 · 2026-09-10 |
+| [`file-search-macos-user-guide.html`](file-search-macos-user-guide.html) | Finding files on macOS: `mdfind`, `fd`, `locate`, `find`, `grep`/`egrep`, `ripgrep`, plus Spotlight and Finder — index vs walk, name vs contents, four regex dialects | macOS 15.6 · fd 10.5.0 · rg 15.2.0 · ugrep 7.8.4 · 2026-09-10 |
 | [`atuin-user-guide.html`](atuin-user-guide.html) | Shell history as a queryable, syncing SQLite database | atuin 18.19.0 · 2026-08-07 |
 | [`rsync-user-guide.html`](rsync-user-guide.html) | The trailing slash, the delta algorithm, filter rules, SSH and daemon transports, `--link-dest` snapshots | rsync 3.4.4 (protocol 32) · 2026-08-07 |
 | [`chezmoi-user-guide.html`](chezmoi-user-guide.html) | Declaring your home directory once and applying it everywhere | chezmoi v2.72.0 · 2026-08-06 |
