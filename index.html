@@ -43,6 +43,7 @@
     --violet: #6d3fc4;
     --red: #b3261e;
     --lime: #647300;
+    --orange: #b8560f;
     --scanline-opacity: 0;
     --glow: transparent;
     color-scheme: light;
@@ -63,6 +64,7 @@
     --violet: #b58cff;
     --red: #ff4f58;
     --lime: #d6f04a;
+    --orange: #ff9248;
     --scanline-opacity: 0.05;
     --glow: rgba(74, 246, 38, 0.14);
     color-scheme: dark;
@@ -84,6 +86,7 @@
       --violet: #b58cff;
       --red: #ff4f58;
       --lime: #d6f04a;
+      --orange: #ff9248;
       --scanline-opacity: 0.05;
       --glow: rgba(74, 246, 38, 0.14);
       color-scheme: dark;
@@ -252,6 +255,7 @@
   .accent-violet  { --accent: var(--violet); }
   .accent-red     { --accent: var(--red); }
   .accent-lime    { --accent: var(--lime); }
+  .accent-orange  { --accent: var(--orange); }
 
   /* ---------- meta docs ---------- */
   .meta-list { list-style: none; margin: 0; padding: 0; }
@@ -315,7 +319,7 @@
       <p class="comment"># no CDN, no fonts, no analytics. Each is a study course and a reference in</p>
       <p class="comment"># the same document, and the labs quote real output. Works on a plane. ✈</p>
       <p class="prompt"><b>paul@guides</b>:~$ ls guides/ | wc -l</p>
-      <p class="stdout"><!-- COUNT:BEGIN -->15<!-- COUNT:END --></p>
+      <p class="stdout"><!-- COUNT:BEGIN -->16<!-- COUNT:END --></p>
       <p class="prompt"><b>paul@guides</b>:~$ <span class="cursor" aria-hidden="true"></span></p>
     </div>
   </div>
@@ -456,6 +460,15 @@
     <p class="card-title">BW150 Electronic Load</p>
     <p class="card-subject">ATorch BW150 150 W electronic load - wiring, every mode, battery capacity and health, charger and cable tests, cycling, the apps, and a virtual front panel</p>
     <p class="card-meta"><span class="badge ok">✓ firmware 1.1.0 · screens 2026-09-05</span></p>
+    </a>
+    </li>
+    <li class="card accent-orange">
+    <a class="card-link" href="de5000-user-guide.html">
+    <span class="card-cmd" aria-hidden="true">$ open ./de5000-user-guide.html</span>
+    <h3 class="card-name">DE-5000 LCR meter</h3>
+    <p class="card-title">DE-5000 LCR Meter</p>
+    <p class="card-subject">DER EE dual-display LCR meter - the impedance vector, open/short calibration, series vs parallel, and reading D/Q/ESR/theta like you mean it</p>
+    <p class="card-meta"><span class="badge soft">○ checked when written</span></p>
     </a>
     </li>
     <!-- GUIDES:END -->

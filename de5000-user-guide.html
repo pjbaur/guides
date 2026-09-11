@@ -1,0 +1,1732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DE-5000 LCR Meter</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📟</text></svg>">
+<style>
+  /* =====================================================================
+     Bench-instrument palette. Light values on :root, dark via media query
+     (guarded so an explicit light choice wins) and via data-theme.
+     LCD colours are fixed in every theme: the screen is always the screen.
+     ===================================================================== */
+  :root {
+    --bg: #f7f5f2;
+    --surface: #ffffff;
+    --surface2: #efe9e2;
+    --ink: #241d15;
+    --ink2: #55483a;
+    --muted: #8a7a68;
+    --line: #ddd3c5;
+    --hairline: rgba(36,29,21,0.10);
+    --code-bg: #efe9e2;
+    --accent: #b8560f;
+    --accent-wash: rgba(184,86,15,0.10);
+    --on-accent: #ffffff;
+    --warn: #8a5a00;
+    --warn-bg: rgba(200,140,0,0.13);
+    --danger: #b0261c;
+    --danger-bg: rgba(176,38,28,0.08);
+    --blue: #1f5fae;
+    --blue-bg: rgba(31,95,174,0.08);
+    --good: #1f7a3c;
+    --good-bg: rgba(31,122,60,0.10);
+    --lab-bg: rgba(184,86,15,0.05);
+    --shadow: rgba(36,29,21,0.10);
+    /* LCD — a grey-blue segment display, identical in both themes */
+    --lcd: #1c2b28;
+    --lcd-2: #223531;
+    --lcd-line: #35504a;
+    --lcd-seg: #eaf6f2;
+    --lcd-dim: #7fa89e;
+    --lcd-yellow: #ffd866;
+    --lcd-green: #6fe08a;
+    --lcd-red: #ff6b61;
+    --lcd-cyan: #7dd8ff;
+    /* series colours for diagrams */
+    --s1: #b8560f;  /* accent: DUT / the part under test */
+    --s2: #1f5fae;  /* blue: reference / fixture */
+    --s3: #1f7a3c;  /* green: pass / good states */
+    --s4: #8a5a00;  /* amber: caution / fail states */
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17120d;
+      --surface: #221b14;
+      --surface2: #2c231a;
+      --ink: #f5efe6;
+      --ink2: #cdbfae;
+      --muted: #98897a;
+      --line: #3a2f23;
+      --hairline: rgba(255,255,255,0.10);
+      --code-bg: #2c231a;
+      --accent: #ff9248;
+      --accent-wash: rgba(255,146,72,0.12);
+      --on-accent: #201004;
+      --warn: #f0c04a;
+      --warn-bg: rgba(240,192,74,0.12);
+      --danger: #ff6b61;
+      --danger-bg: rgba(255,107,97,0.10);
+      --blue: #7fb3ff;
+      --blue-bg: rgba(127,179,255,0.10);
+      --good: #5ad27a;
+      --good-bg: rgba(90,210,122,0.12);
+      --lab-bg: rgba(255,146,72,0.05);
+      --shadow: rgba(0,0,0,0.45);
+      --s1: #ff9248; --s2: #7fb3ff; --s3: #5ad27a; --s4: #f0c04a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f7f5f2; --surface: #ffffff; --surface2: #efe9e2;
+    --ink: #241d15; --ink2: #55483a; --muted: #8a7a68;
+    --line: #ddd3c5; --hairline: rgba(36,29,21,0.10);
+    --code-bg: #efe9e2;
+    --accent: #b8560f; --accent-wash: rgba(184,86,15,0.10); --on-accent: #ffffff;
+    --warn: #8a5a00; --warn-bg: rgba(200,140,0,0.13);
+    --danger: #b0261c; --danger-bg: rgba(176,38,28,0.08);
+    --blue: #1f5fae; --blue-bg: rgba(31,95,174,0.08);
+    --good: #1f7a3c; --good-bg: rgba(31,122,60,0.10);
+    --lab-bg: rgba(184,86,15,0.05); --shadow: rgba(36,29,21,0.10);
+    --s1: #b8560f; --s2: #1f5fae; --s3: #1f7a3c; --s4: #8a5a00;
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    --bg: #17120d; --surface: #221b14; --surface2: #2c231a;
+    --ink: #f5efe6; --ink2: #cdbfae; --muted: #98897a;
+    --line: #3a2f23; --hairline: rgba(255,255,255,0.10);
+    --code-bg: #2c231a;
+    --accent: #ff9248; --accent-wash: rgba(255,146,72,0.12); --on-accent: #201004;
+    --warn: #f0c04a; --warn-bg: rgba(240,192,74,0.12);
+    --danger: #ff6b61; --danger-bg: rgba(255,107,97,0.10);
+    --blue: #7fb3ff; --blue-bg: rgba(127,179,255,0.10);
+    --good: #5ad27a; --good-bg: rgba(90,210,122,0.12);
+    --lab-bg: rgba(255,146,72,0.05); --shadow: rgba(0,0,0,0.45);
+    --s1: #ff9248; --s2: #7fb3ff; --s3: #5ad27a; --s4: #f0c04a;
+    color-scheme: dark;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg); color: var(--ink);
+    line-height: 1.62; font-size: 16px;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .skip-link {
+    position: absolute; left: -9999px; top: 0; z-index: 100;
+    background: var(--accent); color: var(--on-accent);
+    padding: 8px 16px; border-radius: 0 0 8px 0;
+  }
+  .skip-link:focus { left: 0; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- layout ---- */
+  .layout { display: flex; max-width: 1300px; margin: 0 auto; }
+  nav.toc {
+    position: sticky; top: 0; align-self: flex-start;
+    width: 262px; flex-shrink: 0; height: 100vh; overflow-y: auto;
+    padding: 22px 8px 24px 18px; border-right: 1px solid var(--line);
+    background: var(--bg);
+  }
+  nav.toc .brand {
+    display: flex; align-items: center; gap: 9px;
+    font-weight: 800; font-size: 15px; margin-bottom: 2px; letter-spacing: 0.2px;
+  }
+  .brand-mark {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 6px;
+    background: var(--accent); color: var(--on-accent);
+    font: 700 10px/1 ui-monospace, "SF Mono", Menlo, monospace;
+    flex-shrink: 0;
+  }
+  nav.toc .brand-sub { font-size: 12px; color: var(--muted); margin: 0 0 14px 35px; line-height: 1.4; }
+  nav.toc .part {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.9px;
+    color: var(--muted); margin: 14px 0 3px; padding-left: 10px; font-weight: 700;
+  }
+  nav.toc a {
+    display: block; padding: 4.5px 10px; border-radius: 6px;
+    color: var(--ink2); font-size: 13.5px; margin-bottom: 1px;
+  }
+  nav.toc a:hover { background: var(--accent-wash); text-decoration: none; }
+  nav.toc a.active { background: var(--accent-wash); color: var(--accent); font-weight: 600; }
+  main { flex: 1; min-width: 0; padding: 30px 40px 90px; }
+
+  .toc-toggle {
+    display: none; position: fixed; left: 12px; top: 12px; z-index: 12;
+    background: var(--surface); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer;
+    font-family: inherit; box-shadow: 0 2px 8px var(--shadow);
+  }
+  @media (max-width: 940px) {
+    .layout { flex-direction: column; }
+    .toc-toggle { display: inline-block; }
+    nav.toc {
+      position: fixed; top: 0; left: 0; width: min(300px, 86vw); height: 100vh;
+      transform: translateX(-104%); transition: transform 0.2s ease;
+      z-index: 11; box-shadow: 0 0 30px var(--shadow); padding-top: 54px;
+    }
+    nav.toc.open { transform: translateX(0); }
+    main { padding: 64px 16px 60px; }
+  }
+  @media print {
+    nav.toc, .theme-toggle, .toc-toggle, .quiz-actions, .quiz-reset { display: none !important; }
+    .quiz-answer { display: block !important; }
+    details { display: block; }
+    details > *:not(summary) { display: block !important; }
+    section, .lab, .callout, figure { break-inside: avoid-page; }
+    main { padding: 0; }
+    body { font-size: 12.5px; }
+  }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 14px; z-index: 12;
+    background: var(--surface); border: 1px solid var(--line); color: var(--ink2);
+    border-radius: 20px; padding: 5px 14px; font-size: 13px; cursor: pointer;
+    font-family: inherit; box-shadow: 0 2px 8px var(--shadow);
+  }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ---- type ---- */
+  h1 { font-size: clamp(30px, 4.2vw, 46px); line-height: 1.08; font-weight: 800; letter-spacing: -0.02em; }
+  h1 .accent-clause { color: var(--accent); }
+  h2 {
+    font-size: 27px; font-weight: 800; letter-spacing: -0.015em;
+    margin: 0 0 6px; padding-top: 44px; scroll-margin-top: 10px;
+  }
+  h2 .tag { display: block; font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0.02em; margin-top: 2px; }
+  h3 { font-size: 19px; font-weight: 700; margin: 30px 0 8px; scroll-margin-top: 10px; }
+  h4 { font-size: 15.5px; font-weight: 700; margin: 20px 0 6px; }
+  p { margin: 0 0 14px; max-width: 78ch; }
+  ul, ol { margin: 0 0 14px 22px; max-width: 78ch; }
+  li { margin-bottom: 5px; }
+  li > ul, li > ol { margin-top: 5px; }
+  strong { font-weight: 700; }
+  section { border-bottom: 1px solid var(--line); padding-bottom: 36px; }
+  section:last-of-type { border-bottom: none; }
+  .lede { font-size: 18.5px; line-height: 1.55; color: var(--ink); margin-bottom: 18px; max-width: 72ch; }
+  .lede::first-letter { color: var(--accent); }
+  .sources-line { font-size: 13px; color: var(--muted); margin-top: 22px; }
+  .sources-line a { color: var(--muted); text-decoration: underline; text-decoration-color: var(--line); }
+  .sources-line a:hover { color: var(--accent); }
+  .small { font-size: 13.5px; color: var(--ink2); }
+  hr.thin { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
+
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.88em; background: var(--code-bg); padding: 1px 6px; border-radius: 5px;
+    color: var(--ink);
+  }
+  pre {
+    position: relative; background: var(--lcd); color: var(--lcd-seg);
+    border-radius: 10px; padding: 14px 16px; overflow-x: auto; margin: 0 0 16px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13.5px; line-height: 1.55;
+    border: 1px solid var(--lcd-line);
+  }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+  .copy-btn {
+    position: absolute; top: 8px; right: 8px;
+    background: var(--lcd-2); color: var(--lcd-dim); border: 1px solid var(--lcd-line);
+    border-radius: 6px; padding: 2px 9px; font-size: 11.5px; cursor: pointer; font-family: inherit;
+  }
+  .copy-btn:hover { color: var(--lcd-yellow); border-color: var(--lcd-yellow); }
+
+  /* ---- keys ---- */
+  kbd {
+    display: inline-block; font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12.5px; font-weight: 600; line-height: 1;
+    padding: 5px 8px 4px; border-radius: 6px;
+    background: var(--surface); color: var(--ink);
+    border: 1px solid var(--line); border-bottom-width: 3px;
+    box-shadow: 0 1px 0 var(--hairline); vertical-align: middle; white-space: nowrap;
+  }
+  kbd.long { border-color: var(--accent); background: var(--accent-wash); }
+  kbd.long::after { content: " · hold 2s"; font-weight: 500; color: var(--accent); font-size: 11px; }
+  .keys { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .keys .then { color: var(--muted); font-size: 13px; }
+
+  /* ---- recipes (button sequences) ---- */
+  ol.recipe { list-style: none; margin: 0 0 18px; counter-reset: step; max-width: 82ch; }
+  ol.recipe > li {
+    position: relative; padding: 9px 12px 9px 46px; margin: 0 0 6px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    counter-increment: step;
+  }
+  ol.recipe > li::before {
+    content: counter(step); position: absolute; left: 12px; top: 10px;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--accent); color: var(--on-accent);
+    font: 700 12px/24px system-ui, sans-serif; text-align: center;
+  }
+  .expect {
+    display: block; margin-top: 6px; font-size: 13.5px; color: var(--ink2);
+    padding-left: 10px; border-left: 3px solid var(--good);
+  }
+  .expect b { color: var(--good); font-weight: 700; }
+  .expect.inferred { border-left-color: var(--warn); }
+  .expect.inferred b { color: var(--warn); }
+
+  /* ---- callouts ---- */
+  .callout {
+    background: var(--surface2); border-left: 4px solid var(--accent);
+    border-radius: 0 10px 10px 0; padding: 12px 16px; margin: 0 0 18px; max-width: 82ch;
+    font-size: 15px;
+  }
+  .callout > strong:first-child { display: block; margin-bottom: 3px; }
+  .callout.warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .callout.danger { border-left-color: var(--danger); background: var(--danger-bg); }
+  .callout.blue { border-left-color: var(--blue); background: var(--blue-bg); }
+  .callout.good { border-left-color: var(--good); background: var(--good-bg); }
+  .callout.bite { border-left-color: var(--danger); background: var(--danger-bg); }
+  .callout.bite > strong::before {
+    content: "✱ things that bite"; display: block; font-size: 10.5px; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--danger); margin-bottom: 2px;
+  }
+  .callout p:last-child, .callout ul:last-child { margin-bottom: 0; }
+
+  /* ---- tables ---- */
+  .table-wrap { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--line); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; background: var(--surface); }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.9px; color: var(--muted);
+    background: var(--surface2); font-weight: 700;
+  }
+  tr:last-child td { border-bottom: none; }
+  td code { white-space: nowrap; }
+  .num { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* ---- LCD component: the device's own screen, quoted ---- */
+  .lcd {
+    background: var(--lcd); color: var(--lcd-seg); border-radius: 10px;
+    border: 3px solid #14201d; box-shadow: inset 0 0 0 1px var(--lcd-line), 0 10px 30px var(--shadow);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums; overflow: hidden;
+  }
+  .lcd .w { color: var(--lcd-seg); }
+  .lcd .d { color: var(--lcd-dim); }
+  .lcd .y { color: var(--lcd-yellow); }
+  .lcd .g { color: var(--lcd-green); }
+  .lcd .r { color: var(--lcd-red); }
+  .lcd .c { color: var(--lcd-cyan); }
+
+  /* ---- hero ---- */
+  .hero { padding: 6px 0 30px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+  .eyebrow { font-size: 12.5px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); font-weight: 700; margin-bottom: 12px; }
+  .subtitle { font-size: 18px; color: var(--ink2); margin: 14px 0 18px; max-width: 70ch; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge {
+    font-size: 12.5px; padding: 4px 11px; border-radius: 20px;
+    border: 1px solid var(--line); color: var(--ink2); background: var(--surface);
+  }
+  .badge.ok { border-color: var(--good); color: var(--good); }
+  .badge.soft { border-style: dashed; }
+  .hero-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 28px; align-items: center; }
+  @media (max-width: 1100px) { .hero-grid { grid-template-columns: 1fr; } }
+  .hero-lcd { padding: 12px 14px; font-size: 13.5px; line-height: 1.55; }
+  .hero-lcd .row { display: flex; justify-content: space-between; gap: 10px; }
+  .hero-lcd .big { font-size: 26px; font-weight: 700; letter-spacing: 1px; }
+
+  /* ---- diagrams ---- */
+  figure.diagram { margin: 18px 0 24px; max-width: 960px; }
+  figure.diagram svg { width: 100%; height: auto; display: block; }
+  figure.diagram figcaption { font-size: 13.5px; color: var(--muted); margin-top: 8px; line-height: 1.5; max-width: 78ch; }
+  figure.diagram figcaption b { color: var(--ink2); }
+  .d-label { font: 600 15px system-ui, sans-serif; fill: var(--ink); }
+  .d-mono { font: 600 13px ui-monospace, "SF Mono", Menlo, monospace; fill: var(--ink); }
+  .d-tiny { font: 12px system-ui, sans-serif; fill: var(--muted); }
+  .d-accent { fill: var(--accent); }
+  .d-danger { fill: var(--danger); }
+  .d-blue { fill: var(--blue); }
+
+  /* ---- annotated panel ---- */
+  .annot { display: grid; grid-template-columns: minmax(260px, 420px) 1fr; gap: 20px; align-items: start; margin-bottom: 18px; }
+  @media (max-width: 800px) { .annot { grid-template-columns: 1fr; } }
+  .annot ol { margin-left: 20px; font-size: 14.5px; }
+  .annot ol li { margin-bottom: 7px; }
+
+  /* ---- labs ---- */
+  .lab {
+    background: var(--lab-bg); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 20px; margin: 20px 0 24px; max-width: 86ch;
+  }
+  .lab-title { font-size: 17px; font-weight: 800; margin: 0 0 2px; }
+  .lab-title .n { color: var(--accent); }
+  .lab-meta { font-size: 12.5px; color: var(--muted); margin: 0 0 12px; letter-spacing: 0.2px; }
+  .checkpoint {
+    margin-top: 12px; padding: 10px 14px; border-radius: 8px;
+    background: var(--good-bg); border: 1px dashed var(--good); font-size: 14.5px;
+  }
+  .checkpoint strong { color: var(--good); }
+
+  /* ---- level-1 primer ---- */
+  details.level { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); margin: 0 0 22px; max-width: 86ch; }
+  details.level > summary { cursor: pointer; padding: 12px 16px; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+  details.level > summary::-webkit-details-marker { display: none; }
+  details.level > summary .pill { font-size: 11px; text-transform: uppercase; letter-spacing: 0.9px; color: var(--accent); background: var(--accent-wash); padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+  details.level > summary::after { content: "▸"; color: var(--muted); }
+  details.level[open] > summary::after { content: "▾"; }
+  details.level > .inner { padding: 4px 18px 14px; border-top: 1px solid var(--line); }
+
+  /* ---- cards / cheat sheet ---- */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin: 0 0 20px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .card h4 { margin: 0 0 8px; font-size: 14.5px; }
+  .card ul { margin: 0 0 0 18px; font-size: 14px; }
+  .card li { margin-bottom: 4px; }
+  .card .keys { margin: 4px 0; }
+
+  /* ---- prereq check ---- */
+  .check li { list-style: none; position: relative; padding-left: 26px; }
+  .check li::before { content: "☐"; position: absolute; left: 0; color: var(--accent); }
+
+  /* ---- glossary / index ---- */
+  dl.glossary dt { font-weight: 700; margin-top: 12px; scroll-margin-top: 10px; }
+  dl.glossary dd { margin: 2px 0 0 0; color: var(--ink2); max-width: 78ch; font-size: 15px; }
+  .index-cols { columns: 3 220px; column-gap: 28px; font-size: 14px; }
+  .index-cols ul { list-style: none; margin: 0; }
+  .index-cols li { break-inside: avoid; margin-bottom: 3px; }
+  .index-cols .letter { font-weight: 800; color: var(--accent); margin: 10px 0 3px; break-after: avoid; }
+
+  /* ---- quiz ---- */
+  .quiz-score { font-weight: 700; margin: 0 0 14px; padding: 10px 14px; background: var(--surface2); border-radius: 8px; display: inline-block; }
+  .quiz-reset { margin: -6px 0 16px; }
+  .quiz-item { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 0 0 12px; max-width: 86ch; }
+  .quiz-item.got { border-color: var(--good); background: var(--good-bg); }
+  .quiz-item.missed { border-color: var(--warn); background: var(--warn-bg); }
+  .quiz-q { font-weight: 600; margin-bottom: 8px; }
+  .qnum { display: inline-block; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; color: var(--accent); background: var(--accent-wash); padding: 2px 7px; border-radius: 5px; margin-right: 8px; }
+  .quiz-answer { display: none; padding: 8px 12px; border-left: 3px solid var(--accent); background: var(--surface2); border-radius: 0 8px 8px 0; margin-bottom: 10px; font-size: 15px; }
+  .quiz-answer.open { display: block; }
+  .quiz-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .quiz-actions button, .btn {
+    font: inherit; font-size: 13px; padding: 5px 13px; border-radius: 7px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  }
+  .quiz-actions button:hover, .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .quiz-actions .got { border-color: var(--good); color: var(--good); }
+  .quiz-actions .missed { border-color: var(--warn); color: var(--warn); }
+
+  /* ---- misc ---- */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .two-col { grid-template-columns: 1fr; } }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
+  .pill { font-size: 12.5px; padding: 3px 10px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--line); color: var(--ink2); }
+  .pill.on { background: var(--accent-wash); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .mode-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 0 0 20px; }
+  .mode { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .mode .abbr { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 20px; font-weight: 800; color: var(--accent); }
+  .mode .name { font-weight: 700; font-size: 14px; }
+  .mode p { font-size: 13.5px; color: var(--ink2); margin: 6px 0 0; }
+  .mode .needs { font-size: 11.5px; color: var(--warn); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 6px; }
+  .timeline { list-style: none; margin: 0 0 20px; padding: 0; max-width: 86ch; }
+  .timeline li { position: relative; padding: 0 0 14px 30px; border-left: 2px solid var(--line); margin-left: 10px; }
+  .timeline li:last-child { border-left-color: transparent; }
+  .timeline li::before { content: ""; position: absolute; left: -7px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); }
+  .timeline b { display: block; }
+  .timeline .t { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<button class="toc-toggle" id="tocToggle" type="button" aria-expanded="false" aria-controls="toc">☰ Contents</button>
+<button class="theme-toggle" type="button" aria-label="Toggle colour theme">◐ auto</button>
+
+<div class="layout">
+<nav class="toc" id="toc" aria-label="Table of contents">
+  <div class="brand"><span class="brand-mark" aria-hidden="true">LCR</span>DE-5000 LCR Meter</div>
+  <div class="brand-sub">DER EE dual-display bench LCR meter · impedance, D/Q/ESR/θ, calibration &amp; sorting</div>
+  <div class="part">Foundations</div>
+  <a href="#mental-model">1 · Mental model</a>
+  <a href="#prereqs">2 · Prerequisite floor</a>
+  <a href="#panel">3 · Panel &amp; display</a>
+  <a href="#calibration">4 · Calibration</a>
+  <div class="part">Modules</div>
+  <a href="#lcr-auto">5 · LCR AUTO &amp; FREQ</a>
+  <a href="#secondary-parameters">6 · D / Q / ESR / θ</a>
+  <a href="#ser-pal">7 · SER/PAL</a>
+  <a href="#rel-hold">8 · REL% &amp; HOLD</a>
+  <a href="#sorting">9 · SORTING</a>
+  <a href="#pc">10 · PC / data logging</a>
+  <a href="#specifications">11 · Accuracy &amp; specs</a>
+  <div class="part">Practice</div>
+  <a href="#labs">12 · Labs</a>
+  <a href="#capstone">13 · Capstone</a>
+  <a href="#troubleshooting">14 · Troubleshooting</a>
+  <div class="part">Reference</div>
+  <a href="#cheat-sheet">15 · Cheat sheet</a>
+  <a href="#glossary">16 · Glossary</a>
+  <a href="#index">17 · Index</a>
+  <a href="#quiz">18 · Quiz</a>
+  <a href="#sources">19 · Sources</a>
+</nav>
+
+<main id="content">
+
+<header class="hero">
+  <div class="eyebrow">For DMM users who have never fully trusted a "capacitance" reading</div>
+  <div class="hero-grid">
+    <div>
+      <h1>Measure the whole impedance,<br><span class="accent-clause">not just the face your DMM shows you.</span></h1>
+      <p class="subtitle">The DER EE DE-5000 dual-display LCR meter from first power-on to calibrated, tolerance-sorted measurements: the impedance math, the panel, open/short calibration, series vs parallel, and reading D/Q/ESR/θ like you mean it.</p>
+      <div class="badges">
+        <span class="badge soft">✎ built from the manual — not bench-verified</span>
+        <span class="badge">DER EE DE-5000 instruction manual, HCA500000-00020</span>
+        <span class="badge">single file · works offline</span>
+        <span class="badge soft">no live simulator, by design</span>
+        <span class="badge">decision matrices</span>
+        <span class="badge">16-question quiz</span>
+      </div>
+    </div>
+    <div class="lcd hero-lcd" aria-hidden="true">
+      <div class="row"><span class="d">Auto·LCR</span><span class="d">1 kHz</span><span class="w">⎓</span></div>
+      <div class="row"><span class="y big">D</span><span class="w big">0.004</span></div>
+      <div class="row"><span class="d">Cs</span><span class="c big">666.8</span><span class="w">nF</span></div>
+      <div class="row" style="margin-top:8px"><span class="d">SER · PAL below 100 kΩ / above 100 kΩ</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================ 1 -->
+<section id="mental-model">
+<h2>1 · Mental model <span class="tag">A DMM tells you a number. This tells you a vector.</span></h2>
+<p class="lede">A multimeter's capacitance function gives you one number and lets you assume the part is ideal. An LCR meter refuses that assumption. It measures <strong>impedance</strong> — a quantity with two parts, a resistive part and a reactive part — and only then computes the "capacitance" or "inductance" you asked for, plus a second number that tells you how much the real part deviates from the ideal one. Every button on the DE-5000 exists to choose which face of that vector you see.</p>
+
+<details class="level" open>
+  <summary><span>Level 1 · why "capacitance" alone is an incomplete answer</span><span class="pill">skip if fluent</span></summary>
+  <div class="inner">
+    <h4>Impedance has a real part and an imaginary part</h4>
+    <p>In series form, impedance is <code>Zs = Rs + jXs</code>: a resistance <code>Rs</code> (the real part, the part that dissipates energy as heat) plus a reactance <code>Xs</code> (the imaginary part, the part that stores and returns energy). The magnitude is <code>|Z| = √(Rs² + Xs²)</code> and the phase angle is <code>θ = tan⁻¹(Xs/Rs)</code>. A DMM's capacitance mode reports a single scalar and throws away everything about <code>Rs</code>. The DE-5000 keeps it.</p>
+
+    <h4>Reactance has a sign, and the sign tells you what kind of part you have</h4>
+    <p>Two kinds of reactance exist: inductive reactance <code>XL = 2πfL</code> and capacitive reactance <code>XC = 1/(2πfC)</code>, where <code>f</code> is the test signal's frequency. The manual's convention: if <code>θ &gt; 0</code> the reactance is inductive; if <code>θ &lt; 0</code> it's capacitive. This is why the same auto-detect logic that picks L vs C vs R (§5) is really just reading the sign and magnitude of one angle.</p>
+
+    <h4>A "pure" component doesn't exist off the datasheet</h4>
+    <p>Every real capacitor has some series resistance (from its leads, plates and dielectric losses) and every real inductor has some parallel leakage. The ratio between the reactive part and the resistive part — <strong>quality factor Q</strong> for inductors, <strong>dissipation factor D</strong> for capacitors, where <code>D = 1/Q = tanθ</code> — is the number that tells you how close to ideal the part actually is. A 100 µF electrolytic with a bad D is a worse capacitor than its printed value suggests, and no DMM will ever tell you that.</p>
+
+    <h4>Series and parallel are two descriptions of the same impedance, not two different DUTs</h4>
+    <p>The same physical component can be described as a resistance and a reactance <em>in series</em> (<code>Zs = Rs + jXs</code>) or as a conductance and a susceptance <em>in parallel</em> (<code>Y = 1/Z = G + jB</code>, admittance). Both describe the identical impedance; they're duals. Which one is the more <em>useful</em> description depends on whether the loss mechanism in your specific part behaves more like a series resistor or a parallel leakage path — the subject of §7.</p>
+
+    <div class="callout blue">
+      <strong>Analogy: impedance is a compass bearing, not just a distance</strong>
+      "This capacitor is 100 nF" is like saying a hike is "3 miles" — it tells you the magnitude but not the direction. Impedance gives you both: a magnitude (how much it opposes current) and an angle (how much of that opposition is loss versus storage). The DE-5000's dual display is built around handing you both numbers at once.
+    </div>
+  </div>
+</details>
+
+<h3 id="impedance-vector">1.1 · The impedance vector plane</h3>
+<p>The manual draws this exact picture to introduce the whole instrument. Resistance <code>Rs</code> runs along the real axis; reactance <code>Xs</code> runs along the imaginary axis. A part with positive reactance (inductive) plots above the real axis at a positive angle <code>θ</code>; a part with negative reactance (capacitive) plots below it at a negative angle <code>θ₁</code>. The vector's length is <code>|Zs|</code>, its angle is θ, and every measurement the DE-5000 reports is a projection of this one picture onto a display.</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 960 380" role="img" aria-label="Impedance vector plane: an inductive part Zs plots above the real axis at angle theta greater than zero, a capacitive part Zs1 plots below it at angle theta1 less than zero">
+  <defs>
+    <marker id="arrAxis" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+    </marker>
+    <marker id="arrVecA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--s1)"/>
+    </marker>
+    <marker id="arrVecB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--s2)"/>
+    </marker>
+  </defs>
+  <!-- axes -->
+  <line x1="90" y1="190" x2="860" y2="190" stroke="var(--muted)" stroke-width="2" marker-end="url(#arrAxis)"/>
+  <line x1="220" y1="360" x2="220" y2="30" stroke="var(--muted)" stroke-width="2" marker-end="url(#arrAxis)"/>
+  <text x="866" y="196" class="d-tiny">Real axis (Rs)</text>
+  <text x="228" y="40" class="d-tiny">Imaginary axis (Xs)</text>
+
+  <!-- inductive vector: theta > 0, above axis -->
+  <line x1="220" y1="190" x2="620" y2="70" stroke="var(--s1)" stroke-width="4" marker-end="url(#arrVecA)"/>
+  <text x="630" y="66" class="d-mono d-accent">Zs = Rs + jXs</text>
+  <path d="M 270 190 A 50 50 0 0 0 296 158" fill="none" stroke="var(--s1)" stroke-width="2"/>
+  <text x="300" y="172" class="d-tiny d-accent">θ &gt; 0 (inductive)</text>
+  <line x1="620" y1="70" x2="620" y2="190" stroke="var(--s1)" stroke-width="1.5" stroke-dasharray="4 4"/>
+  <text x="628" y="130" class="d-tiny">Xs</text>
+  <line x1="220" y1="190" x2="620" y2="190" stroke="var(--s1)" stroke-width="1.5" stroke-dasharray="4 4"/>
+  <text x="400" y="210" class="d-tiny">Rs</text>
+
+  <!-- capacitive vector: theta1 < 0, below axis -->
+  <line x1="220" y1="190" x2="560" y2="320" stroke="var(--s2)" stroke-width="4" marker-end="url(#arrVecB)"/>
+  <text x="570" y="336" class="d-mono d-blue">Zs₁ = Rs₁ + jXs₁</text>
+  <path d="M 270 190 A 50 50 0 0 1 292 224" fill="none" stroke="var(--s2)" stroke-width="2"/>
+  <text x="296" y="238" class="d-tiny d-blue">θ₁ &lt; 0 (capacitive)</text>
+
+  <text x="500" y="20" class="d-label" text-anchor="middle">|Zs| = √(Rs² + Xs²)   θ = tan⁻¹(Xs / Rs)</text>
+</svg>
+<figcaption><b>Redrawn from the manual's own diagram (Measuring Principle Introduction, p.4).</b> The vector's length is the impedance magnitude the meter's bar-graph and readout are ultimately built from; its sign above or below the real axis is exactly the L-vs-C decision the auto-detect logic in §5 makes for you.</figcaption>
+</figure>
+
+<div class="callout warn">
+  <strong>Misconception: "D and Q are quality grades, like a report card"</strong>
+  They're not pass/fail scores — they're the ratio between the two parts of the same impedance, and both are only meaningful <em>at the frequency and mode you measured them</em>. A capacitor's D at 100 Hz and its D at 100 kHz describe different physical loss mechanisms; quoting one without the other is quoting half a measurement. §5 and §6 come back to this.
+</div>
+
+<p class="sources-line">Sources: manual §II Measuring Principle Introduction, pp.4–7 (Impedance parameter introduction, Measurement mode, Open/short calibration).</p>
+</section>
+
+
+<!-- ============================================================ 2 -->
+<section id="prereqs">
+<h2>2 · Prerequisite floor <span class="tag">What this guide assumes, and what it doesn't</span></h2>
+<p class="lede">You don't need a physics degree to run this meter well. You need three ideas solid enough that you can lean on them without re-deriving them, and this guide will name every place it uses them.</p>
+
+<h3>2.1 · Self-check</h3>
+<ul class="check">
+  <li>I can use <code>V = IR</code> and know what "resistance" physically resists.</li>
+  <li>I know that reactance (from a capacitor or inductor) opposes current in a way that depends on frequency, and that it stores energy rather than burning it as heat.</li>
+  <li>I can tell a series circuit from a parallel circuit by eye: series shares one current path, parallel splits current across branches.</li>
+  <li>I'm comfortable with engineering notation — p / n / µ / m / k / M — as it appears on a capacitor or inductor's printed value.</li>
+</ul>
+
+<div class="callout blue">
+  <strong>What this guide does NOT assume</strong>
+  It does not assume you can do complex-number algebra beyond reading the vector diagram in §1 — every formula that matters is given to you as printed in the manual, not derived. It does not assume prior experience with any LCR meter, bridge, or impedance analyzer. It does not assume you own the optional IR-to-USB adapter (§10 covers that briefly and moves on) or the SMD tweezers (TL-22) — the labs use the alligator leads (TL-21) you already have, and call out TL-22/TL-23 usage as optional asides.
+</div>
+
+<p class="sources-line">Sources: manual §II (pp.4–7) supplies the formulas this floor leans on.</p>
+</section>
+
+<!-- ============================================================ 3 -->
+<section id="panel">
+<h2>3 · Panel &amp; display orientation <span class="tag">Battery in, power on, and know what you're looking at</span></h2>
+<p class="lede">Fourteen keys, one dual-line LCD, and four input terminals. Before you measure anything, learn where the keys are and what the twenty-nine icons around the digits mean — the rest of this guide refers back to this map constantly.</p>
+
+<h3 id="battery-install">3.1 · Battery and first power-on</h3>
+<p>The DE-5000 ships with a standard accessory set: the TL-21 alligator test lead case, an AC/DC adaptor, the TL-23 guard line, the user manual, and a 9 V battery (NEDA 1604 / JIS006P / IEC6F22 carbon-zinc or alkaline — alkaline recommended). To install or replace it: remove the tilt-stand, loosen the four screws on the battery cover with a suitable screwdriver, lift the cover, fit the battery observing polarity, and reverse the procedure.</p>
+
+<div class="callout danger">
+  <strong>Before opening the case</strong>
+  Switch the meter off and remove all test leads and any external adaptor first. Install the new battery with correct polarity.
+</div>
+
+<ol class="recipe">
+  <li>Press <kbd>POWER</kbd>. <span class="expect"><b>Expect:</b> every LCD segment and icon lights for two seconds — the manual's own display self-test — then the meter settles into its default state.</span></li>
+  <li>Read the default state. <span class="expect"><b>Expect:</b> LCR Auto mode, test frequency 1 kHz. This is the meter's power-on default every time, not a mode you have to select.</span></li>
+</ol>
+
+<div class="callout">
+  <strong>Battery condition and auto power-off (APO) interact with your power source</strong>
+  Battery condition is checked every second. A full battery icon means good; a "half-full" icon (one bar) means replace it immediately to keep the meter within its published accuracy spec. Auto power-off (APO) fires after about 5 minutes with no key press or measurement, with three warning beeps before it shows <code>OFF</code> and powers down. APO is enabled — and the <code>APO</code> icon shows — only when running on the 9 V battery. Run the meter from the AC/DC adaptor and APO disables itself automatically; the <code>APO</code> icon disappears.
+</div>
+
+<h3 id="front-panel">3.2 · Front panel</h3>
+<p>Every key does one job in LCR Auto mode (measurement primitives) and often a second job once you leave it (SORTING/SETUP navigation). The diagram below follows the manual's own panel illustration and numbering.</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 960 620" role="img" aria-label="DE-5000 front panel: LCD at top, a 3-column by 5-row key grid below it, and GUARD, minus and plus input terminals at the bottom">
+  <!-- body -->
+  <rect x="230" y="10" width="500" height="600" rx="26" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <!-- LCD -->
+  <rect x="256" y="34" width="448" height="150" rx="10" fill="var(--lcd)" stroke="var(--lcd-line)" stroke-width="2"/>
+  <text x="480" y="70" text-anchor="middle" class="d-tiny" fill="var(--lcd-dim)">Auto · LCR · 1 kHz</text>
+  <text x="480" y="112" text-anchor="middle" font-family="ui-monospace,monospace" font-size="34" font-weight="700" fill="var(--lcd-seg)">18.888</text>
+  <text x="480" y="150" text-anchor="middle" font-family="ui-monospace,monospace" font-size="20" fill="var(--lcd-cyan)">Cs  666.8 nF</text>
+  <circle cx="270" cy="46" r="7" fill="var(--s1)"/>
+  <text x="284" y="51" class="d-mono d-accent">1</text>
+
+  <!-- key grid: 3 cols x 5 rows -->
+  <!-- column x-centers -->
+  <!-- col1 x=330 col2 x=480 col3 x=630, row y starts 224 step 74 -->
+  <g font-family="system-ui,sans-serif">
+    <!-- row1 -->
+    <rect x="270" y="200" width="120" height="52" rx="10" fill="var(--surface2)" stroke="var(--line)"/>
+    <text x="330" y="230" text-anchor="middle" class="d-tiny">POWER</text>
+    <circle cx="270" cy="200" r="12" fill="var(--accent)"/><text x="270" y="204" text-anchor="middle" class="d-mono" fill="var(--on-accent)" font-size="12">2</text>
+
+    <rect x="420" y="200" width="120" height="52" rx="10" fill="var(--surface2)" stroke="var(--line)"/>
+    <text x="480" y="230" text-anchor="middle" class="d-tiny">FREQ</text>
+    <circle cx="540" cy="200" r="12" fill="var(--accent)"/><text x="540" y="204" text-anchor="middle" class="d-mono" fill="var(--on-accent)" font-size="12">4</text>
+
+    <rect x="570" y="200" width="120" height="52" rx="10" fill="var(--surface2)" stroke="var(--line)"/>
+    <text x="630" y="230" text-anchor="middle" class="d-tiny">☀ backlight</text>
+    <circle cx="690" cy="200" r="12" fill="var(--accent)"/><text x="690" y="204" text-anchor="middle" class="d-mono" fill="var(--on-accent)" font-size="12">5</text>
+
+    <!-- row2 -->
+    <rect x="270" y="264" width="120" height="52" rx="10" fill="var(--surface2)" stroke="var(--line)"/>
+    <text x="330" y="294" text-anchor="middle" class="d-tiny">LCR AUTO</text>
+    <circle cx="270" cy="264" r="12" fill="var(--accent)"/><text x="270" y="268" text-anchor="middle" class="d-mono" fill="var(--on-accent)" font-size="12">3</text>
+
+    <rect x="420" y="264" width="120" height="52" rx="10" fill="var(--surface2)" stroke="var(--line)"/>
+    <text x="480" y="294" text-anchor="middle" class="d-tiny">PC ▲</text>
+    <circle cx="540" cy="264" r="12" fill="var(--accent)"/><text x="540" y="268" text-anchor="middle" class="d-mono" fill="var(--on-accent)" font-size="12">7</text>
+
+    <rect x="570" y="264" width="120" height="52" rx="10" fill="var(--surface2)" stroke="var(--line)"/>
+    <text x="630" y="294" text-anchor="middle" class="d-tiny">CAL</text>
+    <circle cx="690" cy="264" r="12" fill="var(--accent)"/><text x="690" y="268" text-anchor="middle" class="d-mono" fill="var(--on-accent)" font-size="12">8</text>
+
+    <!-- row3 -->
+    <rect x="270" y="328" width="120" height="52" rx="10" fill="var(--surface2)" stroke="var(--line)"/>
+    <text x="330" y="358" text-anchor="middle" class="d-tiny">SORTING</text>
+    <circle cx="270" cy="328" r="12" fill="var(--accent)"/><text x="270" y="332" text-anchor="middle" class="d-mono" fill="var(--on-accent)" font-size="12">6</text>
+
+    <rect x="420" y="328" width="120" height="52" rx="10" fill="var(--surface2)" stroke="var(--line)"/>
+    <text x="480" y="358" text-anchor="middle" class="d-tiny">SETUP</text>
+    <circle cx="540" cy="328" r="12" fill="var(--accent)"/><text x="540" y="332" text-anchor="middle" class="d-mono" fill="var(--on-accent)" font-size="12">10</text>
+
+    <rect x="570" y="328" width="120" height="52" rx="10" fill="var(--surface2)" stroke="var(--line)"/>
+    <text x="630" y="358" text-anchor="middle" class="d-tiny">SER/PAL</text>
+    <circle cx="690" cy="328" r="12" fill="var(--accent)"/><text x="690" y="332" text-anchor="middle" class="d-mono" fill="var(--on-accent)" font-size="12">11</text>
+
+    <!-- row4 -->
+    <rect x="270" y="392" width="120" height="52" rx="10" fill="var(--surface2)" stroke="var(--line)"/>
+    <text x="330" y="418" text-anchor="middle" class="d-tiny" font-size="11">D/Q/ESR/θ</text>
+    <circle cx="270" cy="392" r="12" fill="var(--accent)"/><text x="270" y="396" text-anchor="middle" class="d-mono" fill="var(--on-accent)" font-size="12">9</text>
+
+    <rect x="420" y="392" width="120" height="52" rx="10" fill="var(--surface2)" stroke="var(--line)"/>
+    <text x="480" y="422" text-anchor="middle" class="d-tiny">REL%</text>
+    <circle cx="540" cy="392" r="12" fill="var(--accent)"/><text x="540" y="396" text-anchor="middle" class="d-mono" fill="var(--on-accent)" font-size="12">13</text>
+
+    <rect x="570" y="392" width="120" height="52" rx="10" fill="var(--surface2)" stroke="var(--line)"/>
+    <text x="630" y="422" text-anchor="middle" class="d-tiny">HOLD</text>
+    <circle cx="690" cy="392" r="12" fill="var(--accent)"/><text x="690" y="396" text-anchor="middle" class="d-mono" fill="var(--on-accent)" font-size="12">14</text>
+
+    <!-- row5: ENTER -->
+    <rect x="270" y="456" width="120" height="52" rx="10" fill="var(--surface2)" stroke="var(--line)"/>
+    <text x="330" y="486" text-anchor="middle" class="d-tiny">ENTER</text>
+    <circle cx="270" cy="456" r="12" fill="var(--accent)"/><text x="270" y="460" text-anchor="middle" class="d-mono" fill="var(--on-accent)" font-size="12">12</text>
+  </g>
+
+  <!-- terminals -->
+  <rect x="270" y="530" width="420" height="64" rx="10" fill="var(--surface2)" stroke="var(--line)"/>
+  <circle cx="330" cy="562" r="14" fill="none" stroke="var(--ink2)" stroke-width="2"/><text x="330" y="567" text-anchor="middle" class="d-tiny" font-size="10">GRD</text>
+  <circle cx="480" cy="562" r="14" fill="none" stroke="var(--ink2)" stroke-width="2"/><text x="480" y="567" text-anchor="middle" class="d-tiny">−</text>
+  <circle cx="630" cy="562" r="14" fill="none" stroke="var(--ink2)" stroke-width="2"/><text x="630" y="567" text-anchor="middle" class="d-tiny">+</text>
+  <circle cx="690" cy="530" r="12" fill="var(--accent)"/><text x="690" y="534" text-anchor="middle" class="d-mono" fill="var(--on-accent)" font-size="12">15</text>
+</svg>
+<figcaption><b>Redrawn from the manual's Panel Illustration (pp.8–9).</b> Numbering matches the manual exactly. Not shown: 16 AC/DC power adaptor jack (side), 17 battery cover, 18 tilt-stand, 19 IR-to-USB slot (rear, optional accessory) — see the accessories table below.</figcaption>
+</figure>
+
+<div class="table-wrap"><table>
+<tr><th>#</th><th>Item</th><th>What it does</th></tr>
+<tr><td class="num">1</td><td>LCD display</td><td>Dual 19999 / 9999-count display, plus icon row</td></tr>
+<tr><td class="num">2</td><td>POWER</td><td>Power the instrument on/off</td></tr>
+<tr><td class="num">3</td><td>LCR AUTO</td><td>Cycles Auto-LCR → Auto-L → Auto-C → Auto-R → Auto-DCR (§5)</td></tr>
+<tr><td class="num">4</td><td>FREQ</td><td>Cycles test frequency: 1 kHz → 10 kHz → 100 kHz → 100 Hz → 120 Hz (§5)</td></tr>
+<tr><td class="num">5</td><td>☀ (backlight)</td><td>Toggles the LCD backlight; auto-off after 60 s idle</td></tr>
+<tr><td class="num">6</td><td>SORTING</td><td>Enters tolerance-binning mode (§9); disabled in LCR Auto mode</td></tr>
+<tr><td class="num">7</td><td>PC</td><td>Starts/stops UART data transmission to the optional IR-to-USB adapter (§10)</td></tr>
+<tr><td class="num">8</td><td>CAL</td><td>Open/short calibration (§4)</td></tr>
+<tr><td class="num">9</td><td>D/Q/ESR/θ</td><td>Cycles the secondary-display parameter (§6); disabled in LCR Auto mode</td></tr>
+<tr><td class="num">10</td><td>SETUP</td><td>Setup-menu navigation inside SORTING mode (§9)</td></tr>
+<tr><td class="num">11</td><td>SER/PAL</td><td>Manually forces series or parallel mode (§7); disabled in LCR Auto mode</td></tr>
+<tr><td class="num">12</td><td>ENTER</td><td>Confirms a SORTING setup step (§9)</td></tr>
+<tr><td class="num">13</td><td>REL%</td><td>Relative (delta) mode (§8); disabled in LCR Auto mode</td></tr>
+<tr><td class="num">14</td><td>HOLD</td><td>Freezes the primary display (§8)</td></tr>
+<tr><td class="num">15</td><td>Input sockets and terminals</td><td>GUARD, −, + — 4-wire sockets plus guard</td></tr>
+<tr><td class="num">16</td><td>AC/DC power adaptor jack</td><td>Side panel; disables APO automatically when in use</td></tr>
+<tr><td class="num">17</td><td>Battery cover</td><td>Rear; four screws</td></tr>
+<tr><td class="num">18</td><td>Tilt-stand</td><td>Rear</td></tr>
+<tr><td class="num">19</td><td>IR-to-USB slot</td><td>Rear; mates with the optional IR-to-USB case</td></tr>
+<tr><td class="num">20</td><td>IR to USB case (optional)</td><td>Not included — see §10</td></tr>
+<tr><td class="num">21</td><td>TL-21 alligator test lead case</td><td>Standard accessory; the leads used throughout this guide</td></tr>
+<tr><td class="num">22</td><td>TL-22 SMD tweezers (optional)</td><td>Not included — mentioned where it changes a lab</td></tr>
+<tr><td class="num">23</td><td>TL-23 guard line</td><td>Standard accessory; shields the DUT from interference at high impedance (§4)</td></tr>
+</table></div>
+
+<h3 id="lcd-map">3.3 · LCD icon map</h3>
+<p>The DE-5000's LCD carries thirty numbered icons around the two rows of digits. You don't need to memorize all of them — you'll absorb the ones you use constantly (Auto, LCR, the mode letters) in the first hour — but this table is the ground truth to check against when an icon you don't recognize appears.</p>
+
+<div class="table-wrap"><table>
+<tr><th>#</th><th>Icon</th><th>Meaning</th></tr>
+<tr><td class="num">1</td><td>Sorting</td><td>Sorting function is enabled</td></tr>
+<tr><td class="num">2</td><td>Tol</td><td>Tolerance in sorting mode: ±0.25%, ±0.5%, ±1%, ±2%, ±5%, ±10%, ±20%, or +80%/−20%</td></tr>
+<tr><td class="num">3</td><td>kHz</td><td>Test frequency: 1 kHz, 10 kHz, 100 kHz, 100 Hz, or 120 Hz</td></tr>
+<tr><td class="num">4</td><td>PC</td><td>Communication is active</td></tr>
+<tr><td class="num">5</td><td>battery icon</td><td>Battery capacity indication</td></tr>
+<tr><td class="num">6</td><td>Range</td><td>Range selection enabled, on the sorting setup menu</td></tr>
+<tr><td class="num">7</td><td>Auto</td><td>Auto range for L, C, or R measurement</td></tr>
+<tr><td class="num">8</td><td>LCR</td><td>Checking for L/C/R mode automatically</td></tr>
+<tr><td class="num">9</td><td>Δ</td><td>Relative function (REL%) is enabled</td></tr>
+<tr><td class="num">10</td><td>Ls/Lp</td><td>Inductance in series or parallel mode is active</td></tr>
+<tr><td class="num">11</td><td>Cs/Cp</td><td>Capacitance in series or parallel mode is active</td></tr>
+<tr><td class="num">12</td><td>Rs/Rp</td><td>AC resistance in series or parallel mode is active</td></tr>
+<tr><td class="num">13</td><td>DCR</td><td>DC resistance mode is selected</td></tr>
+<tr><td class="num">14</td><td>D/Q/θ</td><td>Dissipation factor, quality factor, or phase angle — secondary L/C parameter</td></tr>
+<tr><td class="num">15</td><td>Rp</td><td>AC resistance in parallel mode is active</td></tr>
+<tr><td class="num">16</td><td>Cal</td><td>Open/short calibration mode</td></tr>
+<tr><td class="num">17</td><td>HOLD</td><td>Data hold is active</td></tr>
+<tr><td class="num">18</td><td>APO</td><td>Auto power-off mode (battery power only)</td></tr>
+<tr><td class="num">19</td><td>ESR</td><td>Series equivalent resistance mode</td></tr>
+<tr><td class="num">20</td><td>secondary display</td><td>The smaller readout</td></tr>
+<tr><td class="num">21</td><td>°</td><td>Phase-angle unit</td></tr>
+<tr><td class="num">22</td><td>MkΩ (secondary)</td><td>Unit for resistance (Ω, kΩ, MΩ) on the secondary display</td></tr>
+<tr><td class="num">23</td><td>pnµF (secondary)</td><td>Unit for capacitance (pF, nF, µF, mF) on the secondary display</td></tr>
+<tr><td class="num">24</td><td>µmH (secondary)</td><td>Unit for inductance (µH, mH, H) on the secondary display</td></tr>
+<tr><td class="num">25</td><td>%</td><td>Percentage display in relative mode, on the secondary display</td></tr>
+<tr><td class="num">26</td><td>primary display</td><td>The larger readout</td></tr>
+<tr><td class="num">27</td><td>MkΩ (primary)</td><td>Unit for resistance on the primary display</td></tr>
+<tr><td class="num">28</td><td>µmH (primary)</td><td>Unit for inductance on the primary display</td></tr>
+<tr><td class="num">29</td><td>pnµF (primary)</td><td>Unit for capacitance on the primary display</td></tr>
+<tr><td class="num">30</td><td>bar-graph</td><td>Analogue bar-graph display, 0–100%</td></tr>
+</table></div>
+<p>Two special indication strings also appear in place of a number: <code>OPEn</code> during open calibration and <code>Srt</code> during short calibration (§4).</p>
+
+<div class="callout">
+  <strong>Read the top line before you trust the big number</strong>
+  The small icon row above the primary digits — Auto/LCR/mode-letter/kHz — tells you what the big number actually means. The same "666.8" reads as 666.8 nF in Cs mode and could read as something else entirely once you change frequency, mode, or series/parallel state. Get in the habit of reading top-to-bottom, not just the digits.
+</div>
+
+<p class="sources-line">Sources: manual §III Panel Illustration (pp.8–10) and §III LCD Display Illustration (pp.11–12); §V Replacing Batteries (p.33).</p>
+</section>
+
+
+<!-- ============================================================ 4 -->
+<section id="calibration">
+<h2>4 · Calibration <span class="tag">Open/short: cancelling the fixture so you measure the part, not the clips</span></h2>
+<p class="lede">Every measurement passes through a test fixture — sockets, leads, clips — and that fixture is not impedance-free. It adds a small series impedance and a small parallel admittance of its own, and at the extremes of the DE-5000's range those parasitics are not small relative to what you're trying to measure. CAL doesn't calibrate the DUT; it calibrates the fixture out of the picture.</p>
+
+<h3 id="why-cal">4.1 · Why the fixture pollutes the reading</h3>
+<p>The manual models the measured impedance <code>ZM</code> as the true DUT impedance <code>ZDUT</code> in series with a fixture's series impedance, in parallel combination with the fixture's parallel admittance:</p>
+<pre><code>ZM = (Rs + jωLs) + [(Go + jωCo)⁻¹ ∥ ZDUT]</code></pre>
+<p>The open measurement captures the fixture's parallel admittance in isolation — with nothing connected, the current through <code>ZDUT</code> is zero and <code>Y_OPEN = Go + jωCo</code> is all that's left to measure. The short measurement captures the fixture's series impedance in isolation — with the leads shorted, <code>Z_SHORT = Rs + jωLs</code> is all that's left. With both known, the meter solves for the true DUT impedance on every subsequent measurement:</p>
+<pre><code>ZDUT = (ZM − Z_SHORT) / [1 − (ZM − Z_SHORT) · Y_OPEN]</code></pre>
+
+<figure class="diagram">
+<svg viewBox="0 0 960 320" role="img" aria-label="Signal flow of open and short calibration: an open measurement captures the fixture's parallel admittance, a short measurement captures its series impedance, and the meter subtracts both from every later reading of the DUT">
+  <defs>
+    <marker id="arrCal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+    </marker>
+  </defs>
+  <!-- OPEN box -->
+  <rect x="20" y="20" width="270" height="120" rx="12" fill="var(--surface)" stroke="var(--s2)" stroke-width="2"/>
+  <text x="155" y="46" text-anchor="middle" class="d-label" fill="var(--s2)">1 · OPEN calibration</text>
+  <text x="155" y="72" text-anchor="middle" class="d-tiny">Leads open, nothing connected</text>
+  <text x="155" y="96" text-anchor="middle" class="d-mono">Y_OPEN = Go + jωCo</text>
+  <text x="155" y="118" text-anchor="middle" class="d-tiny">captures fixture leakage / stray C</text>
+
+  <!-- SHORT box -->
+  <rect x="20" y="180" width="270" height="120" rx="12" fill="var(--surface)" stroke="var(--s2)" stroke-width="2"/>
+  <text x="155" y="206" text-anchor="middle" class="d-label" fill="var(--s2)">2 · SHORT calibration</text>
+  <text x="155" y="232" text-anchor="middle" class="d-tiny">Leads shorted together</text>
+  <text x="155" y="256" text-anchor="middle" class="d-mono">Z_SHORT = Rs + jωLs</text>
+  <text x="155" y="278" text-anchor="middle" class="d-tiny">captures lead R and stray L</text>
+
+  <!-- arrows into EEPROM -->
+  <line x1="290" y1="80" x2="430" y2="150" stroke="var(--muted)" stroke-width="2" marker-end="url(#arrCal)"/>
+  <line x1="290" y1="240" x2="430" y2="170" stroke="var(--muted)" stroke-width="2" marker-end="url(#arrCal)"/>
+
+  <rect x="430" y="110" width="220" height="100" rx="12" fill="var(--surface2)" stroke="var(--line)" stroke-width="2"/>
+  <text x="540" y="140" text-anchor="middle" class="d-label">Stored to EEPROM</text>
+  <text x="540" y="164" text-anchor="middle" class="d-tiny">press CAL again after both PASS</text>
+  <text x="540" y="186" text-anchor="middle" class="d-tiny">applied to every future reading</text>
+
+  <line x1="650" y1="160" x2="770" y2="160" stroke="var(--s1)" stroke-width="3" marker-end="url(#arrCal)"/>
+
+  <!-- DUT box -->
+  <rect x="770" y="90" width="170" height="140" rx="12" fill="var(--surface)" stroke="var(--s1)" stroke-width="2"/>
+  <text x="855" y="118" text-anchor="middle" class="d-label" fill="var(--s1)">3 · DUT measured</text>
+  <text x="855" y="150" text-anchor="middle" class="d-mono d-accent">ZM measured</text>
+  <text x="855" y="176" text-anchor="middle" class="d-tiny">meter solves for</text>
+  <text x="855" y="196" text-anchor="middle" class="d-mono d-accent">ZDUT</text>
+</svg>
+<figcaption><b>Redrawn from the manual's Open/short calibration and Equivalent circuit figures (pp.6–7).</b> Both calibration steps have to happen before either correction is useful — an open-only or short-only calibration leaves half the fixture's parasitics uncorrected.</figcaption>
+</figure>
+
+<h3 id="cal-procedure">4.2 · Running the calibration</h3>
+<div class="callout danger">
+  <strong>Remove the DUT before you start</strong>
+  If any lead or DUT is still connected during calibration, it adds impedance to the circuit and the calibration will report <code>FAIL</code>. Use the TL-21 leads (or an improvised lead — but not a long one) exactly as you intend to measure with afterward, since the calibration is specific to that fixture.
+</div>
+
+<ol class="recipe">
+  <li>Connect TL-21 to the meter's terminals, leaving the far end open. Hold <kbd class="long">CAL</kbd> for 2 seconds. <span class="expect"><b>Expect:</b> the display enters open-calibration mode, showing <code>OPEn</code> with a blinking <code>----</code>.</span></li>
+  <li>Press <kbd>CAL</kbd> to start. <span class="expect"><b>Expect:</b> a 30-second countdown runs (<code>OPEn -30-</code> counting down), then <code>OPEn PASS</code> or <code>OPEn FAIL</code>.</span></li>
+  <li>Press <kbd>CAL</kbd> again. Now short the TL-21 leads together. <span class="expect"><b>Expect:</b> the display enters short-calibration mode, <code>Srt ----</code>.</span></li>
+  <li>Press <kbd>CAL</kbd> to start. <span class="expect"><b>Expect:</b> another 30-second countdown (<code>Srt -30-</code>), then <code>Srt PASS</code> or <code>Srt FAIL</code>.</span></li>
+  <li>If both steps show <code>PASS</code>, press <kbd>CAL</kbd> one more time to store the calibration to EEPROM and return to measurement mode. <span class="expect"><b>Expect:</b> the meter returns to the LCR Auto (or whichever) test screen; the calibration now applies to every subsequent reading until you calibrate again or the meter is reset.</span></li>
+</ol>
+
+<div class="callout warn">
+  <strong>If either step FAILs</strong>
+  Double-check the DUT (or nothing, for open) is in the correct calibration position — leads fully open with nothing touching them for OPEN, leads firmly shorted for SHORT — and run the whole open-then-short sequence again from the start.
+</div>
+
+<h3 id="guard-line">4.3 · The guard line (TL-23)</h3>
+<p>"GUARD" is a separate terminal, wired to the meter's shield rather than one leg of the measurement. It provides a shield for the DUT, improvised test leads, or equipment sitting somewhere with high electrical interference. The manual's own note: test leads should be properly shielded to GUARD if necessary, especially at high or low impedance extremes where a small stray coupling is a large fraction of the signal.</p>
+
+<h3 id="when-to-cal">4.4 · Decision matrix — when calibration is worth doing</h3>
+<div class="table-wrap"><table>
+<tr><th>Situation</th><th>Calibrate?</th><th>Why</th></tr>
+<tr><td>Measuring a range/frequency the accuracy tables mark with <strong>*</strong> (§11)</td><td><strong>Yes, mandatory</strong></td><td>The manual states these ranges only hold their printed accuracy after open/short cal</td></tr>
+<tr><td>Very low impedance (small R, large C) or very high impedance (large R, small C, large L)</td><td><strong>Yes</strong></td><td>Fixture parasitics are a larger fraction of a small or extreme reading</td></tr>
+<tr><td>Using an improvised or longer-than-stock test lead</td><td><strong>Yes, mandatory</strong></td><td>Longer leads add more series L and parallel C — exactly what cal removes; the manual warns against long improvised wires precisely because they add uncorrected error</td></tr>
+<tr><td>Switching from TL-21 alligator leads to TL-22 SMD tweezers (or back)</td><td><strong>Yes</strong></td><td>Calibration is specific to the fixture in use — a different fixture means different parasitics</td></tr>
+<tr><td>Mid-range component (kΩ, µF-to-nF, mH), same TL-21 leads you calibrated with recently</td><td>Optional</td><td>Parasitics are a small fraction of a mid-range reading; skip for a quick go/no-go check</td></tr>
+<tr><td>Rapid SORTING-mode binning of a known-good part family, same session, same leads</td><td>Skippable</td><td>Pass/fail against a tolerance band is forgiving of small systematic offsets that cal would remove</td></tr>
+</table></div>
+
+<p class="sources-line">Sources: manual §II Open/short calibration and Equivalent circuit (pp.6–7); §IV.2 CAL (pp.15–17); §III Panel Illustration guard-line note (p.8); §VII Electrical Specification note 2–3 (p.35).</p>
+</section>
+
+
+<!-- ============================================================ 5 -->
+<section id="lcr-auto">
+<h2>5 · LCR AUTO &amp; FREQ <span class="tag">Letting the meter guess, and telling it not to</span></h2>
+<p class="lede">The LCR AUTO key does two jobs depending on mode: in its default state it auto-detects whether your DUT is an inductor, a capacitor, or a resistor and measures accordingly; press it again and it steps through manual single-parameter modes instead. FREQ decides at what frequency the meter's test signal probes the part — and for a real, lossy component, that choice changes the answer.</p>
+
+<h3 id="auto-detect">5.1 · How auto-detect decides L vs C vs R</h3>
+<p>Power on, and the meter is already in <strong>Auto-LCR</strong> mode at 1 kHz — the factory default. Each press of <kbd>LCR AUTO</kbd> cycles: Auto-LCR → Auto-L → Auto-C → Auto-R → Auto-DCR → back to Auto-LCR. In Auto-LCR, the meter measures the impedance, then classifies it using the quality factor:</p>
+
+<div class="table-wrap"><table>
+<tr><th>Condition (as printed in the manual)</th><th>Mode selected</th><th>Secondary display</th></tr>
+<tr><td><code>|Q| &lt; 0.2</code></td><td>Auto-R</td><td>θ</td></tr>
+<tr><td><code>Q ≥ 0.2</code></td><td>Auto-L</td><td>Q</td></tr>
+<tr><td><code>Q ≥ −0.2</code></td><td>Auto-C</td><td>D</td></tr>
+</table></div>
+
+<div class="callout warn">
+  <strong>Quoted exactly as printed — the third row looks like a manual typo</strong>
+  The manual's footnote *1 (p.19) literally reads "If Q ≥ −0.2, the Auto-C mode will be selected automatically." Given the sign convention in §1 (negative θ / negative Q for capacitive parts), this almost certainly should read <code>Q ≤ −0.2</code> — a capacitive DUT has negative reactance and therefore negative Q. This guide transcribes the manual's wording exactly rather than silently correcting it. Verify the actual break-point against your own unit's behavior rather than trusting either version blindly.
+</div>
+
+<p>Once Auto-L or Auto-C is selected, ranging is fully automatic. The primary display shows the L, C, or R value; the secondary display shows the paired quality/dissipation figure. The manual groups these pairs explicitly: <strong>(L + Q)</strong>, <strong>(C + D)</strong>, <strong>(R + θ)</strong>. One footnote exception: when LCR Auto is active and the DUT's capacitance is under 5 pF, the secondary display substitutes the equivalent parallel resistance <strong>Rp</strong> for D — D becomes numerically unstable at such a small capacitance.</p>
+
+<p>Manual (single-parameter) modes work differently: press <kbd>LCR AUTO</kbd> to step to Auto-L, Auto-C, Auto-R, or Auto-DCR directly, and the meter measures only that parameter without trying to classify the DUT first. Auto-R mode and DCR mode carry <strong>no secondary display</strong> at all — there's no D/Q/θ concept for a pure resistance measurement in the manual's model.</p>
+
+<h3 id="freq-select">5.2 · FREQ and why frequency changes the answer</h3>
+<p>Press <kbd>FREQ</kbd> to cycle the test signal frequency: 1 kHz → 10 kHz → 100 kHz → 100 Hz → 120 Hz → back to 1 kHz. Default is 1 kHz. The LCR impedance scale ranges are based on the selected test frequency — this isn't cosmetic, it changes what range the meter auto-selects internally.</p>
+
+<p>For an ideal capacitor, C would read identically at every frequency. Real capacitors don't, because their dielectric losses and parasitic inductance are themselves frequency-dependent. The manual's own worked example, sweeping FREQ on the same physical capacitor in Auto-LCR mode:</p>
+
+<div class="table-wrap"><table>
+<tr><th>Frequency</th><th>Cs reading</th><th>D reading</th></tr>
+<tr><td class="num">1 kHz</td><td class="num">666.8 nF</td><td class="num">0.004</td></tr>
+<tr><td class="num">10 kHz</td><td class="num">659.8 nF</td><td class="num">0.007</td></tr>
+<tr><td class="num">100 kHz</td><td class="num">646.6 nF</td><td class="num">0.009</td></tr>
+<tr><td class="num">100 Hz</td><td class="num">669.2 nF</td><td class="num">0.003</td></tr>
+<tr><td class="num">120 Hz</td><td class="num">669.2 nF</td><td class="num">0.004</td></tr>
+</table></div>
+
+<p>The same physical part reads 666.8 nF at 1 kHz and 646.6 nF at 100 kHz — a 3% swing — while D climbs from 0.003 at 100 Hz to 0.009 at 100 kHz, more than doubling. Neither number is "wrong." Both are honest measurements of a real, lossy capacitor at different frequencies. This is precisely why a capacitance reading without a stated test frequency is an incomplete spec.</p>
+
+<div class="callout">
+  <strong>Default to 1 kHz unless you have a reason not to</strong>
+  1 kHz is both the meter's power-on default and the frequency most component datasheets quote their D/Q at. Switch away from it deliberately — to match a specific datasheet condition, to probe frequency-dependent behavior, or because your part's nominal value sits outside 1 kHz's best-accuracy range (§11) — not by habit.
+</div>
+
+<p class="sources-line">Sources: manual §IV.3 LCR AUTO (pp.18–19, incl. footnotes *1–*3); §IV.4 Inductance/Capacitance/Resistance Measurement (pp.20–21); §IV.5 FREQ (pp.22–23).</p>
+</section>
+
+
+<!-- ============================================================ 6 -->
+<section id="secondary-parameters">
+<h2>6 · D / Q / ESR / θ <span class="tag">Four faces of the same loss, and which one to trust for what</span></h2>
+<p class="lede">D, Q, ESR, and θ are not four different measurements — they're four different ways of reporting the identical resistive-to-reactive ratio from §1's vector. The <kbd>D/Q/ESR/θ</kbd> key just changes which face the secondary display shows. Which one you should be looking at depends on what question you're asking.</p>
+
+<h3 id="secondary-defs">6.1 · Definitions, straight from the manual</h3>
+<div class="table-wrap"><table>
+<tr><th>Symbol</th><th>Name</th><th>Formula (as printed)</th></tr>
+<tr><td><strong>D</strong></td><td>Dissipation factor</td><td><code>D = 1/Q = tanθ</code></td></tr>
+<tr><td><strong>Q</strong></td><td>Quality factor</td><td><code>Q = Xs/Rs = 2πfLs/Rs = 1/(2πfCsRs)</code> in series mode, or <code>Q = B/G = Rp/|Xp| = Rp/(2πfLp) = 2πfCpRp</code> in parallel mode</td></tr>
+<tr><td><strong>ESR</strong></td><td>Equivalent series resistance</td><td>The series-mode resistive part, <code>Rs</code>, reported directly in ohms</td></tr>
+<tr><td><strong>θ</strong></td><td>Phase angle</td><td><code>θ = tan⁻¹(Xs/Rs)</code>; positive for inductive, negative for capacitive DUTs</td></tr>
+</table></div>
+
+<p>Each press of <kbd>D/Q/ESR/θ</kbd> steps the secondary display: D → Q → ESR → θ → back to D. The manual's own worked example, all four readings taken on the identical DUT in Cs testing mode (1 kHz, Auto-LCR, primary reading held at Cs 666.8 nF throughout):</p>
+
+<div class="annot">
+  <div class="lcd" style="padding:14px 16px">
+    <div style="display:flex;justify-content:space-between"><span class="d">1 kHz · Auto · LCR</span><span class="c">Cs</span></div>
+    <div style="font-size:15px;line-height:2.1">
+      <div><span class="y">D</span> <span class="w">0.004</span></div>
+      <div><span class="y">Q</span> <span class="w">227</span></div>
+      <div><span class="y">ESR</span> <span class="w">104</span> Ω</div>
+      <div><span class="y">θ</span> <span class="w">−89.7</span> °</div>
+    </div>
+    <div style="margin-top:6px;color:var(--lcd-dim);font-size:12px">Cs 666.8 nF unchanged on the primary display throughout</div>
+  </div>
+  <ol>
+    <li><strong>From the manual's own example</strong> (§IV.9, p.27–28), not a live capture — no physical unit was tested for this guide.</li>
+    <li>D 0.004 and Q 227 are reciprocal-consistent: <code>1/227 ≈ 0.0044</code>, matching the printed D within rounding.</li>
+    <li>θ = −89.7° confirms the DUT reads capacitive (negative angle, per §1's sign convention) and close to a pure 90° — a low-loss capacitor.</li>
+    <li>D/Q/ESR/θ has <strong>no function in LCR Auto mode</strong> — you must be in a manual L or C mode (or accept whichever the auto-classifier already picked) for this key to do anything, and it has no effect at all in Auto-R or DCR mode (no secondary parameter exists there).</li>
+  </ol>
+</div>
+
+<h3 id="sub-accuracy">6.2 · Sub-display accuracy — how errors propagate from Z to D, ESR, and θ</h3>
+<p>The manual defines <code>Ae</code> as the impedance (Z) accuracy — the number from the resistance/capacitance/inductance tables in §11 — and derives every secondary parameter's own accuracy from it:</p>
+<pre><code>Q = 1/D          Rp = ESR × (1 + 1/D²)
+D accuracy    De = ± Ae × (1 + D)
+ESR accuracy  Re = ± ZM × Ae  (Ω)      where ZM = impedance calculated as 1/(2πfC) or 2πfL
+Phase angle   θe = ± (180/π) × Ae  (deg)</code></pre>
+<p>The practical upshot: D and θ accuracy both degrade as the base impedance accuracy degrades — the same ranges marked <strong>*</strong> in §11's tables (worth calibrating for) also carry the least trustworthy secondary-parameter readings.</p>
+
+<h3 id="dq-decision">6.3 · Decision matrix — which secondary parameter to read</h3>
+<div class="table-wrap"><table>
+<tr><th>Parameter</th><th>Best for</th><th>Read it when</th><th>Caution</th></tr>
+<tr><td><strong>D</strong></td><td>Capacitors</td><td>Comparing against a datasheet D spec, or judging whether a cap has drifted from its rated loss</td><td>Meaningless without stating the test frequency (§5.2)</td></tr>
+<tr><td><strong>Q</strong></td><td>Inductors</td><td>Comparing against a datasheet Q spec, or judging coil/core loss</td><td>Same frequency dependence as D; also unstable near <code>Q≈0</code> (the R/L/C classification boundary in §5.1)</td></tr>
+<tr><td><strong>ESR</strong></td><td>Capacitors in power/filtering roles (electrolytics, film caps in a supply)</td><td>You want an absolute ohms figure you can compare directly across parts, or check against a "how much did this cap age" rule of thumb</td><td>Only reported meaningfully in series-mode-dominant readings; not a resistor measurement (that's DCR/Auto-R)</td></tr>
+<tr><td><strong>θ</strong></td><td>Quick eyeball of "how close to ideal", any L or C part</td><td>You just want to confirm the DUT is genuinely reactive (θ near ±90°) rather than mostly resistive</td><td>Least intuitive to read numerically; D or Q usually more actionable</td></tr>
+</table></div>
+
+<div class="callout blue">
+  <strong>The wrong question: "which of D, Q, ESR, θ is the most accurate?"</strong>
+  They're mathematically derived from the same impedance measurement, so none is more "true" than another — asking which is most accurate is like asking whether Fahrenheit or Celsius is the more accurate temperature scale. The right question is which one your downstream comparison (a datasheet spec, a pass/fail bin, a "did this part age" check) is expressed in.
+</div>
+
+<p class="sources-line">Sources: manual §II Measuring Principle Introduction, Q/D relationships (p.6); §IV.9 D/Q/ESR/θ (pp.27–28); §VII Electrical Specification, Sub-display parameters accuracy (p.36).</p>
+</section>
+
+
+<!-- ============================================================ 7 -->
+<section id="ser-pal">
+<h2>7 · SER/PAL <span class="tag">Two descriptions of one impedance, and a 100 kΩ rule for choosing</span></h2>
+<p class="lede">§1 introduced series and parallel as two mathematically equivalent descriptions of the same impedance. This section is about the practical question: which description does the DE-5000 pick for you, and when should you override it.</p>
+
+<h3 id="ser-pal-duality">7.1 · The two equivalent circuits</h3>
+<p>In series form, the DUT is modeled as a resistance and a reactance in series: <code>Z = Rs + jXs</code>. In parallel form, it's modeled as the reciprocal admittance <code>Y = 1/Z = G + jB</code>, with a parallel resistance <code>Rp</code> and parallel reactance <code>Xp</code>. Both circuits produce the identical impedance at a given frequency — they're algebraic duals, not two different physical models of the part.</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 960 260" role="img" aria-label="Series equivalent circuit: Rs and Xs in series, labelled Z. Parallel equivalent circuit: Rp and Xp in parallel, labelled Y, the reciprocal of Z">
+  <text x="230" y="34" text-anchor="middle" class="d-label">Impedance in series mode</text>
+  <rect x="90" y="90" width="90" height="40" fill="none" stroke="var(--s1)" stroke-width="3"/>
+  <text x="135" y="115" text-anchor="middle" class="d-mono d-accent">Rs</text>
+  <rect x="230" y="90" width="90" height="40" fill="none" stroke="var(--s1)" stroke-width="3"/>
+  <text x="275" y="115" text-anchor="middle" class="d-mono d-accent">jXs</text>
+  <line x1="40" y1="110" x2="90" y2="110" stroke="var(--ink2)" stroke-width="3"/>
+  <line x1="180" y1="110" x2="230" y2="110" stroke="var(--ink2)" stroke-width="3"/>
+  <line x1="320" y1="110" x2="370" y2="110" stroke="var(--ink2)" stroke-width="3"/>
+  <text x="205" y="170" text-anchor="middle" class="d-mono">Z = Rs + jXs</text>
+  <text x="205" y="192" text-anchor="middle" class="d-tiny">annunciators: Ls · Cs · Rs</text>
+
+  <line x1="480" y1="20" x2="480" y2="240" stroke="var(--line)" stroke-width="1"/>
+
+  <text x="730" y="34" text-anchor="middle" class="d-label">Admittance in parallel mode</text>
+  <line x1="590" y1="80" x2="870" y2="80" stroke="var(--ink2)" stroke-width="3"/>
+  <line x1="590" y1="140" x2="870" y2="140" stroke="var(--ink2)" stroke-width="3"/>
+  <line x1="590" y1="80" x2="590" y2="140" stroke="var(--ink2)" stroke-width="3"/>
+  <line x1="870" y1="80" x2="870" y2="140" stroke="var(--ink2)" stroke-width="3"/>
+  <rect x="650" y="90" width="90" height="40" fill="none" stroke="var(--s2)" stroke-width="3"/>
+  <text x="695" y="115" text-anchor="middle" class="d-mono d-blue">Rp</text>
+  <rect x="760" y="90" width="70" height="40" fill="none" stroke="var(--s2)" stroke-width="3"/>
+  <text x="795" y="115" text-anchor="middle" class="d-mono d-blue">jXp</text>
+  <text x="730" y="170" text-anchor="middle" class="d-mono">Y = 1/Z = G + jB</text>
+  <text x="730" y="192" text-anchor="middle" class="d-tiny">annunciators: Lp · Cp · Rp</text>
+
+  <text x="480" y="230" text-anchor="middle" class="d-tiny">same physical DUT, same frequency — two equivalent descriptions</text>
+</svg>
+<figcaption><b>Redrawn from the manual's Measurement mode figure (p.5).</b> Series annunciators (Ls/Cs/Rs) and parallel annunciators (Lp/Cp/Rp) on the LCD icon row (§3.3, items 10–12) tell you which description is currently active.</figcaption>
+</figure>
+
+<h3 id="which-loss-dominates">7.2 · Why the choice matters: which loss mechanism dominates</h3>
+<p>The manual's reasoning, transcribed directly: real capacitors and inductors both have a series resistance <code>Rs</code> and a parallel resistance <code>Rp</code> in their equivalent circuit, but which one matters depends on the part's size.</p>
+<div class="table-wrap"><table>
+<tr><th>Part</th><th>If small</th><th>If large</th></tr>
+<tr><td>Capacitor</td><td><code>Rp</code> dominates → use <strong>parallel mode</strong></td><td><code>Rs</code> dominates → use <strong>series mode</strong></td></tr>
+<tr><td>Inductor</td><td><code>Rp</code> has almost no effect → use <strong>series mode</strong></td><td><code>Rs</code> has no effect → use <strong>parallel mode</strong></td></tr>
+</table></div>
+<p>Note the inductor and capacitor rules run in opposite directions: low-value inductor → series, low-value capacitor → parallel. This isn't arbitrary — it follows from which loss path (series lead resistance vs. parallel leakage) is physically larger relative to the reactance at that value.</p>
+
+<h3 id="100k-threshold">7.3 · The 100 kΩ auto-threshold</h3>
+<p>SER/PAL has no function in LCR Auto mode — the meter picks for you, automatically, based on the total equivalent impedance it measures: <strong>above 100 kΩ, parallel mode is selected</strong> (Lp, Cp, or Rp shown); <strong>below 100 kΩ, series mode is selected</strong> (Ls, Cs, or Rs shown). In a manual (non-auto) L/C/R mode, press <kbd>SER/PAL</kbd> to force the opposite description at will. The manual's own toggling example, same DUT, same frequency, both readings 666.8 nF / D 0.004:</p>
+<pre><code>Cs testing mode → press SER/PAL → Cp testing mode → press SER/PAL → back to Cs</code></pre>
+
+<h3 id="ser-pal-decision">7.4 · Decision matrix — when to override the 100 kΩ auto-threshold</h3>
+<div class="table-wrap"><table>
+<tr><th>Scenario</th><th>Force</th><th>Why</th></tr>
+<tr><td>Small-value inductor near the 100 kΩ boundary (impedance borderline)</td><td>Series (Ls)</td><td>§7.2's rule: for a small inductor, Rp has almost no effect — series is the physically meaningful description regardless of which side of 100 kΩ the auto-threshold landed on</td></tr>
+<tr><td>Large-value inductor (high reactance, comfortably &gt;100 kΩ already)</td><td>Parallel (Lp) — usually already auto-selected</td><td>Rs has no effect at this size; auto-threshold and physical reasoning agree</td></tr>
+<tr><td>Small-value / high-impedance capacitor (low pF range)</td><td>Parallel (Cp) — usually already auto-selected</td><td>Rp dominates; matches leakage-dominated real behavior</td></tr>
+<tr><td>Large-value / low-impedance capacitor (µF electrolytic)</td><td>Series (Cs) — usually already auto-selected</td><td>Rs (ESR) dominates; matches how electrolytics actually fail</td></tr>
+<tr><td>Matching how the part is actually wired in-circuit (e.g. an electrolytic in a series RC filter)</td><td>Whichever matches the circuit topology, even if it disagrees with the 100 kΩ rule</td><td>The auto-threshold is a heuristic about typical loss dominance, not a statement about your specific circuit</td></tr>
+</table></div>
+
+<div class="callout warn">
+  <strong>Things that bite: the same DUT can read two different values in Ls vs Lp</strong>
+  Series and parallel readings are only numerically identical in the limit of a lossless part. For a real, lossy component, Cs and Cp (or Ls and Lp) will differ — sometimes by a meaningful percentage — because they're each solving a slightly different equivalent-circuit model for the same raw impedance. Don't be alarmed if toggling SER/PAL changes the primary number; that's expected, not a fault.
+</div>
+
+<p class="sources-line">Sources: manual §II Measuring Principle Introduction, Q/D discussion of Rs vs Rp dominance (p.6); §IV.10 SER/PAL (p.29).</p>
+</section>
+
+
+<!-- ============================================================ 8 -->
+<section id="rel-hold">
+<h2>8 · REL% &amp; HOLD <span class="tag">Compare against a reference, or freeze a reading in place</span></h2>
+<p class="lede">Neither key does anything in LCR Auto mode. Both are simple, single-purpose utilities once you're in a manual measurement mode: REL% turns every subsequent reading into a percentage deviation from a stored reference; HOLD just stops the display from updating.</p>
+
+<h3 id="rel-percent">8.1 · REL%</h3>
+<p>Press <kbd>REL%</kbd> to store the current reading as the reference value; the <code>Δ</code> icon appears, and the secondary display switches to showing the percentage deviation of every subsequent reading from that stored reference:</p>
+<pre><code>REL% = (DCUR − DREF) / DREF × 100%</code></pre>
+<p>where <code>DCUR</code> is the current DUT reading and <code>DREF</code> is the stored reference. The percentage range runs from −99.9% to 99.9%; if a new measurement is more than double the reference, the secondary display shows <code>OL%</code>. Press <kbd class="long">REL%</kbd> for more than 2 seconds to exit relative mode.</p>
+
+<p>The manual's own worked example (100 Hz, Auto-LCR, Cs mode) — quoted here, not bench-captured:</p>
+<div class="annot">
+  <div class="lcd" style="padding:14px 16px">
+    <div style="display:flex;justify-content:space-between"><span class="d">100 Hz · Auto</span><span class="c">Cs</span></div>
+    <div style="font-size:14px;line-height:2.0">
+      <div>Reading before REL: <span class="w">669.3</span> nF</div>
+      <div>Press REL → <span class="y">Δ</span>, secondary <span class="w">0.0%</span> (ref = current, they match)</div>
+      <div>Swap in a different part → primary <span class="w">194.16</span> nF, secondary <span class="w">−70.9%</span></div>
+      <div>Swap in a third part → primary <span class="w">870.1</span> nF, secondary <span class="w">30.0%</span></div>
+      <div>Press REL again → Δ flashes, primary briefly shows the stored reference <span class="w">669.3</span> nF</div>
+    </div>
+  </div>
+  <ol>
+    <li><strong>From the manual's own example</strong> (§IV.11, pp.30–31), not a live capture.</li>
+    <li>Check the arithmetic: <code>(194.16 − 669.3) / 669.3 × 100% ≈ −70.98%</code>, matching the printed −70.9% within rounding.</li>
+    <li>REL% is built for comparing a batch of parts against one known-good reference — swap DUTs without leaving the mode and read the deviation directly instead of doing the subtraction yourself.</li>
+  </ol>
+</div>
+
+<h3 id="hold">8.2 · HOLD</h3>
+<p>Press <kbd>HOLD</kbd> to freeze the primary display; the <code>HOLD</code> icon appears. In Hold mode, only the backlight key and the PC key retain function — everything else is locked out until you press <kbd>HOLD</kbd> again to release it.</p>
+
+<div class="callout">
+  <strong>Use REL% for comparison, HOLD for capture</strong>
+  Reach for REL% when the question is "how does this part compare to a reference" across a batch. Reach for HOLD when the question is "I need this number to sit still" — pulling the DUT out of a hard-to-reach spot, writing the value down, or photographing the display. They solve different problems and neither substitutes for the other.
+</div>
+
+<p class="sources-line">Sources: manual §IV.11 REL (pp.30–31); §IV.12 HOLD (p.32).</p>
+</section>
+
+<!-- ============================================================ 9 -->
+<section id="sorting">
+<h2>9 · SORTING mode <span class="tag">Turning a tolerance band into a PASS/FAIL buzzer</span></h2>
+<p class="lede">SORTING exists for one job: binning a stack of nominally-identical parts against a reference value and a tolerance, fast, without you doing the percent-difference math by hand. It's disabled in LCR Auto mode by design — you have to commit to a primary parameter first.</p>
+
+<h3 id="sorting-entry">9.1 · Entering and configuring sorting mode</h3>
+<p>With a DUT connected and a manual L/C/R mode already selected, press <kbd>SORTING</kbd> to enter. The display automatically switches to 2000-digit resolution. If the reading is <code>OL</code> or below 200 counts, sorting is disabled — there isn't enough resolution to bin sensibly.</p>
+<p>Inside sorting mode, the primary display shows <code>PASS</code> or <code>FAIL</code> based on whether the measured impedance falls inside the configured tolerance band; the secondary display keeps showing the raw measurement reading. Configure the reference value, range, and tolerance with <kbd>SETUP</kbd>, <kbd>◄</kbd>/<kbd>►</kbd>, <kbd>▲</kbd>/<kbd>▼</kbd>, and confirm with <kbd>ENTER</kbd>.</p>
+
+<h3 id="sorting-example">9.2 · The manual's own worked example</h3>
+<p>Starting point: Auto-LCR, 1 kHz, D 0.004, Cs 666.8 nF.</p>
+<ol class="recipe">
+  <li>Press <kbd>SORTING</kbd>. <span class="expect"><b>Expect:</b> secondary display shows the reading, 667 nF; primary display shows <code>PASS</code> (default Tol ±1%, 1 kHz).</span></li>
+  <li>Press <kbd>SETUP</kbd>. <span class="expect"><b>Expect:</b> "Range" flashes; use <kbd>◄</kbd>/<kbd>►</kbd> to pick the decimal-point position and units for the component you're sorting.</span></li>
+  <li>The display shows <code>0667.</code> with the last digit flashing. <span class="expect"><b>Expect:</b> <kbd>◄</kbd>/<kbd>►</kbd> selects which digit is active, <kbd>▲</kbd>/<kbd>▼</kbd> adjusts its value — set the reference value digit by digit, then press <kbd>ENTER</kbd>.</span></li>
+  <li>"Tol±" flashes. <span class="expect"><b>Expect:</b> each press of <kbd>◄</kbd>/<kbd>►</kbd> cycles the tolerance: ±1%, ±2%, ±5%, ±10%, ±20%, −20%/+80%, ±0.25%, ±0.5%.</span></li>
+  <li>Press <kbd>ENTER</kbd> to confirm. <span class="expect"><b>Expect:</b> setup is complete; the meter returns to live PASS/FAIL sorting against the configured reference and tolerance.</span></li>
+  <li>Insert a DUT inside tolerance. <span class="expect"><b>Expect:</b> the buzzer beeps once, primary display shows <code>PASS</code> — the manual's own example reads <code>Cs 667 nF PASS</code>.</span></li>
+  <li>Insert a DUT outside tolerance. <span class="expect"><b>Expect:</b> primary display shows <code>FAIL</code> — the manual's own example reads <code>Cs 673 nF FAIL</code>.</span></li>
+</ol>
+<p class="small"><strong>From the manual's own example</strong> (§IV.7, pp.23–25), not a live capture — no physical unit was tested for this guide.</p>
+
+<div class="callout blue">
+  <strong>SORTING is a workflow accelerator, not a different measurement</strong>
+  Every number sorting reports is one you could compute by hand from a normal LCR Auto reading and REL%. What SORTING buys you is the buzzer and the PASS/FAIL glance — genuinely useful when you're binning fifty resistors from a reel and don't want to read digits fifty times.
+</div>
+
+<p class="sources-line">Sources: manual §IV.7 SORTING/SETUP/ENTER (pp.23–25); §III LCD Display Illustration, Sorting/Tol/Range icons (pp.11–12).</p>
+</section>
+
+
+<!-- ============================================================ 10 -->
+<section id="pc">
+<h2>10 · PC / data logging <span class="tag">One paragraph, because you don't own the adapter</span></h2>
+<p class="lede">The <kbd>PC</kbd> key starts and stops data transmission to a PC through the optional, fully isolated IR-to-USB interface — a separate accessory this guide's reader doesn't own, so it gets a paragraph rather than a module.</p>
+<p>With the optional IR-to-USB case snapped onto the meter's rear IR slot (item 19 in §3.2) and connected by USB to a computer, pressing <kbd>PC</kbd> starts transmission and the <code>PC</code> icon appears on the display (icon 4 in §3.3); pressing <kbd>PC</kbd> again cancels it. The General Specification table (§11.1) lists the IR-to-USB case as an <strong>option</strong>, not a standard accessory — if you later add one, the manual's §IV.8 (p.26) is the four-step reference: snap on the case, connect USB, press PC, press PC again to stop.</p>
+<p class="sources-line">Sources: manual §IV.8 PC (p.26); §VI General Specification, Option row (p.34).</p>
+</section>
+
+<!-- ============================================================ 11 -->
+<section id="specifications">
+<h2>11 · Accuracy &amp; specification reference <span class="tag">The numbers, transcribed exactly as printed</span></h2>
+<p class="lede">This section is a lookup table, not a narrative. Every figure below is copied from the manual's General Specification and Electrical Specification tables — treat it as the reference you return to, not something to read start-to-finish.</p>
+
+<h3 id="general-spec">11.1 · General specification</h3>
+<div class="table-wrap"><table>
+<tr><th>Item</th><th>Spec</th></tr>
+<tr><td>Item</td><td>Dual Display L C R Meter</td></tr>
+<tr><td>Parameters measured</td><td>Ls / Lp / Cs / Cp / Rs / Rp / D / Q / θ / ESR; LCR auto selection</td></tr>
+<tr><td>Measuring circuit mode</td><td>Series / Parallel</td></tr>
+<tr><td>Displays</td><td>Dual 19999 / 9999 display</td></tr>
+<tr><td>Ranging mode</td><td>Auto</td></tr>
+<tr><td>Measuring terminals</td><td>4-wire sockets (terminals) &amp; guard</td></tr>
+<tr><td>Auto LCR test range</td><td>L: 20.000 µH ~ 2.000 KH &nbsp;·&nbsp; C: 200.00 pF ~ 20.00 mF &nbsp;·&nbsp; R: 20.000 Ω ~ 200.0 MΩ &nbsp;·&nbsp; DCR: 200.00 Ω ~ 200.0 MΩ</td></tr>
+<tr><td>Test frequency</td><td>100 Hz / 120 Hz / 1 kHz / 10 kHz / 100 kHz</td></tr>
+<tr><td>Backlight</td><td>Yes</td></tr>
+<tr><td>Tolerance mode</td><td>±0.25%, ±0.5%, ±1%, ±2%, ±5%, ±10%, ±20%, −20%/+80%</td></tr>
+<tr><td>Test signal level</td><td>0.5 Vrms typ.</td></tr>
+<tr><td>Measuring rate</td><td>1.2 / second, nominal</td></tr>
+<tr><td>Response time</td><td>Approx. 1 second / DUT</td></tr>
+<tr><td>Auto power-off</td><td>Approx. 5 minutes without key operation (battery power only, §3.1)</td></tr>
+<tr><td>Temperature coefficient</td><td>0.15 × (spec. accur.) per °C (0–18°C, 28–50°C)</td></tr>
+<tr><td>Operation temperature</td><td>0°C to 50°C; 0–70% R.H.</td></tr>
+<tr><td>Storage temperature</td><td>−20°C to +60°C; 0–80% R.H.</td></tr>
+<tr><td>Battery voltage indication</td><td>Full icon when good; low-battery icon means replace immediately to stay within spec</td></tr>
+<tr><td>Standard accessories</td><td>Alligator test lead case (TL-21) · AC/DC adaptor · guard line (TL-23) · user manual · DC 9 V battery</td></tr>
+<tr><td>Option</td><td>IR to USB case · SMD tweezers (TL-22)</td></tr>
+<tr><td>Dimensions (L/W/H)</td><td>188 / 95 / 52.5 mm</td></tr>
+<tr><td>Weight</td><td>Approx. 350 g (LCR meter only, excluding battery)</td></tr>
+</table></div>
+
+<div class="callout warn">
+  <strong>Accuracy notation</strong>
+  Every figure below is <code>±(% of reading + number of least-significant digits)</code> at 23°C ±5°C, &lt;75% R.H. A cell reading <code>0.3%+2</code> means: take 0.3% of the displayed value, then add 2 counts in the last displayed digit. Ranges marked <strong>*</strong> require open/short calibration (§4) to hit the printed number.
+</div>
+
+<h3 id="resistance-table">11.2 · Resistance accuracy (parallel / series mode)</h3>
+<div class="table-wrap"><table>
+<tr><th>Range</th><th>Resolution</th><th>100/120 Hz</th><th>1 kHz</th><th>10 kHz</th><th>100 kHz</th></tr>
+<tr><td class="num">20.000 Ω</td><td class="num">0.001 Ω</td><td>—</td><td class="num">1.0%+3*</td><td class="num">0.3%+2</td><td class="num">0.3%+2</td></tr>
+<tr><td class="num">200.00 Ω</td><td class="num">0.01 Ω</td><td>—</td><td class="num">1.0%+3*</td><td class="num">0.3%+2</td><td class="num">0.3%+2</td></tr>
+<tr><td class="num">2.0000 kΩ</td><td class="num">0.0001 kΩ</td><td class="num">0.3%+2</td><td class="num">0.3%+2</td><td class="num">0.3%+2</td><td class="num">0.6%+3</td></tr>
+<tr><td class="num">20.000 kΩ</td><td class="num">0.001 kΩ</td><td class="num">0.3%+2</td><td class="num">0.3%+2</td><td class="num">0.3%+2</td><td class="num">0.6%+3</td></tr>
+<tr><td class="num">200.00 kΩ</td><td class="num">0.01 kΩ</td><td class="num">0.5%+2</td><td class="num">0.5%+2</td><td class="num">0.5%+2</td><td class="num">1.0%+3</td></tr>
+<tr><td class="num">2.0000 MΩ (2.000 MΩ)</td><td class="num">0.0001 MΩ</td><td class="num">1.0%+3</td><td class="num">1.0%+3</td><td>—</td><td class="num">2.0%+3*</td></tr>
+<tr><td class="num">20.000 MΩ (20.00 MΩ)</td><td class="num">0.001 MΩ</td><td class="num">2.0%+3*</td><td class="num">2.0%+3*</td><td>—</td><td>—</td></tr>
+<tr><td class="num">200.0 MΩ</td><td class="num">0.1 MΩ</td><td class="num">2.0%+3*</td><td class="num">2.0%+3*</td><td>—</td><td>—</td></tr>
+</table></div>
+<p class="small">* Do open/short calibration before measuring on ranges marked with * to have better precision.</p>
+
+<h3 id="dcr-table">11.3 · DCR accuracy</h3>
+<div class="table-wrap"><table>
+<tr><th>Range</th><th>Resolution</th><th>Accuracy</th></tr>
+<tr><td class="num">200.00 Ω</td><td class="num">0.01 Ω</td><td class="num">1.0%+3*</td></tr>
+<tr><td class="num">2.0000 kΩ</td><td class="num">0.0001 kΩ</td><td class="num">0.2%+2</td></tr>
+<tr><td class="num">20.000 kΩ</td><td class="num">0.001 kΩ</td><td class="num">0.2%+2</td></tr>
+<tr><td class="num">200.00 kΩ</td><td class="num">0.01 kΩ</td><td class="num">0.5%+2</td></tr>
+<tr><td class="num">2.0000 MΩ</td><td class="num">0.0001 MΩ</td><td class="num">1.0%+3</td></tr>
+<tr><td class="num">20.000 MΩ</td><td class="num">0.001 MΩ</td><td class="num">2.0%+3*</td></tr>
+<tr><td class="num">200.0 MΩ</td><td class="num">0.1 MΩ</td><td class="num">2.0%+3*</td></tr>
+</table></div>
+<p class="small">* Do open/short calibration before measuring on ranges marked with * to have better precision.</p>
+
+<h3 id="capacitance-table">11.4 · Capacitance accuracy (parallel / series mode)</h3>
+<div class="table-wrap"><table>
+<tr><th>Range</th><th>Resolution</th><th>100/120 Hz</th><th>1 kHz</th><th>10 kHz</th><th>100 kHz</th></tr>
+<tr><td class="num">200.00 pF</td><td class="num">0.01 pF</td><td>—</td><td>—</td><td class="num">1.2%+5*</td><td class="num">2.0%+5*</td></tr>
+<tr><td class="num">2000.0 pF</td><td class="num">0.1 pF</td><td>—</td><td class="num">2.0%+3*</td><td class="num">0.3%+2</td><td class="num">0.6%+3</td></tr>
+<tr><td class="num">20.000 nF</td><td class="num">0.001 nF</td><td class="num">2.0%+3*</td><td class="num">0.3%+2</td><td class="num">0.3%+2</td><td class="num">0.6%+3</td></tr>
+<tr><td class="num">200.00 nF</td><td class="num">0.01 nF</td><td class="num">0.3%+2</td><td class="num">0.3%+2</td><td class="num">0.6%+2</td><td class="num">1.2%+5*</td></tr>
+<tr><td class="num">2000.0 nF</td><td class="num">0.1 nF</td><td class="num">0.3%+2</td><td class="num">0.6%+2</td><td class="num">2.0%+5*</td><td>—</td></tr>
+<tr><td class="num">20.000 µF (20.00 µF)</td><td class="num">0.001 µF</td><td>—</td><td class="num">0.6%+2</td><td>—</td><td>—</td></tr>
+<tr><td class="num">200.00 µF (200.0 µF)</td><td class="num">0.01 µF</td><td class="num">0.6%+2</td><td class="num">1.0%+3*</td><td>—</td><td>—</td></tr>
+<tr><td class="num">2000.0 µF (2000 µF)</td><td class="num">1 µF</td><td class="num">1.0%+3*</td><td>—</td><td class="num">3.0%+5 (100 µF max.)*</td><td>—</td></tr>
+<tr><td class="num">20.00 mF</td><td class="num">0.01 mF</td><td class="num">1.2%+3*</td><td>—</td><td>—</td><td>—</td></tr>
+</table></div>
+<p class="small">If the reading is below 2000, the unit on display is pF (below 2000 counts, the meter shows the finer unit). * Do open/short calibration before measuring on ranges marked with * to have better precision.</p>
+
+<h3 id="inductance-table">11.5 · Inductance accuracy (parallel / series mode)</h3>
+<div class="table-wrap"><table>
+<tr><th>Range</th><th>Resolution</th><th>100/120 Hz</th><th>1 kHz</th><th>10 kHz</th><th>100 kHz</th></tr>
+<tr><td class="num">20.000 µH</td><td class="num">0.001 µH</td><td>—</td><td>—</td><td>—</td><td class="num">2.5%+5*</td></tr>
+<tr><td class="num">200.00 µH</td><td class="num">0.01 µH</td><td>—</td><td>—</td><td class="num">1.2%+5*</td><td class="num">0.6%+3</td></tr>
+<tr><td class="num">2000.0 µH</td><td class="num">0.1 µH</td><td>—</td><td class="num">2.0%+5*</td><td class="num">0.6%+3</td><td class="num">0.6%+3</td></tr>
+<tr><td class="num">20.000 mH</td><td class="num">0.001 mH</td><td class="num">1.2%+5*</td><td class="num">1.0%+5</td><td class="num">0.3%+2</td><td class="num">0.6%+3</td></tr>
+<tr><td class="num">200.00 mH</td><td class="num">0.01 mH</td><td class="num">0.3%+2</td><td class="num">0.6%+2</td><td class="num">0.3%+2</td><td class="num">1.2%+5*</td></tr>
+<tr><td class="num">2000.0 mH</td><td class="num">0.1 mH</td><td class="num">0.3%+2</td><td class="num">0.3%+2</td><td class="num">0.6%+3</td><td>—</td></tr>
+<tr><td class="num">20.000 H</td><td class="num">0.001 H</td><td class="num">0.3%+2</td><td class="num">0.3%+2</td><td class="num">0.6%+3</td><td>—</td></tr>
+<tr><td class="num">200.0 H</td><td class="num">0.1 H</td><td class="num">0.6%+3</td><td class="num">1.2%+5*</td><td>—</td><td>—</td></tr>
+<tr><td class="num">2.000 KH</td><td class="num">0.001 KH</td><td class="num">1.2%+5*</td><td>—</td><td>—</td><td>—</td></tr>
+</table></div>
+<p class="small">If the reading is below 2000, the unit on display is µH. * Do open/short calibration before measuring on ranges marked with * to have better precision.</p>
+
+<h3 id="zdut-table">11.6 · Accuracy vs. resistance (ZDUT)</h3>
+<div class="table-wrap"><table>
+<tr><th>Z<sub>DUT</sub></th><th>DCR</th><th>100/120 Hz</th><th>1 kHz</th><th>10 kHz</th><th>100 kHz</th></tr>
+<tr><td>0.1 ~ 1 Ω</td><td class="num">1.2%+5*</td><td class="num">1.2%+5*</td><td class="num">1.2%+5*</td><td class="num">1.2%+5*</td><td class="num">2.5%+5*</td></tr>
+<tr><td>1 ~ 10 Ω</td><td class="num">0.6%+3*</td><td class="num">0.6%+3*</td><td class="num">0.6%+3*</td><td class="num">0.6%+3*</td><td class="num">1.2%+5*</td></tr>
+<tr><td>10 ~ 100 kΩ</td><td class="num">0.3%+2</td><td class="num">0.3%+2</td><td class="num">0.3%+2</td><td class="num">0.3%+2</td><td class="num">0.6%+3</td></tr>
+<tr><td>100 k ~ 1 MΩ</td><td class="num">0.6%+3</td><td class="num">0.6%+3</td><td class="num">0.6%+3</td><td class="num">0.6%+3</td><td class="num">2.5%+5*</td></tr>
+<tr><td>1 M ~ 20 MΩ</td><td class="num">1.2%+5*</td><td class="num">1.2%+5*</td><td class="num">1.2%+5*</td><td class="num">2.5%+5*</td><td>100 k~2 MΩ</td></tr>
+<tr><td>&gt;20 MΩ</td><td class="num">2.5%+5*</td><td class="num">2.5%+5*</td><td class="num">2.5%+5*</td><td>—</td><td>—</td></tr>
+</table></div>
+<p class="small">* Do open/short calibration before measuring on ranges marked with * to have better precision.</p>
+<p>Two correction rules apply on top of this table:</p>
+<ul>
+  <li>If <code>D &gt; 0.1</code>, multiply the accuracy by <code>√(1 + D²)</code>.</li>
+  <li>If <code>D ≪ 0.1</code>: in capacitance mode, <code>ZC = 1/(2πfC)</code>; in inductance mode, <code>ZL = 2πfL</code> — use the relevant Z to look up the row above.</li>
+</ul>
+
+<p class="sources-line">Sources: manual §VI General Specification (p.34); §VII Electrical Specification, all tables (pp.35–36).</p>
+</section>
+
+
+<!-- ============================================================ 12 -->
+<section id="labs">
+<h2>12 · Labs <span class="tag">Run these on your own bench — this guide gives you the manual's numbers to check against</span></h2>
+<p class="lede">No physical DE-5000 was tested to write this guide, so these labs are structured around the manual's own worked examples rather than a live transcript. Follow each recipe on your own unit; the "Expect" lines quote what the manual documents happening on its unit for the identical sequence, not a capture from this session.</p>
+
+<div class="callout warn">
+  <strong>Honesty check before you start</strong>
+  Every "Expect" line in this section is traced to a manual page number, not to a live measurement taken for this guide. Where your own unit's reading differs slightly (different DUT, different lead length, different environment), that's expected — the point of each lab is the <em>procedure</em> and the <em>shape</em> of the result, not an exact digit match.
+</div>
+
+<div class="lab">
+<div class="lab-title"><span class="n">Lab 1 ·</span> Full open/short calibration walkthrough</div>
+<div class="lab-meta">10 minutes · TL-21 alligator leads · no DUT needed for the calibration steps themselves</div>
+<ol class="recipe">
+  <li>Power on, connect TL-21 to the meter's terminals, leave the far end open (nothing touching, nothing shorted). <span class="expect"><b>Expect:</b> default Auto-LCR mode, 1 kHz, per manual §IV.1.</span></li>
+  <li>Hold <kbd class="long">CAL</kbd>. <span class="expect"><b>Expect (manual, p.16):</b> display shows <code>OPEn</code> with a blinking <code>----</code>.</span></li>
+  <li>Press <kbd>CAL</kbd> to start the open calibration. <span class="expect"><b>Expect (manual, p.16):</b> a 30-second countdown (<code>OPEn -30-</code>), then <code>OPEn PASS</code>.</span></li>
+  <li>Press <kbd>CAL</kbd>, then short the TL-21 leads together. <span class="expect"><b>Expect (manual, p.17):</b> display shows <code>Srt ----</code>.</span></li>
+  <li>Press <kbd>CAL</kbd> to start the short calibration. <span class="expect"><b>Expect (manual, p.17):</b> a second 30-second countdown (<code>Srt -30-</code>), then <code>Srt PASS</code>.</span></li>
+  <li>Press <kbd>CAL</kbd> once more to store both to EEPROM. <span class="expect"><b>Expect:</b> the meter returns to its measurement screen; both parasitic corrections now apply.</span></li>
+</ol>
+<div class="checkpoint"><strong>Checkpoint:</strong> if either step reports <code>FAIL</code> instead of <code>PASS</code>, you almost certainly have something connected that shouldn't be (open step) or an incomplete short (short step). Re-verify the lead position and redo the whole sequence from open — the manual gives no partial-retry path.</div>
+</div>
+
+<div class="lab">
+<div class="lab-title"><span class="n">Lab 2 ·</span> Watching a capacitor cross the 100 kΩ series/parallel threshold</div>
+<div class="lab-meta">15 minutes · TL-21 leads · one film or ceramic capacitor in the nF-to-pF range</div>
+<p>SER/PAL's 100 kΩ auto-threshold (§7.3) is a statement about <em>impedance</em>, not capacitance directly — and a capacitor's impedance at a given frequency is <code>Xc = 1/(2πfC)</code>. That means the same physical part can sit on either side of the threshold depending purely on which FREQ you select. This is arithmetic from the manual's own formula (§1), not a live reading — work it out before you touch the meter, then confirm the mode annunciator matches your prediction.</p>
+<ol class="recipe">
+  <li>Pick a capacitor and compute the frequency at which its impedance crosses 100 kΩ: <code>f = 1/(2π × 100,000 × C)</code>. For a 666.8 nF part (the manual's own example value), that's <code>f ≈ 1/(2π × 100,000 × 666.8×10⁻⁹) ≈ 2.39 Hz</code> — far below any of the DE-5000's five test frequencies, so a 667 nF cap will read in series mode (Cs) at every available FREQ setting.</li>
+  <li>Pick a much smaller part instead — say, a 100 pF capacitor: <code>f ≈ 1/(2π × 100,000 × 100×10⁻¹²) ≈ 15.9 MHz</code>, also far above every available FREQ, so a 100 pF cap reads in parallel mode (Cp) at every available FREQ setting too.</li>
+  <li>Connect your actual part in Auto-LCR mode at 1 kHz. <span class="expect"><b>Expect:</b> the LCD's Cs or Cp annunciator (icon 11, §3.3) tells you which side of 100 kΩ your part's impedance landed on at this frequency.</span></li>
+  <li>Step through <kbd>FREQ</kbd> and watch the annunciator. <span class="expect inferred"><b>Expect (inferred from the impedance formula, not manual-quoted):</b> for a part whose impedance is genuinely close to 100 kΩ at some available frequency, the Cs/Cp annunciator flips as you cross it — most everyday nF-to-µF parts will stay on the Cs side at every available frequency, which is itself the useful observation.</span></li>
+  <li>In a manual (non-Auto) mode, press <kbd>SER/PAL</kbd> to force the opposite description regardless of the auto-threshold. <span class="expect"><b>Expect (manual, p.29):</b> the primary reading changes — Cs and Cp are not numerically identical for a real, lossy part (§7.4's "things that bite" callout).</span></li>
+</ol>
+<div class="checkpoint"><strong>Checkpoint:</strong> you should be able to state, before connecting a part, whether it will read Cs or Cp at 1 kHz — and explain why in terms of <code>Xc</code> versus 100 kΩ, not just by reading the icon.</div>
+</div>
+
+<div class="lab">
+<div class="lab-title"><span class="n">Lab 3 ·</span> SORTING-mode tolerance run</div>
+<div class="lab-meta">10 minutes · TL-21 leads · a handful of same-nominal-value parts (or one part measured, then simulate a second by nudging it)</div>
+<ol class="recipe">
+  <li>In Auto-LCR at 1 kHz, take a baseline reading of your reference part. <span class="expect"><b>Expect:</b> a stable Cs (or Ls/Rs) reading with a D/Q value that isn't jumping around — noisy contact gives false FAILs later.</span></li>
+  <li>Press <kbd>SORTING</kbd>. <span class="expect"><b>Expect (manual, p.24):</b> secondary display shows the reading, primary shows <code>PASS</code> or <code>FAIL</code> against the default tolerance.</span></li>
+  <li>Press <kbd>SETUP</kbd>, set the reference value to your baseline reading digit-by-digit with <kbd>◄</kbd>/<kbd>►</kbd> and <kbd>▲</kbd>/<kbd>▼</kbd>, then <kbd>ENTER</kbd>. <span class="expect"><b>Expect (manual, p.24):</b> "Tol±" flashes next.</span></li>
+  <li>Pick a tolerance appropriate to your part's spec (e.g. ±5% for a 5%-tolerance resistor) with <kbd>◄</kbd>/<kbd>►</kbd>, confirm with <kbd>ENTER</kbd>. <span class="expect"><b>Expect (manual, p.25):</b> setup completes and the meter returns to live sorting.</span></li>
+  <li>Reinsert the same part. <span class="expect"><b>Expect:</b> buzzer beeps once, <code>PASS</code> — matching the manual's own example, <code>Cs 667 nF PASS</code>.</span></li>
+  <li>Swap in a part you know is out of spec (or physically stress/flex a marginal one). <span class="expect"><b>Expect:</b> <code>FAIL</code> — matching the manual's own example, <code>Cs 673 nF FAIL</code> for a ±1% tolerance band around 667 nF.</span></li>
+</ol>
+<div class="checkpoint"><strong>Checkpoint:</strong> you have a working PASS/FAIL bin configured, and you can explain what would need to change (reference value, tolerance) to make a specific borderline part fail instead of pass, or vice versa.</div>
+</div>
+
+<p class="sources-line">Sources: manual §IV.2 CAL (pp.15–17); §II impedance formula (p.5); §IV.10 SER/PAL (p.29); §IV.7 SORTING (pp.23–25).</p>
+</section>
+
+
+<!-- ============================================================ 13 -->
+<section id="capstone">
+<h2>13 · Capstone <span class="tag">One unknown part, every skill in this guide</span></h2>
+<p class="lede">Pull an unlabeled or unknown-value part from your junk box — ideally one you genuinely don't already know the value of — and take it through the full workflow. This is a checklist for your own bench, not a scripted transcript; the point is that you make each decision deliberately rather than accepting whatever the meter defaults to.</p>
+
+<ol class="recipe">
+  <li><strong>Calibrate.</strong> Connect TL-21, run open then short calibration (§4.2, Lab 1). Confirm both steps report <code>PASS</code> before continuing.</li>
+  <li><strong>Measure blind, in Auto-LCR at 1 kHz.</strong> Connect the unknown part. Read the LCD icon row first (§3.3) — is <code>LCR</code> plus <code>Ls/Lp</code>, <code>Cs/Cp</code>, or <code>Rs/Rp</code> lit? That's your L/C/R identification, made by the meter's own <code>|Q|</code> classification logic (§5.1), not by you guessing from the part's appearance.</li>
+  <li><strong>Read the rough value.</strong> Note the primary display's magnitude and unit. Sanity-check it against any markings on the part (color bands, printed code) if present — and note explicitly if there are none, which is presumably why it's unknown.</li>
+  <li><strong>Choose series or parallel deliberately.</strong> Note which the auto-threshold picked (§7.3). Using §7.2's Rs-vs-Rp reasoning and §7.4's decision matrix, decide whether that's also the <em>physically</em> meaningful description for a part of this apparent value — and if not, force the other with <kbd>SER/PAL</kbd> in a manual mode and note how much the primary reading moves.</li>
+  <li><strong>Read D/Q/ESR/θ appropriately.</strong> Using §6.3's decision matrix, pick the secondary parameter that matches what you'd actually want to know about this part (its loss, if it's a cap or inductor; its phase, if you're just sanity-checking "is this reactive at all"). State which one you picked and why.</li>
+  <li><strong>Decide pass/fail via SORTING.</strong> If you have a spec or a second, known-good sample of the same nominal part, configure SORTING (§9) with an appropriate tolerance and confirm your unknown part against it. If you don't have a reference, state what tolerance you'd choose and why, based on the part's apparent type and the accuracy tables in §11.</li>
+</ol>
+
+<div class="checkpoint"><strong>Checkpoint:</strong> you should be able to state, in one sentence each: what the part is (L, C, or R), its rough value and units, whether you measured it in series or parallel mode and why, which secondary parameter you trusted and why, and whether it passed your chosen tolerance.</div>
+
+<p class="sources-line">Sources: synthesizes §3–§9 of this guide, all traced to manual §III–§IV (pp.8–31).</p>
+</section>
+
+<!-- ============================================================ 14 -->
+<section id="troubleshooting">
+<h2>14 · Troubleshooting <span class="tag">Symptom → cause → fix</span></h2>
+<div class="table-wrap"><table>
+<tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr>
+<tr><td><code>CAL</code> step shows <code>FAIL</code></td><td>A lead or DUT was still connected during open or short calibration, adding uncorrected impedance</td><td>Remove everything for the open step; fully short the leads for the short step. Redo the whole open-then-short sequence from the start (§4.2)</td></tr>
+<tr><td>Primary display shows <code>OL.</code></td><td>Reading is out of range for the current mode/range — could be a genuinely open circuit, a bad connection, or a part outside the Auto LCR test range (§11.1)</td><td>Check the lead connection first; if solid, confirm the part's expected value is inside the meter's 20.000 µH~2.000 KH / 200.00 pF~20.00 mF / 20.000 Ω~200.0 MΩ range</td></tr>
+<tr><td>SORTING key does nothing</td><td>You're still in LCR Auto mode — SORTING (like SER/PAL, REL%, D/Q/ESR/θ) requires a manual primary-parameter mode first</td><td>Press <kbd>LCR AUTO</kbd> to step into Auto-L, Auto-C, Auto-R or Auto-DCR, then try again</td></tr>
+<tr><td>SORTING won't engage even in a manual mode</td><td>Reading is <code>OL</code>, or below 200 counts — not enough resolution to bin</td><td>Confirm a stable, in-range reading first; sorting needs the meter to already trust its own number</td></tr>
+<tr><td>Battery icon shows one bar / low</td><td>9 V battery is depleted</td><td>Replace immediately — the manual explicitly ties continued spec accuracy to prompt replacement (§3.1, §11.1)</td></tr>
+<tr><td>Meter beeps twice on a keypress and nothing happens</td><td>Not a fault — that key has no function in the current mode (e.g. SER/PAL in LCR Auto mode)</td><td>Check which mode you're in; a single beep means the key worked, a double beep means it was a no-op by design</td></tr>
+<tr><td><code>APO</code> icon never appears, meter never auto-powers-off</td><td>Running from the AC/DC adaptor — auto power-off disables itself automatically on adaptor power</td><td>Expected behavior, not a fault. Switch to battery power if you want APO active</td></tr>
+<tr><td>Same part reads differently after switching leads (TL-21 ↔ TL-22)</td><td>Calibration is fixture-specific; a new fixture carries the old fixture's stored correction</td><td>Re-run open/short calibration with the new fixture attached (§4.4 decision matrix)</td></tr>
+<tr><td>Reading jumps around / D or Q looks unstable</td><td>Poor contact, a DUT that's still charged (for capacitors), or measuring right at a range boundary</td><td>Discharge the capacitor before testing (manual warning, p.2 and p.21); check lead contact; if near a range boundary, small ambient noise can flip the last digit</td></tr>
+<tr><td>Toggling SER/PAL changes the primary reading</td><td>Not a fault — Cs and Cp (or Ls and Lp) are only identical for an ideal, lossless part (§7.4 "things that bite")</td><td>Expected for any real component with nonzero D; pick the mode that matches how the part is actually used (§7.4)</td></tr>
+</table></div>
+<p class="sources-line">Sources: manual general warnings (p.2); §IV.1 Power ON/OFF (pp.13–14); §IV.2 CAL (pp.15–17); §IV.7 SORTING (pp.23–25); §V Replacing Batteries (p.33).</p>
+</section>
+
+
+<!-- ============================================================ 15 -->
+<section id="cheat-sheet">
+<h2>15 · Cheat sheet <span class="tag">One page to tape to the bench</span></h2>
+<p class="lede">Everything you need at the terminal block, with the section that explains it in brackets.</p>
+<div class="cards">
+  <div class="card"><h4>Universal starting pattern (§4.2)</h4><ul>
+    <li>Connect TL-21. Hold <kbd class="long">CAL</kbd> → OPEN (leads open) → SHORT (leads shorted) → both PASS → <kbd>CAL</kbd> to store.</li>
+    <li>Connect DUT. Default is Auto-LCR, 1 kHz.</li>
+    <li>Read the icon row first (LCR / Ls·Lp / Cs·Cp / Rs·Rp), then the digits.</li>
+  </ul></div>
+  <div class="card"><h4>Key grammar (§3.2)</h4><ul>
+    <li><kbd>LCR AUTO</kbd> cycles Auto-LCR → Auto-L → Auto-C → Auto-R → Auto-DCR</li>
+    <li><kbd>FREQ</kbd> cycles 1 kHz → 10 kHz → 100 kHz → 100 Hz → 120 Hz</li>
+    <li><kbd>D/Q/ESR/θ</kbd> · <kbd>SER/PAL</kbd> · <kbd>REL%</kbd> · <kbd>SORTING</kbd> — all dead in LCR Auto mode</li>
+    <li><kbd class="long">CAL</kbd> enters calibration · <kbd class="long">REL%</kbd> exits relative mode</li>
+  </ul></div>
+  <div class="card"><h4>Auto L/C/R classification (§5.1)</h4><ul>
+    <li><code>|Q| &lt; 0.2</code> → Auto-R, secondary θ</li>
+    <li><code>Q ≥ 0.2</code> → Auto-L, secondary Q</li>
+    <li><code>Q ≥ −0.2</code> (printed; likely means ≤ −0.2) → Auto-C, secondary D</li>
+    <li>C &lt; 5 pF in LCR Auto → secondary shows Rp instead of D</li>
+  </ul></div>
+  <div class="card"><h4>Series vs parallel (§7)</h4><ul>
+    <li>Auto: &gt;100 kΩ → parallel, &lt;100 kΩ → series</li>
+    <li>Small cap → parallel · large cap → series</li>
+    <li>Small inductor → series · large inductor → parallel</li>
+    <li>Override with <kbd>SER/PAL</kbd> in a manual mode</li>
+  </ul></div>
+  <div class="card"><h4>D/Q/ESR/θ quick pick (§6.3)</h4><ul>
+    <li><strong>D</strong> — capacitors, datasheet comparisons</li>
+    <li><strong>Q</strong> — inductors, datasheet comparisons</li>
+    <li><strong>ESR</strong> — capacitor absolute ohms, power/filter roles</li>
+    <li><strong>θ</strong> — quick "how reactive is this really"</li>
+  </ul></div>
+  <div class="card"><h4>Tolerance bins (§9)</h4><ul>
+    <li>±0.25% · ±0.5% · ±1% · ±2% · ±5% · ±10% · ±20% · −20%/+80%</li>
+    <li>Disabled below 200 counts or on <code>OL</code></li>
+  </ul></div>
+</div>
+</section>
+
+<!-- ============================================================ 16 -->
+<section id="glossary">
+<h2>16 · Glossary <span class="tag">Every term of art, with where it was taught</span></h2>
+<dl class="glossary">
+  <dt id="g-admittance">Admittance (Y)</dt><dd>The reciprocal of impedance, <code>Y = 1/Z = G + jB</code>: the parallel-mode dual of impedance. (<a href="#mental-model">§1</a>)</dd>
+  <dt id="g-apo">APO</dt><dd>Auto power-off: shuts the meter down after ~5 minutes idle, but only on battery power — the AC/DC adaptor disables it. (<a href="#panel">§3.1</a>)</dd>
+  <dt id="g-conductance">Conductance (G)</dt><dd>The real (resistive) part of admittance, the parallel-mode counterpart to resistance. (<a href="#mental-model">§1</a>)</dd>
+  <dt id="g-d">D (dissipation factor)</dt><dd><code>D = 1/Q = tanθ</code>; how lossy a capacitor is relative to ideal. (<a href="#secondary-parameters">§6.1</a>)</dd>
+  <dt id="g-dcr">DCR</dt><dd>DC resistance mode; no secondary parameter available. (<a href="#lcr-auto">§5.1</a>)</dd>
+  <dt id="g-dut">DUT</dt><dd>Device under test — whatever is connected to the terminals. (<a href="#mental-model">§1</a>)</dd>
+  <dt id="g-esr">ESR</dt><dd>Equivalent series resistance — the series-mode resistive part <code>Rs</code>, reported directly in ohms. (<a href="#secondary-parameters">§6.1</a>)</dd>
+  <dt id="g-fixture">Fixture parasitic impedance</dt><dd>The small series impedance and parallel admittance every test lead/socket adds, corrected out by open/short calibration. (<a href="#calibration">§4.1</a>)</dd>
+  <dt id="g-guard">GUARD</dt><dd>A shield terminal (used with the TL-23 guard line) that protects the DUT or improvised leads from interference, separate from the ± measurement path. (<a href="#calibration">§4.3</a>)</dd>
+  <dt id="g-hold">HOLD</dt><dd>Freezes the primary display; only the backlight and PC keys keep working while active. (<a href="#rel-hold">§8.2</a>)</dd>
+  <dt id="g-impedance">Impedance (Z)</dt><dd>The complex quantity <code>Z = Rs + jXs</code> that every DE-5000 reading is ultimately derived from. (<a href="#mental-model">§1</a>)</dd>
+  <dt id="g-lcr">LCR AUTO</dt><dd>The primary-parameter key; in its default state, auto-classifies the DUT as L, C, or R using <code>|Q|</code> thresholds. (<a href="#lcr-auto">§5.1</a>)</dd>
+  <dt id="g-ol">OL</dt><dd>Overload/out-of-range indication; also disables SORTING mode. (<a href="#troubleshooting">§14</a>)</dd>
+  <dt id="g-open-cal">Open calibration</dt><dd>Measures the fixture's parallel admittance with nothing connected, shown as <code>OPEn</code> on the display. (<a href="#calibration">§4.2</a>)</dd>
+  <dt id="g-q">Q (quality factor)</dt><dd><code>Q = Xs/Rs</code> in series mode or <code>Q = Rp/|Xp|</code> in parallel mode; how close to ideal an inductor is. (<a href="#secondary-parameters">§6.1</a>)</dd>
+  <dt id="g-rel">REL%</dt><dd>Relative mode: stores a reference reading and shows every later reading as a percentage deviation from it. (<a href="#rel-hold">§8.1</a>)</dd>
+  <dt id="g-reactance">Reactance (X)</dt><dd>The imaginary part of impedance; inductive <code>XL = 2πfL</code> (positive θ) or capacitive <code>XC = 1/(2πfC)</code> (negative θ). (<a href="#mental-model">§1</a>)</dd>
+  <dt id="g-parallel">Series / parallel mode</dt><dd>Two algebraically equivalent descriptions of the same impedance — Rs/Xs in series, Rp/Xp (or G/B) in parallel. (<a href="#ser-pal">§7.1</a>)</dd>
+  <dt id="g-short-cal">Short calibration</dt><dd>Measures the fixture's series impedance with the leads shorted, shown as <code>Srt</code> on the display. (<a href="#calibration">§4.2</a>)</dd>
+  <dt id="g-sorting">SORTING</dt><dd>Tolerance-binning mode: configures a reference value and tolerance, reports PASS/FAIL against it. (<a href="#sorting">§9</a>)</dd>
+  <dt id="g-susceptance">Susceptance (B)</dt><dd>The imaginary (reactive) part of admittance, the parallel-mode counterpart to reactance. (<a href="#mental-model">§1</a>)</dd>
+  <dt id="g-theta">θ (phase angle)</dt><dd><code>θ = tan⁻¹(Xs/Rs)</code>; positive for inductive DUTs, negative for capacitive ones. (<a href="#mental-model">§1</a>, <a href="#secondary-parameters">§6.1</a>)</dd>
+  <dt id="g-tl21">TL-21</dt><dd>The standard alligator test lead case, used throughout this guide's labs. (<a href="#panel">§3.2</a>)</dd>
+  <dt id="g-tl22">TL-22</dt><dd>Optional SMD tweezers accessory, not owned by this guide's reference reader. (<a href="#panel">§3.2</a>)</dd>
+  <dt id="g-tl23">TL-23</dt><dd>The guard line accessory; shields the DUT or improvised leads from interference. (<a href="#calibration">§4.3</a>)</dd>
+  <dt id="g-tol">Tolerance (sorting)</dt><dd>The PASS/FAIL band configured in SORTING mode: ±0.25% through ±20%, or −20%/+80%. (<a href="#sorting">§9.1</a>)</dd>
+  <dt id="g-zdut">ZDUT</dt><dd>The true DUT impedance the meter solves for once open and short calibration are both stored. (<a href="#calibration">§4.1</a>)</dd>
+</dl>
+</section>
+
+<!-- ============================================================ 17 -->
+<section id="index">
+<h2>17 · Index <span class="tag">Terms, keys, modes, and settings</span></h2>
+<div class="index-cols">
+  <div class="letter">A</div><ul>
+    <li><a href="#g-admittance">Admittance (Y)</a></li>
+    <li><a href="#g-apo">APO (auto power-off)</a></li>
+    <li><a href="#lcr-auto">Auto-DCR mode</a></li>
+    <li><a href="#lcr-auto">Auto-detect (|Q| thresholds)</a></li>
+    <li><a href="#panel">Accessories (TL-21/22/23)</a></li>
+    <li><a href="#specifications">Accuracy notation (%+digits)</a></li>
+  </ul>
+  <div class="letter">B</div><ul>
+    <li><a href="#panel">Backlight key (☀)</a></li>
+    <li><a href="#panel">Battery install</a></li>
+    <li><a href="#panel">Battery, low icon</a></li>
+  </ul>
+  <div class="letter">C</div><ul>
+    <li><a href="#calibration">CAL key</a></li>
+    <li><a href="#calibration">Calibration, when to (matrix)</a></li>
+    <li><a href="#specifications">Capacitance accuracy table</a></li>
+    <li><a href="#capstone">Capstone</a></li>
+    <li><a href="#g-conductance">Conductance (G)</a></li>
+  </ul>
+  <div class="letter">D</div><ul>
+    <li><a href="#g-d">D (dissipation factor)</a></li>
+    <li><a href="#g-dcr">DCR mode</a></li>
+    <li><a href="#secondary-parameters">D/Q/ESR/θ key</a></li>
+    <li><a href="#secondary-parameters">Decision matrix, D/Q/ESR/θ</a></li>
+    <li><a href="#specifications">DCR accuracy table</a></li>
+    <li><a href="#g-dut">DUT</a></li>
+  </ul>
+  <div class="letter">E</div><ul>
+    <li><a href="#g-esr">ESR</a></li>
+    <li><a href="#g-esr">ENTER key</a></li>
+  </ul>
+  <div class="letter">F</div><ul>
+    <li><a href="#lcr-auto">FREQ key</a></li>
+    <li><a href="#g-fixture">Fixture parasitic impedance</a></li>
+  </ul>
+  <div class="letter">G</div><ul>
+    <li><a href="#g-guard">GUARD terminal</a></li>
+  </ul>
+  <div class="letter">H</div><ul>
+    <li><a href="#g-hold">HOLD key</a></li>
+  </ul>
+  <div class="letter">I</div><ul>
+    <li><a href="#g-impedance">Impedance (Z)</a></li>
+    <li><a href="#specifications">Inductance accuracy table</a></li>
+  </ul>
+  <div class="letter">L</div><ul>
+    <li><a href="#g-lcr">LCR AUTO key</a></li>
+    <li><a href="#panel">LCD icon map</a></li>
+  </ul>
+  <div class="letter">O</div><ul>
+    <li><a href="#g-ol">OL (overload)</a></li>
+    <li><a href="#g-open-cal">Open calibration</a></li>
+  </ul>
+  <div class="letter">P</div><ul>
+    <li><a href="#panel">Panel diagram</a></li>
+    <li><a href="#pc">PC key / IR-to-USB</a></li>
+    <li><a href="#prereqs">Prerequisite floor</a></li>
+  </ul>
+  <div class="letter">Q</div><ul>
+    <li><a href="#g-q">Q (quality factor)</a></li>
+  </ul>
+  <div class="letter">R</div><ul>
+    <li><a href="#g-reactance">Reactance (X, XL, XC)</a></li>
+    <li><a href="#g-rel">REL% key</a></li>
+    <li><a href="#specifications">Resistance accuracy table</a></li>
+  </ul>
+  <div class="letter">S</div><ul>
+    <li><a href="#ser-pal">SER/PAL key</a></li>
+    <li><a href="#ser-pal">100 kΩ auto-threshold</a></li>
+    <li><a href="#g-short-cal">Short calibration</a></li>
+    <li><a href="#g-sorting">SORTING mode</a></li>
+    <li><a href="#g-susceptance">Susceptance (B)</a></li>
+  </ul>
+  <div class="letter">T</div><ul>
+    <li><a href="#g-theta">θ (phase angle)</a></li>
+    <li><a href="#g-tl21">TL-21</a></li>
+    <li><a href="#g-tl22">TL-22</a></li>
+    <li><a href="#g-tl23">TL-23</a></li>
+    <li><a href="#g-tol">Tolerance bins</a></li>
+    <li><a href="#troubleshooting">Troubleshooting table</a></li>
+  </ul>
+  <div class="letter">Z</div><ul>
+    <li><a href="#g-zdut">ZDUT</a></li>
+    <li><a href="#specifications">ZDUT accuracy table</a></li>
+  </ul>
+</div>
+</section>
+
+
+<!-- ============================================================ 18 -->
+<section id="quiz">
+<h2>18 · Quiz <span class="tag">Sixteen flashcards, self-scored</span></h2>
+<p class="lede">Reveal, then be honest. Aim for 13 of 16 before you trust a calibrated reading on a part you can't replace. Your score persists in this browser; the reset button below clears it.</p>
+<div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0/16 answered — aim for 13/16</div>
+<div class="quiz-actions quiz-reset"><button id="quizReset" type="button">Reset score</button></div>
+
+<div class="quiz-item" data-q="1">
+  <div class="quiz-q"><span class="qnum">Q1</span>Write the series-mode impedance equation and the two formulas for its magnitude and phase angle.</div>
+  <div class="quiz-answer"><code>Zs = Rs + jXs</code>; <code>|Zs| = √(Rs² + Xs²)</code>; <code>θ = tan⁻¹(Xs/Rs)</code>. (<a href="#mental-model">§1</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="2">
+  <div class="quiz-q"><span class="qnum">Q2</span>What does the sign of θ tell you about the DUT?</div>
+  <div class="quiz-answer">θ &gt; 0 means the reactance is inductive; θ &lt; 0 means it's capacitive. (<a href="#mental-model">§1</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="3">
+  <div class="quiz-q"><span class="qnum">Q3</span>What is the DE-5000's power-on default mode and frequency?</div>
+  <div class="quiz-answer">LCR Auto mode at 1 kHz, every time. (<a href="#panel">§3.1</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="4">
+  <div class="quiz-q"><span class="qnum">Q4</span>What happens to auto power-off (APO) when the meter runs from the AC/DC adaptor instead of the 9 V battery?</div>
+  <div class="quiz-answer">It disables itself automatically — the APO icon disappears — because the adaptor doesn't have the battery-drain concern APO exists to solve. (<a href="#panel">§3.1</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="5">
+  <div class="quiz-q"><span class="qnum">Q5</span>What do the open and short calibration steps each isolate, mathematically?</div>
+  <div class="quiz-answer">Open isolates the fixture's parallel admittance <code>Y_OPEN = Go + jωCo</code> (nothing connected). Short isolates the fixture's series impedance <code>Z_SHORT = Rs + jωLs</code> (leads shorted). (<a href="#calibration">§4.1</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="6">
+  <div class="quiz-q"><span class="qnum">Q6</span>Why does the manual warn against leaving a lead or DUT connected during CAL?</div>
+  <div class="quiz-answer">It adds impedance to the circuit the calibration is trying to characterize as "nothing" or "a short," causing the step to report FAIL. (<a href="#calibration">§4.2</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="7">
+  <div class="quiz-q"><span class="qnum">Q7</span>State the manual's |Q|-based auto-classification thresholds for Auto-R, Auto-L, and Auto-C, exactly as printed.</div>
+  <div class="quiz-answer">|Q| &lt; 0.2 → Auto-R (secondary θ). Q ≥ 0.2 → Auto-L (secondary Q). Q ≥ −0.2 → Auto-C (secondary D) — the third condition is printed as-is in the manual though it looks like a typo. (<a href="#lcr-auto">§5.1</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="8">
+  <div class="quiz-q"><span class="qnum">Q8</span>In the manual's own FREQ-sweep example, does the same capacitor read the identical value at every frequency? What changed the most?</div>
+  <div class="quiz-answer">No — Cs ranged from 646.6 nF (100 kHz) to 669.2 nF (100/120 Hz), a real swing. D changed proportionally more, from 0.003 at 100 Hz to 0.009 at 100 kHz. (<a href="#lcr-auto">§5.2</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="9">
+  <div class="quiz-q"><span class="qnum">Q9</span>Write the relationship between D, Q, and θ.</div>
+  <div class="quiz-answer"><code>D = 1/Q = tanθ</code>. (<a href="#secondary-parameters">§6.1</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="10">
+  <div class="quiz-q"><span class="qnum">Q10</span>Which secondary parameter (D, Q, ESR, or θ) would you read to compare a filter capacitor's absolute loss in ohms across different capacitor values?</div>
+  <div class="quiz-answer">ESR — it's reported directly in ohms and is comparable across parts, unlike the dimensionless D or Q. (<a href="#secondary-parameters">§6.3</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="11">
+  <div class="quiz-q"><span class="qnum">Q11</span>State the 100 kΩ auto-threshold rule for SER/PAL.</div>
+  <div class="quiz-answer">Impedance above 100 kΩ auto-selects parallel mode (Lp/Cp/Rp); below 100 kΩ auto-selects series mode (Ls/Cs/Rs). (<a href="#ser-pal">§7.3</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="12">
+  <div class="quiz-q"><span class="qnum">Q12</span>For a small-value capacitor, which parasitic resistance dominates its loss — Rs or Rp — and which mode should you therefore prefer?</div>
+  <div class="quiz-answer">Rp dominates for a small capacitor; prefer parallel mode. (For a large capacitor it flips: Rs dominates, prefer series.) (<a href="#ser-pal">§7.2</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="13">
+  <div class="quiz-q"><span class="qnum">Q13</span>Write the REL% formula, and state what OL% means.</div>
+  <div class="quiz-answer"><code>REL% = (DCUR − DREF) / DREF × 100%</code>. OL% appears when a new reading is more than double the stored reference. (<a href="#rel-hold">§8.1</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="14">
+  <div class="quiz-q"><span class="qnum">Q14</span>Two conditions that disable SORTING mode.</div>
+  <div class="quiz-answer">The reading is OL, or the reading is below 200 counts. (SORTING is also simply unavailable at all while still in LCR Auto mode.) (<a href="#sorting">§9.1</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="15">
+  <div class="quiz-q"><span class="qnum">Q15</span>What does the accuracy notation <code>0.3%+2</code> mean when applied to a displayed reading?</div>
+  <div class="quiz-answer">Take 0.3% of the displayed value, then add 2 counts in the last displayed digit — the total is the ± error band. (<a href="#specifications">§11.1</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="16">
+  <div class="quiz-q"><span class="qnum">Q16</span>Why don't Cs and Cp read identically on the same real capacitor?</div>
+  <div class="quiz-answer">Series and parallel forms are only numerically identical for an ideal, lossless part. A real part has nonzero D, so its series-equivalent and parallel-equivalent circuit models diverge. (<a href="#ser-pal">§7.4</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+</section>
+
+<!-- ============================================================ 19 -->
+<section id="sources">
+<h2>19 · Sources <span class="tag">Where every claim came from</span></h2>
+<p class="small">Written against the vendor's <em>DE-5000 Instruction Manual — Dual Display L C R Meter</em> (document code HCA500000-00020, 19 printed pages, DER EE Electrical Instrument Co., Ltd.), read in full at <code>/Volumes/thunderbay-public/documentation/DE-5000_manual_english.pdf</code> on 2026-09-11. <strong>No physical DE-5000 unit was operated, calibrated, or measured to write this guide.</strong> Every worked example, LCD screen quote, and spec-table figure is transcribed directly from the manual and is labelled as coming from the manual, never presented as a live capture. Where the manual's own text appears internally inconsistent (the Auto-C threshold footnote in §5.1), this guide quotes it exactly and says so, rather than silently correcting it. Formulas applied outside the manual's own worked numbers (the frequency-crossing arithmetic in Lab 2) are ordinary algebra on the manual's own equations, clearly marked as calculated rather than measured. External links below require a network; this guide itself works entirely offline.</p>
+<ul>
+  <li><strong>DE-5000 Instruction Manual (PDF, DER EE Electrical Instrument Co., Ltd., document HCA500000-00020).</strong> The sole primary source for this guide: measuring-principle theory, panel and LCD illustrations, every operation-instruction section, battery replacement, and both specification tables. Best used for the exact figures this guide's tables and diagrams were redrawn from.</li>
+  <li><a href="http://www.deree.com.tw" target="_blank" rel="noopener">www.deree.com.tw</a> — the vendor site printed in the manual's closing page. Domain as printed in the manual; not crawled or verified for this guide.</li>
+  <li><a href="https://en.wikipedia.org/wiki/Electrical_impedance" target="_blank" rel="noopener">Electrical impedance (Wikipedia)</a> — general background on the Z = R + jX model behind §1; not manual-specific.</li>
+  <li><a href="https://en.wikipedia.org/wiki/Dissipation_factor" target="_blank" rel="noopener">Dissipation factor (Wikipedia)</a> — general background on D as a capacitor loss metric, behind §6.</li>
+  <li><a href="https://en.wikipedia.org/wiki/Q_factor" target="_blank" rel="noopener">Q factor (Wikipedia)</a> — general background on Q as an inductor/resonator figure of merit, behind §6.</li>
+  <li><a href="https://en.wikipedia.org/wiki/Series_and_parallel_circuits" target="_blank" rel="noopener">Series and parallel circuits (Wikipedia)</a> — general background behind §7's duality discussion.</li>
+  <li><a href="https://en.wikipedia.org/wiki/LCR_meter" target="_blank" rel="noopener">LCR meter (Wikipedia)</a> — general background on how bridge-based LCR meters work, for context beyond this one model.</li>
+</ul>
+<p class="small" style="margin-top:20px">A guide built entirely from a manual is a transcript, not a bench test. Numbers in §11's accuracy tables, the worked examples in §5, §6, §8, and §9, and every "Expect" line in §12's labs describe what the manual documents — confirm them against the screen in front of you before trusting a measurement that matters.</p>
+</section>
+
+
+</main>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var root = document.documentElement;
+
+  /* ---- theme toggle: auto → dark → light ---- */
+  var toggle = document.querySelector('.theme-toggle');
+  var THEME_KEY = 'de5000-guide-theme';
+  var themes = ['auto', 'dark', 'light'];
+  var labels = { auto: '◐ auto', dark: '● dark', light: '○ light' };
+  function applyTheme(t) {
+    if (t === 'auto') { root.removeAttribute('data-theme'); }
+    else { root.setAttribute('data-theme', t); }
+    toggle.textContent = labels[t];
+  }
+  var saved = null;
+  try { saved = localStorage.getItem(THEME_KEY); } catch (e) {}
+  var current = themes.indexOf(saved) >= 0 ? saved : 'auto';
+  applyTheme(current);
+  toggle.addEventListener('click', function () {
+    current = themes[(themes.indexOf(current) + 1) % themes.length];
+    applyTheme(current);
+    try { localStorage.setItem(THEME_KEY, current); } catch (e) {}
+  });
+
+  /* ---- mobile TOC ---- */
+  var toc = document.getElementById('toc');
+  var tocToggle = document.getElementById('tocToggle');
+  function setToc(open) {
+    toc.classList.toggle('open', open);
+    tocToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    tocToggle.textContent = open ? '✕ Close' : '☰ Contents';
+  }
+  tocToggle.addEventListener('click', function () { setToc(!toc.classList.contains('open')); });
+  toc.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && toc.classList.contains('open')) setToc(false);
+  });
+
+  /* ---- copy buttons on every pre ---- */
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var btn = document.createElement('button');
+    btn.className = 'copy-btn'; btn.type = 'button'; btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var clone = pre.cloneNode(true);
+      var b = clone.querySelector('.copy-btn'); if (b) b.remove();
+      var text = clone.textContent.replace(/^\s+|\s+$/g, '');
+      function done() { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1400); }
+      function fail() { btn.textContent = 'Select & copy'; setTimeout(function () { btn.textContent = 'Copy'; }, 1800); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(fail);
+      } else { fail(); }
+    });
+    pre.appendChild(btn);
+  });
+
+  /* ---- scrollspy ---- */
+  var tocLinks = document.querySelectorAll('nav.toc a[href^="#"]');
+  var byId = {};
+  tocLinks.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  if ('IntersectionObserver' in window) {
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) {
+          tocLinks.forEach(function (a) { a.classList.remove('active'); });
+          var link = byId[en.target.id];
+          if (link) link.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-15% 0px -70% 0px' });
+    document.querySelectorAll('main section[id]').forEach(function (s) { spy.observe(s); });
+  }
+
+  /* ---- quiz ---- */
+  var QUIZ_KEY = 'de5000-guide-quiz';
+  var quizState = {};
+  try { quizState = JSON.parse(localStorage.getItem(QUIZ_KEY) || '{}'); } catch (e) { quizState = {}; }
+  var items = document.querySelectorAll('.quiz-item');
+  var scoreEl = document.getElementById('quizScore');
+  function saveQuiz() { try { localStorage.setItem(QUIZ_KEY, JSON.stringify(quizState)); } catch (e) {} }
+  function renderScore() {
+    var got = 0, missed = 0;
+    Object.keys(quizState).forEach(function (k) {
+      if (quizState[k] === 'got') got++; else if (quizState[k] === 'missed') missed++;
+    });
+    if (!scoreEl) return;
+    scoreEl.textContent = 'Score: ' + got + ' learned · ' + missed + ' review · ' +
+      (got + missed) + '/' + items.length + ' answered — aim for 13/' + items.length;
+  }
+  function setAnswerOpen(item, open) { item.querySelector('.quiz-answer').classList.toggle('open', open); }
+  items.forEach(function (item) {
+    var q = item.getAttribute('data-q');
+    if (quizState[q]) item.classList.add(quizState[q]);
+    item.querySelector('.reveal').addEventListener('click', function () {
+      item.querySelector('.quiz-answer').classList.toggle('open');
+    });
+    item.querySelector('.got').addEventListener('click', function () {
+      quizState[q] = 'got'; item.classList.remove('missed'); item.classList.add('got');
+      setAnswerOpen(item, true); saveQuiz(); renderScore();
+    });
+    item.querySelector('.missed').addEventListener('click', function () {
+      quizState[q] = 'missed'; item.classList.remove('got'); item.classList.add('missed');
+      setAnswerOpen(item, true); saveQuiz(); renderScore();
+    });
+  });
+  var quizReset = document.getElementById('quizReset');
+  if (quizReset) quizReset.addEventListener('click', function () {
+    quizState = {};
+    items.forEach(function (item) { item.classList.remove('got', 'missed'); setAnswerOpen(item, false); });
+    saveQuiz(); renderScore();
+  });
+  renderScore();
+}());
+</script>
+</body>
+</html>

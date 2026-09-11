@@ -105,6 +105,13 @@
       "subject": "ATorch BW150 150 W electronic load - wiring, every mode, battery capacity and health, charger and cable tests, cycling, the apps, and a virtual front panel",
       "verified": "firmware 1.1.0 · screens 2026-09-05",
       "accent": "lime"
+    },
+    {
+      "file": "de5000-user-guide.html",
+      "name": "DE-5000 LCR meter",
+      "subject": "DER EE dual-display LCR meter - the impedance vector, open/short calibration, series vs parallel, and reading D/Q/ESR/theta like you mean it",
+      "verified": null,
+      "accent": "orange"
     }
   ]
 }
