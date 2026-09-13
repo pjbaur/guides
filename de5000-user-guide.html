@@ -882,8 +882,9 @@
 </table></div>
 
 <div class="callout warn">
-  <strong>Quoted exactly as printed — the third row looks like a manual typo</strong>
-  The manual's footnote *1 (p.19) literally reads "If Q ≥ −0.2, the Auto-C mode will be selected automatically." Given the sign convention in §1 (negative θ / negative Q for capacitive parts), this almost certainly should read <code>Q ≤ −0.2</code> — a capacitive DUT has negative reactance and therefore negative Q. This guide transcribes the manual's wording exactly rather than silently correcting it. Verify the actual break-point against your own unit's behavior rather than trusting either version blindly.
+  <strong>Documented vs. observed — the Auto-C threshold sign</strong>
+  <strong>Documented:</strong> the manual's footnote *1 (p.19) literally reads "If Q ≥ −0.2, the Auto-C mode will be selected automatically" — printed exactly as shown in the table above. Given the sign convention in §1 (negative θ / negative Q for capacitive parts), this reads as internally inconsistent: it overlaps the Auto-R condition instead of picking up where it leaves off.<br><br>
+  <strong>Observed:</strong> bench-tested on a physical DE-5000, a 100 nF-nominal capacitor (measured 94.7 nF) wired in series with 1% metal-film resistors, sweeping Q across the ±0.2 boundary at 1 kHz (X<sub>c</sub> ≈ 1681 Ω). An 8.2 kΩ resistor (D ≈ 4.88, Q ≈ −0.205) read <strong>Cs</strong>; a 10 kΩ resistor (D ≈ 5.95, Q ≈ −0.168) read <strong>Rs</strong>. The switch happens at |Q| ≈ 0.2 with Q negative — confirming the real rule is <code>Q ≤ −0.2</code> selects Auto-C, and the printed <code>≥</code> is a manual typo, not a quirk of this unit.
 </div>
 
 <p>Once Auto-L or Auto-C is selected, ranging is fully automatic. The primary display shows the L, C, or R value; the secondary display shows the paired quality/dissipation figure. The manual groups these pairs explicitly: <strong>(L + Q)</strong>, <strong>(C + D)</strong>, <strong>(R + θ)</strong>. One footnote exception: when LCR Auto is active and the DUT's capacitance is under 5 pF, the secondary display substitutes the equivalent parallel resistance <strong>Rp</strong> for D — D becomes numerically unstable at such a small capacitance.</p>
@@ -1028,6 +1029,12 @@ Phase angle   θe = ± (180/π) × Ae  (deg)</code></pre>
 <h3 id="100k-threshold">7.3 · The 100 kΩ auto-threshold</h3>
 <p>SER/PAL has no function in LCR Auto mode — the meter picks for you, automatically, based on the total equivalent impedance it measures: <strong>above 100 kΩ, parallel mode is selected</strong> (Lp, Cp, or Rp shown); <strong>below 100 kΩ, series mode is selected</strong> (Ls, Cs, or Rs shown). In a manual (non-auto) L/C/R mode, press <kbd>SER/PAL</kbd> to force the opposite description at will. The manual's own toggling example, same DUT, same frequency, both readings 666.8 nF / D 0.004:</p>
 <pre><code>Cs testing mode → press SER/PAL → Cp testing mode → press SER/PAL → back to Cs</code></pre>
+
+<div class="callout warn">
+  <strong>Documented vs. observed — the SER/PAL impedance threshold</strong>
+  <strong>Documented:</strong> the manual states impedance above 100 kΩ auto-selects parallel mode, below 100 kΩ auto-selects series mode.<br><br>
+  <strong>Observed:</strong> bench-tested on a physical DE-5000, bare 1% metal-film resistors (no reactive part) direct on the terminals in Auto-LCR: 1.49 kΩ → Rs; 4.69 kΩ → Rs; 7.49 kΩ → Rs; 8.25 kΩ → Rs; 9.94 kΩ → Rp; 33.05 kΩ → Rp. The real series↔parallel cutover for a resistive DUT falls between <strong>8.25 kΩ and 9.94 kΩ</strong> — roughly an order of magnitude below the printed 100 kΩ, not a rounding difference. This was only characterized for the R family; whether C and L DUTs share the same real threshold, or the printed 100 kΩ, hasn't been separately bench-checked — Lab 2 below uses the manual's stated 100 kΩ for its arithmetic and that number should be treated as unverified for capacitance.
+</div>
 
 <h3 id="ser-pal-decision">7.4 · Decision matrix — when to override the 100 kΩ auto-threshold</h3>
 <div class="table-wrap"><table>
@@ -1545,7 +1552,7 @@ Phase angle   θe = ± (180/π) × Ae  (deg)</code></pre>
 </div>
 <div class="quiz-item" data-q="7">
   <div class="quiz-q"><span class="qnum">Q7</span>State the manual's |Q|-based auto-classification thresholds for Auto-R, Auto-L, and Auto-C, exactly as printed.</div>
-  <div class="quiz-answer">|Q| &lt; 0.2 → Auto-R (secondary θ). Q ≥ 0.2 → Auto-L (secondary Q). Q ≥ −0.2 → Auto-C (secondary D) — the third condition is printed as-is in the manual though it looks like a typo. (<a href="#lcr-auto">§5.1</a>)</div>
+  <div class="quiz-answer">As printed: |Q| &lt; 0.2 → Auto-R (secondary θ). Q ≥ 0.2 → Auto-L (secondary Q). Q ≥ −0.2 → Auto-C (secondary D). Bench-confirmed correction: the third condition is actually <code>Q ≤ −0.2</code> — a real DE-5000 switched to Cs only once Q dropped past −0.2, not the other way around. (<a href="#lcr-auto">§5.1</a>)</div>
   <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
 </div>
 <div class="quiz-item" data-q="8">
@@ -1564,8 +1571,8 @@ Phase angle   θe = ± (180/π) × Ae  (deg)</code></pre>
   <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
 </div>
 <div class="quiz-item" data-q="11">
-  <div class="quiz-q"><span class="qnum">Q11</span>State the 100 kΩ auto-threshold rule for SER/PAL.</div>
-  <div class="quiz-answer">Impedance above 100 kΩ auto-selects parallel mode (Lp/Cp/Rp); below 100 kΩ auto-selects series mode (Ls/Cs/Rs). (<a href="#ser-pal">§7.3</a>)</div>
+  <div class="quiz-q"><span class="qnum">Q11</span>State the 100 kΩ auto-threshold rule for SER/PAL — and what a bench test on a resistive DUT actually found.</div>
+  <div class="quiz-answer">As printed: impedance above 100 kΩ auto-selects parallel mode (Lp/Cp/Rp); below 100 kΩ auto-selects series mode (Ls/Cs/Rs). Bench-confirmed for the R family: the real cutover is between 8.25 kΩ and 9.94 kΩ — about an order of magnitude below 100 kΩ. Not separately checked for C or L DUTs. (<a href="#ser-pal">§7.3</a>)</div>
   <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
 </div>
 <div class="quiz-item" data-q="12">
@@ -1598,7 +1605,7 @@ Phase angle   θe = ± (180/π) × Ae  (deg)</code></pre>
 <!-- ============================================================ 19 -->
 <section id="sources">
 <h2>19 · Sources <span class="tag">Where every claim came from</span></h2>
-<p class="small">Written against the vendor's <em>DE-5000 Instruction Manual — Dual Display L C R Meter</em> (document code HCA500000-00020, 19 printed pages, DER EE Electrical Instrument Co., Ltd.), read in full at <code>/Volumes/thunderbay-public/documentation/DE-5000_manual_english.pdf</code> on 2026-09-11. <strong>No physical DE-5000 unit was operated, calibrated, or measured to write this guide.</strong> Every worked example, LCD screen quote, and spec-table figure is transcribed directly from the manual and is labelled as coming from the manual, never presented as a live capture. Where the manual's own text appears internally inconsistent (the Auto-C threshold footnote in §5.1), this guide quotes it exactly and says so, rather than silently correcting it. Formulas applied outside the manual's own worked numbers (the frequency-crossing arithmetic in Lab 2) are ordinary algebra on the manual's own equations, clearly marked as calculated rather than measured. External links below require a network; this guide itself works entirely offline.</p>
+<p class="small">Written against the vendor's <em>DE-5000 Instruction Manual — Dual Display L C R Meter</em> (document code HCA500000-00020, 19 printed pages, DER EE Electrical Instrument Co., Ltd.), read in full at <code>/Volumes/thunderbay-public/documentation/DE-5000_manual_english.pdf</code> on 2026-09-11. Every worked example, LCD screen quote, and spec-table figure is transcribed directly from the manual and is labelled as coming from the manual, never presented as a live capture. Where the manual's own text appeared internally inconsistent (the Auto-C threshold footnote in §5.1, the SER/PAL 100 kΩ threshold in §7.3), this guide quotes the printed text exactly, then reports what a physical DE-5000 actually did against real 1%-tolerance resistors and a measured capacitor — see the "Documented vs. observed" callouts in §5.1 and §7.3, dated 2026-09-13. Those two spot-checks are the only bench measurements behind this guide; no other section's figures were re-verified against a live unit. Formulas applied outside the manual's own worked numbers (the frequency-crossing arithmetic in Lab 2) are ordinary algebra on the manual's own equations, clearly marked as calculated rather than measured. External links below require a network; this guide itself works entirely offline.</p>
 <ul>
   <li><strong>DE-5000 Instruction Manual (PDF, DER EE Electrical Instrument Co., Ltd., document HCA500000-00020).</strong> The sole primary source for this guide: measuring-principle theory, panel and LCD illustrations, every operation-instruction section, battery replacement, and both specification tables. Best used for the exact figures this guide's tables and diagrams were redrawn from.</li>
   <li><a href="http://www.deree.com.tw" target="_blank" rel="noopener">www.deree.com.tw</a> — the vendor site printed in the manual's closing page. Domain as printed in the manual; not crawled or verified for this guide.</li>
