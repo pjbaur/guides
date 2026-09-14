@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prompting Anthropic &amp; Z.AI in Claude Code</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%99%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f7f6f3; --surface:#ffffff; --surface2:#f0eee8; --ink:#22201c; --ink2:#4a463e;
+  --muted:#7a756a; --line:#ddd8cc; --code-bg:#2b2820;
+  --accent:#a8580a; --accent-wash:#f6e6d4;
+  --warn:#8a5a00; --danger:#a3271f;
+  --terminal:#1d1b16; --terminal-ink:#e8e3d6; --terminal-accent:#e0a253;
+  --on-accent:#fff8ef;
+}
+@media (prefers-color-scheme: dark){
+  :root:not(.light){
+    --bg:#161410; --surface:#1e1c17; --surface2:#252219; --ink:#efe9dc; --ink2:#cabfa9;
+    --muted:#948a76; --line:#3a3527; --code-bg:#12100c;
+    --accent:#e0a253; --accent-wash:#332a19;
+    --warn:#e0b84a; --danger:#e2685c;
+    --terminal:#0e0d0a; --terminal-ink:#e8e3d6; --terminal-accent:#e0a253;
+    --on-accent:#1a1610;
+  }
+}
+:root.dark{
+  --bg:#161410; --surface:#1e1c17; --surface2:#252219; --ink:#efe9dc; --ink2:#cabfa9;
+  --muted:#948a76; --line:#3a3527; --code-bg:#12100c;
+  --accent:#e0a253; --accent-wash:#332a19;
+  --warn:#e0b84a; --danger:#e2685c;
+  --terminal:#0e0d0a; --terminal-ink:#e8e3d6; --terminal-accent:#e0a253;
+  --on-accent:#1a1610;
+}
+:root.light{
+  --bg:#f7f6f3; --surface:#ffffff; --surface2:#f0eee8; --ink:#22201c; --ink2:#4a463e;
+  --muted:#7a756a; --line:#ddd8cc; --code-bg:#2b2820;
+  --accent:#a8580a; --accent-wash:#f6e6d4;
+  --warn:#8a5a00; --danger:#a3271f;
+  --terminal:#1d1b16; --terminal-ink:#e8e3d6; --terminal-accent:#e0a253;
+  --on-accent:#fff8ef;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin:0}
+p{max-width:78ch}
+h1,h2,h3,h4{line-height:1.25;color:var(--ink)}
+a{color:var(--accent)}
+code,pre,kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+code{background:var(--surface2);padding:.15em .4em;border-radius:4px;font-size:.9em}
+kbd{background:var(--surface2);border:1px solid var(--line);border-bottom-width:3px;border-radius:5px;padding:.1em .5em;font-size:.85em}
+.skip-link{position:absolute;left:-999px;top:0;background:var(--accent);color:var(--on-accent);padding:.6em 1em;z-index:100}
+.skip-link:focus{left:0}
+.layout{display:flex;min-height:100vh}
+.sidebar{position:sticky;top:0;height:100vh;overflow-y:auto;width:270px;flex:0 0 270px;background:var(--surface);border-right:1px solid var(--line);padding:1.4rem 1.2rem}
+.sidebar h1{font-size:1.05rem;margin:0 0 .2rem}
+.sidebar .subtitle{color:var(--muted);font-size:.82rem;margin:0 0 1.2rem}
+.toc-group{margin:1.1rem 0}
+.toc-label{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 .4rem;font-weight:600}
+.toc-group a{display:block;color:var(--ink2);text-decoration:none;font-size:.87rem;padding:.28rem .4rem;border-radius:5px}
+.toc-group a:hover{background:var(--surface2)}
+.toc-group a.active{background:var(--accent-wash);color:var(--accent);font-weight:600}
+main{flex:1;min-width:0;padding:2.6rem clamp(1.2rem,4vw,4rem) 6rem}
+.hero{max-width:78ch;margin-bottom:2.6rem}
+.eyebrow{color:var(--accent);font-size:.78rem;letter-spacing:.09em;text-transform:uppercase;font-weight:700;margin:0 0 .8rem}
+.hero h2{font-size:2rem;margin:0 0 .8rem}
+.hero .accent-clause{color:var(--accent)}
+.hero .lede{color:var(--ink2);font-size:1.05rem;margin:0 0 1.2rem}
+.badges{display:flex;flex-wrap:wrap;gap:.5rem}
+.badge{background:var(--surface2);border:1px solid var(--line);border-radius:999px;padding:.3rem .8rem;font-size:.78rem;color:var(--ink2)}
+section{max-width:78ch;margin:3.2rem 0;scroll-margin-top:1.5rem}
+section h2{font-size:1.5rem;border-bottom:2px solid var(--line);padding-bottom:.5rem;margin-bottom:1rem}
+section h3{font-size:1.15rem;margin-top:1.8rem}
+.callout{border-left:4px solid var(--accent);background:var(--accent-wash);border-radius:0 8px 8px 0;padding:.9rem 1.1rem;margin:1.2rem 0}
+.callout strong{display:block;margin-bottom:.3rem}
+.callout.warn{border-color:var(--warn);background:color-mix(in srgb, var(--warn) 14%, var(--surface))}
+.callout.danger{border-color:var(--danger);background:color-mix(in srgb, var(--danger) 14%, var(--surface))}
+.callout.blue{border-color:#3a7ca5;background:color-mix(in srgb, #3a7ca5 12%, var(--surface))}
+pre{background:var(--terminal);color:var(--terminal-ink);border-radius:8px;padding:1rem 1.1rem;overflow-x:auto;font-size:.86rem;position:relative;line-height:1.55}
+pre .copy-btn{position:absolute;top:.5rem;right:.5rem;background:transparent;border:1px solid var(--terminal-accent);color:var(--terminal-accent);border-radius:5px;font-size:.7rem;padding:.2rem .5rem;cursor:pointer;opacity:.7}
+pre .copy-btn:hover{opacity:1}
+.cmd{color:var(--terminal-accent)}
+.comment{color:#8a8470}
+.table-wrap{overflow-x:auto;margin:1rem 0}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{border:1px solid var(--line);padding:.5rem .7rem;text-align:left;vertical-align:top}
+th{background:var(--surface2);text-transform:uppercase;letter-spacing:.04em;font-size:.72rem;color:var(--muted)}
+tr:nth-child(even) td{background:var(--surface2)}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.lab{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:1.2rem 1.4rem;margin:1.4rem 0}
+.lab .meta{color:var(--muted);font-size:.82rem;margin:-.4rem 0 1rem}
+.lab h4{margin:0 0 .3rem}
+.checkpoint{border-top:1px dashed var(--line);margin-top:1rem;padding-top:.8rem;font-size:.9rem;color:var(--ink2)}
+.diagram{margin:1.6rem 0;padding:0;border:0}
+.diagram svg{width:100%;height:auto}
+.diagram figcaption{color:var(--muted);font-size:.82rem;text-align:center;margin-top:.5rem}
+.flowtext{font-size:13px;fill:var(--ink)}
+.flowmuted{font-size:11px;fill:var(--muted)}
+.cheat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem}
+.cheat-card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:1rem 1.1rem}
+.cheat-card h4{margin:0 0 .5rem;font-size:.95rem;color:var(--accent)}
+.cheat-card code{display:block;margin:.2rem 0}
+dl.glossary{display:grid;gap:1.1rem}
+dl.glossary dt{font-weight:700;scroll-margin-top:1.5rem}
+dl.glossary dd{margin:.2rem 0 0;color:var(--ink2)}
+.index-grid{columns:2;column-gap:2.5rem}
+@media (max-width:640px){.index-grid{columns:1}}
+.index-grid p{margin:.15rem 0;break-inside:avoid}
+.quiz-item{border:1px solid var(--line);border-radius:10px;padding:1rem 1.2rem;margin:1rem 0;background:var(--surface)}
+.quiz-item.got{border-color:#4a8a5c}
+.quiz-item.missed{border-color:var(--danger)}
+.quiz-q{font-weight:600;margin-bottom:.5rem}
+.qnum{color:var(--accent);margin-right:.5rem;font-weight:700}
+.quiz-answer{display:none;color:var(--ink2);background:var(--surface2);border-radius:6px;padding:.6rem .8rem;margin:.5rem 0}
+.quiz-answer.shown{display:block}
+.quiz-actions{display:flex;gap:.5rem}
+.quiz-actions button{border:1px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:6px;padding:.35rem .8rem;font-size:.82rem;cursor:pointer}
+.quiz-actions button:hover{background:var(--accent-wash)}
+#quiz-score{font-weight:600;margin:1rem 0;color:var(--ink2)}
+.theme-toggle{position:fixed;bottom:1.2rem;right:1.2rem;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;font-size:1.1rem;z-index:50}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sources-line{font-size:.82rem;color:var(--muted);margin-top:.6rem}
+@media print{
+  .sidebar,.theme-toggle,pre .copy-btn{display:none}
+  main{padding:0}
+  details{display:block}
+  .quiz-answer{display:block}
+  section{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<a href="#content" class="skip-link">Skip to content</a>
+<div class="layout">
+<nav class="sidebar" aria-label="Table of contents">
+  <h1>Prompting the Two-Tier Setup</h1>
+  <p class="subtitle">Anthropic &amp; Z.AI in Claude Code, from your own measured usage</p>
+  <div class="toc-group">
+    <p class="toc-label">Foundations</p>
+    <a href="#mental-model">1 · Mental model</a>
+    <a href="#your-setup">2 · Your setup at a glance</a>
+    <a href="#verify">3 · Verify it's live</a>
+  </div>
+  <div class="toc-group">
+    <p class="toc-label">Core modules</p>
+    <a href="#cost-model">4 · Where the money actually goes</a>
+    <a href="#routing">5 · Task → model routing</a>
+    <a href="#prompt-patterns">6 · Prompt patterns per tier</a>
+    <a href="#budget-guard">7 · The budget guard</a>
+    <a href="#peak-hours">8 · The peak-hours guard</a>
+    <a href="#archive">9 · The transcript archive</a>
+    <a href="#caveman">10 · Caveman mode</a>
+  </div>
+  <div class="toc-group">
+    <p class="toc-label">Practice</p>
+    <a href="#labs">Labs</a>
+    <a href="#capstone">Capstone</a>
+    <a href="#troubleshooting">Troubleshooting</a>
+  </div>
+  <div class="toc-group">
+    <p class="toc-label">Reference</p>
+    <a href="#cheat-sheet">Cheat sheet</a>
+    <a href="#glossary">Glossary</a>
+    <a href="#index">Index</a>
+    <a href="#quiz">Quiz</a>
+    <a href="#sources">Sources</a>
+  </div>
+</nav>
+<main id="content">
+  <div class="hero">
+    <p class="eyebrow">For paul.baur@gmail.com's own Claude Code setup</p>
+    <h2>Two models, one budget.<br><span class="accent-clause">Stop paying for context you didn't need.</span></h2>
+    <p class="lede">A reference for prompting Anthropic (Sonnet 5 / Opus 5) and Z.AI (GLM-5.3 / Flash) in Claude Code — built from your own measured sessions, not generic advice.</p>
+    <div class="badges">
+      <span class="badge">usage-guard.py verified 2026-09-13</span>
+      <span class="badge">archive_transcripts.py: 18,730 sessions recovered</span>
+      <span class="badge">single file · works offline</span>
+      <span class="badge">data through 2026-09-13</span>
+    </div>
+  </div>
+
+  <section id="mental-model">
+    <h2>1 · Mental model</h2>
+    <p>Your Claude Code setup is not "a model you talk to." It is a pipeline: a <strong>router</strong> picks which model answers, a <strong>meter</strong> watches what that costs, and an <strong>archive</strong> keeps a copy of what happened because the provider's own transcript store does not. All three are hooks — small scripts Claude Code runs at fixed points (prompt submit, session start, session stop) — and all three were built in response to one measured fact: <em>a handful of runaway sessions consume almost all of your quota, and nothing was watching.</em></p>
+    <p>The two-tier design exists because model capability and token cost move independently. A work-tier model (Sonnet 5 on Anthropic, GLM-5.3-Flash on Z.AI) is cheap per token and fine for anything mechanical. A deep-tier model (Opus 5, GLM-5.3) costs roughly 3x more per input token and 3x more per output token, and is worth it exactly when the task involves a judgment call with no obvious right answer. The entire prompting discipline in this guide reduces to one question, asked honestly, per task: <strong>does this need judgment, or does it need typing?</strong></p>
+    <div class="callout blue">
+      <strong>Misconception: "the expensive model gives better code, so default to it"</strong>
+      Your own data says otherwise. 96% of tokens processed across 59,397 Z.AI turns were <em>cached input</em> — context being re-read, not new reasoning. The model tier barely moves that number; context size does. A deep-tier model re-reading a bloated context is not buying you quality, it's buying you a bigger per-token multiplier on the exact same waste.
+    </div>
+    <figure class="diagram">
+      <svg viewBox="0 0 960 260" role="img" aria-label="Pipeline diagram: prompt submit triggers peak guard, budget guard, and archive; session stop triggers archive">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+          </marker>
+        </defs>
+        <rect x="20" y="100" width="150" height="60" rx="8" fill="none" stroke="var(--accent)" stroke-width="2"/>
+        <text x="95" y="135" text-anchor="middle" class="flowtext">You type a prompt</text>
+        <line x1="170" y1="130" x2="230" y2="130" stroke="var(--muted)" stroke-width="2" marker-end="url(#arrow)"/>
+        <rect x="230" y="30" width="180" height="50" rx="8" fill="none" stroke="var(--line)" stroke-width="2"/>
+        <text x="320" y="60" text-anchor="middle" class="flowtext">peak-hours-guard.sh</text>
+        <rect x="230" y="105" width="180" height="50" rx="8" fill="none" stroke="var(--line)" stroke-width="2"/>
+        <text x="320" y="135" text-anchor="middle" class="flowtext">usage-guard.py</text>
+        <rect x="230" y="180" width="180" height="50" rx="8" fill="none" stroke="var(--line)" stroke-width="2"/>
+        <text x="320" y="205" text-anchor="middle" class="flowtext">log-prompt.sh</text>
+        <text x="320" y="222" text-anchor="middle" class="flowmuted">(UserPromptSubmit)</text>
+        <line x1="230" y1="55" x2="180" y2="130" stroke="var(--muted)" stroke-width="1.5"/>
+        <line x1="230" y1="130" x2="180" y2="130" stroke="var(--muted)" stroke-width="1.5"/>
+        <line x1="230" y1="205" x2="180" y2="140" stroke="var(--muted)" stroke-width="1.5"/>
+        <line x1="410" y1="130" x2="470" y2="130" stroke="var(--muted)" stroke-width="2" marker-end="url(#arrow)"/>
+        <rect x="470" y="100" width="150" height="60" rx="8" fill="var(--accent-wash)" stroke="var(--accent)" stroke-width="2"/>
+        <text x="545" y="135" text-anchor="middle" class="flowtext">Model responds</text>
+        <line x1="620" y1="130" x2="680" y2="130" stroke="var(--muted)" stroke-width="2" marker-end="url(#arrow)"/>
+        <rect x="680" y="30" width="230" height="50" rx="8" fill="none" stroke="var(--line)" stroke-width="2"/>
+        <text x="795" y="60" text-anchor="middle" class="flowtext">SessionStart → sweep + archive</text>
+        <rect x="680" y="105" width="230" height="50" rx="8" fill="none" stroke="var(--line)" stroke-width="2"/>
+        <text x="795" y="130" text-anchor="middle" class="flowtext">Session ends</text>
+        <rect x="680" y="180" width="230" height="50" rx="8" fill="none" stroke="var(--line)" stroke-width="2"/>
+        <text x="795" y="205" text-anchor="middle" class="flowtext">Stop → archive_transcripts.py</text>
+        <line x1="680" y1="130" x2="620" y2="130" stroke="var(--muted)" stroke-width="1.5"/>
+        <line x1="795" y1="80" x2="795" y2="105" stroke="var(--muted)" stroke-width="1.5"/>
+        <line x1="795" y1="155" x2="795" y2="180" stroke="var(--muted)" stroke-width="1.5"/>
+      </svg>
+      <figcaption>Every prompt passes through the peak guard and budget guard before reaching the model; every session's start and end pass through the archive.</figcaption>
+    </figure>
+  </section>
+
+  <section id="your-setup">
+    <h2>2 · Your setup at a glance</h2>
+    <p>Two config directories, each a complete Claude Code identity: <code>~/.claude</code> talks to Anthropic directly; <code>~/.claude-zai</code> talks to Z.AI's Anthropic-compatible endpoint via <code>zclaude</code>. Both are now wired identically for metering and archiving.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>File</th><th>Role</th><th>Registered in</th></tr></thead>
+        <tbody>
+          <tr><td><code>~/.claude/hooks/usage-guard.py</code></td><td>Per-session + rolling 5h/7d budget meter. Warns or blocks.</td><td>Both, <code>UserPromptSubmit</code></td></tr>
+          <tr><td><code>~/.claude/hooks/peak-hours-guard.sh</code></td><td>Warns/blocks the deep tier during Z.AI's peak-rate window.</td><td>Z.AI only, <code>UserPromptSubmit</code></td></tr>
+          <tr><td><code>~/.claude/hooks/log-prompt.sh</code></td><td>Appends every prompt to <code>~/.claude/logs/prompts.jsonl</code>.</td><td>Both, <code>UserPromptSubmit</code></td></tr>
+          <tr><td><code>~/.claude/archive/archive_transcripts.py</code></td><td>SQLite archive of every session transcript, raw + parsed.</td><td>Both, <code>SessionStart</code> + <code>Stop</code></td></tr>
+          <tr><td><code>~/.claude/hooks/caveman-*.js</code></td><td>Terse-output mode — cuts filler tokens from every response.</td><td>Both, various</td></tr>
+          <tr><td><code>~/.claude/hooks/active-plan-check.sh</code></td><td>Surfaces an in-progress plan file at session start.</td><td>Anthropic only, <code>SessionStart</code></td></tr>
+          <tr><td><code>~/scripts/zclaude</code></td><td>Launcher: picks the Z.AI tier pair, sets the compact window, applies the peak guard.</td><td>—</td></tr>
+          <tr><td><code>~/.claude/tier-discipline.md</code></td><td>The short routing policy loaded into every session via both <code>CLAUDE.md</code> files.</td><td>Both</td></tr>
+          <tr><td><code>~/.claude/model-routing.md</code></td><td>The long version — full measured data, not loaded into sessions.</td><td>Reference only</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sources-line">Sources: <code>~/.claude/settings.json</code>, <code>~/.claude-zai/settings.json</code>, <code>~/.claude/model-routing.md</code>.</p>
+  </section>
+
+  <section id="verify">
+    <h2>3 · Verify it's live</h2>
+    <p>Before trusting any of the guidance below, confirm the pipeline is actually running in your current setup.</p>
+    <pre><button class="copy-btn" type="button">Copy</button><span class="cmd">python3 ~/.claude/hooks/usage-guard.py --status</span>
+<span class="comment"># Expect: policy, budgets, and rolling 5h/7d totals — not an error</span>
+
+<span class="cmd">python3 ~/.claude/archive/archive_transcripts.py stats</span>
+<span class="comment"># Expect: session/message counts and a date range for both configs</span>
+
+<span class="cmd">~/.claude/hooks/peak-hours-guard.sh --status</span>
+<span class="comment"># Expect: current SGT peak window state; exit 1 only if inside peak</span></pre>
+    <div class="callout">
+      <strong>If any of these error</strong>
+      The guard's own design philosophy is "never break a session" — every unexpected failure inside the hook exits 0 silently. That means a broken guard is invisible from inside a Claude Code session. Running these three commands directly, outside a session, is the only way you'll actually notice one has stopped working.
+    </div>
+  </section>
+
+  <section id="cost-model">
+    <h2>4 · Where the money actually goes</h2>
+    <p>The credit formula looks like it rewards short output. It doesn't — it rewards small context. This is the single most important number in this guide, because every prompting rule below is downstream of it.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Source</th><th class="num">Tokens</th><th class="num">Share of tokens</th><th class="num">Share of credits</th></tr></thead>
+        <tbody>
+          <tr><td>Cached input</td><td class="num">4,096,294,848</td><td class="num">96%</td><td class="num"><strong>82%</strong></td></tr>
+          <tr><td>Fresh input</td><td class="num">140,101,070</td><td class="num">3%</td><td class="num">11%</td></tr>
+          <tr><td>Output</td><td class="num">23,295,400</td><td class="num">1%</td><td class="num">7%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Measured across 59,397 Z.AI turns, 2026-07-15 to 2026-09-11. Per-token, output is 3.5x fresh input and fresh input is 4.1x cached input — but volume beats ratio: there is 175x more cached-input volume than output volume, so cached input still wins on total cost even at its lower per-token rate.</p>
+    <p><strong>What this means in practice:</strong> the size of your context window, re-read on every single turn, is the lever. Terse replies help, but only at the margin — they shave the 7% column. A bloated context that never gets compacted taxes every turn for the rest of the session.</p>
+    <h3>The concentration problem</h3>
+    <p>It isn't evenly distributed usage either. One session accounted for nearly half of eight weeks of spend:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Sessions</th><th class="num">Share of credits</th></tr></thead>
+        <tbody>
+          <tr><td>Top 1 of 670</td><td class="num">47.5%</td></tr>
+          <tr><td>Top 3</td><td class="num">61.3%</td></tr>
+          <tr><td>Top 10</td><td class="num">76.1%</td></tr>
+          <tr><td>Top 50</td><td class="num">92.6%</td></tr>
+          <tr><td>Remaining 620</td><td class="num">7.4%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>That top session ran 18,045 turns over 93 hours, median context 520,077 tokens, peaking at 921,806 against the 1M ceiling — an unattended loop nobody was watching, on the expensive tier, without a compact window. Replaying it against three interventions:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Scenario</th><th class="num">Credits</th><th class="num">vs actual</th></tr></thead>
+        <tbody>
+          <tr><td>As it ran (1M window, GLM-5.3)</td><td class="num">170,514</td><td class="num">1.0x</td></tr>
+          <tr><td>250K auto-compact only</td><td class="num">75,755</td><td class="num">2.3x</td></tr>
+          <tr><td>Flash only</td><td class="num">56,265</td><td class="num">3.0x</td></tr>
+          <tr><td>Both changes</td><td class="num">24,996</td><td class="num"><strong>6.8x</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn">
+      <strong>Don't over-correct: the median turn is fine</strong>
+      Across all sessions the median turn carries 33,140 tokens and only 3.7% exceed 250K. The 250K auto-compact window (now the <code>zclaude</code> default) never fires for ordinary work — it exists purely for the tail. Don't shrink it further; a tighter window compacts normal sessions needlessly, and compaction itself costs a summarization call and loses fidelity.
+    </div>
+    <p class="sources-line">Sources: <code>~/.claude/model-routing.md</code> §1–3, replay against the 170,514-credit CampForge-v2 transcript.</p>
+  </section>
+
+  <section id="routing">
+    <h2>5 · Task → model routing</h2>
+    <p>The wrong question is "which model is smarter?" Both are smart enough for roughly three-quarters of what actually gets typed into this setup. The right question is "does getting this wrong cost more than the token savings from getting it fast?" Below is the actual composition of your own Anthropic-side prompt corpus, split by that question.</p>
+    <h3>Work tier — <code>/model sonnet</code> (Flash / Sonnet 5)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Class</th><th class="num">Share</th><th>Why it's safe</th></tr></thead>
+        <tbody>
+          <tr><td>Acks and steers (<code>1</code>, <code>Yes</code>, <code>push</code>, <code>Go</code>)</td><td class="num">20%</td><td>205 prompts averaging 4 characters. No reasoning at all.</td></tr>
+          <tr><td>Short steers and re-runs</td><td class="num">26%</td><td>Averaging 73 characters. Mechanical.</td></tr>
+          <tr><td>Commit, push, branch, PR, worktree</td><td class="num">21%</td><td>Format-bound.</td></tr>
+          <tr><td>Tests, lint, formatting, chasing CI green</td><td class="num">—</td><td>Verification is reading output, not reasoning.</td></tr>
+          <tr><td>Docs, README, changelog</td><td class="num">2%</td><td>Bounded scope, known format.</td></tr>
+          <tr><td>"Where is X" / "what calls Y"</td><td class="num">—</td><td>Search, not analysis.</td></tr>
+          <tr><td>Mechanical refactors</td><td class="num">—</td><td>Scope known before you start.</td></tr>
+          <tr><td>Log / stack-trace triage</td><td class="num">—</td><td>Pattern matching.</td></tr>
+          <tr><td><strong>Long unattended loops</strong></td><td class="num">—</td><td>The one rule with measured consequences — see §4.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3>Deep tier — <code>/model opus</code> (GLM-5.3 / Opus 5)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Class</th><th class="num">Share</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Architecture, specs, phased plans</td><td class="num">5%</td><td>Wrong answer costs hours downstream.</td></tr>
+          <tr><td>Code review and security audit</td><td class="num">3%</td><td>Cheap models miss what they don't look for.</td></tr>
+          <tr><td>Root-cause debugging</td><td class="num">4%</td><td>After two honest attempts on the work tier.</td></tr>
+          <tr><td>Auth, money, migrations, data integrity</td><td class="num">—</td><td>Blast radius.</td></tr>
+          <tr><td>Deciding <em>whether</em>, not <em>how</em></td><td class="num">—</td><td>Judgment calls with no obvious right answer.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Roughly 75% of Anthropic-side turns fit the work tier by this breakdown. If your own ratio looks very different from that, that's a signal worth noticing — not a rule you're breaking.</p>
+    <figure class="diagram">
+      <svg viewBox="0 0 960 300" role="img" aria-label="Escalation flowchart between work tier and deep tier">
+        <defs>
+          <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+          </marker>
+        </defs>
+        <rect x="60" y="30" width="280" height="70" rx="10" fill="var(--accent-wash)" stroke="var(--accent)" stroke-width="2"/>
+        <text x="200" y="60" text-anchor="middle" class="flowtext">Work tier</text>
+        <text x="200" y="80" text-anchor="middle" class="flowmuted">/model sonnet — start here</text>
+        <rect x="620" y="30" width="280" height="70" rx="10" fill="none" stroke="var(--line)" stroke-width="2"/>
+        <text x="760" y="60" text-anchor="middle" class="flowtext">Deep tier</text>
+        <text x="760" y="80" text-anchor="middle" class="flowmuted">/model opus</text>
+        <path d="M340,55 C450,55 510,55 620,55" fill="none" stroke="var(--danger)" stroke-width="2" marker-end="url(#arrow2)"/>
+        <text x="480" y="42" text-anchor="middle" class="flowtext" fill="var(--danger)">prints ESCALATE:</text>
+        <path d="M620,85 C510,85 450,85 340,85" fill="none" stroke="var(--muted)" stroke-width="2" marker-end="url(#arrow2)"/>
+        <text x="480" y="105" text-anchor="middle" class="flowtext">prints DOWNSHIFT:</text>
+        <rect x="60" y="170" width="840" height="90" rx="10" fill="none" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <text x="480" y="200" text-anchor="middle" class="flowtext">Neither line switches the model by itself.</text>
+        <text x="480" y="222" text-anchor="middle" class="flowmuted">You run /model opus or /model sonnet, then re-send. One escalation per session — never ping-pong.</text>
+        <text x="480" y="244" text-anchor="middle" class="flowmuted">Switching invalidates the prompt cache: the new model re-reads all context as fresh input, not cached.</text>
+      </svg>
+      <figcaption>ESCALATE and DOWNSHIFT are signals the model prints — you decide whether to act on them.</figcaption>
+    </figure>
+    <div class="callout danger">
+      <strong>Escalation is not free</strong>
+      Switching <code>/model</code> mid-session invalidates the prompt cache — the new model re-reads the whole context as fresh input at the 4.1x-more-expensive rate instead of cached. At 250K tokens of context that's roughly 172 credits on GLM-5.3, about twenty ordinary turns. Escalate <strong>early</strong>, before context has accumulated, and never more than once per session. For work you already know is deep, start there — <code>zclaude deep</code> — rather than switching later.
+    </div>
+  </section>
+
+  <section id="prompt-patterns">
+    <h2>6 · Prompt patterns per tier</h2>
+    <p>Small models fail on inference, not raw capability. The gap between a work-tier model that nails a task and one that flails on it is almost always missing information the prompt should have supplied outright.</p>
+    <h3>Work-tier prompts: make inference unnecessary</h3>
+    <p>Every work-tier prompt should carry four things:</p>
+    <ul>
+      <li><strong>Explicit paths</strong> — not "the config file," but <code>~/.claude/settings.json</code>.</li>
+      <li><strong>An explicit done condition</strong> — how the model knows it's finished, not just what to start doing.</li>
+      <li><strong>A scope boundary</strong> — what NOT to touch, especially in a repo with adjacent unrelated code.</li>
+      <li><strong>An escape hatch for hidden difficulty</strong> — when the task might be harder than it looks, add: <code>If you'd have to guess at anything, stop and print ESCALATE: &lt;reason&gt;.</code></li>
+    </ul>
+    <div class="callout">
+      <strong>Misconception: "vague prompts save typing"</strong>
+      They save typing once and cost it back with interest: a vague prompt produces a wrong-scope answer, which produces a correction turn, which is now fresh context re-read for the rest of the session. The specific prompt is cheaper end-to-end even though it looks more expensive up front.
+    </div>
+    <h3>Deep-tier prompts: state the judgment call, not the steps</h3>
+    <p>If you're paying the deep-tier multiplier, spend it on judgment, not typing speed. Good deep-tier prompts name the trade-off explicitly ("pick between eager and lazy loading here, and say why") rather than a numbered procedure — a numbered procedure is work-tier material regardless of which model executes it.</p>
+    <h3>Stop pasting command output</h3>
+    <p>51% of every character typed into this setup was pasted terminal output; one <code>lsof</code> dump alone ran 21,864 characters. Pasted text is not compactable the way a tool result is — it sits in the conversation and is re-read on every subsequent turn.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Instead of</th><th>Say</th></tr></thead>
+        <tbody>
+          <tr><td>Pasting a stack trace or log dump</td><td><code>Run &lt;cmd&gt; and diagnose</code> — let the tool call carry it, not the prompt</td></tr>
+          <tr><td>Re-pasting a template every time</td><td>A slash command (<code>/postgate</code>, <code>/sym-phase</code>) — same content, but now a stable cache prefix instead of fresh tokens each time</td></tr>
+          <tr><td>Describing what you just watched happen</td><td>Point at the file/output and ask for the specific judgment you need</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sources-line">Sources: <code>~/.claude/model-routing.md</code> §8, <code>~/.claude/tier-discipline.md</code>.</p>
+  </section>
+
+  <section id="budget-guard">
+    <h2>7 · The budget guard</h2>
+    <p><code>usage-guard.py</code> exists because routing ordinary work to a cheaper tier doesn't stop a runaway session — only a budget does. On every prompt it accounts for what the session has spent since the last check, appends the delta to a durable ledger, and checks three numbers against limits: this session's total, the rolling 5-hour total across all sessions, and the rolling 7-day total.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>Z.AI</th><th>Anthropic</th></tr></thead>
+        <tbody>
+          <tr><td>Soft — notice in context</td><td>1,000 credits</td><td>$2.00</td></tr>
+          <tr><td>Hard — next prompt refused</td><td>5,000 credits</td><td>$10.00</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Z.AI's numbers are real credits, directly comparable to plan caps. Anthropic's are list-price dollars — a quota-pressure proxy, not a bill, since Anthropic doesn't publish the weighting behind its own 5-hour/weekly limits. At these defaults, the 402,576-credit runaway session from §4 would have been stopped at 1.2% of its eventual spend.</p>
+    <h3>A blocked prompt is not a lost prompt</h3>
+    <p>Hitting the hard threshold exits 2 and Claude Code surfaces the reason, but your typed text is preserved. Downshift with <code>/model sonnet</code>, or start a fresh session, and re-send the same prompt.</p>
+    <pre><button class="copy-btn" type="button">Copy</button><span class="cmd">~/.claude/hooks/usage-guard.py --status</span>       <span class="comment"># policy, budgets, rolling windows</span>
+<span class="cmd">~/.claude/hooks/usage-guard.py --windows</span>      <span class="comment"># rolling 5h / 7d vs plan caps</span>
+<span class="cmd">~/.claude/hooks/usage-guard.py --top 10</span>       <span class="comment"># largest sessions in the ledger</span>
+<span class="cmd">CLAUDE_BUDGET_ZAI_HARD=50000 zclaude deep</span>  <span class="comment"># raise the ceiling for a session you know is legitimately large</span>
+<span class="cmd">CLAUDE_BUDGET_POLICY=warn zclaude</span>          <span class="comment"># never block, just tell me</span></pre>
+    <div class="callout warn">
+      <strong>Known limit: this bounds a session, not a turn</strong>
+      The hard block fires at the <em>next</em> prompt. One prompt that launches a long autonomous run can still overshoot before the guard gets another look. It's a seatbelt for the session, not an airbag for the turn — don't launch an unbounded autonomous loop and assume the guard caps its damage mid-flight.
+    </div>
+    <p class="sources-line">Sources: <code>~/.claude/usage-budget.md</code>, <code>~/.claude/hooks/usage-guard.py</code>.</p>
+  </section>
+
+  <section id="peak-hours">
+    <h2>8 · The peak-hours guard</h2>
+    <p>Z.AI's legacy prompt-count plans bill GLM-5.3 at 3x and Flash at 1.2x during Mon–Fri 14:00–18:00 Singapore time — 01:00–05:00 CDT locally. That's the middle of the night, exactly when unattended overnight loops run: 15.3% of Z.AI turns and 13.3% of credits fell inside that window, almost none of it watched work.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Value</th><th>At launch</th><th>During a session</th></tr></thead>
+        <tbody>
+          <tr><td><code>warn</code> (default)</td><td>Prints a warning, starts the deep tier anyway</td><td>Notice in context each turn</td></tr>
+          <tr><td><code>enforce</code></td><td>Starts on Flash instead (<code>--peak-ok</code> overrides)</td><td>Blocks the prompt (exit 2)</td></tr>
+          <tr><td><code>off</code></td><td>Silent</td><td>Silent</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <pre><button class="copy-btn" type="button">Copy</button><span class="comment"># Interactive work — warn and let me judge (the default; nothing to set)</span>
+<span class="cmd">zclaude deep</span>
+
+<span class="comment"># Overnight loop — never let it hold the deep tier through peak</span>
+<span class="cmd">ZCLAUDE_PEAK_POLICY=enforce zclaude deep --danger -p "$(cat nightly-task.md)"</span>
+
+<span class="cmd">zclaude --peak</span>       <span class="comment"># window status in local time</span></pre>
+    <div class="callout">
+      <strong>Caveat, stated plainly</strong>
+      Peak multipliers are documented for legacy prompt-count plans. Credit-based plans publish flat multipliers with no peak surcharge. If you're on a credit plan, the guard saves nothing directly — set <code>ZCLAUDE_PEAK_POLICY=off</code> — but <code>--status</code> is still a useful signal that an unattended session is sitting on the expensive tier at 3am.
+    </div>
+    <p class="sources-line">Sources: <code>~/.claude/peak-hours.md</code>, <code>~/.claude/hooks/peak-hours-guard.sh</code>.</p>
+  </section>
+
+  <section id="archive">
+    <h2>9 · The transcript archive</h2>
+    <p>Claude Code prunes session transcripts. Between 2026-09-11 and 2026-09-13, the live Z.AI transcript count fell from 1,200 files to 585, and recorded GLM-5.2 turns fell from 10,925 to 910. Anything computed by re-reading transcripts — cost analysis, session history, this guide's own source data — silently loses history as that pruning happens. <code>archive_transcripts.py</code> exists so nothing has to trust the live transcript store again.</p>
+    <h3>What it captures</h3>
+    <p>Both storage granularities you asked for: the full raw JSONL of every transcript (zlib-compressed) for perfect-fidelity replay, and a parsed <code>messages</code> table (role, model, timestamp, token counts, content preview) for fast querying without decompressing anything. Scope is both configs — <code>~/.claude/projects</code> and <code>~/.claude-zai/projects</code> — including subagent transcripts nested under <code>&lt;session&gt;/subagents/&lt;name&gt;.jsonl</code>.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Trigger</th><th>What runs</th><th>Why it's crash-safe</th></tr></thead>
+        <tbody>
+          <tr><td><code>SessionStart</code></td><td><code>hook-sessionstart</code> — sweeps every live transcript file, imports anything new or more complete</td><td>Catches sessions that never fired a clean <code>Stop</code> — a crash, a killed terminal, a force-quit</td></tr>
+          <tr><td><code>Stop</code></td><td><code>hook-stop</code> — archives the just-finished session's transcript immediately</td><td>Minimizes the pruning window for the common, clean-exit case</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Import is "most-complete-version-wins": a file is only re-imported if it has more lines than what's already archived for that <code>transcript_key</code>. Nothing is ever deleted or overwritten with less-complete data.</p>
+    <pre><button class="copy-btn" type="button">Copy</button><span class="cmd">python3 ~/.claude/archive/archive_transcripts.py stats</span>
+<span class="comment"># claude: sessions=5259 messages=485364 range=2025-12-24..2026-09-13
+# claude-zai: sessions=13471 messages=716060 range=2025-12-24..2026-09-12
+# db size: 1608.8 MiB</span>
+
+<span class="cmd">python3 ~/.claude/archive/archive_transcripts.py sweep</span>              <span class="comment"># manual catch-up sweep of live files</span>
+<span class="cmd">python3 ~/.claude/archive/archive_transcripts.py backfill-timemachine</span> <span class="comment"># pull older snapshots from TM backups</span>
+<span class="cmd">python3 ~/.claude/archive/archive_transcripts.py export &lt;transcript_key&gt; --out session.jsonl</span></pre>
+    <div class="callout">
+      <strong>Recovery, for scale</strong>
+      A one-time TimeMachine backfill against 45 historical snapshots recovered 13,471 claude-zai sessions and 5,259 claude sessions — against only 585 and 535 respectively surviving live at the time. That gap is the size of the problem this closes going forward.
+    </div>
+    <p class="sources-line">Sources: <code>~/.claude/archive/archive_transcripts.py</code>, <code>~/.claude/settings.json</code>, <code>~/.claude-zai/settings.json</code>.</p>
+  </section>
+
+  <section id="caveman">
+    <h2>10 · Caveman mode</h2>
+    <p>The caveman-mode hooks (<code>caveman-activate.js</code> at <code>SessionStart</code>, <code>caveman-mode-tracker.js</code> at <code>UserPromptSubmit</code>) inject a standing instruction to drop articles, filler, and pleasantries from responses, keeping technical substance intact. It's a direct application of §4: output tokens are 3.5x the cost of input tokens, and every token emitted this turn is re-read as cached input on every turn after it. Terse-by-default is a small, compounding discount that costs nothing to keep on.</p>
+    <p>It explicitly steps aside for security warnings, irreversible-action confirmations, and anywhere fragment order could be misread — code, commits, and PRs are always written in full prose regardless of mode.</p>
+  </section>
+
+  <section id="labs">
+    <h2>Labs</h2>
+    <div class="lab">
+      <h4>Lab 1 · Read your own routing signal</h4>
+      <p class="meta">5 minutes · local only · no session risk</p>
+      <p>Run <code>~/.claude/hooks/usage-guard.py --top 10</code> and look at your own top 10 sessions by spend. For each one, ask: was that session's size a judgment call being made repeatedly (legitimate deep-tier work), or a work-tier task that ran long because the context never got trimmed?</p>
+      <div class="checkpoint">Checkpoint: you can name at least one habit from your own top-10 list you'd change — e.g. "that was an unattended loop I forgot was on the deep tier."</div>
+    </div>
+    <div class="lab">
+      <h4>Lab 2 · Practice the ESCALATE / DOWNSHIFT signal</h4>
+      <p class="meta">10 minutes · a real work-tier session</p>
+      <p>Start on <code>/model sonnet</code>. Give it a task you already suspect is a genuine judgment call (per §5's deep-tier table). Confirm it prints <code>ESCALATE: &lt;reason&gt;</code> and stops rather than guessing. Switch with <code>/model opus</code> and resend once, not twice.</p>
+      <div class="checkpoint">Checkpoint: the model stopped instead of guessing, and you switched exactly once.</div>
+    </div>
+    <div class="lab">
+      <h4>Lab 3 · Query the archive for a session you thought was gone</h4>
+      <p class="meta">5 minutes · read-only</p>
+      <p>Pick a session older than a week. Run <code>archive_transcripts.py export &lt;transcript_key&gt;</code> against it (find the key by grepping <code>sqlite3 ~/.claude/archive/transcripts.db "select transcript_key from sessions where session_id like '...'"</code>).</p>
+      <div class="checkpoint">Checkpoint: you get a real JSONL file back, even if the live <code>projects/</code> copy has since been pruned.</div>
+    </div>
+  </section>
+
+  <section id="capstone">
+    <h2>Capstone</h2>
+    <p>Start a real task on <code>zclaude</code> (work tier). Before typing the prompt, write down: the explicit path(s) involved, the done condition, the scope boundary, and whether you expect this to need ESCALATE. Work the task. If it escalates, switch once, finish, and afterward run <code>usage-guard.py --session &lt;id&gt;</code> to see what that escalation actually cost against the §5 estimate. Then check <code>--windows</code> to see where this session left your rolling 5h/7d totals.</p>
+  </section>
+
+  <section id="troubleshooting">
+    <h2>Troubleshooting</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td>Budget notice never appears even though spend feels high</td><td>Guard failed silently (its design: never break a session) or <code>CLAUDE_BUDGET_POLICY=off</code></td><td>Run <code>usage-guard.py --status</code> directly, outside a session</td></tr>
+          <tr><td>Session totals look wrong after a transcript got pruned</td><td>Byte-offset accounting restarts from zero if a transcript shrinks or is replaced</td><td>Trust the ledger (<code>~/.claude/usage/ledger.jsonl</code>), not a live recompute from transcripts</td></tr>
+          <tr><td>Archive <code>stats</code> shows fewer sessions than expected</td><td>Hooks were only just registered — historical sessions predate them</td><td>Run <code>backfill-timemachine</code> once to recover pre-hook history</td></tr>
+          <tr><td>Deep tier feels "stuck on" all night</td><td>An unattended loop was launched with <code>/model opus</code> or <code>zclaude deep</code> and never downshifted</td><td>Never leave an unattended loop on the deep tier — §5's one hard rule</td></tr>
+          <tr><td>Escalating felt like it cost a lot</td><td>Context had already grown large before the switch</td><td>Escalate earlier next time — cost scales with accumulated context, per §5</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="cheat-sheet">
+    <h2>Cheat sheet</h2>
+    <div class="cheat-grid">
+      <div class="cheat-card">
+        <h4>Universal starting pattern</h4>
+        <code>zclaude</code> (work tier, default)
+        <code>zclaude deep</code> (known-deep work)
+        <code>/model sonnet</code> / <code>/model opus</code> (switch in-session, once)
+      </div>
+      <div class="cheat-card">
+        <h4>Work-tier prompt must have</h4>
+        Explicit path · done condition · scope boundary · "stop and print ESCALATE if you'd guess"
+      </div>
+      <div class="cheat-card">
+        <h4>Deep-tier triggers</h4>
+        Architecture/spec · security/auth/money/migration · root cause after 2 honest attempts · "whether" not "how"
+      </div>
+      <div class="cheat-card">
+        <h4>Never</h4>
+        Paste terminal output — say "run X and diagnose" · leave an unattended loop on the deep tier · ping-pong tiers
+      </div>
+      <div class="cheat-card">
+        <h4>Budget commands</h4>
+        <code>usage-guard.py --status</code>
+        <code>usage-guard.py --windows</code>
+        <code>usage-guard.py --top 10</code>
+      </div>
+      <div class="cheat-card">
+        <h4>Archive commands</h4>
+        <code>archive_transcripts.py stats</code>
+        <code>archive_transcripts.py sweep</code>
+        <code>archive_transcripts.py export &lt;key&gt;</code>
+      </div>
+    </div>
+  </section>
+
+  <section id="glossary">
+    <h2>Glossary</h2>
+    <dl class="glossary">
+      <dt id="g-tier">Work tier / deep tier</dt><dd>The cheap-per-token model (Sonnet 5 / Flash) vs the expensive one (Opus 5 / GLM-5.3). (<a href="#mental-model">§1</a>)</dd>
+      <dt id="g-cached">Cached input</dt><dd>Context re-read from a prior turn rather than freshly processed; billed at roughly a quarter of fresh-input rate but dominates total cost by sheer volume. (<a href="#cost-model">§4</a>)</dd>
+      <dt id="g-escalate">ESCALATE:</dt><dd>A line the model prints on the work tier when a task needs judgment the cheap model shouldn't guess at. Does not switch models by itself. (<a href="#routing">§5</a>)</dd>
+      <dt id="g-downshift">DOWNSHIFT:</dt><dd>The reverse signal — remaining work is mechanical, offered to a deep-tier session. Does not switch models by itself. (<a href="#routing">§5</a>)</dd>
+      <dt id="g-ledger">Ledger</dt><dd>The append-only spend record at <code>~/.claude/usage/ledger.jsonl</code>, kept because live transcripts get pruned and can't be trusted as a durable history. (<a href="#budget-guard">§7</a>)</dd>
+      <dt id="g-transcriptkey">transcript_key</dt><dd>The archive's stable identity for a transcript file — its path relative to <code>projects/</code> — used because subagent transcripts have no session-UUID-shaped filename of their own. (<a href="#archive">§9</a>)</dd>
+      <dt id="g-peak">Peak window</dt><dd>Z.AI's Mon–Fri 14:00–18:00 SGT surcharge window, billed only under legacy prompt-count plans. (<a href="#peak-hours">§8</a>)</dd>
+      <dt id="g-compact">Compact window</dt><dd>The context-size threshold (250K default) past which <code>zclaude</code> auto-summarizes to bound growth. (<a href="#cost-model">§4</a>)</dd>
+    </dl>
+  </section>
+
+  <section id="index">
+    <h2>Index</h2>
+    <div class="index-grid">
+      <p><a href="#budget-guard">Budget guard, hard/soft thresholds §7</a></p>
+      <p><a href="#archive">Archive, backfill-timemachine §9</a></p>
+      <p><a href="#archive">Archive, export §9</a></p>
+      <p><a href="#cost-model">Cached input §4</a></p>
+      <p><a href="#mental-model">Caveman mode §10</a></p>
+      <p><a href="#cost-model">Compact window, 250K default §4</a></p>
+      <p><a href="#budget-guard"><code>CLAUDE_BUDGET_POLICY</code> §7</a></p>
+      <p><a href="#routing">DOWNSHIFT: §5</a></p>
+      <p><a href="#routing">ESCALATE: §5</a></p>
+      <p><a href="#budget-guard">Ledger, <code>~/.claude/usage/ledger.jsonl</code> §7</a></p>
+      <p><a href="#peak-hours"><code>ZCLAUDE_PEAK_POLICY</code> §8</a></p>
+      <p><a href="#peak-hours">Peak-hours window §8</a></p>
+      <p><a href="#routing">Routing table §5</a></p>
+      <p><a href="#archive">Subagent transcripts §9</a></p>
+      <p><a href="#your-setup"><code>tier-discipline.md</code> §2</a></p>
+      <p><a href="#archive"><code>transcript_key</code> §9</a></p>
+      <p><a href="#verify">Verifying the pipeline §3</a></p>
+      <p><a href="#your-setup"><code>zclaude</code> launcher §2</a></p>
+    </div>
+  </section>
+
+  <section id="quiz">
+    <h2>Quiz</h2>
+    <p>Flashcard style, self-scored. Aim for 12/14. <span id="quiz-score" aria-live="polite">Score: 0 learned · 0 review · 0/14 answered</span></p>
+
+    <div class="quiz-item" data-q="1">
+      <div class="quiz-q"><span class="qnum">Q1</span>Why doesn't routing ordinary work to a cheaper model stop a runaway session?</div>
+      <div class="quiz-answer">Routing changes per-token cost, not the number of tokens a session accumulates. Nothing was counting cumulative spend, so nothing could stop it. (<a href="#budget-guard">§7</a>)</div>
+      <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+    </div>
+    <div class="quiz-item" data-q="2">
+      <div class="quiz-q"><span class="qnum">Q2</span>What share of total tokens was cached input, and what share of credits did it cost?</div>
+      <div class="quiz-answer">96% of tokens, 82% of credits. (<a href="#cost-model">§4</a>)</div>
+      <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+    </div>
+    <div class="quiz-item" data-q="3">
+      <div class="quiz-q"><span class="qnum">Q3</span>Does printing <code>ESCALATE:</code> switch the model automatically?</div>
+      <div class="quiz-answer">No. It's a signal; you run <code>/model opus</code> yourself and re-send. (<a href="#routing">§5</a>)</div>
+      <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+    </div>
+    <div class="quiz-item" data-q="4">
+      <div class="quiz-q"><span class="qnum">Q4</span>Why is escalating early cheaper than escalating late?</div>
+      <div class="quiz-answer">Switching models invalidates the prompt cache — all existing context gets re-read as fresh input at ~4x the cached rate. Cost scales with how much context has accumulated before the switch. (<a href="#routing">§5</a>)</div>
+      <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+    </div>
+    <div class="quiz-item" data-q="5">
+      <div class="quiz-q"><span class="qnum">Q5</span>What's the four-part shape of a good work-tier prompt?</div>
+      <div class="quiz-answer">Explicit path, explicit done condition, scope boundary, and an escape hatch ("if you'd guess, print ESCALATE"). (<a href="#prompt-patterns">§6</a>)</div>
+      <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+    </div>
+    <div class="quiz-item" data-q="6">
+      <div class="quiz-q"><span class="qnum">Q6</span>Why say "run X and diagnose" instead of pasting the output of X?</div>
+      <div class="quiz-answer">Pasted text isn't compactable and is re-read every subsequent turn; a tool result is. 51% of characters typed in this setup were pasted terminal output. (<a href="#prompt-patterns">§6</a>)</div>
+      <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+    </div>
+    <div class="quiz-item" data-q="7">
+      <div class="quiz-q"><span class="qnum">Q7</span>Z.AI credits vs Anthropic dollars in the budget guard — what's the difference in what they represent?</div>
+      <div class="quiz-answer">Z.AI credits are real, comparable to plan caps. Anthropic dollars are list-price, a quota-pressure proxy, not an actual bill. (<a href="#budget-guard">§7</a>)</div>
+      <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+    </div>
+    <div class="quiz-item" data-q="8">
+      <div class="quiz-q"><span class="qnum">Q8</span>Does the budget guard bound a single turn?</div>
+      <div class="quiz-answer">No — it bounds a session. The hard block fires at the next prompt; one prompt that launches a long autonomous run can overshoot before the guard looks again. (<a href="#budget-guard">§7</a>)</div>
+      <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+    </div>
+    <div class="quiz-item" data-q="9">
+      <div class="quiz-q"><span class="qnum">Q9</span>Why does the usage guard keep its own ledger instead of recomputing from transcripts?</div>
+      <div class="quiz-answer">Transcripts get pruned — Z.AI's fell from 1,200 to 585 files in two days. A recompute from transcripts alone silently loses history; the ledger is append-only and durable. (<a href="#budget-guard">§7</a>, <a href="#archive">§9</a>)</div>
+      <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+    </div>
+    <div class="quiz-item" data-q="10">
+      <div class="quiz-q"><span class="qnum">Q10</span>What two storage granularities does the transcript archive keep for every session?</div>
+      <div class="quiz-answer">The full raw JSONL (compressed, for fidelity) and a parsed per-message table (for fast querying). (<a href="#archive">§9</a>)</div>
+      <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+    </div>
+    <div class="quiz-item" data-q="11">
+      <div class="quiz-q"><span class="qnum">Q11</span>Why does the archive key on <code>transcript_key</code> (a relative path) instead of session ID?</div>
+      <div class="quiz-answer">Subagent transcripts live at <code>&lt;session&gt;/subagents/&lt;name&gt;.jsonl</code> and have no session-UUID-shaped filename of their own; the path is a stable identity, the real session ID is still captured as a separate queryable column. (<a href="#archive">§9</a>)</div>
+      <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+    </div>
+    <div class="quiz-item" data-q="12">
+      <div class="quiz-q"><span class="qnum">Q12</span>Which hook catches a session that crashed without a clean exit?</div>
+      <div class="quiz-answer"><code>SessionStart</code>'s sweep — it re-scans every live transcript, not just the one that just ended, so a crashed prior session still gets picked up on the next launch. (<a href="#archive">§9</a>)</div>
+      <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+    </div>
+    <div class="quiz-item" data-q="13">
+      <div class="quiz-q"><span class="qnum">Q13</span>Under what condition does the peak-hours guard actually save money?</div>
+      <div class="quiz-answer">Only on legacy prompt-count Z.AI plans, which publish a 3x peak multiplier. Credit-based plans have no peak surcharge — there <code>ZCLAUDE_PEAK_POLICY=off</code> is correct, though <code>--status</code> is still a useful signal. (<a href="#peak-hours">§8</a>)</div>
+      <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+    </div>
+    <div class="quiz-item" data-q="14">
+      <div class="quiz-q"><span class="qnum">Q14</span>What is the one rule in the routing table with directly measured consequences?</div>
+      <div class="quiz-answer">Never leave an unattended loop on the deep tier — the 402,576-credit runaway session was exactly this. (<a href="#routing">§5</a>)</div>
+      <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+    </div>
+  </section>
+
+  <section id="sources">
+    <h2>Sources</h2>
+    <p class="sources-line">All figures traced to files on this machine, checked 2026-09-13. No external network access required to read this guide.</p>
+    <ul>
+      <li><code>~/.claude/model-routing.md</code> — full measured routing data, credit formula, escalation cost math. Best used for: re-deriving any number in §4–5.</li>
+      <li><code>~/.claude/usage-budget.md</code> — budget guard design, defaults, verified test cases. Best used for: tuning thresholds.</li>
+      <li><code>~/.claude/peak-hours.md</code> — peak-window guard design and policy semantics. Best used for: overnight/unattended launch config.</li>
+      <li><code>~/.claude/tier-discipline.md</code> — the short policy loaded into every session. Best used for: the exact wording the model sees.</li>
+      <li><code>~/.claude/hooks/usage-guard.py</code> — the budget guard implementation. Best used for: exact CLI flags and exit codes.</li>
+      <li><code>~/.claude/hooks/peak-hours-guard.sh</code> — the peak guard implementation.</li>
+      <li><code>~/.claude/archive/archive_transcripts.py</code> — the transcript archive implementation and schema. Best used for: querying historical sessions directly with <code>sqlite3</code>.</li>
+      <li><code>~/scripts/zclaude</code> — the launcher source, tier selectors, and environment overrides.</li>
+      <li><code>~/.claude/settings.json</code>, <code>~/.claude-zai/settings.json</code> — live hook registration for both configs.</li>
+      <li>Vault note: <code>Coding Agent usage tracking and optimization.md</code> — the original build narrative and the transcript-pruning discovery that motivated §9.</li>
+    </ul>
+  </section>
+
+</main>
+</div>
+<button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme">◐</button>
+<script>
+'use strict';
+(function(){
+  var THEME_KEY = 'ccpg-theme';
+  var root = document.documentElement;
+  function applyTheme(t){
+    root.classList.remove('dark','light');
+    if(t==='dark') root.classList.add('dark');
+    if(t==='light') root.classList.add('light');
+  }
+  var saved = null;
+  try{ saved = localStorage.getItem(THEME_KEY); }catch(e){}
+  var order = ['auto','dark','light'];
+  var current = order.indexOf(saved) >= 0 ? saved : 'auto';
+  applyTheme(current);
+  var btn = document.getElementById('theme-toggle');
+  if(btn){
+    btn.addEventListener('click', function(){
+      current = order[(order.indexOf(current)+1) % order.length];
+      applyTheme(current);
+      try{ localStorage.setItem(THEME_KEY, current); }catch(e){}
+    });
+  }
+
+  document.querySelectorAll('pre').forEach(function(pre){
+    var btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function(){
+      var text = pre.textContent.replace(/^Copy/, '').trim();
+      if(navigator.clipboard){
+        navigator.clipboard.writeText(text).then(function(){
+          btn.textContent = 'Copied';
+          setTimeout(function(){ btn.textContent = 'Copy'; }, 1200);
+        });
+      }
+    });
+    if(!pre.querySelector('.copy-btn')) pre.insertBefore(btn, pre.firstChild);
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc-group a'));
+  var sections = links.map(function(a){ return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+  if('IntersectionObserver' in window && sections.length){
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        var id = '#' + entry.target.id;
+        var link = links.find(function(a){ return a.getAttribute('href') === id; });
+        if(!link) return;
+        if(entry.isIntersecting){
+          links.forEach(function(a){ a.classList.remove('active'); });
+          link.classList.add('active');
+        }
+      });
+    }, {rootMargin: '-15% 0px -70% 0px'});
+    sections.forEach(function(s){ obs.observe(s); });
+  }
+
+  var QUIZ_KEY = 'ccpg-quiz';
+  var state = {};
+  try{ state = JSON.parse(localStorage.getItem(QUIZ_KEY) || '{}'); }catch(e){}
+  function saveState(){ try{ localStorage.setItem(QUIZ_KEY, JSON.stringify(state)); }catch(e){} }
+  function updateScore(){
+    var items = document.querySelectorAll('.quiz-item');
+    var got = 0, missed = 0, answered = 0;
+    items.forEach(function(item){
+      var q = item.getAttribute('data-q');
+      if(state[q] === 'got'){ got++; answered++; }
+      if(state[q] === 'missed'){ missed++; answered++; }
+    });
+    var scoreEl = document.getElementById('quiz-score');
+    if(scoreEl) scoreEl.textContent = 'Score: ' + got + ' learned · ' + missed + ' review · ' + answered + '/' + items.length + ' answered';
+  }
+  document.querySelectorAll('.quiz-item').forEach(function(item){
+    var q = item.getAttribute('data-q');
+    var answer = item.querySelector('.quiz-answer');
+    var revealBtn = item.querySelector('.reveal');
+    var gotBtn = item.querySelector('.got');
+    var missedBtn = item.querySelector('.missed');
+    if(state[q] === 'got') item.classList.add('got');
+    if(state[q] === 'missed') item.classList.add('missed');
+    if(revealBtn) revealBtn.addEventListener('click', function(){ answer.classList.toggle('shown'); });
+    if(gotBtn) gotBtn.addEventListener('click', function(){
+      state[q] = 'got'; item.classList.add('got'); item.classList.remove('missed');
+      answer.classList.add('shown'); saveState(); updateScore();
+    });
+    if(missedBtn) missedBtn.addEventListener('click', function(){
+      state[q] = 'missed'; item.classList.add('missed'); item.classList.remove('got');
+      answer.classList.add('shown'); saveState(); updateScore();
+    });
+  });
+  updateScore();
+})();
+</script>
+</body>
+</html>
