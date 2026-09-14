@@ -623,7 +623,7 @@ error: repetition operator missing expression</span></code></pre>
 <p>macOS hangs arbitrary key/value data off a file beside its contents. The <code>@</code>
 in <code>ls -l</code> output marks a file that has some:</p>
 <pre><code><span class="cmd">ls</span> <span class="arg">-li</span> docs/notes.md
-<span class="out">465192060 -rw-r--r--@ 1 paulbaur  wheel  52 Sep 10 12:54 docs/notes.md</span>
+<span class="out">465192060 -rw-r--r--@ 1 you  wheel  52 Sep 10 12:54 docs/notes.md</span>
 <span class="cmd">xattr</span> <span class="arg">-l</span> docs/notes.md
 <span class="out">com.apple.provenance:</span></code></pre>
 <p>It matters because Finder tags, quarantine flags and "Where from" URLs live there, and
@@ -1178,8 +1178,8 @@ with space dir/</span>
 
 <span class="comment"># ls -l style detail, without a second command</span>
 <span class="cmd">fd</span> <span class="arg">-e</span> md <span class="arg">-l</span>
-<span class="out">-rw-r--r-- 1 paulbaur wheel 52 Sep 10 12:54 ./docs/notes.md
-lrwxr-xr-x 1 paulbaur wheel 16 Sep 10 12:54 ./src/link-to-notes.md -&gt; ../docs/notes.md</span></code></pre>
+<span class="out">-rw-r--r-- 1 you wheel 52 Sep 10 12:54 ./docs/notes.md
+lrwxr-xr-x 1 you wheel 16 Sep 10 12:54 ./src/link-to-notes.md -&gt; ../docs/notes.md</span></code></pre>
 
 <h3><code>-x</code> and <code>-X</code>: exec without xargs</h3>
 
@@ -1204,13 +1204,13 @@ positional argument is the <em>pattern</em>, not the path — so
 <code>fd -e pdf ~</code> does not search your home directory. It prints nothing to stdout
 and explains itself on stderr:</p>
 <pre><code><span class="cmd">fd</span> <span class="arg">-e</span> pdf ~
-<span class="out">[fd error]: The search pattern '/Users/paulbaur' contains a path-separation
+<span class="out">[fd error]: The search pattern '/Users/you' contains a path-separation
 character and will not lead to any search results.
 
-If you want to search for all files inside the '/Users/paulbaur' directory,
+If you want to search for all files inside the '/Users/you' directory,
 use a match-all pattern:
 
-  fd . '/Users/paulbaur'</span></code></pre>
+  fd . '/Users/you'</span></code></pre>
 <p>Write <code>fd . ~</code> or <code>fd PATTERN ~</code>. In a pipeline with stderr
 redirected away, the silence looks exactly like "no matches" — which is how this one costs
 people an hour.</p>
@@ -1382,13 +1382,13 @@ traverse. Your home directory is mode 755, so it is in. <code>~/Documents</code>
 <code>~/Library</code> are mode 700, so they are not — at all:</p>
 
 <pre><code><span class="cmd">ls</span> <span class="arg">-ld</span> ~ ~/Documents ~/Library
-<span class="out">drwxr-xr-x@ 782 paulbaur  staff   /Users/paulbaur
-drwx------@  97 paulbaur  staff   /Users/paulbaur/Documents
-drwx------@ 145 paulbaur  staff   /Users/paulbaur/Library</span>
+<span class="out">drwxr-xr-x@ 782 you  staff   /Users/you
+drwx------@  97 you  staff   /Users/you/Documents
+drwx------@ 145 you  staff   /Users/you/Library</span>
 
-<span class="cmd">locate</span> <span class="arg">-c</span> <span class="str">'/Users/paulbaur/guides/'</span>      <span class="out">→ 337</span>
-<span class="cmd">locate</span> <span class="arg">-c</span> <span class="str">'/Users/paulbaur/Documents/'</span>   <span class="out">→ <span class="hl">0</span></span>
-<span class="cmd">locate</span> <span class="arg">-c</span> <span class="str">'/Users/paulbaur/Library/'</span>     <span class="out">→ <span class="hl">0</span></span></code></pre>
+<span class="cmd">locate</span> <span class="arg">-c</span> <span class="str">'/Users/you/guides/'</span>      <span class="out">→ 337</span>
+<span class="cmd">locate</span> <span class="arg">-c</span> <span class="str">'/Users/you/Documents/'</span>   <span class="out">→ <span class="hl">0</span></span>
+<span class="cmd">locate</span> <span class="arg">-c</span> <span class="str">'/Users/you/Library/'</span>     <span class="out">→ <span class="hl">0</span></span></code></pre>
 
 <div class="callout myth">
 <strong>Misconception: "<code>locate</code> indexes my whole Mac"</strong>
@@ -1425,7 +1425,7 @@ time.</p>
 <span class="out">locate: [show only 5 lines]
 /Applications/Xcode.app/…/man1/mdfind.1
 /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk/…/mdfind.1
-/Users/paulbaur/man/mdfind.pdf</span>
+/Users/you/man/mdfind.pdf</span>
 
 <span class="comment"># contains a metacharacter → treated as a glob against the whole path</span>
 <span class="cmd">locate</span> <span class="str">'/usr/bin/md*'</span>
@@ -1975,7 +1975,7 @@ a line in <code>~/.gitignore_global</code>, pointed at by <code>core.excludesFil
 which applies to every repository on the machine. One command tells you which rule ate
 your file, in which file, on which line:</p>
 <pre><code><span class="cmd">git</span> <span class="arg">check-ignore</span> <span class="arg">-v</span> .env
-<span class="out">/Users/paulbaur/.gitignore_global:56:.env	.env</span></code></pre>
+<span class="out">/Users/you/.gitignore_global:56:.env	.env</span></code></pre>
 <p>Make this your reflex. "Why doesn't ripgrep see my file" has exactly one good
 diagnostic and this is it.</p>
 </div>
@@ -2319,7 +2319,7 @@ have been searching one folder all along.</p>
 <p>Paste that <code>RawQuery</code> straight into <code>mdfind</code> and it runs:</p>
 
 <pre><code><span class="cmd">mdfind</span> <span class="str">'(kMDItemUserTags = "Gray"cd)'</span>
-<span class="out">/Users/paulbaur/Library/Mobile Documents/…/Nice_List_Certificate.pdf
+<span class="out">/Users/you/Library/Mobile Documents/…/Nice_List_Certificate.pdf
 /Volumes/thunderbay-private2/tmp/39953.mp4</span></code></pre>
 
 <div class="callout ok">
@@ -2479,13 +2479,13 @@ ask.</figcaption>
 
 <span class="comment"># scope it. -onlyin is the single most important flag.</span>
 <span class="cmd">mdfind</span> <span class="arg">-onlyin</span> ~/spotlight-lab-tmp Zylophantic
-<span class="out">/Users/paulbaur/spotlight-lab-tmp/report.txt
-/Users/paulbaur/spotlight-lab-tmp/scratch.md
-/Users/paulbaur/spotlight-lab-tmp/memo.rtf</span>
+<span class="out">/Users/you/spotlight-lab-tmp/report.txt
+/Users/you/spotlight-lab-tmp/scratch.md
+/Users/you/spotlight-lab-tmp/memo.rtf</span>
 
 <span class="comment"># filenames only</span>
 <span class="cmd">mdfind</span> <span class="arg">-onlyin</span> ~/spotlight-lab-tmp <span class="arg">-name</span> memo
-<span class="out">/Users/paulbaur/spotlight-lab-tmp/memo.rtf</span>
+<span class="out">/Users/you/spotlight-lab-tmp/memo.rtf</span>
 
 <span class="comment"># count · NUL-safe · show attributes inline</span>
 <span class="cmd">mdfind</span> <span class="arg">-count</span> <span class="arg">-onlyin</span> ~ <span class="str">'kind:pdf'</span>
@@ -2571,7 +2571,7 @@ user-syntax parser prints locale chatter:</p>
 <pre><code><span class="cmd">mdfind</span> <span class="arg">-onlyin</span> ~ <span class="str">'kind:pdf'</span>
 <span class="out">2026-09-10 13:03:02.808 mdfind[10674:80508855] [UserQueryParser] Loading keywords and predicates for locale "en_US"
 2026-09-10 13:03:02.808 mdfind[10674:80508855] [UserQueryParser] Loading keywords and predicates for locale "en"
-/Users/paulbaur/Downloads/ISO_12233-reschart.pdf</span></code></pre>
+/Users/you/Downloads/ISO_12233-reschart.pdf</span></code></pre>
 
 <p>Raw <code>kMDItem…</code> queries do not print it. In scripts, always
 <code>2&gt;/dev/null</code>. Some queries also emit
@@ -2629,7 +2629,7 @@ into a folder to exclude it. Tested on macOS 15.6, with no forced <code>mdimport
 and 20 seconds for the background indexer:</p>
 <pre><code><span class="comment"># marker file present, then a new file created inside</span>
 <span class="cmd">mdfind</span> <span class="arg">-onlyin</span> ~/spotlight-lab-tmp/never2 Qwixotrone
-<span class="out">/Users/paulbaur/spotlight-lab-tmp/never2/late.txt   <span class="hl">← still indexed</span></span>
+<span class="out">/Users/you/spotlight-lab-tmp/never2/late.txt   <span class="hl">← still indexed</span></span>
 
 <span class="comment"># same test, folder renamed to end in .noindex</span>
 <span class="cmd">mdfind</span> <span class="arg">-onlyin</span> ~/spotlight-lab-tmp/x.noindex Qwixotrone
@@ -2645,8 +2645,8 @@ to the Spotlight Privacy list in System Settings.</p>
 behind Full Disk Access. Every walking tool hits the same wall:</p>
 
 <pre><code><span class="cmd">find</span> ~/Library/Mail <span class="arg">-maxdepth</span> 1
-<span class="out">/Users/paulbaur/Library/Mail
-<span class="hl">find: /Users/paulbaur/Library/Mail: Operation not permitted</span></span>
+<span class="out">/Users/you/Library/Mail
+<span class="hl">find: /Users/you/Library/Mail: Operation not permitted</span></span>
 
 <span class="cmd">find</span> /Library/Application\ Support/com.apple.TCC <span class="arg">-type</span> f
 <span class="out"><span class="hl">find: /Library/Application Support/com.apple.TCC: Operation not permitted</span></span></code></pre>
@@ -2766,14 +2766,14 @@ version.</p>
 
 <pre><code><span class="comment"># modifiers are not decoration — without c, the case must match exactly</span>
 <span class="cmd">mdfind</span> <span class="arg">-onlyin</span> <span class="str">"$SL"</span> <span class="str">"kMDItemFSName == 'REPORT.TXT'c"</span>
-<span class="out">/Users/paulbaur/spotlight-lab-tmp/report.txt</span>
+<span class="out">/Users/you/spotlight-lab-tmp/report.txt</span>
 
 <span class="cmd">mdfind</span> <span class="arg">-onlyin</span> <span class="str">"$SL"</span> <span class="str">"kMDItemFSName == 'REPORT.TXT'"</span>
 <span class="out">(nothing)</span>
 
 <span class="comment"># d folds accents: this finds café.txt</span>
 <span class="cmd">mdfind</span> <span class="arg">-onlyin</span> <span class="str">"$SL"</span> <span class="str">"kMDItemFSName == 'cafe.txt'd"</span>
-<span class="out">/Users/paulbaur/spotlight-lab-tmp/café.txt</span>
+<span class="out">/Users/you/spotlight-lab-tmp/café.txt</span>
 
 <span class="comment"># PDFs touched in the last week, anywhere in $HOME</span>
 <span class="cmd">mdfind</span> <span class="arg">-onlyin</span> ~ <span class="str">"kMDItemContentModificationDate &gt;= \$time.today(-7) &amp;&amp; kMDItemContentType == 'com.adobe.pdf'"</span></code></pre>
@@ -2855,7 +2855,7 @@ even for a range that provably contains the file:</p>
 <span class="out">(nothing — report.txt is 65 bytes)</span>
 
 <span class="cmd">mdfind</span> <span class="arg">-onlyin</span> <span class="str">"$SL"</span> <span class="str">"kMDItemFSSize &gt; 50 &amp;&amp; kMDItemFSSize &lt; 100"</span>
-<span class="out">/Users/paulbaur/spotlight-lab-tmp/report.txt</span></code></pre>
+<span class="out">/Users/you/spotlight-lab-tmp/report.txt</span></code></pre>
 <p>Use two comparisons joined with <code>&amp;&amp;</code>. It is longer and it works.</p>
 </div>
 
