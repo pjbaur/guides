@@ -19,28 +19,28 @@
       "file": "tmux-user-guide.html",
       "name": "tmux",
       "subject": "Terminal multiplexing — sessions that outlive your connection, the client/server model, panes, copy-mode, scripting",
-      "verified": "tmux 3.7b · 2026-08-22",
+      "verified": "tmux 3.7b · 2026-08-22 (3.7c available)",
       "accent": "green"
     },
     {
       "file": "atuin-user-guide.html",
       "name": "atuin",
       "subject": "Shell history as a queryable, syncing SQLite database",
-      "verified": "atuin 18.19.0 · 2026-08-07",
+      "verified": "atuin 18.19.0 · 2026-08-07 (18.21.0 available)",
       "accent": "cyan"
     },
     {
       "file": "rsync-user-guide.html",
       "name": "rsync",
       "subject": "The trailing slash, the delta algorithm, filter rules, SSH and daemon transports, --link-dest snapshots",
-      "verified": "rsync 3.4.4 (protocol 32) · 2026-08-07",
+      "verified": "rsync 3.4.4 (protocol 32) · 2026-08-07 (3.5.0 available)",
       "accent": "amber"
     },
     {
       "file": "chezmoi-user-guide.html",
       "name": "chezmoi",
       "subject": "Declaring your home directory once and applying it everywhere",
-      "verified": "chezmoi v2.72.0 · 2026-08-06",
+      "verified": "chezmoi v2.72.0 · 2026-08-06 (v2.72.1 available)",
       "accent": "blue"
     },
     {
@@ -54,14 +54,14 @@
       "file": "fzf-user-guide.html",
       "name": "fzf",
       "subject": "Fuzzy finding as a composable shell primitive",
-      "verified": "fzf 0.74.2 · 2026-08-06",
+      "verified": "fzf 0.74.2 · 2026-08-06 (0.74.3 available)",
       "accent": "magenta"
     },
     {
       "file": "lazygit-user-guide.html",
       "name": "lazygit",
       "subject": "Daily Git through a terminal UI, without losing the plot",
-      "verified": "lazygit 0.63.0",
+      "verified": "lazygit 0.63.0 (0.64.1 available)",
       "accent": "green"
     },
     {
