@@ -4,8 +4,8 @@
     {
       "file": "claude-code-prompting-user-guide.html",
       "name": "Claude Code prompting",
-      "subject": "Two-tier Anthropic/Z.AI routing, the budget guard, and the transcript archive — built from your own measured session data, not generic advice",
-      "verified": "usage-guard.py + archive_transcripts.py · data through 2026-09-13",
+      "subject": "Three-tier Anthropic (Sonnet/Opus/Fable) and two-tier Z.AI routing, quota windows and the runaway backstop, Claude Code's own context levers, and the transcript archive — built from your own measured session data",
+      "verified": "usage-guard.py 2026-09-18 rewrite + archive_transcripts.py · verified 2026-09-18",
       "accent": "amber"
     },
     {
