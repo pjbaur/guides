@@ -454,7 +454,7 @@ dl.glossary dd{margin:.2rem 0 0;color:var(--ink2)}
           <tr><td><code>effortLevel</code> (<code>settings.json</code>)</td><td>Global effort; <code>modelSettings</code> overrides per model. Yours: <code>high</code> globally, Opus 5 <code>xhigh</code>.</td><td>Lower to <code>medium</code> for routine interactive work; Fable at lower effort still beats older models at <code>xhigh</code>.</td></tr>
           <tr><td>Subagents (<code>Agent</code> tool)</td><td>Tool output stays in the subagent; only its report enters your context.</td><td>Any read-heavy search or review. The report is the only part you pay for on every later turn.</td></tr>
           <tr><td><code>CLAUDE.md</code> and <code>@includes</code></td><td>Re-read as cached input on every turn. A 140 KB instructions file cost $6 in three Fable prompts (<code>usage-budget.md</code>).</td><td>Keep includes short; move reference material to files the model reads on demand.</td></tr>
-          <tr><td><code>cleanupPeriodDays</code> (<code>settings.json</code>)</td><td>How long Claude Code keeps session transcripts before pruning them (default unverified at the time of writing).</td><td>The pruning §10 archives against is a setting, not a law. Raise it if you want longer live history; keep the archive regardless.</td></tr>
+          <tr><td><code>cleanupPeriodDays</code> (<code>settings.json</code>)</td><td>How long Claude Code keeps session transcripts and other application data before a background sweep after session start deletes them. Default 30 days; minimum 1.</td><td>The pruning §10 archives against is a setting, not a law. Raise it if you want longer live history; keep the archive regardless.</td></tr>
         </tbody>
       </table>
     </div>
