@@ -187,7 +187,7 @@ dl.glossary dd{margin:.2rem 0 0;color:var(--ink2)}
   <section id="mental-model">
     <h2>1 · Mental model</h2>
     <p>Your Claude Code setup is not "a model you talk to." It is a pipeline: a <strong>router</strong> picks which model answers, a <strong>meter</strong> watches what that costs, and an <strong>archive</strong> keeps a copy of what happened because the provider's own transcript store does not. All of them are hooks — small scripts Claude Code runs at fixed points (prompt submit, session start, session stop) — plus one statusline script that captures the account's real quota reading (§8), and all of them were built in response to one measured fact: <em>a handful of runaway sessions consume almost all of your quota, and nothing was watching.</em></p>
-    <p>The two-tier design exists because model capability and token cost move independently. A work-tier model (Sonnet 5 on Anthropic, GLM-5.3-Flash on Z.AI) is cheap per token and fine for anything mechanical. A deep-tier model (Opus 5, GLM-5.3) costs roughly 3x more per input token and 3x more per output token, and is worth it exactly when the task involves a judgment call with no obvious right answer. On Anthropic there is a third rung, Fable 5.1, at twice Opus per token; your <code>settings.json</code> starts every Anthropic session there (§5). The entire prompting discipline in this guide reduces to one question, asked honestly, per task: <strong>does this need judgment, or does it need typing?</strong></p>
+    <p>The two-tier design exists because model capability and token cost move independently. A work-tier model (Sonnet 5 on Anthropic, GLM-5.3-Flash on Z.AI) is cheap per token and fine for anything mechanical. A deep-tier model (Opus 5, GLM-5.3) costs roughly 3x more per input token and 3x more per output token, and is worth it exactly when the task involves a judgment call with no obvious right answer. On Anthropic there is a third rung, Fable 5.1, at twice Opus per token, reached only by escalation (§5). The entire prompting discipline in this guide reduces to one question, asked honestly, per task: <strong>does this need judgment, or does it need typing?</strong></p>
     <div class="callout blue">
       <strong>Misconception: "the expensive model gives better code, so default to it"</strong>
       Your own data says otherwise. 96% of tokens processed across 59,397 Z.AI turns were <em>cached input</em> — context being re-read, not new reasoning. The model tier barely moves that number; context size does. A deep-tier model re-reading a bloated context is not buying you quality, it's buying you a bigger per-token multiplier on the exact same waste.
@@ -372,7 +372,7 @@ dl.glossary dd{margin:.2rem 0 0;color:var(--ink2)}
         </tbody>
       </table>
     </div>
-    <p>Fable is the Anthropic default, so an Anthropic session starts on the top rung. The routing rule is therefore inverted there: downshift to <code>/model sonnet</code> before mechanical or unattended work. Fable is 2x Opus and 5x Sonnet per token at list; on a subscription that ratio is what the 5h/7d windows in §8 feel.</p>
+    <p>Fable is an escalation target, never a starting point. Start on Sonnet, escalate to Opus for judgment, and to Fable only for the classes above, with the full spec given up front. Fable is 2x Opus and 5x Sonnet per token at list; on a subscription that ratio is what the 5h/7d windows in §8 feel.</p>
     <p>Roughly 75% of Anthropic-side turns fit the work tier by this breakdown. If your own ratio looks very different from that, that's a signal worth noticing — not a rule you're breaking.</p>
     <figure class="diagram">
       <svg viewBox="0 0 960 300" role="img" aria-label="Escalation flowchart between work tier and deep tier">
@@ -639,7 +639,7 @@ projected = used% / elapsed</pre>
     <div class="lab">
       <h4>Lab 2 · Practice the ESCALATE / DOWNSHIFT signal</h4>
       <p class="meta">10 minutes · a real work-tier session</p>
-      <p>Start on <code>/model sonnet</code> — on Anthropic say it explicitly, since the session otherwise opens on Fable. Give it a task you already suspect is a genuine judgment call (per §5's deep-tier table). Confirm it prints <code>ESCALATE: &lt;reason&gt;</code> and stops rather than guessing. Switch with <code>/model opus</code> and resend once, not twice.</p>
+      <p>Start on <code>/model sonnet</code>. Give it a task you already suspect is a genuine judgment call (per §5's deep-tier table). Confirm it prints <code>ESCALATE: &lt;reason&gt;</code> and stops rather than guessing. Switch with <code>/model opus</code> and resend once, not twice.</p>
       <div class="checkpoint">Checkpoint: the model stopped instead of guessing, and you switched exactly once.</div>
     </div>
     <div class="lab">
@@ -687,7 +687,7 @@ projected = used% / elapsed</pre>
         <code>zclaude</code> (work tier, default)
         <code>zclaude deep</code> (known-deep work)
         <code>/model sonnet</code> / <code>/model opus</code> (switch in-session, once)
-        <code>claude</code> → Fable (Anthropic default) · <code>/model sonnet</code> before mechanical work
+        <code>claude</code> → Sonnet 5 (work tier) · <code>/model opus</code>, or <code>/model fable</code> for frontier-class work
       </div>
       <div class="cheat-card">
         <h4>Work-tier prompt must have</h4>
