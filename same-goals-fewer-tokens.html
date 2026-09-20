@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Same Goals, Fewer Tokens</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%99%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f7f6f3; --surface:#ffffff; --surface2:#f0eee8; --ink:#22201c; --ink2:#4a463e;
+  --muted:#7a756a; --line:#ddd8cc; --code-bg:#2b2820;
+  --accent:#a8580a; --accent-wash:#f6e6d4;
+  --warn:#8a5a00; --danger:#a3271f;
+  --terminal:#1d1b16; --terminal-ink:#e8e3d6; --terminal-accent:#e0a253;
+  --on-accent:#fff8ef;
+}
+@media (prefers-color-scheme: dark){
+  :root:not(.light){
+    --bg:#161410; --surface:#1e1c17; --surface2:#252219; --ink:#efe9dc; --ink2:#cabfa9;
+    --muted:#948a76; --line:#3a3527; --code-bg:#12100c;
+    --accent:#e0a253; --accent-wash:#332a19;
+    --warn:#e0b84a; --danger:#e2685c;
+    --terminal:#0e0d0a; --terminal-ink:#e8e3d6; --terminal-accent:#e0a253;
+    --on-accent:#1a1610;
+  }
+}
+:root.dark{
+  --bg:#161410; --surface:#1e1c17; --surface2:#252219; --ink:#efe9dc; --ink2:#cabfa9;
+  --muted:#948a76; --line:#3a3527; --code-bg:#12100c;
+  --accent:#e0a253; --accent-wash:#332a19;
+  --warn:#e0b84a; --danger:#e2685c;
+  --terminal:#0e0d0a; --terminal-ink:#e8e3d6; --terminal-accent:#e0a253;
+  --on-accent:#1a1610;
+}
+:root.light{
+  --bg:#f7f6f3; --surface:#ffffff; --surface2:#f0eee8; --ink:#22201c; --ink2:#4a463e;
+  --muted:#7a756a; --line:#ddd8cc; --code-bg:#2b2820;
+  --accent:#a8580a; --accent-wash:#f6e6d4;
+  --warn:#8a5a00; --danger:#a3271f;
+  --terminal:#1d1b16; --terminal-ink:#e8e3d6; --terminal-accent:#e0a253;
+  --on-accent:#fff8ef;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin:0}
+p{max-width:78ch}
+h1,h2,h3,h4{line-height:1.25;color:var(--ink)}
+a{color:var(--accent)}
+code,pre,kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+code{background:var(--surface2);padding:.15em .4em;border-radius:4px;font-size:.9em}
+kbd{background:var(--surface2);border:1px solid var(--line);border-bottom-width:3px;border-radius:5px;padding:.1em .5em;font-size:.85em}
+.skip-link{position:absolute;left:-999px;top:0;background:var(--accent);color:var(--on-accent);padding:.6em 1em;z-index:100}
+.skip-link:focus{left:0}
+.layout{display:flex;min-height:100vh}
+.sidebar{position:sticky;top:0;height:100vh;overflow-y:auto;width:270px;flex:0 0 270px;background:var(--surface);border-right:1px solid var(--line);padding:1.4rem 1.2rem}
+.sidebar h1{font-size:1.05rem;margin:0 0 .2rem}
+.sidebar .subtitle{color:var(--muted);font-size:.82rem;margin:0 0 1.2rem}
+.toc-group{margin:1.1rem 0}
+.toc-label{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 .4rem;font-weight:600}
+.toc-group a{display:block;color:var(--ink2);text-decoration:none;font-size:.87rem;padding:.28rem .4rem;border-radius:5px}
+.toc-group a:hover{background:var(--surface2)}
+.toc-group a.active{background:var(--accent-wash);color:var(--accent);font-weight:600}
+main{flex:1;min-width:0;padding:2.6rem clamp(1.2rem,4vw,4rem) 6rem}
+.hero{max-width:78ch;margin-bottom:2.6rem}
+.eyebrow{color:var(--accent);font-size:.78rem;letter-spacing:.09em;text-transform:uppercase;font-weight:700;margin:0 0 .8rem}
+.hero h2{font-size:2rem;margin:0 0 .8rem}
+.hero .accent-clause{color:var(--accent)}
+.hero .lede{color:var(--ink2);font-size:1.05rem;margin:0 0 1.2rem}
+.badges{display:flex;flex-wrap:wrap;gap:.5rem}
+.badge{background:var(--surface2);border:1px solid var(--line);border-radius:999px;padding:.3rem .8rem;font-size:.78rem;color:var(--ink2)}
+section{max-width:78ch;margin:3.2rem 0;scroll-margin-top:1.5rem}
+section h2{font-size:1.5rem;border-bottom:2px solid var(--line);padding-bottom:.5rem;margin-bottom:1rem}
+section h3{font-size:1.15rem;margin-top:1.8rem}
+.callout{border-left:4px solid var(--accent);background:var(--accent-wash);border-radius:0 8px 8px 0;padding:.9rem 1.1rem;margin:1.2rem 0}
+.callout>strong:first-child{display:block;margin-bottom:.3rem}
+.callout.warn{border-color:var(--warn);background:color-mix(in srgb, var(--warn) 14%, var(--surface))}
+.callout.danger{border-color:var(--danger);background:color-mix(in srgb, var(--danger) 14%, var(--surface))}
+.callout.blue{border-color:#3a7ca5;background:color-mix(in srgb, #3a7ca5 12%, var(--surface))}
+pre{background:var(--terminal);color:var(--terminal-ink);border-radius:8px;padding:1rem 1.1rem;overflow-x:auto;font-size:.86rem;position:relative;line-height:1.55}
+pre .copy-btn{position:absolute;top:.5rem;right:.5rem;background:transparent;border:1px solid var(--terminal-accent);color:var(--terminal-accent);border-radius:5px;font-size:.7rem;padding:.2rem .5rem;cursor:pointer;opacity:.7}
+pre .copy-btn:hover{opacity:1}
+.cmd{color:var(--terminal-accent)}
+.comment{color:#8a8470}
+.table-wrap{overflow-x:auto;margin:1rem 0}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{border:1px solid var(--line);padding:.5rem .7rem;text-align:left;vertical-align:top}
+th{background:var(--surface2);text-transform:uppercase;letter-spacing:.04em;font-size:.72rem;color:var(--muted)}
+tr:nth-child(even) td{background:var(--surface2)}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.lab{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:1.2rem 1.4rem;margin:1.4rem 0}
+.lab .meta{color:var(--muted);font-size:.82rem;margin:-.4rem 0 1rem}
+.lab h4{margin:0 0 .3rem}
+.checkpoint{border-top:1px dashed var(--line);margin-top:1rem;padding-top:.8rem;font-size:.9rem;color:var(--ink2)}
+blockquote.prompt{border-left:4px solid var(--line);background:var(--surface);border-radius:0 8px 8px 0;padding:.8rem 1.1rem;margin:1rem 0;font-size:.9rem;color:var(--ink2);white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+blockquote.prompt.bad{border-left-color:var(--danger)}
+blockquote.prompt.good{border-left-color:#4a8a5c}
+.cheat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem}
+.cheat-card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:1rem 1.1rem}
+.cheat-card h4{margin:0 0 .5rem;font-size:.95rem;color:var(--accent)}
+.cheat-card code{display:block;margin:.2rem 0}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.4rem 0}
+@media (max-width:720px){.vs{grid-template-columns:1fr}}
+.vs .side{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:1rem 1.2rem}
+.vs .side h4{margin:.1rem 0 .6rem}
+.vs .pro{border-top:4px solid #4a8a5c}
+.vs .con{border-top:4px solid var(--danger)}
+.vs .verdict{grid-column:1/-1;background:var(--accent-wash);border:1px solid var(--accent);border-radius:10px;padding:1rem 1.2rem}
+.sources-line{font-size:.82rem;color:var(--muted);margin-top:.6rem}
+@media print{
+  .sidebar,pre .copy-btn{display:none}
+  main{padding:0}
+  section{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<a href="#content" class="skip-link">Skip to content</a>
+<div class="layout">
+<nav class="sidebar" aria-label="Table of contents">
+  <h1>Same Goals, Fewer Tokens</h1>
+  <p class="subtitle">Your 30-day Z.AI spend, correlated to real prompts and rewritten</p>
+  <div class="toc-group">
+    <p class="toc-label">Evidence</p>
+    <a href="#correlation">1 · Where the tokens went</a>
+    <a href="#spenders">2 · The prompts that cost the most</a>
+  </div>
+  <div class="toc-group">
+    <p class="toc-label">The big question</p>
+    <a href="#debate">3 · Long orchestrator runs: two pits, one verdict</a>
+  </div>
+  <div class="toc-group">
+    <p class="toc-label">The fixes</p>
+    <a href="#rewrites">4 · Prompt rewrites</a>
+    <a href="#hygiene">5 · Session hygiene</a>
+  </div>
+  <div class="toc-group">
+    <p class="toc-label">Practice</p>
+    <a href="#lab">Lab</a>
+    <a href="#cheat-sheet">Cheat sheet</a>
+    <a href="#sources">Sources</a>
+  </div>
+</nav>
+<main id="content">
+  <div class="hero">
+    <p class="eyebrow">Companion to claude-code-prompting-user-guide.html</p>
+    <h2>Same goals, fewer tokens.<br><span class="accent-clause">Every spender, rewritten.</span></h2>
+    <p class="lede">Your dashboard shows 2.6B tokens over 30 days. This document traces that spend to the specific prompts that caused it, argues the case for and against the pattern that dominated it, and rewrites each expensive prompt to hit the same goal for less — using the rules from the prompting guide.</p>
+    <div class="badges">
+      <span class="badge">Window 2026-08-18 → 2026-09-16</span>
+      <span class="badge">3.34B raw tokens parsed, 44 sessions with usage</span>
+      <span class="badge">Top session = 62.5% of everything</span>
+      <span class="badge">Cached input = 96.3% of tokens</span>
+    </div>
+  </div>
+
+  <section id="correlation">
+    <h2>1 · Where the tokens went</h2>
+    <p>The dashboard's two spikes — ~580M on Sep 7–8 and ~610M on Sep 9–10 — are not two events. They are one session: <code>7d2f487a</code>, the orchestrator "blind spots" run, Sep 7 15:54 → Sep 11 13:54 (94 hours). Everything else you did in 30 days fits inside its shadow.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Measure</th><th class="num">Value</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Session total</td><td class="num">2,086,063,543</td><td>62.5% of the 30-day window</td></tr>
+          <tr><td>Main-thread share</td><td class="num">900,184,779</td><td>1,735 turns, all on <code>glm-5.3</code></td></tr>
+          <tr><td>Subagent share</td><td class="num">~1.19B</td><td>181 subagent transcripts — impl + review pairs per task</td></tr>
+          <tr><td>Median context per turn</td><td class="num">522,666</td><td>p99 = 921,245 · max = 922,312 vs the 250K compact window</td></tr>
+          <tr><td>Top 3 sessions</td><td class="num">71.1%</td><td>Top 10 = 87.5% of all spend</td></tr>
+          <tr><td>Cached input, whole window</td><td class="num">96.3%</td><td>Matches the guide's 96%/82% finding exactly</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The daily shape confirms it: Sep 7 = 256M, Sep 8 = 759M, Sep 9 = 336M, Sep 10 = 433M, Sep 11 = 304M. One continuous run, deep tier, unattended, median context half a million tokens re-read on every turn. Your second-, third-, and fourth-biggest sessions — the tmux guide, Epic 5, the Rust port — together cost less than one average <em>day</em> of this run.</p>
+    <div class="callout warn">
+      <strong>The token-dashboard database is retired</strong>
+      <code>~/.claude/token-dashboard.db</code> silently stopped ingesting on 2026-04-22 and missed this entire window; a one-off backfill on 2026-09-16 recovered Aug–Sep but May–Jul were already pruned from the live store. It now lives frozen at <code>~/.claude/archive/retired/token-dashboard.db</code> — do not query it for current numbers. Its replacement: the archive (<code>~/.claude/archive/transcripts.db</code>, hooks ingest on every session start/end, nothing is ever pruned, May–Jul recovered from TimeMachine). Analysis commands: <code>archive_transcripts.py top-spend --days 30 --prompts</code>, <code>stats</code>, <code>export</code>. The archive DB is copied daily to the NAS share by <code>local.archive-backup</code> (launchd 11:37) on top of TimeMachine.
+    </div>
+    <div class="callout blue">
+      <strong>Why the dashboard says 2.6B and the transcripts say 3.34B</strong>
+      Raw transcript tokens (input + output + cache read + cache create) sum to 3.34B; the dashboard bills 2.6B. The gap is consistent with Z.AI discounting cache reads in its billing view. The correlation does not care which number is "real": both agree the spikes are the orchestrator run, and both agree the run is the majority of the window.
+    </div>
+  </section>
+
+  <section id="spenders">
+    <h2>2 · The prompts that cost the most</h2>
+    <p>Ranked by session total (subagents included). The prompt text is quoted from the transcripts.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Date</th><th>Project</th><th class="num">Tokens</th><th>Prompt that started it</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Sep 7–11</td><td>orchestrator project</td><td class="num">2,086,063,543</td><td>"I have a document, @docs/product-blind-spots-2026-09-07.md, that contains work I want done to this project. Create a prompt I can use that will tackle all of the work in that document iteratively with a QA pass after eac[h task]…" — then the generated orchestrator prompt was pasted back in and left to run.</td></tr>
+          <tr><td>2</td><td>Aug 23</td><td>~/guides</td><td class="num">159,190,685</td><td>"Create a fun, functionally stylish (not style for style's-sake), thorough, detailed user guide for tmux."</td></tr>
+          <tr><td>3</td><td>Aug 27–30</td><td>quantum ×3 sessions</td><td class="num">~135,000,000</td><td>"Has everything in @docs/critical-review-2026-02-21.md been addressed?" — same question, three near-identical sessions, each re-reading the repo and the doc from scratch.</td></tr>
+          <tr><td>4</td><td>Aug 25</td><td>orchestrator project</td><td class="num">128,721,007</td><td>"Implement the Messge board (Epic 5)."</td></tr>
+          <tr><td>5</td><td>Aug 21</td><td>screencap tool</td><td class="num">118,663,750</td><td>"I want to create a Rust version of this project. Create the local repo as a sibling to this project, then create a detailed plan. Ask me clarifying questions. Do not make any changes to this repo."</td></tr>
+          <tr><td>6</td><td>Aug 20–22</td><td>scrape-printers</td><td class="num">107,732,151</td><td>"continue refresh"</td></tr>
+          <tr><td>7</td><td>Aug 25</td><td>reverse-proxy-cluster</td><td class="num">105,271,407</td><td>"Create a README.md for this project."</td></tr>
+          <tr><td>8</td><td>Aug 20</td><td>review tool</td><td class="num">71,011,307</td><td>"Create a thorough, detailed plan to implement all improvements from @CRITICAL-REVIEW.md using parallel agent teams."</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Two of these deserve a second look because the prompt is <em>small</em> but the session was not. "Create a README.md for this project" cost 105M tokens — the prompt is fine, the context it inherited was not. And "Rename the master branch to main, then push" cost 44M in a bloated Rust-port session — a two-command mechanical task riding on a 40M-token conversation. That is the guide's §4 lesson in miniature: <strong>the prompt is rarely the bill; the context it lands in is.</strong></p>
+    <h3>The six patterns behind the spend</h3>
+    <ol>
+      <li><strong>The everything-doc run.</strong> One session, one work document, iterate until done. (Spender #1 — see the debate in §3.)</li>
+      <li><strong>The repeated verification question.</strong> "Has X been implemented?" asked fresh each time, each ask re-reading the whole repo. (Spender #3.)</li>
+      <li><strong>Big-bang planning in a live session.</strong> Detailed plans + parallel agent teams in the same context that then executes. (Spenders #4, #8.)</li>
+      <li><strong>Whole-project port.</strong> Rust rewrites of working tools. (Spender #5, plus the review-tool clone at 48M.)</li>
+      <li><strong>Vague continuation in a long session.</strong> "continue refresh" — no done condition, no scope, session runs until something stops it. (Spender #6.)</li>
+      <li><strong>Mechanical tasks in bloated sessions.</strong> README, branch rename. The work cost nothing; the context cost everything.</li>
+    </ol>
+  </section>
+
+  <section id="debate">
+    <h2>3 · Long orchestrator runs: two pits, one verdict</h2>
+    <p>The orchestrator run is the most expensive thing you have done in Claude Code — and it is also the most work you have gotten out of a single session: multiple epics, implemented and reviewed, across 94 hours with 181 subagent transcripts. Pretending it was simply a mistake throws away the reason you built it. So the two positions, argued against each other from your own data:</p>
+    <div class="vs">
+      <div class="side pro">
+        <h4>Pit #1 — "It was worth it. Make it cheaper, don't kill it."</h4>
+        <p>The run produced reviewed implementations for an entire work document in one launch. The cost was not the orchestration pattern — subagents are exactly how you keep the main context small — the cost was that nothing bounded it:</p>
+        <ul>
+          <li>Main thread ran 1,735 turns on <code>glm-5.3</code> with median context 522K against a 250K compact window. The orchestrator prompt even said "your own context stays small." It didn't, and nothing enforced it.</li>
+          <li>The run predates the guards: <code>usage-guard.py</code> was verified 2026-09-13, two days after this run ended. The guide's runaway replay showed the same session at 6.8x cheaper with a compact window plus tier split.</li>
+          <li>Split per epic, each orchestrator starts with a fresh, small context; cross-epic state lives in checkpoint files on disk — the plan/history machinery you already have — not in a 500K-token conversation.</li>
+        </ul>
+        <p><strong>The fix is fencing, not abolition:</strong> per-epic sessions, Flash for implementation subagents, deep tier only for reviews, <code>CLAUDE_BUDGET_ZAI_HARD</code> as a hard ceiling, and the peak-hours guard on anything left unattended.</p>
+      </div>
+      <div class="side con">
+        <h4>Pit #3 — "At 2B tokens, the pattern is too expensive at any price."</h4>
+        <p>The numbers say the orchestrator's core promise failed. "Your own context stays small" was the design's first principle, and the main thread burned 900M tokens anyway — 96% of it cache re-reads of its own accumulated context. Why this predicts every future run fails the same way:</p>
+        <ul>
+          <li>An orchestrator's job is to hold state for <em>everything</em> — item briefs, specs, review verdicts, teammate messages. That state only grows. 454 "user prompts" were injected into this session, most of them teammate notifications the orchestrator must read. The context cannot stay small by construction, and no prompt will make it.</li>
+          <li>Unattended + deep tier + no ceiling is the guide's one hard rule, violated for 94 hours. The next run will violate it again, because the incentive at launch ("just let it finish") is exactly the incentive that created this one.</li>
+          <li>Per-epic sessions don't lose much: epics in the doc are mostly independent, and each epic's subagents start fresh regardless. The cross-epic context the mega-session preserved is the same context that cost 522K per turn to re-read.</li>
+        </ul>
+        <p><strong>The pattern's failure mode is not incidental — it is the design.</strong> Delete it, work the doc one epic per plain session, review each with a fresh deep-tier pass.</p>
+      </div>
+      <div class="verdict">
+        <h4>Verdict: fence it, and make the fence load-bearing</h4>
+        <p>Pit #1 is right that the work was real; Pit #3 is right that the pattern as-run cannot be repeated. The resolution is to keep the orchestrator but bind it to the things it refused to do for itself:</p>
+        <ol>
+          <li><strong>Scope = one epic.</strong> The generated prompt says "tackle all of the work in that document." Change it to one epic per launch, with the next epic as a fresh session reading the checkpoint file. This is the single biggest lever: it caps the context the 96.3% tax applies to.</li>
+          <li><strong>Tier split the subagents.</strong> Implementation subagents on Flash; only the review pass on GLM-5.3. Reviews are the judgment calls; implementation from a tight spec is typing.</li>
+          <li><strong>State on disk, never in context.</strong> Item status, briefs, verdicts go to a checkpoint file after every task. The orchestrator reads the file, not its own history.</li>
+          <li><strong>Launch fenced or not at all:</strong> <code>CLAUDE_BUDGET_ZAI_HARD=15000 ZCLAUDE_PEAK_POLICY=enforce</code> on every unattended run. If a legitimate run needs more, raise it consciously at launch, not after the fact.</li>
+        </ol>
+        <p>Rough arithmetic, assumptions stated: main-thread cost scales roughly with median context × turns. Capping median context at ~250K (compact window actually firing) halves the 900M main-thread share; per-epic sessions cap it further because most turns run well under the ceiling. Flash implementation subagents at roughly a quarter of GLM-5.3's rate cut most of the 1.19B subagent share. Combined, the same work plausibly lands in the 400–700M range — <em>not</em> the guide's 6.8x, because this run's output volume was real, and reviews stay on the deep tier. Anyone quoting you a 10x saving on this run is selling something.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="rewrites">
+    <h2>4 · Prompt rewrites</h2>
+    <p>Each rewrite follows the guide's §6 shape: explicit path, done condition, scope boundary, escape hatch. Same goal, bounded blast radius.</p>
+
+    <h3>4.1 The everything-doc run</h3>
+    <blockquote class="prompt bad">Create a prompt I can use that will tackle all of the work in that document iteratively with a QA pass after each task…</blockquote>
+    <p>The generated prompt then ran until the document was empty. Rewrite the generated prompt itself:</p>
+    <blockquote class="prompt good">Work through @docs/product-blind-spots-2026-09-07.md, Epic 6 only ("Campfire chat + Pings").
+
+Done condition: every task in Epic 6 implemented, reviewed by a subagent review pass, tests green, checkpoint file updated, work committed.
+
+Rules:
+- Read the checkpoint file at docs/blind-spots-state.md first. It holds completed-item status and design briefs — trust it over your own memory. Update it after every task.
+- Dispatch implementation subagents; brief each with only what that task needs.
+- Your own context: if the conversation exceeds the compact window, finish the current task, update the checkpoint file, and stop. I will launch the next session.
+- Scope: do not start Epic 7. Do not refactor code outside the epic's files.
+- If a task needs a judgment call the spec does not answer, stop and print ESCALATE: &lt;question&gt;. Do not guess.
+
+Launch with:
+CLAUDE_BUDGET_ZAI_HARD=15000 ZCLAUDE_PEAK_POLICY=enforce zclaude deep --danger -p "$(cat epic6-run.md)"</blockquote>
+    <p>What changed: the unit of work shrank from "the document" to one epic; the checkpoint file, not the conversation, is the state; the budget and peak guards are attached at launch; and the escape hatch replaces silent guessing. Run six of these instead of one, and each one is killable.</p>
+
+    <h3>4.2 The repeated verification question</h3>
+    <blockquote class="prompt bad">Has everything in @docs/critical-review-2026-02-21.md been addressed?</blockquote>
+    <p>Asked three times in three sessions ≈ 135M tokens, because each ask re-read the doc, the repo, and the git history to rebuild the same answer. Two fixes — one-time setup, then a cheap recurring prompt:</p>
+    <p>Once, in a fresh session, have the review written down as a persistent checklist:</p>
+    <blockquote class="prompt good">Read @docs/critical-review-2026-02-21.md. For each finding, add a row to docs/review-state.md: finding ID, one-line summary, status (open | fixed | wontfix), evidence (file:line or commit SHA). Do not fix anything. Done condition: every finding in the doc has a row.</blockquote>
+    <p>Then every future "has it been addressed?" becomes incremental:</p>
+    <blockquote class="prompt good">Verify open items 12–40 in docs/review-state.md against the current code. For each: flip status to fixed with evidence, or leave open with a one-line reason. Update only that file. Do not re-read findings already marked fixed. Done condition: no item in 12–40 left unverified.</blockquote>
+    <p>Each run touches one file plus the code for the open items — tens of thousands of tokens, not tens of millions. This is also exactly what a slash command is for: the template stops being fresh tokens each time (guide §6).</p>
+
+    <h3>4.3 Big-bang planning in a live session</h3>
+    <blockquote class="prompt bad">Create a thorough, detailed plan to implement all improvements from @CRITICAL-REVIEW.md using parallel agent teams.</blockquote>
+    <p>The plan is a judgment call — deep tier, correct. The mistake is doing it in the session that then executes, so the whole plan lives in context for the rest of the work. Split by artifact:</p>
+    <blockquote class="prompt good">Read @CRITICAL-REVIEW.md and write a phased implementation plan to docs/impl-plan.md. One phase per coherent chunk, each phase listing: files touched, done condition, verification steps. Use the plan format from my plan/history setup. Do not implement anything. Ask me clarifying questions before writing if scope is ambiguous.</blockquote>
+    <p>Then execution is per-phase fresh sessions — you already have <code>/sym-phase</code> and the phased-project template for exactly this. Each session reads one phase (~a few thousand tokens), not the planning conversation (~hundreds of thousands).</p>
+
+    <h3>4.4 The whole-project port</h3>
+    <blockquote class="prompt bad">I want to create a Rust version of this project. Create the local repo as a sibling to this project, then create a detailed plan. Ask me clarifying questions. Do not make any changes to this repo.</blockquote>
+    <p>Honest assessment: this is already a good prompt — explicit location, clarifying-questions gate, scope boundary. Its 119M came from doing the survey of the entire source project in an interactive session. The upgrade is directional, not structural:</p>
+    <blockquote class="prompt good">Port this project to Rust as a sibling repo at ../screencap-rs.
+
+First: inventory the source. For each module record, in PORT-PLAN.md: what it does, its public interface, test coverage, and a port difficulty score. Do not read implementation bodies of modules scored "trivial" — interface + tests are enough to port them.
+
+Then plan the port in phases in PORT-PLAN.md and stop for my review before writing any Rust. Do not modify anything in the source repo.</blockquote>
+    <p>"Interface + tests are enough" is the line that matters: it stops the session from ingesting every implementation body, which is where the tokens went. Same pattern for the review-tool clone.</p>
+
+    <h3>4.5 Vague continuation</h3>
+    <blockquote class="prompt bad">continue refresh</blockquote>
+    <p>108M tokens, no done condition, no scope. Continuation prompts are fine mid-task; they are expensive when they are the <em>only</em> instruction for hours. Same task, bounded:</p>
+    <blockquote class="prompt good">Continue the refresh skill run. Done condition for this session: refresh cycle completes for all sources in config/sources.yaml, failures logged to refresh-errors.log, summary printed. If any source fails twice, skip it, log it, keep going. Stop and report when done — do not start a second cycle.</blockquote>
+
+    <h3>4.6 Mechanical tasks in bloated sessions</h3>
+    <blockquote class="prompt bad">Rename the master branch to main, then push.</blockquote>
+    <p>44M tokens for two commands, because the session carried 40M tokens of prior context. The rewrite is not better wording — it is <strong>a fresh session</strong> (<code>/clear</code>, or <code>/rewind</code> if the bloat is recent):</p>
+    <blockquote class="prompt good">(new session) In /Users/you/projects/screencap-rs: rename branch master to main, update the remote, push with -u. Report the tracking branch when done.</blockquote>
+    <p>Rule of thumb from your own data: if a prompt takes under one line and the task has no judgment in it, it belongs in a fresh session (or a shell), not in the conversation you happen to have open. Same for "Create a README.md" at 105M — fine prompt, wrong session; a fresh one with "read only code and existing docs in repo root and src/, do not read tests or vendored code" would have cut it by an order of magnitude.</p>
+  </section>
+
+  <section id="hygiene">
+    <h2>5 · Session hygiene</h2>
+    <p>Prompt rewrites fail if the session around them is unbounded. Half the money in this window was context tax; these are the habits that tax it back.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Habit</th><th>Trigger</th><th>Why, from your data</th></tr></thead>
+        <tbody>
+          <tr><td>Fresh session per epic / per phase</td><td>Starting any bounded unit of work</td><td>Top session's median context was 522K; the 96.3% cache-read share taxes every accumulated token on every turn</td></tr>
+          <tr><td>State to disk, not to conversation</td><td>Checkpoint after each task in any long run</td><td>Orchestrator prompt promised small context; 900M main-thread tokens happened anyway. Only a file is free to re-read</td></tr>
+          <tr><td>Fresh session for mechanical tasks</td><td>Prompt fits on one line, no judgment</td><td>"Rename branch, push" = 44M. "README.md" = 105M</td></tr>
+          <tr><td>Slash commands for repeated prompts</td><td>Same template typed twice</td><td>Verification question asked 3× = ~135M; a checklist file + command makes recurrence incremental</td></tr>
+          <tr><td>Never unattended on deep tier</td><td>Any <code>-p</code>/overnight launch</td><td>94 hours unattended on <code>glm-5.3</code>; the guide's one hard rule, and the guards now exist to enforce it</td></tr>
+          <tr><td>Budget ceiling at launch, not after</td><td>Any run expected to be big</td><td><code>CLAUDE_BUDGET_ZAI_HARD</code> exists; this run predates it and would have been stopped at a few percent of its spend</td></tr>
+          <tr><td>"Run X and diagnose," never pasted output</td><td>Every time you're about to paste a dump</td><td>Guide §6: 51% of characters typed were pasted output, re-read every turn</td></tr>
+          <tr><td>Compact window stays at 250K</td><td>Always</td><td>Guide §4 warning: tighter windows compact normal sessions needlessly; this window exists for exactly the tail that ate your month</td></tr>
+          <tr><td><code>/rewind</code> or <code>/compact</code> <em>before</em> <code>/model</code>, never after</td><td>Any escalation or downshift mid-session</td><td>Guide §7: a model switch discards the cache prefix, so the whole context is re-written at the new tier's rate. Rewind keeps the cache; compact shrinks what gets re-written</td></tr>
+          <tr><td>Know the floor: <code>/context</code> once per project</td><td>First session in a repo, or when a fresh session already feels slow</td><td>Guide §7: fresh sessions open at 61K tokens on the Anthropic config and opened at 108K in CampForge-v2, before a word is typed. "README.md" at 105M was a fine prompt in a session that started heavy</td></tr>
+          <tr><td>Audit what loads every turn</td><td>After adding a plugin, hook, MCP server, or a big <code>CLAUDE.md</code></td><td>Guide §7: the caveman hooks were registered twice and CampForge-v2's <code>CLAUDE.md</code> was 140 KB; both were paid on every turn of every session there. Both fixed 2026-09-19</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <strong>One caveat on hygiene</strong>
+      None of this helps if the meters are dark. As of 2026-09-16 they are not: the archive is the single meter (hooks on every session start/end, never pruned), <code>usage-guard.py --top</code> shows live credit burn, and the archive DB is copied daily to the NAS plus TimeMachine hourly. The one check that still matters: run <code>archive_transcripts.py stats</code> directly, outside a session, now and then — a silently dead hook is invisible from inside a session (guide §3's lesson, which is how the old dashboard died for five months).
+    </div>
+  </section>
+
+  <section id="lab">
+    <h2>Lab</h2>
+    <div class="lab">
+      <h4>Lab · Re-run the correlation yourself</h4>
+      <p class="meta">10 minutes · read-only · works against the archive, not just live transcripts</p>
+      <p>The analysis in §1 was a 30-line script over the transcripts: group assistant-turn usage by <code>sessionId</code> and day, sum the four token buckets, sort. Re-run it after your next big session, but against the archive instead of the live store. Compare its top-1 share to this document's 62.5%. If your next month's top session is again above ~25%, the fenced-orchestrator rules from §3 were not applied; if the top sessions are all under ~10%, the fencing worked.</p>
+      <div class="checkpoint">Checkpoint: you can produce the per-session token table from the archive, and you know your own top session's share of the month.</div>
+    </div>
+  </section>
+
+  <section id="cheat-sheet">
+    <h2>Cheat sheet</h2>
+    <div class="cheat-grid">
+      <div class="cheat-card">
+        <h4>Before launching anything long</h4>
+        <code>Scope = one epic / one phase</code>
+        <code>CLAUDE_BUDGET_ZAI_HARD=15000</code>
+        <code>ZCLAUDE_PEAK_POLICY=enforce</code>
+        <code>checkpoint file path named in the prompt</code>
+      </div>
+      <div class="cheat-card">
+        <h4>Every work-tier prompt carries</h4>
+        <code>explicit path · done condition</code>
+        <code>scope boundary (what NOT to touch)</code>
+        <code>"if you'd guess, print ESCALATE"</code>
+      </div>
+      <div class="cheat-card">
+        <h4>Recurring questions become files</h4>
+        <code>review-state.md checklist, updated in place</code>
+        <code>verify only open items each run</code>
+        <code>slash command for the template</code>
+      </div>
+      <div class="cheat-card">
+        <h4>Fresh session when…</h4>
+        <code>prompt fits on one line</code>
+        <code>task is mechanical</code>
+        <code>prior conversation is &gt;100K and unrelated to the task</code>
+        <code>/clear · /rewind if the tangent is recent</code>
+      </div>
+      <div class="cheat-card">
+        <h4>Meters</h4>
+        <code>archive_transcripts.py top-spend --days 30 --prompts</code>
+        <code>archive_transcripts.py stats</code>
+        <code>usage-guard.py --top 10 --windows</code>
+        <code>/context · /cost · /usage (cache hit ratio)</code>
+        <code>backup.log / MyBackups/claude-archive/</code>
+      </div>
+      <div class="cheat-card">
+        <h4>Subagent tier split</h4>
+        <code>implementation → Flash</code>
+        <code>review / architecture → GLM-5.3</code>
+        <code>orchestrator → smallest context, disk-backed state</code>
+      </div>
+    </div>
+  </section>
+
+  <section id="sources">
+    <h2>Sources</h2>
+    <p class="sources-line">All numbers computed from local files, 2026-09-16.</p>
+    <ul>
+      <li>Live Z.AI transcripts, <code>~/.claude-zai/projects/**/*.jsonl</code> — per-turn usage buckets (input, output, cache read, cache create) grouped by sessionId and day, window 2026-08-18 → 2026-09-16. The two spikes resolve to session <code>7d2f487a-a796-4700-8be6-7641f91d1d1c</code> plus its 181 subagent transcripts under <code>7d2f487a-a796-4700-8be6-7641f91d1d1c/subagents/</code>.</li>
+      <li>Z.AI dashboard screenshot, 2026-09-16 — 2.6B total, GLM-5.3 2.53B, GLM-4.7 71.41M, GLM-5.3-Flash 3.45M, window 2026-08-18 → 2026-09-16.</li>
+      <li><code>~/.claude/token-dashboard.db</code> — checked for coverage; stale (last write 2026-04-22, range 2026-01-11 → 2026-04-22), excluded as a source and flagged in §1.</li>
+      <li><code>~/guides/claude-code-prompting-user-guide.html</code> — the rules applied throughout: §4 cost model (96%/82% cached-input finding, concentration table, replay math), §5 routing and escalation-cache rules, §6 prompt-pattern shape, §7 context levers (fresh-session floor, <code>/rewind</code>, <code>/usage</code>, skill and hook audit), §8 budget guard, §9 peak guard, §10 archive.</li>
+    </ul>
+  </section>
+
+</main>
+</div>
+<button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme" style="position:fixed;bottom:1.2rem;right:1.2rem;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;font-size:1.1rem;z-index:50">◐</button>
+<script>
+'use strict';
+(function(){
+  var THEME_KEY='ccpg-theme';
+  var root=document.documentElement;
+  function applyTheme(t){root.classList.remove('dark','light');if(t==='dark')root.classList.add('dark');if(t==='light')root.classList.add('light');}
+  var saved=null;try{saved=localStorage.getItem(THEME_KEY);}catch(e){}
+  var order=['auto','dark','light'];
+  var current=order.indexOf(saved)>=0?saved:'auto';
+  applyTheme(current);
+  var btn=document.getElementById('theme-toggle');
+  if(btn){btn.addEventListener('click',function(){current=order[(order.indexOf(current)+1)%order.length];applyTheme(current);try{localStorage.setItem(THEME_KEY,current);}catch(e){}});}
+  document.querySelectorAll('pre').forEach(function(pre){
+    var b=document.createElement('button');b.className='copy-btn';b.type='button';b.textContent='Copy';
+    b.addEventListener('click',function(){var t=pre.textContent.replace(/^Copy/,'').trim();if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy';},1200);});}});
+    if(!pre.querySelector('.copy-btn'))pre.insertBefore(b,pre.firstChild);
+  });
+  var links=Array.prototype.slice.call(document.querySelectorAll('.toc-group a'));
+  var sections=links.map(function(a){return document.querySelector(a.getAttribute('href'));}).filter(Boolean);
+  if('IntersectionObserver' in window && sections.length){
+    var obs=new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        var id='#'+entry.target.id;
+        var link=links.find(function(a){return a.getAttribute('href')===id;});
+        if(!link)return;
+        if(entry.isIntersecting){links.forEach(function(a){a.classList.remove('active');});link.classList.add('active');}
+      });
+    },{rootMargin:'-15% 0px -70% 0px'});
+    sections.forEach(function(s){obs.observe(s);});
+  }
+})();
+</script>
+</body>
+</html>
