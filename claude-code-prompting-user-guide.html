@@ -441,28 +441,102 @@ dl.glossary dd{margin:.2rem 0 0;color:var(--ink2)}
 
   <section id="context-levers">
     <h2>7 · Claude Code's own context levers</h2>
-    <p>§4 showed that context re-read on every turn is 82% of spend. The hooks in this guide <em>meter</em> that number; Claude Code itself holds the controls that <em>shrink</em> it. None of them are exotic, and the routing discipline in §5 assumes you use them.</p>
+    <p>§4 showed that context re-read on every turn is 82% of spend. The hooks in this guide <em>meter</em> that number; Claude Code itself holds the controls that <em>shrink</em> it. Every lever below was checked against the installed binary (2.1.278) and the current docs on 2026-09-19, and the numbers come from your own transcripts. The routing discipline in §5 assumes you use them.</p>
+
+    <div class="callout">
+      <strong>What a fresh session already costs before you type</strong>
+      First assistant turn, all input buckets summed, per config dir. This is the floor every later turn re-reads.
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Config dir</th><th class="num">Sessions</th><th class="num">Median first-turn tokens</th><th>Roster loaded into the system prompt</th></tr></thead>
+        <tbody>
+          <tr><td><code>~/.claude</code> (Anthropic), last 14 days</td><td class="num">33</td><td class="num">61,268</td><td>90 skills, 15 agents, 10 commands, 6 plugins</td></tr>
+          <tr><td><code>~/.claude-zai</code> (Z.AI), last 30 days</td><td class="num">49</td><td class="num">27,793</td><td>0 skills, 15 agents, 9 commands, 2 plugins</td></tr>
+          <tr><td><code>~/.claude</code> in CampForge-v2 only</td><td class="num">3</td><td class="num">108,124</td><td>Same roster plus a 140,696-byte <code>CLAUDE.md</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Same launcher, same model tier, same person. The 33K-token gap between the two config dirs is first-party tooling that never loads under <code>zclaude</code>: four extra plugins, the built-in Anthropic skills, and the claude.ai connector and Chrome tool listings. The further 47K in CampForge-v2 is one file. Neither is conversation. Both are billed as cache reads on every turn, which is exactly the 82% bucket.</p>
+
+    <h3>Conversation levers</h3>
     <div class="table-wrap">
       <table>
         <thead><tr><th>Lever</th><th>What it does</th><th>When</th></tr></thead>
         <tbody>
-          <tr><td><code>/compact [focus]</code></td><td>Summarises the conversation so far; optional focus text says what to keep.</td><td>Before switching topics in a long session; before an escalation, because a smaller context is a cheaper cache miss (§5).</td></tr>
-          <tr><td><code>/clear</code></td><td>Drops the conversation entirely.</td><td>Between unrelated tasks. Cheaper than compaction and loses nothing you needed.</td></tr>
-          <tr><td><code>CLAUDE_CODE_AUTO_COMPACT_WINDOW</code></td><td>Token threshold for automatic compaction; <code>zclaude</code> sets 250,000.</td><td>Leave at 250K (§4 callout). Set it in <code>~/.claude/settings.json</code> <code>env</code> if you want the same ceiling on the Anthropic side.</td></tr>
-          <tr><td><code>/context</code></td><td>Shows what is occupying the window right now: system prompt, <code>CLAUDE.md</code> includes, tools, messages.</td><td>When a fresh session already feels expensive.</td></tr>
+          <tr><td><code>/compact [focus]</code></td><td>Summarises the conversation so far; optional focus text says what to keep. A <em>Compact instructions</em> section in <code>CLAUDE.md</code> steers every compaction the same way.</td><td>At a topic boundary in a long session; before an escalation, because a smaller context is a cheaper cache miss (§5).</td></tr>
+          <tr><td><code>/clear</code></td><td>Drops the conversation entirely; the old one stays resumable.</td><td>Between unrelated tasks. Cheaper than compaction and loses nothing you needed.</td></tr>
+          <tr><td><code>/rewind</code></td><td>Truncates the conversation back to an earlier turn. The cache prefix up to that turn survives.</td><td>Undoing a tangent. Cheaper than <code>/compact</code> when the first half of the session was the useful half.</td></tr>
+          <tr><td><code>/context</code></td><td>Shows what is occupying the window right now: system prompt, <code>CLAUDE.md</code> includes, tools, skills, messages.</td><td>When a fresh session already feels expensive. Run it once per project and compare to the table above.</td></tr>
           <tr><td><code>/cost</code></td><td>Session token and cost totals from Claude Code's own accounting.</td><td>Cross-check against <code>usage-guard.py --session &lt;id&gt;</code>.</td></tr>
-          <tr><td><code>effortLevel</code> (<code>settings.json</code>)</td><td>Global effort; <code>modelSettings</code> overrides per model. Yours: <code>high</code> globally, Opus 5 <code>xhigh</code>.</td><td>Lower to <code>medium</code> for routine interactive work; Fable at lower effort still beats older models at <code>xhigh</code>.</td></tr>
-          <tr><td>Subagents (<code>Agent</code> tool)</td><td>Tool output stays in the subagent; only its report enters your context.</td><td>Any read-heavy search or review. The report is the only part you pay for on every later turn.</td></tr>
-          <tr><td><code>CLAUDE.md</code> and <code>@includes</code></td><td>Re-read as cached input on every turn. A 140 KB instructions file cost $6 in three Fable prompts (<code>usage-budget.md</code>).</td><td>Keep includes short; move reference material to files the model reads on demand.</td></tr>
-          <tr><td><code>cleanupPeriodDays</code> (<code>settings.json</code>)</td><td>How long Claude Code keeps session transcripts and other application data before a background sweep after session start deletes them. Default 30 days; minimum 1.</td><td>The pruning §10 archives against is a setting, not a law. Raise it if you want longer live history; keep the archive regardless.</td></tr>
+          <tr><td><code>/usage</code></td><td>Plan limits plus, since 2.1.260, prompt-cache statistics: hit ratio, misses, warm or cold.</td><td>The direct meter for the §4 cache-read share. A cold cache mid-session means something below invalidated it.</td></tr>
         </tbody>
       </table>
     </div>
+
+    <h3>Compaction settings</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Lever</th><th>What it does</th><th>When</th></tr></thead>
+        <tbody>
+          <tr><td><code>autoCompactWindow</code> (<code>settings.json</code>) / <code>CLAUDE_CODE_AUTO_COMPACT_WINDOW</code> (env)</td><td>Token threshold for automatic compaction. The env var is undocumented but real, and takes precedence over the setting; the effective threshold is the smaller of this value and the model's maximum. <code>zclaude</code> exports 250,000.</td><td>Leave at 250K (§4 callout). On the Anthropic side set the documented <code>autoCompactWindow</code> key rather than copying the env var.</td></tr>
+          <tr><td><code>autoCompactEnabled</code> (<code>settings.json</code>)</td><td>Boolean, default <code>true</code>.</td><td>Never off for unattended runs; the §4 replay depends on it firing.</td></tr>
+          <tr><td><code>CLAUDE_CODE_MAX_CONTEXT_TOKENS</code> (env)</td><td>Tells Claude Code the real context size of a third-party model. <code>zclaude</code> sets it per tier.</td><td>Only matters under <code>zclaude</code>. Wrong value makes the compact threshold clamp to the wrong ceiling.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>What loads before you type</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Lever</th><th>What it does</th><th>When</th></tr></thead>
+        <tbody>
+          <tr><td><code>CLAUDE.md</code> and <code>@includes</code></td><td>Loaded at session start and sent as cached input on every turn. Edits mid-session do not apply until <code>/clear</code>, <code>/compact</code>, or a restart. CampForge-v2's 140 KB file was the $6-in-three-prompts case from <code>usage-budget.md</code>; on 2026-09-19 its 77 rule essays moved to <code>docs/architecture-rules.md</code> behind a one-line index, and the file is 16 KB.</td><td>Keep includes short; move reference material to files the model reads on demand, and leave an index so the model knows what to grep for.</td></tr>
+          <tr><td>Skills, agents, plugins</td><td>Every model-invocable skill's description sits in the system prompt. <code>disable-model-invocation: true</code> in a skill's frontmatter keeps it out until you call it by name. <code>skillListingBudgetFraction</code> and <code>skillListingMaxDescChars</code> cap the listing; past the budget Claude Code truncates descriptions and warns. <code>/skills</code> disables individual ones.</td><td>Already done for user skills: <code>/skills</code> writes <code>skillOverrides</code> into <code>settings.json</code>, and yours has 77 off, leaving 10 visible. The remaining roster is plugins and first-party built-ins, so the next cut is <code>enabledPlugins</code>, not skills. Run <code>/context</code> in each config dir to split the 33K.</td></tr>
+          <tr><td>Hook output</td><td><code>SessionStart</code> and <code>UserPromptSubmit</code> hooks that print context inject it into the conversation, and it stays there. Output over 10 KB is saved to a file with only a preview injected.</td><td>Audit for duplicates. Until 2026-09-19 the caveman hooks were registered twice here: once by the plugin's <code>plugin.json</code>, once as stale local copies in <code>~/.claude/settings.json</code>, so every session start and every prompt injected the banner twice. The <code>settings.json</code> rows are gone; the plugin's copy is the newer one.</td></tr>
+          <tr><td>MCP tool schemas</td><td>Each connected server's tool definitions are context. <code>ENABLE_TOOL_SEARCH</code> (default <code>auto</code> on first-party hosts) defers schemas until a tool is looked up; <code>/mcp</code> disables servers.</td><td>Disable servers you are not using in a project. A server that fails to connect still costs nothing, but a connected one you never call does.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Model, effort, and cache</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Lever</th><th>What it does</th><th>When</th></tr></thead>
+        <tbody>
+          <tr><td><code>effortLevel</code> (<code>settings.json</code>)</td><td>Global effort; <code>modelSettings</code> overrides per model. Documented values <code>low</code>, <code>medium</code>, <code>high</code>; the binary also accepts <code>xhigh</code> and <code>max</code> and silently downgrades models that lack them. Yours: <code>high</code> globally, Opus 5 <code>xhigh</code>. Thinking tokens bill as output.</td><td>Lower to <code>medium</code> for routine interactive work; Fable at lower effort still beats older models at <code>xhigh</code>.</td></tr>
+          <tr><td>Cache invalidators</td><td>A <code>/model</code> switch always discards the cache prefix. An effort change mid-session does too on most models; Fable 5.1 keeps it. <code>/fast</code> discards it on the first turn after toggling. Dropping old images does it once per batch.</td><td>This is the cost inside §5's escalation rule. Compact or rewind <em>before</em> switching, never after.</td></tr>
+          <tr><td><code>promptCacheTtl</code>, <code>subagentPromptCacheTtl</code> (<code>settings.json</code>)</td><td><code>5m</code> or <code>1h</code> cache lifetime for the main thread and for subagents.</td><td><code>1h</code> for sessions you step away from; a warm cache on return is the difference between a cache read and a full re-write.</td></tr>
+          <tr><td><code>MAX_THINKING_TOKENS</code>, <code>CLAUDE_CODE_MAX_OUTPUT_TOKENS</code> (env)</td><td>Caps on the output side. Output tokens cost ~3.5x input (§1).</td><td>Long unattended runs where the model narrates; pair with the budget guard (§8).</td></tr>
+          <tr><td>Subagents (<code>Agent</code> tool), <code>CLAUDE_CODE_SUBAGENT_MODEL</code> (env)</td><td>Tool output stays in the subagent; only its report enters your context. The env var picks the subagent model independently of the main thread.</td><td>Any read-heavy search or review. The report is the only part you pay for on every later turn. Implementation subagents on the work tier, review on the deep tier (companion guide §3).</td></tr>
+          <tr><td>Tool-result truncation</td><td>Results past a few tens of KB are written to a file and only a preview enters context.</td><td>Do not <code>cat</code> the saved file back into the conversation; grep it. The truncation was the saving.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Housekeeping</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Lever</th><th>What it does</th><th>When</th></tr></thead>
+        <tbody>
+          <tr><td><code>cleanupPeriodDays</code> (<code>settings.json</code>)</td><td>How long Claude Code keeps session transcripts and other application data before a sweep after session start deletes them. Default 30 days; minimum 1. Unset in both of your configs, so 30 applies.</td><td>The pruning §10 archives against is a setting, not a law. Raise it if you want longer live history; keep the archive regardless.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
     <div class="callout warn">
       <strong>Compaction is not free either</strong>
-      Compaction costs a summarisation call and loses fidelity. That is why the 250K window exists for the tail and not for the median turn (§4): compact deliberately at a topic boundary, not reflexively.
+      Compaction costs a summarisation call and loses fidelity. That is why the 250K window exists for the tail and not for the median turn (§4): compact deliberately at a topic boundary, not reflexively. <code>/rewind</code> costs nothing and keeps the cache; reach for it first when the tangent is recent.
     </div>
-    <p class="sources-line">Sources: <code>~/.claude/settings.json</code>, <code>~/scripts/zclaude</code>, <code>~/.claude/usage-budget.md</code>, Claude Code settings documentation (version 2.1.277).</p>
+    <div class="callout">
+      <strong>Three things this section found in your own setup (first two fixed 2026-09-19)</strong>
+      <ol>
+        <li>CampForge-v2's <code>CLAUDE.md</code> was 140,696 bytes; sessions there opened at 108K tokens against a 61K median everywhere else. Now 16,291 bytes plus an on-demand rules file.</li>
+        <li>The caveman hooks fired twice per prompt (plugin plus <code>settings.json</code>), and the local tracker copy had drifted from the plugin's. Duplicate rows removed.</li>
+        <li>The Anthropic config dir carries 33K more tokens per turn than the Z.AI one before any conversation. User skills are already pruned to 10; what remains is plugins, built-in skills, and connector tool listings, and <code>/context</code> is the only way to see which.</li>
+      </ol>
+    </div>
+    <p class="sources-line">Sources: <code>~/.claude/settings.json</code>, <code>~/.claude-zai/settings.json</code>, <code>~/.claude/plugins/cache/caveman/…/plugin.json</code>, <code>~/scripts/zclaude</code>, <code>~/.claude/usage-budget.md</code>, first-turn usage from <code>~/.claude/projects</code> and <code>~/.claude-zai/projects</code> transcripts computed 2026-09-19, strings in the Claude Code 2.1.278 binary, and the Claude Code docs pages <em>context-window</em>, <em>prompt-caching</em>, <em>costs</em>, <em>settings-reference</em>.</p>
   </section>
 
   <section id="budget-guard">
@@ -710,7 +784,7 @@ projected = used% / elapsed</pre>
       </div>
       <div class="cheat-card">
         <h4>Context levers</h4>
-        <code>/compact</code> · <code>/clear</code> · <code>/context</code> · subagents for read-heavy work · keep <code>CLAUDE.md</code> small
+        <code>/compact</code> · <code>/rewind</code> · <code>/clear</code> · <code>/context</code> · <code>/usage</code> · subagents for read-heavy work · keep <code>CLAUDE.md</code> and the skill roster small
       </div>
       <div class="cheat-card">
         <h4>Archive commands</h4>
@@ -749,15 +823,19 @@ projected = used% / elapsed</pre>
       <p><a href="#cost-model">Compact window, 250K default §4</a></p>
       <p><a href="#context-levers">Compaction, <code>/compact</code> §7</a></p>
       <p><a href="#context-levers"><code>CLAUDE_CODE_AUTO_COMPACT_WINDOW</code> §7</a></p>
+      <p><a href="#context-levers"><code>autoCompactWindow</code> §7</a></p>
       <p><a href="#budget-guard"><code>CLAUDE_BUDGET_POLICY</code> §8</a></p>
       <p><a href="#context-levers"><code>cleanupPeriodDays</code> §7</a></p>
       <p><a href="#routing">DOWNSHIFT: §5</a></p>
       <p><a href="#context-levers"><code>effortLevel</code> §7</a></p>
+      <p><a href="#context-levers">Fresh-session floor, 61K vs 28K §7</a></p>
       <p><a href="#routing">ESCALATE: §5</a></p>
       <p><a href="#budget-guard">Ledger, <code>~/.claude/usage/ledger.jsonl</code> §8</a></p>
       <p><a href="#peak-hours"><code>ZCLAUDE_PEAK_POLICY</code> §9</a></p>
       <p><a href="#peak-hours">Peak-hours window §9</a></p>
       <p><a href="#routing">Routing table §5</a></p>
+      <p><a href="#context-levers"><code>/rewind</code>, <code>/usage</code> §7</a></p>
+      <p><a href="#context-levers">Skill listing budget §7</a></p>
       <p><a href="#archive">Subagent transcripts §10</a></p>
       <p><a href="#your-setup"><code>tier-discipline.md</code> §2</a></p>
       <p><a href="#archive"><code>transcript_key</code> §10</a></p>
@@ -868,7 +946,7 @@ projected = used% / elapsed</pre>
       <li><code>~/scripts/zclaude</code> — the launcher source, tier selectors, and environment overrides.</li>
       <li><code>~/.claude/settings.json</code>, <code>~/.claude-zai/settings.json</code> — live hook registration for both configs.</li>
       <li><a href="same-goals-fewer-tokens.html">same-goals-fewer-tokens.html</a> — companion guide: measured prompt rewrites and session hygiene (§6).</li>
-      <li>Claude Code settings documentation (version 2.1.277) — <code>cleanupPeriodDays</code>, <code>effortLevel</code>, slash commands (§7).</li>
+      <li>Claude Code 2.1.278 binary strings and docs pages <em>context-window</em>, <em>prompt-caching</em>, <em>costs</em>, <em>settings-reference</em> — compaction settings, skill listing budget, cache invalidation, slash commands (§7).</li>
       <li>Vault note: <code>Coding Agent usage tracking and optimization.md</code> — the original build narrative and the transcript-pruning discovery that motivated §10.</li>
     </ul>
   </section>
