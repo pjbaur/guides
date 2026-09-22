@@ -126,6 +126,13 @@
       "subject": "The unified diagnostic method from five master repair channels - safety floor, power-entry walks, short hunting by coil-shorting, signal-chain tracing, SMPS and console repair, and the commercial no-fix decision",
       "verified": "25 videos · 5 channels · surveyed 2026-09-21",
       "accent": "red"
+    },
+    {
+      "file": "usb-testers-user-guide.html",
+      "name": "USB tester shootout",
+      "subject": "Seven USB power meters compared straight from their manuals — voltage/current range, fast-charge protocol coverage, cable diagnostics, and a filterable pick for budget, pocket, cable-detective, pro-bench, and hacker use cases",
+      "verified": "7 devices · manuals surveyed 2026-09-22",
+      "accent": "lime"
     }
   ]
 }
