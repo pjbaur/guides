@@ -119,6 +119,13 @@
       "subject": "DER EE dual-display LCR meter - the impedance vector, open/short calibration, series vs parallel, and reading D/Q/ESR/theta like you mean it",
       "verified": null,
       "accent": "orange"
+    },
+    {
+      "file": "removed-guide.html",
+      "name": "electronics repair",
+      "subject": "[removed]",
+      "verified": "[removed]",
+      "accent": "red"
     }
   ]
 }
