@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>USB Tester Shootout</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔌</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1b1c1e;
+  --paper:#f6f3ec;
+  --panel:#fffdf8;
+  --panel-border:#dcd6c8;
+  --muted:#6b6558;
+  --yellow:#ffcc00;
+  --yellow-ink:#3a2e00;
+  --cyan:#0d9aa8;
+  --coral:#e35b3f;
+  --amber:#c47f0a;
+  --green:#3c8a5c;
+  --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+  --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --disp: 'Space Grotesk', var(--sans);
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#f1efe8;
+    --paper:#17181a;
+    --panel:#212326;
+    --panel-border:#3a3d40;
+    --muted:#a3a196;
+    --yellow:#ffd94d;
+    --yellow-ink:#1b1500;
+    --cyan:#4fd6e2;
+    --coral:#ff8266;
+    --amber:#e3a53c;
+    --green:#6fce97;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#f1efe8;
+  --paper:#17181a;
+  --panel:#212326;
+  --panel-border:#3a3d40;
+  --muted:#a3a196;
+  --yellow:#ffd94d;
+  --yellow-ink:#1b1500;
+  --cyan:#4fd6e2;
+  --coral:#ff8266;
+  --amber:#e3a53c;
+  --green:#6fce97;
+}
+*{box-sizing:border-box;}
+html,body{background:var(--paper);}
+body{
+  color:var(--ink);
+  font-family:var(--sans);
+  margin:0;
+  padding-block:0 48px;
+  line-height:1.5;
+}
+.wrap{
+  max-width:1080px;
+  margin:0 auto;
+  padding-inline:20px;
+}
+a{color:var(--cyan);}
+
+/* ---------- Hero ---------- */
+.hero{
+  background:var(--ink);
+  color:var(--paper);
+  padding-block:52px 40px;
+  border-bottom:6px solid var(--yellow);
+}
+.hero .wrap{display:flex;flex-direction:column;gap:14px;}
+.eyebrow{
+  font-family:var(--mono);
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  font-size:.72rem;
+  color:var(--yellow);
+  display:flex;align-items:center;gap:10px;
+}
+.eyebrow::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px color-mix(in srgb, var(--green) 25%, transparent);}
+h1{
+  font-family:var(--disp);
+  font-weight:700;
+  font-size:clamp(2.1rem,5vw,3.4rem);
+  line-height:1.05;
+  margin:0;
+  text-wrap:balance;
+  max-width:14ch;
+}
+.hero p{
+  max-width:62ch;
+  color:color-mix(in srgb, var(--paper) 78%, transparent);
+  font-size:1.05rem;
+  margin:0;
+}
+.hero-meta{
+  display:flex;flex-wrap:wrap;gap:10px;
+  margin-top:10px;
+  font-family:var(--mono);
+  font-size:.78rem;
+}
+.hero-meta span{
+  border:1px solid color-mix(in srgb, var(--paper) 30%, transparent);
+  border-radius:999px;
+  padding:5px 12px;
+  color:color-mix(in srgb, var(--paper) 85%, transparent);
+}
+
+/* ---------- Sections ---------- */
+section{padding-block:44px;}
+.section-head{margin-bottom:22px;}
+.kicker{
+  font-family:var(--mono);
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  font-size:.72rem;
+  color:var(--coral);
+  margin:0 0 6px;
+}
+h2{
+  font-family:var(--disp);
+  font-size:clamp(1.5rem,3vw,2.1rem);
+  margin:0 0 8px;
+  text-wrap:balance;
+}
+.lede{color:var(--muted);max-width:70ch;margin:0;}
+
+/* ---------- Dial filter ---------- */
+.dial{
+  display:flex;flex-wrap:wrap;gap:8px;
+  margin:20px 0 26px;
+}
+.dial button{
+  font-family:var(--mono);
+  font-size:.78rem;
+  background:var(--panel);
+  border:1px solid var(--panel-border);
+  color:var(--ink);
+  padding:8px 14px;
+  border-radius:999px;
+  cursor:pointer;
+  transition:background .15s, color .15s, border-color .15s;
+}
+.dial button:hover{border-color:var(--cyan);}
+.dial button.active{
+  background:var(--yellow);
+  border-color:var(--yellow);
+  color:var(--yellow-ink);
+  font-weight:600;
+}
+
+/* ---------- Table ---------- */
+.table-scroll{
+  overflow-x:auto;
+  border:1px solid var(--panel-border);
+  border-radius:var(--radius);
+  background:var(--panel);
+}
+table{
+  border-collapse:collapse;
+  width:100%;
+  min-width:840px;
+  font-size:.88rem;
+}
+thead th{
+  text-align:left;
+  font-family:var(--mono);
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  font-size:.7rem;
+  color:var(--muted);
+  padding:12px 14px;
+  border-bottom:2px solid var(--panel-border);
+  white-space:nowrap;
+}
+tbody td{
+  padding:13px 14px;
+  border-bottom:1px solid var(--panel-border);
+  vertical-align:top;
+}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr{transition:background .2s, opacity .2s;}
+tbody tr.dim{opacity:.32;}
+tbody tr.hit{background:color-mix(in srgb, var(--yellow) 14%, transparent);}
+.dev-name{font-family:var(--disp);font-weight:700;font-size:1rem;}
+.dev-mfr{display:block;font-family:var(--mono);font-size:.72rem;color:var(--muted);margin-top:2px;}
+td.num{font-family:var(--mono);white-space:nowrap;}
+.badge{
+  display:inline-block;
+  font-family:var(--mono);
+  font-size:.68rem;
+  padding:2px 8px;
+  border-radius:999px;
+  white-space:nowrap;
+  margin:2px 3px 0 0;
+}
+.b-budget{background:color-mix(in srgb, var(--green) 22%, transparent);color:var(--green);}
+.b-pocket{background:color-mix(in srgb, var(--cyan) 20%, transparent);color:var(--cyan);}
+.b-cable{background:color-mix(in srgb, var(--amber) 22%, transparent);color:var(--amber);}
+.b-pro{background:color-mix(in srgb, var(--coral) 20%, transparent);color:var(--coral);}
+.b-hacker{background:color-mix(in srgb, var(--yellow) 30%, transparent);color:var(--yellow-ink);}
+
+/* ---------- Cards ---------- */
+.cards{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(300px,1fr));
+  gap:18px;
+}
+.card{
+  background:var(--panel);
+  border:1px solid var(--panel-border);
+  border-radius:var(--radius);
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  border-top:4px solid var(--cyan);
+  transition:opacity .2s;
+}
+.card.dim{opacity:.32;}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+.card-name{font-family:var(--disp);font-weight:700;font-size:1.3rem;line-height:1.1;}
+.card-mfr{font-family:var(--mono);font-size:.72rem;color:var(--muted);}
+.readout{
+  font-family:var(--mono);
+  background:var(--ink);
+  color:var(--green);
+  border-radius:6px;
+  padding:10px 12px;
+  font-size:.82rem;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:4px 10px;
+}
+.readout div span{color:color-mix(in srgb, var(--green) 55%, var(--paper));}
+.spec-list{margin:0;padding:0;list-style:none;font-size:.86rem;display:flex;flex-direction:column;gap:6px;}
+.spec-list li strong{font-family:var(--mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);display:block;}
+.quirk{
+  font-size:.85rem;
+  font-style:italic;
+  color:var(--muted);
+  border-left:3px solid var(--yellow);
+  padding-left:10px;
+  margin:0;
+}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:4px;}
+
+/* ---------- Picks ---------- */
+.picks{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(260px,1fr));
+  gap:16px;
+}
+.pick{
+  background:var(--ink);
+  color:var(--paper);
+  border-radius:var(--radius);
+  padding:18px 20px;
+  position:relative;
+  overflow:hidden;
+}
+.pick::before{
+  content:"";
+  position:absolute;top:0;left:0;bottom:0;width:5px;
+  background:var(--yellow);
+}
+.pick-label{font-family:var(--mono);font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--yellow);}
+.pick-name{font-family:var(--disp);font-weight:700;font-size:1.15rem;margin:4px 0 6px;}
+.pick p{margin:0;font-size:.86rem;color:color-mix(in srgb, var(--paper) 78%, transparent);}
+
+/* ---------- Gaps callout ---------- */
+.gaps{
+  background:color-mix(in srgb, var(--coral) 10%, var(--panel));
+  border:1px solid color-mix(in srgb, var(--coral) 40%, var(--panel-border));
+  border-radius:var(--radius);
+  padding:24px 26px;
+}
+.gaps h3{font-family:var(--disp);margin:0 0 10px;font-size:1.2rem;}
+.gaps ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px;font-size:.92rem;}
+.gaps li strong{color:var(--coral);}
+
+footer{
+  text-align:center;
+  color:var(--muted);
+  font-family:var(--mono);
+  font-size:.75rem;
+  padding-top:30px;
+}
+
+@media (max-width:640px){
+  .readout{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Field-tested against the actual manuals</p>
+    <h1>Seven meters walk into a USB port</h1>
+    <p>A drawer audit of every USB power tester currently owned, from a $9 dongle that just blinks numbers to a Lua-scriptable bench rig with a swappable electronic-load module. Specs pulled straight from the manufacturer manuals &mdash; typos, mistranslations, and one very confusing rebrand included.</p>
+    <div class="hero-meta">
+      <span>7 devices</span>
+      <span>4 manufacturers</span>
+      <span>0.005V &ndash; 50V coverage</span>
+      <span>1 device that runs actual code</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<section id="table">
+  <div class="section-head">
+    <p class="kicker">The lineup</p>
+    <h2>Turn the dial to filter</h2>
+    <p class="lede">Every meter does volts &times; amps. What separates them is how far they'll go, what protocols they'll poke at, and whether they'll let you script them. Click a role to spotlight who fits it.</p>
+  </div>
+
+  <div class="dial" id="dial">
+    <button data-role="all" class="active">Show everything</button>
+    <button data-role="budget">💸 Budget baseline</button>
+    <button data-role="pocket">🎒 Pocket EDC</button>
+    <button data-role="cable">🔌 Cable detective</button>
+    <button data-role="pro">🔬 Pro bench</button>
+    <button data-role="hacker">🧪 Hacker rig</button>
+  </div>
+
+  <div class="table-scroll">
+    <table id="specTable">
+      <thead>
+        <tr>
+          <th>Device</th>
+          <th>Voltage</th>
+          <th>Current</th>
+          <th>Max power</th>
+          <th>Display</th>
+          <th>Protocol coverage</th>
+          <th>Logging / link</th>
+          <th>Standout trait</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr data-roles="budget">
+          <td><span class="dev-name">DROK USB Meter</span><span class="dev-mfr">Drok</span></td>
+          <td class="num">3.7&ndash;13.0V</td>
+          <td class="num">0&ndash;3.000A</td>
+          <td class="num">39.00W</td>
+          <td>0.91" OLED</td>
+          <td>None &mdash; pure pass-through meter</td>
+          <td>None (no app, no BT)</td>
+          <td>One button, does mAh/mWh math, costs about as much as lunch</td>
+        </tr>
+        <tr data-roles="pocket">
+          <td><span class="dev-name">UM34(C)</span><span class="dev-mfr">RuiDeng</span></td>
+          <td class="num">4&ndash;24.00V</td>
+          <td class="num">0&ndash;4.000A</td>
+          <td class="num">~96W</td>
+          <td>1.44" color LCD, 4-way rotate</td>
+          <td>QC2.0/3.0, Apple 2.4A/2.1A/1A/0.5A, DCP, Samsung, OPPO VOOC, OnePlus DASH (detect-only)</td>
+          <td>UM34C: Bluetooth + Android/iOS app, 22 languages, CSV export</td>
+          <td>The one everyone's already seen in a teardown video</td>
+        </tr>
+        <tr data-roles="pocket">
+          <td><span class="dev-name">TC66C</span><span class="dev-mfr">RuiDeng</span></td>
+          <td class="num">0.0050&ndash;30.00V</td>
+          <td class="num">0&ndash;5.00000A</td>
+          <td class="num">150W</td>
+          <td>0.96" color IPS</td>
+          <td>QC2.0/3.0, Apple, DCP, Samsung, FCP, SCP, AFC, PD fixed + PPS trigger</td>
+          <td>USB or BLE (TC66C), PC/Android/iOS software, isolated micro-USB power for precision mode</td>
+          <td>Only meter here with an isolated-supply mode for lab-grade voltage accuracy</td>
+        </tr>
+        <tr data-roles="cable">
+          <td><span class="dev-name">FNB58</span><span class="dev-mfr">FNIRSI</span></td>
+          <td class="num">4&ndash;28V</td>
+          <td class="num">0&ndash;7.0A</td>
+          <td class="num">120W</td>
+          <td>2.0" full-color TFT</td>
+          <td>QC2/3, FCP, SCP, AFC, PD2.0/3.0, VOOC/WARP, SVOOC 1.0/2.0</td>
+          <td>Onboard waveform scope, offline recording, no wireless</td>
+          <td>Reads DASH cable authentication chips and E-marker data; has a built-in oscilloscope page</td>
+        </tr>
+        <tr data-roles="cable pro">
+          <td><span class="dev-name">FNB-C2</span><span class="dev-mfr">FNIRSI</span></td>
+          <td class="num">4&ndash;50V</td>
+          <td class="num">0&ndash;6.5A</td>
+          <td class="num">240W</td>
+          <td>1.54" TFT, 240&times;240</td>
+          <td>QC2/3, FCP, SCP, AFC, PD2.0/3.0, UFCS, OPPO/VIVO SVOOC/VOOC/VFCP, PD listener, QC&rarr;PD conversion</td>
+          <td>USB4-rated pass-through connectors, HID link to driver-free PC/Mac app</td>
+          <td>20-bit ADC, 2Msps ripple capture, and it'll politely listen to a PD negotiation instead of joining it</td>
+        </tr>
+        <tr data-roles="pro">
+          <td><span class="dev-name">Power-Z KM003C</span><span class="dev-mfr">ChargerLab</span></td>
+          <td class="num">0&ndash;50V</td>
+          <td class="num">0&ndash;6.0A</td>
+          <td class="num">~300W</td>
+          <td>USB4-rated USB-C in/out + HID (app-driven UI)</td>
+          <td>PD2.0/3.0/3.1, PPS, QC2/3/4+/5, UFCS, VIFS, FCP, SCP, AFC, BC1.2 &mdash; plus a full protocol packet analyzer</td>
+          <td>Windows/Mac app, multi-unit simultaneous connection, 10,000-point PD capture, 4K curve export</td>
+          <td>The only one that decodes the actual PD/UFCS handshake packets, not just the resulting voltage</td>
+        </tr>
+        <tr data-roles="hacker">
+          <td><span class="dev-name">CT-3 <em>(a.k.a. Shizuku)</em></span><span class="dev-mfr">AVHzY</span></td>
+          <td class="num">~4&ndash;26V<sup>*</sup></td>
+          <td class="num">~0&ndash;6A<sup>*</sup></td>
+          <td class="num">n/a<sup>*</sup></td>
+          <td>1.44" TFT 128&times;128</td>
+          <td>QC2.0/3.0/4.0(PPS), PD2/3, Huawei FCP/SCP, Samsung AFC, VOOC/DASH/WARP CV, Super VOOC</td>
+          <td>PC toolbox with Lua scripting console, USB mass-storage mount, module bay for a plug-in electronic load</td>
+          <td>Runs your own Lua scripts on the meter itself, and hot-swaps an electronic-load daughterboard</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="lede" style="margin-top:10px;font-size:.82rem;">
+    <sup>*</sup> The manual folder's "CT-3 User Guide" is, verbatim, an <em>AVHzY CT-2</em> quick-start card &mdash; a labeling mix-up in the box contents, not a typo here. The real CT-3 user manual (18 pages, confirmed "AVHzY CT-3 USB Multimeter / Shizuku") never republishes a core V/I spec table, so the range above is inherited from its CT-2 sibling as the closest documented reference. Treat it as directionally correct, not gospel.
+  </p>
+</section>
+
+<section id="cards">
+  <div class="section-head">
+    <p class="kicker">Device by device</p>
+    <h2>The spec plates</h2>
+    <p class="lede">Same filter dial still works down here.</p>
+  </div>
+  <div class="cards" id="cardGrid">
+
+    <div class="card" data-roles="budget" style="border-top-color:var(--green);">
+      <div class="card-top">
+        <div><div class="card-name">DROK USB Meter</div><div class="card-mfr">Drok &middot; USB3.0 Meter(H)</div></div>
+      </div>
+      <div class="readout">
+        <div><span>V</span> 3.70&ndash;13.00</div>
+        <div><span>A</span> 0&ndash;3.000</div>
+        <div><span>P</span> 0&ndash;39.00W</div>
+        <div><span>mAh</span> 0&ndash;99999</div>
+      </div>
+      <ul class="spec-list">
+        <li><strong>Ports</strong> USB-A male &rarr; USB-A female, USB2.0/USB3.0 compatible pass-through</li>
+        <li><strong>Protocols</strong> none &mdash; it just measures whatever the two ends agree to on their own</li>
+        <li><strong>Extras</strong> current-zero calibration, screen rotation, mAh/mWh unit toggle, 14g</li>
+      </ul>
+      <p class="quirk">"Over-voltage and Under-voltage reminding function" &mdash; the manual's words for two blinking arrows. No app. No Bluetooth. No opinions.</p>
+      <div class="tags"><span class="badge b-budget">Budget baseline</span></div>
+    </div>
+
+    <div class="card" data-roles="pocket" style="border-top-color:var(--cyan);">
+      <div class="card-top">
+        <div><div class="card-name">UM34(C)</div><div class="card-mfr">Hangzhou RuiDeng Technologies</div></div>
+      </div>
+      <div class="readout">
+        <div><span>V</span> 4&ndash;24.00</div>
+        <div><span>A</span> 0&ndash;4.000</div>
+        <div><span>mAh</span> 0&ndash;99999</div>
+        <div><span>R</span> 0.8&ndash;9999.9&Omega;</div>
+      </div>
+      <ul class="spec-list">
+        <li><strong>Display</strong> 1.44" color LCD, rotates 4 ways, 10 data groups saved on-device</li>
+        <li><strong>Protocols</strong> QC2.0/3.0, Apple 2.4A/2.1A/1A/0.5A, Android DCP, Samsung, OPPO VOOC, OnePlus DASH &mdash; detection only, no trigger</li>
+        <li><strong>Connectivity</strong> UM34C adds Bluetooth + app (Android 5.0+ / iOS 8.0+), 22 languages, exports straight to a spreadsheet</li>
+      </ul>
+      <p class="quirk">The manual warns fast-charge recognition "can't be absolutely accurate" &mdash; refreshingly upfront for a $15 dongle.</p>
+      <div class="tags"><span class="badge b-pocket">Pocket EDC</span></div>
+    </div>
+
+    <div class="card" data-roles="pocket" style="border-top-color:var(--cyan);">
+      <div class="card-top">
+        <div><div class="card-name">TC66C</div><div class="card-mfr">Hangzhou RuiDeng Technologies</div></div>
+      </div>
+      <div class="readout">
+        <div><span>V</span> 0.0050&ndash;30.00</div>
+        <div><span>A</span> 0&ndash;5.00000</div>
+        <div><span>P</span> 0&ndash;150W</div>
+        <div><span>R</span> 1&ndash;9999.9&Omega;</div>
+      </div>
+      <ul class="spec-list">
+        <li><strong>Display</strong> 0.96" color IPS, two-button nav (K1/K2), 8 default pages</li>
+        <li><strong>Protocols</strong> QC2.0/3.0, Apple, DCP, Samsung, FCP, SCP, AFC, automatic protocol detection page, PD fixed/PPS trigger with adjustable step size</li>
+        <li><strong>Connectivity</strong> TC66 = USB only; TC66C adds BLE + iOS/Android app; PC software shows live graph + offline CSV export</li>
+      </ul>
+      <p class="quirk">Has a dedicated <strong>PWR switch</strong> to run off isolated micro-USB power instead of the port under test &mdash; a genuinely pro touch on a dongle this small.</p>
+      <div class="tags"><span class="badge b-pocket">Pocket EDC</span></div>
+    </div>
+
+    <div class="card" data-roles="cable" style="border-top-color:var(--amber);">
+      <div class="card-top">
+        <div><div class="card-name">FNB58</div><div class="card-mfr">FNIRSI (菲尼瑞斯)</div></div>
+      </div>
+      <div class="readout">
+        <div><span>V</span> 4&ndash;28</div>
+        <div><span>A</span> 0&ndash;7.0</div>
+        <div><span>P</span> 0&ndash;120W</div>
+        <div><span>R</span> 0&ndash;9999.9&Omega;</div>
+      </div>
+      <ul class="spec-list">
+        <li><strong>Ports</strong> USB-A in/out, Type-C monitor port, Micro-USB monitor port, USB-C PC link</li>
+        <li><strong>Protocols</strong> QC2.0/3.0, FCP, SCP, AFC, PD2.0/3.0, VOOC/WARP, SVOOC 1.0/2.0, automatic protocol monitoring</li>
+        <li><strong>Toolbox</strong> cable resistance detection, PD listener, PD&rarr;converter, USB-C E-marker read, DASH cable read, "soft" DASH/Apple 2.4A accelerators</li>
+      </ul>
+      <p class="quirk">Onboard waveform page with adjustable time base &mdash; the closest thing to a pocket scope before you get to the CT-3 or KM003C.</p>
+      <div class="tags"><span class="badge b-cable">Cable detective</span></div>
+    </div>
+
+    <div class="card" data-roles="cable pro" style="border-top-color:var(--coral);">
+      <div class="card-top">
+        <div><div class="card-name">FNB-C2</div><div class="card-mfr">FNIRSI (菲尼瑞斯)</div></div>
+      </div>
+      <div class="readout">
+        <div><span>V</span> 4&ndash;50</div>
+        <div><span>A</span> 0&ndash;6.5</div>
+        <div><span>P</span> 0&ndash;240W</div>
+        <div><span>ADC</span> 20-bit</div>
+      </div>
+      <ul class="spec-list">
+        <li><strong>Ports</strong> USB4-rated USB-C male + female pass-through, plus a USB-C HID port for the PC/Mac app</li>
+        <li><strong>Protocols</strong> QC2.0/3.0, FCP, SCP, AFC, PD2.0/3.0, UFCS, OPPO/VIVO SVOOC/VOOC/VFCP &mdash; "protocols all support auto-monitoring"</li>
+        <li><strong>Sampling</strong> up to 2Msps ripple capture, 20Ksps continuous, 9-hour max recording window</li>
+      </ul>
+      <p class="quirk">One of only two testers in the drawer that claims full USB4-spec pass-through connectors instead of "USB2.0/3.0 compatible."</p>
+      <div class="tags"><span class="badge b-cable">Cable detective</span><span class="badge b-pro">Pro bench</span></div>
+    </div>
+
+    <div class="card" data-roles="pro" style="border-top-color:var(--coral);">
+      <div class="card-top">
+        <div><div class="card-name">Power-Z KM003C</div><div class="card-mfr">ChargerLab</div></div>
+      </div>
+      <div class="readout">
+        <div><span>V</span> 0&ndash;50</div>
+        <div><span>A</span> 0&ndash;6.0</div>
+        <div><span>ADC</span> 20-bit</div>
+        <div><span>SPS</span> up to 1000</div>
+      </div>
+      <ul class="spec-list">
+        <li><strong>Ports</strong> USB4-rated USB-C female + male, plus a USB-C HID port &mdash; driver-free, open API</li>
+        <li><strong>Protocols</strong> PD2.0/3.0/3.1, PPS, QC2.0/3.0/3+/4+/5, UFCS, VIFS, FCP, SCP, AFC, BC1.2, plus SOP/SOP'/SOP" packet decoding</li>
+        <li><strong>Software</strong> Windows/Mac, live multi-curve graphs, PD protocol analyzer (10,000-point capture), 4K curve image export, multiple units on one PC simultaneously</li>
+      </ul>
+      <p class="quirk">The changelog reads like a firmware diary for a much bigger instrument &mdash; "Fixed the display error of UFCS/VFCP/SVOOC(PD) protocols," casually, in a point release.</p>
+      <div class="tags"><span class="badge b-pro">Pro bench</span></div>
+    </div>
+
+    <div class="card" data-roles="hacker" style="border-top-color:var(--yellow);">
+      <div class="card-top">
+        <div><div class="card-name">CT-3 <span style="font-weight:400;font-size:.8rem;">(Shizuku)</span></div><div class="card-mfr">AVHzY</div></div>
+      </div>
+      <div class="readout">
+        <div><span>V</span> ~4&ndash;26<sup>*</sup></div>
+        <div><span>A</span> ~0&ndash;6<sup>*</sup></div>
+        <div><span>Groups</span> 5 accum.</div>
+        <div><span>Scope</span> 3.2Msps</div>
+      </div>
+      <ul class="spec-list">
+        <li><strong>Cable tools</strong> four separate resistance-test methods (Normal A-C, 4-Line, Bypass C-C, Bypass Load-Free C-C), E-marker reader, DASH/VOOC/WARP cable data dump, Apple charger + MFi cable test</li>
+        <li><strong>Programmability</strong> onboard Lua script engine, PC toolbox with a live Lua editor, mountable as USB mass storage to drop in scripts or firmware</li>
+        <li><strong>Expansion</strong> right-click module bay currently supports one plug-in electronic-load board (constant-current, constant-power, and ramp-up test modes)</li>
+      </ul>
+      <p class="quirk">Its own manual admits it "partially supports USB3.1... not guaranteed to pass all USB3.1 signal normally" &mdash; possibly the most honest line in any manual here.</p>
+      <div class="tags"><span class="badge b-hacker">Hacker rig</span></div>
+    </div>
+
+  </div>
+</section>
+
+<section id="picks">
+  <div class="section-head">
+    <p class="kicker">Verdicts</p>
+    <h2>Grab this one for&hellip;</h2>
+  </div>
+  <div class="picks">
+    <div class="pick">
+      <p class="pick-label">Just tell me if it's charging</p>
+      <p class="pick-name">DROK USB Meter</p>
+      <p>No protocols, no app, no drama. If the question is "is this cable actually delivering 2A," this answers it and gets out of the way.</p>
+    </div>
+    <div class="pick">
+      <p class="pick-label">Daily-carry sanity check</p>
+      <p class="pick-name">TC66C</p>
+      <p>Widest range of the pocket dongles (30V/5A), isolated-power precision mode, and PPS trigger &mdash; the one that earns a permanent spot in the bag.</p>
+    </div>
+    <div class="pick">
+      <p class="pick-label">Nostalgia / classic hobbyist pick</p>
+      <p class="pick-name">UM34(C)</p>
+      <p>Still fine for logging capacity claims on sketchy power banks over Bluetooth. Just don't expect it to keep up with anything PD3.1.</p>
+    </div>
+    <div class="pick">
+      <p class="pick-label">Bad cable, or bad charger?</p>
+      <p class="pick-name">FNB58</p>
+      <p>Onboard scope plus E-marker and DASH cable reads mean you can point fingers at the actual culprit instead of guessing.</p>
+    </div>
+    <div class="pick">
+      <p class="pick-label">One step below lab-grade</p>
+      <p class="pick-name">FNB-C2</p>
+      <p>50V/240W headroom, UFCS support, and USB4-rated pass-through &mdash; the most future-proof of the "just plug it in" testers.</p>
+    </div>
+    <div class="pick">
+      <p class="pick-label">Overall pick &mdash; accuracy &amp; protocol depth</p>
+      <p class="pick-name">Power-Z KM003C</p>
+      <p>The only one that actually decodes PD/UFCS packets instead of inferring them, and the only one with QC5 and PD3.1 called out by name.</p>
+    </div>
+    <div class="pick">
+      <p class="pick-label">Overall pick &mdash; if you enjoy voiding warranties</p>
+      <p class="pick-name">CT-3 (Shizuku)</p>
+      <p>Nothing else here runs your own code, swaps in a load module, or gives you four ways to measure the same cable's resistance out of spite.</p>
+    </div>
+  </div>
+</section>
+
+<section id="gaps">
+  <div class="gaps">
+    <h3>Where all seven of these still fall short</h3>
+    <ul>
+      <li><strong>USB4 / Thunderbolt signal compliance</strong> &mdash; the KM003C and FNB-C2 have USB4-rated connectors, which means continuity, not certification. None of these seven do actual eye-diagram or protocol-compliance testing on USB4 data lines; the CT-3's manual is the only one honest enough to say its data pass-through "isn't guaranteed."</li>
+      <li><strong>PD 3.1 EPR at the top end</strong> &mdash; the KM003C is the only device here that explicitly lists PD3.1 and QC5 by name. If you're chasing a 240W laptop brick's full EPR negotiation, it's the only tool in this drawer built for it.</li>
+      <li><strong>AC-side (wall) measurement</strong> &mdash; every device here measures the DC side of a USB port. None of them tell you wall-to-USB efficiency; that still needs a Kill-A-Watt or equivalent in the loop.</li>
+      <li><strong>Traceable/calibrated accuracy</strong> &mdash; these are hobbyist-grade instruments (0.05%&ndash;1% class, uncalibrated). Fine for "is this charger lying," not fine for anything that needs a calibration certificate.</li>
+      <li><strong>Newer proprietary fast-charge standards</strong> &mdash; things like the latest 300W+ laptop-specific protocols or brand-new EPR variants will outpace all seven eventually. When that happens, it's a firmware update away on the KM003C or FNB-C2, and a genuinely new purchase for the rest.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>Specs pulled from each manufacturer's manual, in this folder, on 2026-09-22. Your mileage, and your D+/D- readings, may vary.</footer>
+
+</div>
+
+<script>
+(function(){
+  try{
+    var dial = document.getElementById('dial');
+    var rows = document.querySelectorAll('#specTable tbody tr');
+    var cards = document.querySelectorAll('#cardGrid .card');
+    dial.addEventListener('click', function(e){
+      var btn = e.target.closest('button');
+      if(!btn) return;
+      dial.querySelectorAll('button').forEach(function(b){b.classList.remove('active');});
+      btn.classList.add('active');
+      var role = btn.getAttribute('data-role');
+      function apply(el){
+        var roles = (el.getAttribute('data-roles')||'').split(' ');
+        var show = role === 'all' || roles.indexOf(role) !== -1;
+        el.classList.toggle('dim', !show);
+        el.classList.toggle('hit', show && role !== 'all');
+      }
+      rows.forEach(apply);
+      cards.forEach(apply);
+    });
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
