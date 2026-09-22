@@ -119,6 +119,13 @@
       "subject": "DER EE dual-display LCR meter - the impedance vector, open/short calibration, series vs parallel, and reading D/Q/ESR/theta like you mean it",
       "verified": null,
       "accent": "orange"
+    },
+    {
+      "file": "electronics-repair-user-guide.html",
+      "name": "electronics repair",
+      "subject": "The unified diagnostic method from five master repair channels - safety floor, power-entry walks, short hunting by coil-shorting, signal-chain tracing, SMPS and console repair, and the commercial no-fix decision",
+      "verified": "25 videos · 5 channels · surveyed 2026-09-21",
+      "accent": "red"
     }
   ]
 }

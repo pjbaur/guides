@@ -1,0 +1,2037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Electronics Repair</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
+<style>
+  /* =====================================================================
+     Workshop palette: petrol/teal on cool greys. Light values on :root,
+     dark via media query (guarded so an explicit light choice wins) and
+     via data-theme. Terminal panels are fixed dark in both themes.
+     ===================================================================== */
+  :root {
+    --bg: #f4f6f5;
+    --surface: #ffffff;
+    --surface2: #e8eeec;
+    --ink: #16211f;
+    --ink2: #46554f;
+    --muted: #7d8c86;
+    --line: #d3ddd9;
+    --hairline: rgba(22,33,31,0.10);
+    --code-bg: #e8eeec;
+    --accent: #0e7569;
+    --accent-wash: rgba(14,117,105,0.10);
+    --on-accent: #ffffff;
+    --warn: #8a5a00;
+    --warn-bg: rgba(200,140,0,0.13);
+    --danger: #b0261c;
+    --danger-bg: rgba(176,38,28,0.08);
+    --blue: #1f5fae;
+    --blue-bg: rgba(31,95,174,0.08);
+    --good: #1f7a3c;
+    --good-bg: rgba(31,122,60,0.10);
+    --lab-bg: rgba(14,117,105,0.05);
+    --shadow: rgba(22,33,31,0.10);
+    /* terminal panels — always dark */
+    --terminal: #101b19;
+    --terminal-2: #172724;
+    --terminal-line: #2a3b37;
+    --terminal-ink: #d8efe9;
+    --terminal-dim: #8fa39c;
+    --terminal-accent: #35d0bd;
+    --terminal-yellow: #ffd866;
+    --terminal-red: #ff6b61;
+    /* series colours for diagrams */
+    --s1: #0e7569;  /* accent: power path / the fault */
+    --s2: #1f5fae;  /* blue: signal chain / measurement */
+    --s3: #1f7a3c;  /* green: good / verified */
+    --s4: #8a5a00;  /* amber: caution */
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d1514;
+      --surface: #14201d;
+      --surface2: #1a2926;
+      --ink: #edf5f2;
+      --ink2: #bcd0ca;
+      --muted: #8fa39c;
+      --line: #2a3b37;
+      --hairline: rgba(255,255,255,0.10);
+      --code-bg: #1a2926;
+      --accent: #35d0bd;
+      --accent-wash: rgba(53,208,189,0.12);
+      --on-accent: #04211c;
+      --warn: #f0c04a;
+      --warn-bg: rgba(240,192,74,0.12);
+      --danger: #ff6b61;
+      --danger-bg: rgba(255,107,97,0.10);
+      --blue: #7fb3ff;
+      --blue-bg: rgba(127,179,255,0.10);
+      --good: #5ad27a;
+      --good-bg: rgba(90,210,122,0.12);
+      --lab-bg: rgba(53,208,189,0.05);
+      --shadow: rgba(0,0,0,0.45);
+      --s1: #35d0bd; --s2: #7fb3ff; --s3: #5ad27a; --s4: #f0c04a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f6f5; --surface: #ffffff; --surface2: #e8eeec;
+    --ink: #16211f; --ink2: #46554f; --muted: #7d8c86;
+    --line: #d3ddd9; --hairline: rgba(22,33,31,0.10);
+    --code-bg: #e8eeec;
+    --accent: #0e7569; --accent-wash: rgba(14,117,105,0.10); --on-accent: #ffffff;
+    --warn: #8a5a00; --warn-bg: rgba(200,140,0,0.13);
+    --danger: #b0261c; --danger-bg: rgba(176,38,28,0.08);
+    --blue: #1f5fae; --blue-bg: rgba(31,95,174,0.08);
+    --good: #1f7a3c; --good-bg: rgba(31,122,60,0.10);
+    --lab-bg: rgba(14,117,105,0.05); --shadow: rgba(22,33,31,0.10);
+    --s1: #0e7569; --s2: #1f5fae; --s3: #1f7a3c; --s4: #8a5a00;
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1514; --surface: #14201d; --surface2: #1a2926;
+    --ink: #edf5f2; --ink2: #bcd0ca; --muted: #8fa39c;
+    --line: #2a3b37; --hairline: rgba(255,255,255,0.10);
+    --code-bg: #1a2926;
+    --accent: #35d0bd; --accent-wash: rgba(53,208,189,0.12); --on-accent: #04211c;
+    --warn: #f0c04a; --warn-bg: rgba(240,192,74,0.12);
+    --danger: #ff6b61; --danger-bg: rgba(255,107,97,0.10);
+    --blue: #7fb3ff; --blue-bg: rgba(127,179,255,0.10);
+    --good: #5ad27a; --good-bg: rgba(90,210,122,0.12);
+    --lab-bg: rgba(53,208,189,0.05); --shadow: rgba(0,0,0,0.45);
+    --s1: #35d0bd; --s2: #7fb3ff; --s3: #5ad27a; --s4: #f0c04a;
+    color-scheme: dark;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg); color: var(--ink);
+    line-height: 1.62; font-size: 16px;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .skip-link {
+    position: absolute; left: -9999px; top: 0; z-index: 100;
+    background: var(--accent); color: var(--on-accent);
+    padding: 8px 16px; border-radius: 0 8px 0 0;
+  }
+  .skip-link:focus { left: 0; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- layout ---- */
+  .layout { display: flex; max-width: 1300px; margin: 0 auto; }
+  nav.toc {
+    position: sticky; top: 0; align-self: flex-start;
+    width: 262px; flex-shrink: 0; height: 100vh; overflow-y: auto;
+    padding: 22px 8px 24px 18px; border-right: 1px solid var(--line);
+    background: var(--bg);
+  }
+  nav.toc .brand {
+    display: flex; align-items: center; gap: 9px;
+    font-weight: 800; font-size: 15px; margin-bottom: 2px; letter-spacing: 0.2px;
+  }
+  .brand-mark {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 6px;
+    background: var(--accent); color: var(--on-accent);
+    font: 700 10px/1 ui-monospace, "SF Mono", Menlo, monospace;
+    flex-shrink: 0;
+  }
+  nav.toc .brand-sub { font-size: 12px; color: var(--muted); margin: 0 0 14px 35px; line-height: 1.4; }
+  nav.toc .part {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.9px;
+    color: var(--muted); margin: 14px 0 3px; padding-left: 10px; font-weight: 700;
+  }
+  nav.toc a {
+    display: block; padding: 4.5px 10px; border-radius: 6px;
+    color: var(--ink2); font-size: 13.5px; margin-bottom: 1px;
+  }
+  nav.toc a:hover { background: var(--accent-wash); text-decoration: none; }
+  nav.toc a.active { background: var(--accent-wash); color: var(--accent); font-weight: 600; }
+  main { flex: 1; min-width: 0; padding: 30px 40px 90px; }
+
+  .toc-toggle {
+    display: none; position: fixed; left: 12px; top: 12px; z-index: 12;
+    background: var(--surface); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer;
+    font-family: inherit; box-shadow: 0 2px 8px var(--shadow);
+  }
+  @media (max-width: 940px) {
+    .layout { flex-direction: column; }
+    .toc-toggle { display: inline-block; }
+    nav.toc {
+      position: fixed; top: 0; left: 0; width: min(300px, 86vw); height: 100vh;
+      transform: translateX(-104%); transition: transform 0.2s ease;
+      z-index: 11; box-shadow: 0 0 30px var(--shadow); padding-top: 54px;
+    }
+    nav.toc.open { transform: translateX(0); }
+    main { padding: 64px 16px 60px; }
+  }
+  @media print {
+    nav.toc, .theme-toggle, .toc-toggle, .quiz-actions, .quiz-reset, .sim-actions button { display: none !important; }
+    .quiz-answer { display: block !important; }
+    details { display: block; }
+    details > *:not(summary) { display: block !important; }
+    section, .lab, .callout, figure { break-inside: avoid-page; }
+    main { padding: 0; }
+    body { font-size: 12.5px; }
+  }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 14px; z-index: 12;
+    background: var(--surface); border: 1px solid var(--line); color: var(--ink2);
+    border-radius: 20px; padding: 5px 14px; font-size: 13px; cursor: pointer;
+    font-family: inherit; box-shadow: 0 2px 8px var(--shadow);
+  }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ---- type ---- */
+  h1 { font-size: clamp(30px, 4.2vw, 46px); line-height: 1.08; font-weight: 800; letter-spacing: -0.02em; }
+  h1 .accent-clause { color: var(--accent); }
+  h2 {
+    font-size: 27px; font-weight: 800; letter-spacing: -0.015em;
+    margin: 0 0 6px; padding-top: 44px; scroll-margin-top: 10px;
+  }
+  h2 .tag { display: block; font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0.02em; margin-top: 2px; }
+  h3 { font-size: 19px; font-weight: 700; margin: 30px 0 8px; scroll-margin-top: 10px; }
+  h4 { font-size: 15.5px; font-weight: 700; margin: 20px 0 6px; }
+  p { margin: 0 0 14px; max-width: 78ch; }
+  ul, ol { margin: 0 0 14px 22px; max-width: 78ch; }
+  li { margin-bottom: 5px; }
+  li > ul, li > ol { margin-top: 5px; }
+  strong { font-weight: 700; }
+  section { border-bottom: 1px solid var(--line); padding-bottom: 36px; }
+  section:last-of-type { border-bottom: none; }
+  .lede { font-size: 18.5px; line-height: 1.55; color: var(--ink); margin-bottom: 18px; max-width: 72ch; }
+  .lede::first-letter { color: var(--accent); }
+  .sources-line { font-size: 13px; color: var(--muted); margin-top: 22px; }
+  .sources-line a { color: var(--muted); text-decoration: underline; text-decoration-color: var(--line); }
+  .sources-line a:hover { color: var(--accent); }
+  .small { font-size: 13.5px; color: var(--ink2); }
+  hr.thin { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
+
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.88em; background: var(--code-bg); padding: 1px 6px; border-radius: 5px;
+    color: var(--ink);
+  }
+  pre {
+    position: relative; background: var(--terminal); color: var(--terminal-ink);
+    border-radius: 10px; padding: 14px 16px; overflow-x: auto; margin: 0 0 16px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13.5px; line-height: 1.55;
+    border: 1px solid var(--terminal-line);
+  }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+  pre .cmd { color: var(--terminal-accent); font-weight: 600; }
+  pre .comment { color: var(--terminal-dim); }
+  pre .hot { color: var(--terminal-red); }
+  pre .val { color: var(--terminal-yellow); }
+  .copy-btn {
+    position: absolute; top: 8px; right: 8px;
+    background: var(--terminal-2); color: var(--terminal-dim); border: 1px solid var(--terminal-line);
+    border-radius: 6px; padding: 2px 9px; font-size: 11.5px; cursor: pointer; font-family: inherit;
+  }
+  .copy-btn:hover { color: var(--terminal-yellow); border-color: var(--terminal-yellow); }
+
+  kbd {
+    display: inline-block; font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12.5px; font-weight: 600; line-height: 1;
+    padding: 5px 8px 4px; border-radius: 6px;
+    background: var(--surface); color: var(--ink);
+    border: 1px solid var(--line); border-bottom-width: 3px;
+    box-shadow: 0 1px 0 var(--hairline); vertical-align: middle; white-space: nowrap;
+  }
+  .keys { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .keys .then { color: var(--muted); font-size: 13px; }
+
+  /* ---- recipes (numbered procedures) ---- */
+  ol.recipe { list-style: none; margin: 0 0 18px; counter-reset: step; max-width: 82ch; }
+  ol.recipe > li {
+    position: relative; padding: 9px 12px 9px 46px; margin: 0 0 6px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    counter-increment: step;
+  }
+  ol.recipe > li::before {
+    content: counter(step); position: absolute; left: 12px; top: 10px;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--accent); color: var(--on-accent);
+    font: 700 12px/24px system-ui, sans-serif; text-align: center;
+  }
+  .expect {
+    display: block; margin-top: 6px; font-size: 13.5px; color: var(--ink2);
+    padding-left: 10px; border-left: 3px solid var(--good);
+  }
+  .expect b { color: var(--good); font-weight: 700; }
+
+  /* ---- callouts ---- */
+  .callout {
+    background: var(--surface2); border-left: 4px solid var(--accent);
+    border-radius: 0 10px 10px 0; padding: 12px 16px; margin: 0 0 18px; max-width: 82ch;
+    font-size: 15px;
+  }
+  .callout > strong:first-child { display: block; margin-bottom: 3px; }
+  .callout.warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .callout.danger { border-left-color: var(--danger); background: var(--danger-bg); }
+  .callout.blue { border-left-color: var(--blue); background: var(--blue-bg); }
+  .callout.good { border-left-color: var(--good); background: var(--good-bg); }
+  .callout.bite { border-left-color: var(--danger); background: var(--danger-bg); }
+  .callout.bite > strong::before {
+    content: "✱ things that bite"; display: block; font-size: 10.5px; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--danger); margin-bottom: 2px;
+  }
+  .callout p:last-child, .callout ul:last-child { margin-bottom: 0; }
+
+  /* ---- tables ---- */
+  .table-wrap { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--line); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; background: var(--surface); }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.9px; color: var(--muted);
+    background: var(--surface2); font-weight: 700;
+  }
+  tr:last-child td { border-bottom: none; }
+  td code { white-space: nowrap; }
+  .num { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* ---- hero ---- */
+  .hero { padding: 6px 0 30px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+  .eyebrow { font-size: 12.5px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); font-weight: 700; margin-bottom: 12px; }
+  .subtitle { font-size: 18px; color: var(--ink2); margin: 14px 0 18px; max-width: 70ch; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge {
+    font-size: 12.5px; padding: 4px 11px; border-radius: 20px;
+    border: 1px solid var(--line); color: var(--ink2); background: var(--surface);
+  }
+  .badge.ok { border-color: var(--good); color: var(--good); }
+  .badge.soft { border-style: dashed; }
+
+  /* ---- diagrams ---- */
+  figure.diagram { margin: 18px 0 24px; max-width: 960px; }
+  figure.diagram svg { width: 100%; height: auto; display: block; }
+  figure.diagram figcaption { font-size: 13.5px; color: var(--muted); margin-top: 8px; line-height: 1.5; max-width: 78ch; }
+  figure.diagram figcaption b { color: var(--ink2); }
+  .d-label { font: 600 15px system-ui, sans-serif; fill: var(--ink); }
+  .d-mono { font: 600 13px ui-monospace, "SF Mono", Menlo, monospace; fill: var(--ink); }
+  .d-tiny { font: 12px system-ui, sans-serif; fill: var(--muted); }
+  .d-accent { fill: var(--accent); }
+  .d-danger { fill: var(--danger); }
+  .d-blue { fill: var(--blue); }
+
+  /* ---- labs ---- */
+  .lab {
+    background: var(--lab-bg); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 20px; margin: 20px 0 24px; max-width: 86ch;
+  }
+  .lab-title { font-size: 17px; font-weight: 800; margin: 0 0 2px; }
+  .lab-title .n { color: var(--accent); }
+  .lab-meta { font-size: 12.5px; color: var(--muted); margin: 0 0 12px; letter-spacing: 0.2px; }
+  .checkpoint {
+    margin-top: 12px; padding: 10px 14px; border-radius: 8px;
+    background: var(--good-bg); border: 1px dashed var(--good); font-size: 14.5px;
+  }
+  .checkpoint strong { color: var(--good); }
+
+  /* ---- level-1 primer ---- */
+  details.level { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); margin: 0 0 22px; max-width: 86ch; }
+  details.level > summary { cursor: pointer; padding: 12px 16px; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+  details.level > summary::-webkit-details-marker { display: none; }
+  details.level > summary .pill { font-size: 11px; text-transform: uppercase; letter-spacing: 0.9px; color: var(--accent); background: var(--accent-wash); padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+  details.level > summary::after { content: "▸"; color: var(--muted); }
+  details.level[open] > summary::after { content: "▾"; }
+  details.level > .inner { padding: 4px 18px 14px; border-top: 1px solid var(--line); }
+
+  /* ---- cards / cheat sheet ---- */
+  .cards { display: grid; grid-template-columns: 1fr; gap: 14px; margin: 0 0 20px; max-width: 860px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .card h4 { margin: 0 0 8px; font-size: 14.5px; }
+  .card ul { margin: 0 0 0 18px; font-size: 14px; }
+  .card li { margin-bottom: 4px; }
+  .card .keys { margin: 4px 0; }
+
+  /* ---- prereq check ---- */
+  .check li { list-style: none; position: relative; padding-left: 26px; }
+  .check li::before { content: "☐"; position: absolute; left: 0; color: var(--accent); }
+
+  /* ---- glossary / index ---- */
+  dl.glossary dt { font-weight: 700; margin-top: 12px; scroll-margin-top: 10px; }
+  dl.glossary dd { margin: 2px 0 0 0; color: var(--ink2); max-width: 78ch; font-size: 15px; }
+  .index-cols { columns: 3 220px; column-gap: 28px; font-size: 14px; }
+  .index-cols ul { list-style: none; margin: 0; }
+  .index-cols li { break-inside: avoid; margin-bottom: 3px; }
+  .index-cols .letter { font-weight: 800; color: var(--accent); margin: 10px 0 3px; break-after: avoid; }
+
+  /* ---- quiz ---- */
+  .quiz-score { font-weight: 700; margin: 0 0 14px; padding: 10px 14px; background: var(--surface2); border-radius: 8px; display: inline-block; }
+  .quiz-reset { margin: -6px 0 16px; }
+  .quiz-item { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 0 0 12px; max-width: 86ch; }
+  .quiz-item.got { border-color: var(--good); background: var(--good-bg); }
+  .quiz-item.missed { border-color: var(--warn); background: var(--warn-bg); }
+  .quiz-q { font-weight: 600; margin-bottom: 8px; }
+  .qnum { display: inline-block; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; color: var(--accent); background: var(--accent-wash); padding: 2px 7px; border-radius: 5px; margin-right: 8px; }
+  .quiz-answer { display: none; padding: 8px 12px; border-left: 3px solid var(--accent); background: var(--surface2); border-radius: 0 8px 8px 0; margin-bottom: 10px; font-size: 15px; }
+  .quiz-answer.open { display: block; }
+  .quiz-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .quiz-actions button, .btn {
+    font: inherit; font-size: 13px; padding: 5px 13px; border-radius: 7px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  }
+  .quiz-actions button:hover, .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .quiz-actions .got { border-color: var(--good); color: var(--good); }
+  .quiz-actions .missed { border-color: var(--warn); color: var(--warn); }
+
+  /* ---- simulator: the dead-board trainer ---- */
+  .sim {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px 20px; margin: 20px 0 24px; max-width: 860px;
+  }
+  .sim-title { font-size: 17px; font-weight: 800; margin: 0 0 2px; }
+  .sim-meta { font-size: 12.5px; color: var(--muted); margin: 0 0 14px; }
+  .sim-ticket {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13.5px;
+    background: var(--terminal); color: var(--terminal-ink); border: 1px solid var(--terminal-line);
+    border-radius: 10px; padding: 12px 14px; margin: 0 0 14px; white-space: pre-wrap;
+  }
+  .sim-ticket .lbl { color: var(--terminal-accent); font-weight: 700; }
+  .sim-ticket .bad { color: var(--terminal-red); }
+  .sim-node { min-height: 24px; }
+  .sim-reading {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px;
+    background: var(--code-bg); color: var(--ink); border-radius: 8px;
+    padding: 10px 12px; margin: 10px 0; white-space: pre-wrap; display: none;
+  }
+  .sim-reading.show { display: block; }
+  .sim-choices { display: grid; gap: 8px; margin: 12px 0; }
+  .sim-choice {
+    text-align: left; font: inherit; font-size: 14px; padding: 9px 13px;
+    border-radius: 9px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  }
+  .sim-choice:hover { border-color: var(--accent); }
+  .sim-choice.good { border-color: var(--good); background: var(--good-bg); }
+  .sim-choice.bad { border-color: var(--danger); background: var(--danger-bg); }
+  .sim-feedback {
+    display: none; border-radius: 8px; padding: 10px 13px; margin: 10px 0; font-size: 14px;
+    border-left: 3px solid var(--accent); background: var(--surface2);
+  }
+  .sim-feedback.show { display: block; }
+  .sim-feedback.bad { border-left-color: var(--danger); background: var(--danger-bg); }
+  .sim-feedback.good { border-left-color: var(--good); background: var(--good-bg); }
+  .sim-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .sim-actions .btn { font-size: 12.5px; }
+  .sim-log {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px;
+    color: var(--ink2); border-top: 1px dashed var(--line); margin-top: 14px; padding-top: 10px;
+  }
+  .sim-log ol { margin: 6px 0 0 20px; max-width: 80ch; }
+
+  /* ---- misc ---- */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .two-col { grid-template-columns: 1fr; } }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
+  .pill { font-size: 12.5px; padding: 3px 10px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--line); color: var(--ink2); }
+  .pill.on { background: var(--accent-wash); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .channel { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); padding: 14px 16px; margin: 0 0 14px; max-width: 86ch; }
+  .channel h4 { margin: 0 0 4px; }
+  .channel .ch-meta { font-size: 12.5px; color: var(--muted); margin: 0 0 8px; }
+  .channel ul { font-size: 14px; }
+  .timeline { list-style: none; margin: 0 0 20px; padding: 0; max-width: 86ch; }
+  .timeline li { position: relative; padding: 0 0 14px 30px; border-left: 2px solid var(--line); margin-left: 10px; }
+  .timeline li:last-child { border-left-color: transparent; }
+  .timeline li::before { content: ""; position: absolute; left: -7px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); }
+  .timeline b { display: block; }
+  .timeline .t { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<button class="toc-toggle" id="tocToggle" type="button" aria-expanded="false" aria-controls="toc">☰ Contents</button>
+<button class="theme-toggle" type="button" aria-label="Toggle colour theme">◐ auto</button>
+
+<div class="layout">
+<nav class="toc" id="toc" aria-label="Table of contents">
+  <div class="brand"><span class="brand-mark" aria-hidden="true">FIX</span>Electronics Repair</div>
+  <div class="brand-sub">The unified diagnostic method — distilled from five master repair channels</div>
+  <div class="part">Foundations</div>
+  <a href="#mental-model">1 · Mental model</a>
+  <a href="#prereqs">2 · Prerequisite floor</a>
+  <a href="#safety">3 · Safety</a>
+  <div class="part">The method</div>
+  <a href="#method">4 · Unified diagnostic method</a>
+  <a href="#no-schematic">5 · Boards without schematics</a>
+  <a href="#power-entry">6 · Power entry &amp; rails</a>
+  <a href="#shorts">7 · Short hunting</a>
+  <a href="#signal-chain">8 · Signal-chain tracing</a>
+  <a href="#mechanical">9 · Mechanical faults</a>
+  <div class="part">Applications</div>
+  <a href="#smps">10 · SMPS deep dive</a>
+  <a href="#modern">11 · Consoles &amp; USB-C</a>
+  <a href="#commercial">12 · Going commercial</a>
+  <a href="#bench">13 · The bench</a>
+  <div class="part">Practice</div>
+  <a href="#simulator">14 · Dead-board simulator</a>
+  <a href="#labs">15 · Labs</a>
+  <a href="#capstone">16 · Capstone</a>
+  <a href="#troubleshooting">17 · Troubleshooting</a>
+  <div class="part">Reference</div>
+  <a href="#cheat-sheet">18 · Cheat sheet</a>
+  <a href="#glossary">19 · Glossary</a>
+  <a href="#index">20 · Index</a>
+  <a href="#quiz">21 · Quiz</a>
+  <a href="#sources">22 · Sources</a>
+</nav>
+
+<main id="content">
+
+<header class="hero">
+  <div class="eyebrow">For the advanced hobbyist who intends to take paying customers</div>
+  <h1>Diagnose the fault.<br><span class="accent-clause">Prove it. Fix it. Get paid.</span></h1>
+  <p class="subtitle">The unified electronics-repair method — safety, power-entry walks, short hunting, signal tracing, board-level craft — distilled from the top repair work of five master channels: Learn Electronics Repair, Mr. Carlson's Lab, Mend It Mark, Electronics Repair School and Northridge Fix.</p>
+  <div class="badges">
+    <span class="badge">25 videos surveyed · 2026-09-21</span>
+    <span class="badge">5 channels · 1.99M combined subscribers</span>
+    <span class="badge soft">Learn Electronics Repair: channel hijacked, rebuild pending — content verified from web archives</span>
+    <span class="badge">single file · works offline</span>
+    <span class="badge">dead-board simulator</span>
+    <span class="badge">decision matrices</span>
+    <span class="badge">16-question quiz</span>
+  </div>
+</header>
+
+<!-- ============================================================ 1 -->
+<section id="mental-model">
+<h2>1 · Mental model <span class="tag">A dead device is not broken. It is paused at a specific, findable point.</span></h2>
+<p class="lede">Every electronic fault is a location before it is a component. The device worked once, which means energy flowed along a defined path through defined stages — and now it stops somewhere. Your entire job is to bracket that stopping point between two measurements, walk the bracket inward, and condemn exactly one part with evidence. The five channels this guide is built from disagree about gear, era, and pace. They do not disagree about that.</p>
+
+<p>Watch enough master-level repair and the surface differences dissolve. Mr. Carlson spends three hours on a 1938 tube radio; Alex at Northridge Fix spends thirteen minutes on an Asus laptop; Sorin at Electronics Repair School walks a Lenovo board with no schematic at all. Different universes of hardware — and underneath, the same loop:</p>
+
+<ol class="recipe">
+  <li><strong>Observe.</strong> Read the ticket, then the board, before any probe touches it. Burn marks, corrosion, prior-repair damage, missing parts.</li>
+  <li><strong>Bracket.</strong> Find two points where behavior differs from expectation. The fault lives between them.</li>
+  <li><strong>Halve.</strong> Measure, inject, or disconnect at the midpoint of the bracket. One half is now exonerated.</li>
+  <li><strong>Condemn with proof.</strong> Out-of-circuit confirmation before the iron comes out. In-circuit readings lie.</li>
+  <li><strong>Repair, then verify like a skeptic.</strong> Real loads, real current draws, real signals — not "it powers on, ship it."</li>
+</ol>
+
+<h3>The three ideas that separate pros from parts-changers</h3>
+<p><strong>First: measure what the meter actually sees.</strong> Sorin's most-repeated warning: low resistance at a VRM output is usually the CPU die itself, measured backwards through the coil — a coil is just wire. Most "I found a shorted MOSFET" emails he receives are this exact false positive. The meter reports the resistance of the entire path it sits across, not the part you are staring at. Know the path, or the number is noise.</p>
+<p><strong>Second: the schematic is optional, the topology is not.</strong> Carlson repairs supplies with no schematic by recognizing the converter topology — once you know it is a half-bridge, its failure modes follow. Sorin reads unknown boards by eye: every coil is a switching supply, every cap cluster marks a rail. Richard at Learn Electronics Repair rebuilt unobtainable circuits by sketching them from the board itself. The schematic is a convenience. Topology knowledge is the real instrument.</p>
+<p><strong>Third: replace only what testing proves bad.</strong> Carlson's rule, and it is the difference between repair and vandalism: wholesale recapping that happens to fix the fault teaches you nothing and destroys original design intent. Diagnose to the failed part. Then replace that part, correctly, and verify the repair with instruments.</p>
+
+<div class="callout blue">
+  <strong>What "grand unified" means here</strong>
+  This guide merges five channels into one method because their methods already agree. Where they genuinely differ — thermal camera versus coil-shorting, donor-board pragmatism versus restore-to-factory discipline — this guide shows the fork and names who takes which branch and why. Section 4 is the merged spine; the application modules (§10–§12) show the spine running on real hardware from the survey.
+</div>
+
+<h3>The five masters at a glance</h3>
+<div class="table-wrap"><table>
+  <tr><th>Channel</th><th>Territory</th><th>Signature move</th><th>Watch them for</th></tr>
+  <tr><td><strong>Learn Electronics Repair</strong> (Richard, UK)</td><td>Anything with a board — pro audio, GPUs, industrial</td><td>Diagnose from first principles with a multimeter and no schematic</td><td>Topology reconstruction; the startup-capacitor failure family; "it's all just electronics"</td></tr>
+  <tr><td><strong>Mr. Carlson's Lab</strong> (Paul Carlson, Canada)</td><td>Vintage tube radios, test gear, high voltage</td><td>Signal-trace stage by stage until the signal dies</td><td>Safety discipline; verify-your-tester-first; instrument-verified alignment</td></tr>
+  <tr><td><strong>Mend It Mark</strong> (Mark, UK)</td><td>Hi-fi, tape decks, phono — analogue restoration</td><td>Exploit the good channel as a free known-good reference</td><td>Rails before signal; bisection; mechanical-versus-electrical triage; honest dead ends</td></tr>
+  <tr><td><strong>Electronics Repair School</strong> (Sorin, UK)</td><td>Windows laptop board repair</td><td>Walk the power entry chain, then inject current where voltage died</td><td>Gate voltages before condemning FETs; coil-shorting short hunt; firmware before hardware</td></tr>
+  <tr><td><strong>Northridge Fix</strong> (Alex, USA)</td><td>Commercial mail-in shop: consoles, laptops, GPUs</td><td>Diode-mode fingerprint the board, then time-box the job</td><td>Probability priors ("chip not cap"); donor boards; pad-repair craft; the no-fix decision</td></tr>
+</table></div>
+
+<div class="callout">
+  <strong>The wrong question: "which channel should I watch?"</strong>
+  All five, in rotation, is the actual answer — they cross-pollinate constantly. But the guide you are reading extracts the method so you can practice it on your bench instead of watching it. Watching repair is not repair. Every module below ends in something to measure.
+</div>
+<p class="sources-line">Sources: <a href="#sources">§22</a> — all five channel surveys, top-5 video selections per channel.</p>
+</section>
+
+<!-- ============================================================ 2 -->
+<section id="prereqs">
+<h2>2 · Prerequisite floor <span class="tag">What this guide assumes you already bring to the bench</span></h2>
+<p class="lede">This guide starts at advanced-hobbyist, not zero. It assumes you have killed components before and learned from it. Below is the floor — the hard prerequisites you cannot proceed without, the soft ones that help, and a self-assessment to expose gaps while they are still cheap.</p>
+
+<h3>Hard prerequisites</h3>
+<ul class="check">
+  <li><strong>DMM fluency:</strong> diode mode, resistance, DC volts, continuity — and you know why diode mode reads voltage drop, not ohms.</li>
+  <li><strong>Component literacy:</strong> resistors, ceramic and electrolytic capacitors, diodes, BJTs, MOSFETs — schematic symbols and packages, and roughly what each does in a circuit.</li>
+  <li><strong>Soldering:</strong> clean joints on through-hole and TQFP-scale SMD, desoldering with pump/wick/hot tweezers without lifting pads.</li>
+  <li><strong>Ohm's and Kirchhoff's laws, used:</strong> not memorized — applied. You can look at two parallel resistors and know instantly what the meter across them will read.</li>
+  <li><strong>Respect for mains:</strong> you know mains live parts bite and that stored charge in capacitors outlives the plug. If not, §3 is now your only allowed section.</li>
+</ul>
+
+<h3>Soft prerequisites</h3>
+<ul>
+  <li>Oscilloscope basics — triggering, scale, probing without loading the circuit down.</li>
+  <li>LCR/ESR meter experience (your DE-5000-class instrument is ideal — the guide's cap-testing guidance leans on it).</li>
+  <li>Schematic reading at block-diagram level — power section, signal path, feedback loop.</li>
+  <li>Basic switch-mode supply concepts: chopper FET, transformer, feedback via optocoupler.</li>
+</ul>
+
+<h3>Self-assessment — all five, or fix the gap first</h3>
+<ol>
+  <li>A DMM in diode mode across a silicon diode reads 0.5xx V one way. What does it read the other way, and why?</li>
+  <li>You measure 8 Ω across a big electrolytic on a motherboard VRM output. Short or not — and what single fact about the surrounding circuit decides?</li>
+  <li>Why does a series light bulb prevent damage at first power-up of a repaired supply?</li>
+  <li>A MOSFET's gate reads 0 V while its source-drain path should be conducting. Name two different reasons, one innocent and one guilty.</li>
+  <li>Which capacitor failure modes does an ESR meter catch that a capacitance meter misses?</li>
+</ol>
+<details class="level">
+  <summary>Check your answers <span class="pill">diagnostic</span></summary>
+  <div class="inner">
+    <ol>
+      <li>OL / open — the meter's test voltage is below the diode's reverse breakdown; only forward conduction registers. This asymmetry is why diode mode fingerprints junctions (§5).</li>
+      <li>Usually not a short: you are reading the CPU die backwards through the buck coil (a coil is a wire). The deciding fact is whether the reading matches the board's normal rail fingerprint (§5, §7).</li>
+      <li>The bulb's cold filament is low resistance; a fault draws huge current, the filament lights, its resistance rises, and voltage across the device collapses. A healthy device draws modest current and the bulb stays mostly dark (§3, §10).</li>
+      <li>Innocent: a protection IC (BQ-family charger management) is deliberately holding gate drive off because it detected a downstream short. Guilty: the gate driver or its supply is dead (§6).</li>
+      <li>Dried-out electros that still show correct capacitance but high series loss — ESR is the tell, capacitance alone says "fine" (§13, your LCR meter's D and ESR modes).</li>
+    </ol>
+  </div>
+</details>
+<p class="sources-line">Sources: <a href="#sources">§22</a> — prerequisite framing drawn from the ERS "motherboards repair lesson" and the LER no-schematic repair surveys.</p>
+</section>
+
+<!-- ============================================================ 3 -->
+<section id="safety">
+<h2>3 · Safety <span class="tag">The floor under every other skill in this guide</span></h2>
+<p class="lede">Electronics repair mixes mains voltage, charged capacitors, and your hands. Mr. Carlson, the survey's high-voltage authority, treats safety as step zero on every line-powered job: isolation transformer before anything, discharge before fingers, gentle power-up while watching current. This section is not optional reading — it is the license for every lab that follows.</p>
+
+<div class="callout danger">
+  <strong>Lethal energy, three places</strong>
+  <ul>
+    <li><strong>Mains itself:</strong> 120/230 VAC at tens of amps available. Across the chest, fatal.</li>
+    <li><strong>Stored charge:</strong> SMPS primary caps hold 170–390 VDC and bite long after unplugging. Tube gear supplies hold 200–600 V.</li>
+    <li><strong>Inverter/flash circuits:</strong> camera flashes, LCD backlights, microwave inverters — high voltage from small packages.</li>
+  </ul>
+</div>
+
+<h3>The three-tier hazard map</h3>
+<div class="table-wrap"><table>
+  <tr><th>Tier</th><th>Where</th><th>Hazard</th><th>Mandatory practice</th></tr>
+  <tr><td><strong>Tier 1 · Low-voltage DC</strong></td><td>Logic boards, consoles, USB gear, battery rails</td><td>Parts damage, minor burns — rarely personal injury</td><td>Current-limited bench supply instead of battery/wall during diagnosis (§7)</td></tr>
+  <tr><td><strong>Tier 2 · Mains-side SMPS</strong></td><td>Primary side of any wall-powered supply, board-mounted or standalone</td><td>170–390 VDC on primary caps; live chassis on the bench</td><td>Isolation transformer, dim-bulb, discharge probe, one-hand rule</td></tr>
+  <tr><td><strong>Tier 3 · Tube / high voltage</strong></td><td>Vintage radios, tube amps, CRTs</td><td>200–600 V supplies that stay charged for days</td><td>Everything in Tier 2, plus explicit discharge-and-verify before every reach-in, no exceptions, no hurry</td></tr>
+</table></div>
+
+<h3>The non-negotiables</h3>
+<ol class="recipe">
+  <li><strong>Isolation transformer for anything line-powered.</strong> Carlson's standing rule, stated as its own chapter in his fault-finding video. The transformer breaks the galvanic path between your device and the wall's ground reference, so touching a live chassis does not complete a circuit through you. Size it above your device's draw — 300 VA covers most bench SMPS and audio work.</li>
+  <li><strong>Discharge before you reach in.</strong> Bleeder the primary caps with a discharge probe (a resistor on a stick, not a screwdriver short — the spark pits the cap and your nerves). Then <em>measure</em> the cap to confirm zero. Carlson designed and sells his own HV discharge tool for exactly this sequence.</li>
+  <li><strong>Dim-bulb tester at first power-up.</strong> A series incandescent bulb between the isolation transformer and the device. Healthy device: bulb flashes, settles dim, device runs. Shorted device: bulb glows at full brightness, voltage across the device collapses, nothing burns. Build one in Lab 1.</li>
+  <li><strong>One-hand rule on live circuits.</strong> One hand in your pocket while probing energized gear. The current path you are choosing for a mistake is hand-to-hand — straight through the heart. Never two.</li>
+  <li><strong>Variac for gentle bring-up.</strong> Raise mains from low while watching current. Mark's AIWA deck was Japanese-market 100 V — the variac was not a safety luxury but the only correct supply. Know your device's nominal voltage before you dial anything.</li>
+  <li><strong>Never bypass a safety part silently.</strong> If you bridge a fusible resistor or defeat an interlock to test, tag it, and restore before return. A repair that removes a safety feature is a loan against someone's future injury.</li>
+</ol>
+
+<figure class="diagram">
+<svg viewBox="0 0 960 300" role="img" aria-label="Dim-bulb tester wiring diagram">
+  <title>Dim-bulb tester: mains through isolation transformer, then a series incandescent bulb, then the device under test</title>
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--ink2)"/></marker></defs>
+  <!-- mains -->
+  <rect x="20" y="120" width="120" height="60" rx="10" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="80" y="147" text-anchor="middle" class="d-label">Mains</text>
+  <text x="80" y="167" text-anchor="middle" class="d-tiny">120/230 VAC</text>
+  <line x1="140" y1="135" x2="200" y2="135" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="140" y1="165" x2="200" y2="165" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar)"/>
+  <!-- iso transformer -->
+  <rect x="200" y="100" width="180" height="100" rx="10" fill="var(--surface)" stroke="var(--s1)" stroke-width="2"/>
+  <text x="290" y="127" text-anchor="middle" class="d-label">Isolation transformer</text>
+  <text x="290" y="147" text-anchor="middle" class="d-tiny">1:1 · ≥300 VA</text>
+  <text x="290" y="167" text-anchor="middle" class="d-tiny">breaks ground path to you</text>
+  <line x1="380" y1="135" x2="450" y2="135" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="380" y1="165" x2="450" y2="165" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar)"/>
+  <!-- bulb -->
+  <circle cx="500" cy="150" r="42" fill="var(--surface)" stroke="var(--s4)" stroke-width="2.5"/>
+  <path d="M482,150 q9,-16 18,0 q9,16 18,0" fill="none" stroke="var(--s4)" stroke-width="2.5"/>
+  <text x="500" y="215" text-anchor="middle" class="d-label">Series bulb</text>
+  <text x="500" y="232" text-anchor="middle" class="d-tiny">60–100 W incandescent</text>
+  <line x1="542" y1="150" x2="620" y2="150" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar)"/>
+  <!-- DUT -->
+  <rect x="620" y="110" width="200" height="80" rx="10" fill="var(--surface)" stroke="var(--s2)" stroke-width="2"/>
+  <text x="720" y="142" text-anchor="middle" class="d-label">Device under test</text>
+  <text x="720" y="162" text-anchor="middle" class="d-tiny">repaired supply · first power-up</text>
+  <!-- return path -->
+  <path d="M820,190 L820,260 L500,260 L500,192" fill="none" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar)"/>
+  <path d="M500,108 L500,60 L290,60 L290,100" fill="none" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar)"/>
+</svg>
+<figcaption><b>Reading the bulb:</b> dark-to-dim and the device runs = healthy. Full brightness that persists = short downstream; the bulb's hot filament rises in resistance, collapsing the voltage across the device, and the fuse philosophy of "sacrifice nothing" is satisfied. Richard (LER) adds a caveat from his SMPS work: some switching supplies legitimately draw enough startup surge to blink the bulb — a bright <em>flash</em> that decays is normal; steady <em>glow</em> is the fault signature.</figcaption>
+</figure>
+
+<div class="callout bite">
+  <strong>Hot ground is not chassis ground</strong>
+  Richard's rule from the small-SMPS guide: on non-isolated supplies (most cheap wall adapters, e-bike chargers, some TV supplies) the negative output is tied to mains through the rectifier — "hot ground." Clipping your grounded oscilloscope to it shorts half the mains waveform through the probe. Use an isolation transformer before any grounded instrument touches a non-isolated supply, or run the scope differential (two probes, channel math A−B) as Mark does on live rails.
+</div>
+
+<div class="callout warn">
+  <strong>Batteries are Tier 1.5</strong>
+  A laptop or console battery delivers hundreds of amps into a short — enough to burn tweezers and ignite pouch cells. For bench diagnosis, replace the battery with a current-limited supply. If the battery must stay in (battery-authentication circuits), tape over its terminals until the moment it is needed.
+</div>
+<p class="sources-line">Sources: <a href="#sources">§22</a> — Mr. Carlson's Lab "Electronic Circuitry Diagnosis And Fault Finding" (isolation-transformer and safety chapters); LER "Small Switch Mode Power Supply Repair Guide" (hot ground, dim-bulb limits); Mend It Mark AIWA repair (variac for 100 V gear, series bulbs at mains bring-up).</p>
+</section>
+
+<!-- ============================================================ 4 -->
+<section id="method">
+<h2>4 · Unified diagnostic method <span class="tag">One spine, five accents — the loop every master runs</span></h2>
+<p class="lede">Here is the merge. Five channels, five eras of hardware, and when you strip the narration down to decisions, the same sequence appears every time. Learn this sequence as a checklist until it is reflex. The rest of the guide is this sequence run at depth: §5–§9 expand each phase, §10–§12 run it on specific hardware classes.</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 960 640" role="img" aria-label="The unified diagnostic method as a flow diagram">
+  <title>Unified diagnostic flow: intake, eyes, power entry, rails, shorts, signal chain, component bench, repair, verify, no-fix exit</title>
+  <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--ink2)"/></marker></defs>
+  <!-- Phase boxes: two columns -->
+  <rect x="60" y="20" width="380" height="74" rx="10" fill="var(--surface)" stroke="var(--s1)" stroke-width="2"/>
+  <text x="80" y="48" class="d-label">1 · INTAKE &amp; EYES</text>
+  <text x="80" y="70" class="d-tiny">ticket, damage, prior repairs, corrosion — Northridge · Carlson</text>
+
+  <rect x="60" y="120" width="380" height="74" rx="10" fill="var(--surface)" stroke="var(--s1)" stroke-width="2"/>
+  <text x="80" y="148" class="d-label">2 · SAFETY FLOOR</text>
+  <text x="80" y="170" class="d-tiny">isolate · discharge · dim-bulb · current limit — Carlson · §3</text>
+
+  <rect x="60" y="220" width="380" height="74" rx="10" fill="var(--surface)" stroke="var(--s1)" stroke-width="2"/>
+  <text x="80" y="248" class="d-label">3 · POWER ENTRY WALK</text>
+  <text x="80" y="270" class="d-tiny">port → fuse → FETs → sense → main rail — ERS · Northridge</text>
+
+  <rect x="60" y="320" width="380" height="74" rx="10" fill="var(--surface)" stroke="var(--s1)" stroke-width="2"/>
+  <text x="80" y="348" class="d-label">4 · RAILS &amp; SHORTS</text>
+  <text x="80" y="370" class="d-tiny">diode-mode fingerprint · injection · coil-short · thermal — ERS · §7</text>
+
+  <rect x="60" y="420" width="380" height="74" rx="10" fill="var(--surface)" stroke="var(--s2)" stroke-width="2"/>
+  <text x="80" y="448" class="d-label">5 · SIGNAL CHAIN</text>
+  <text x="80" y="470" class="d-tiny">stage-by-stage trace until signal dies — Carlson · Mark</text>
+
+  <rect x="60" y="520" width="380" height="74" rx="10" fill="var(--surface)" stroke="var(--s2)" stroke-width="2"/>
+  <text x="80" y="548" class="d-label">6 · SYMMETRY &amp; BISECT</text>
+  <text x="80" y="570" class="d-tiny">good channel as reference · halve the bracket — Mark · LER</text>
+
+  <rect x="520" y="20" width="380" height="74" rx="10" fill="var(--surface)" stroke="var(--s2)" stroke-width="2"/>
+  <text x="540" y="48" class="d-label">7 · COMPONENT BENCH</text>
+  <text x="540" y="70" class="d-tiny">out-of-circuit proof: diode test, gain, ESR, curve — all</text>
+
+  <rect x="520" y="120" width="380" height="74" rx="10" fill="var(--surface)" stroke="var(--s3)" stroke-width="2"/>
+  <text x="540" y="148" class="d-label">8 · REPAIR</text>
+  <text x="540" y="170" class="d-tiny">heat discipline · donors matched · orientation correct — Northridge</text>
+
+  <rect x="520" y="220" width="380" height="74" rx="10" fill="var(--surface)" stroke="var(--s3)" stroke-width="2"/>
+  <text x="540" y="248" class="d-label">9 · VERIFY LIKE A SKEPTIC</text>
+  <text x="540" y="270" class="d-tiny">real loads · current draws · waveforms · burn-in — Mark · Carlson</text>
+
+  <rect x="520" y="320" width="380" height="74" rx="10" fill="var(--surface)" stroke="var(--s4)" stroke-width="2"/>
+  <text x="540" y="348" class="d-label">10 · DOCUMENT &amp; RETURN</text>
+  <text x="540" y="370" class="d-tiny">what failed, why, what was replaced, what to watch — pro habit</text>
+
+  <!-- no-fix box -->
+  <rect x="520" y="440" width="380" height="150" rx="10" fill="var(--surface)" stroke="var(--danger)" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="540" y="472" class="d-label d-danger">TIME-BOX &amp; NO-FIX</text>
+  <text x="540" y="496" class="d-tiny">if parts keep dying or the bracket never narrows:</text>
+  <text x="540" y="516" class="d-tiny">stop, document, return — Northridge's discipline.</text>
+  <text x="540" y="542" class="d-tiny">"I cannot afford to spend the whole day on one board."</text>
+
+  <!-- arrows left column -->
+  <line x1="250" y1="94" x2="250" y2="118" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar2)"/>
+  <line x1="250" y1="194" x2="250" y2="218" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar2)"/>
+  <line x1="250" y1="294" x2="250" y2="318" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar2)"/>
+  <line x1="250" y1="394" x2="250" y2="418" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar2)"/>
+  <line x1="250" y1="494" x2="250" y2="518" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar2)"/>
+  <!-- cross to right column -->
+  <path d="M440,557 Q490,557 490,110 Q490,57 518,57" fill="none" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar2)"/>
+  <!-- right column -->
+  <line x1="710" y1="94" x2="710" y2="118" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar2)"/>
+  <line x1="710" y1="194" x2="710" y2="218" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar2)"/>
+  <path d="M710,294 Q710,340 660,340 Q620,340 620,438" fill="none" stroke="var(--danger)" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ar2)"/>
+  <text x="640" y="330" class="d-tiny d-danger">fault wins ↑</text>
+  <!-- loop back: verify fails -->
+  <path d="M710,294 Q710,388 530,388 Q470,388 470,247 L444,247" fill="none" stroke="var(--ink2)" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#ar2)"/>
+  <text x="480" y="378" class="d-tiny">verify fails → re-diagnose</text>
+</svg>
+<figcaption><b>The spine.</b> Phases 1–4 are electrical triage (does power reach where it should?). Phase 5–6 localize a functional fault (where does the signal or symmetry break?). Phases 7–10 close the job. The dashed loop is the honest one: a repair that fails verification sends you back to phase 4, with everything you learned. The red dashed exit is the professional's secret weapon — knowing when to stop.</figcaption>
+</figure>
+
+<h3>Phase by phase, who owns it, what "done" means</h3>
+<div class="table-wrap"><table>
+  <tr><th>Phase</th><th>Owner(s)</th><th>Exit condition — you may advance when…</th></tr>
+  <tr><td><strong>1 · Intake &amp; eyes</strong></td><td>Northridge Fix (commercial triage), Carlson (inspection-first)</td><td>The ticket is precise, the board has had a full microscope pass, and every prior-repair crime is catalogued, not silently accepted.</td></tr>
+  <tr><td><strong>2 · Safety floor</strong></td><td>Carlson (authority), this guide §3</td><td>Isolation in place, caps discharged and <em>verified</em> discharged, dim-bulb or current limit staged. No exceptions on mains-side work.</td></tr>
+  <tr><td><strong>3 · Power entry walk</strong></td><td>ERS (the canonical chain), Northridge</td><td>Input voltage is confirmed at the port and walked to the main rail; the exact node where it disappears is named.</td></tr>
+  <tr><td><strong>4 · Rails &amp; shorts</strong></td><td>ERS, Northridge, LER (VRM methods)</td><td>Every rail is either up, or shorted with the short localized to a rail — then §7's hunt narrows it to a component.</td></tr>
+  <tr><td><strong>5 · Signal chain</strong></td><td>Carlson (stage tracing), Mark (audio paths)</td><td>A known-good signal goes in; you have walked it stage by stage and found the stage where it dies.</td></tr>
+  <tr><td><strong>6 · Symmetry &amp; bisect</strong></td><td>Mark (stereo reference), LER</td><td>Duplicated structures are diffed good-vs-bad; single-path structures are halved at module boundaries.</td></tr>
+  <tr><td><strong>7 · Component bench</strong></td><td>All five</td><td>The condemned part has failed <em>out of circuit</em> — diode test, gain match, ESR, or curve — not merely in-circuit where parallel paths lie.</td></tr>
+  <tr><td><strong>8 · Repair</strong></td><td>Northridge (rework craft), Mark (restoration craft)</td><td>Correct part, correct orientation, correct soldering, donor parts diode-tested before fitting.</td></tr>
+  <tr><td><strong>9 · Verify</strong></td><td>Mark (fullest practice), Carlson (alignment)</td><td>Real load, real current draw, waveform within spec, DC offset in bounds, burn-in survived.</td></tr>
+  <tr><td><strong>10 · Document &amp; return</strong></td><td>Northridge (business frame)</td><td>Customer-ready record: fault, cause, parts, test evidence, advice. Your future self reads it too.</td></tr>
+</table></div>
+
+<div class="callout">
+  <strong>Why this ordering, and not "test the obvious suspects first"?</strong>
+  Because the ordering is what makes evidence accumulate. Eyes before probes means you do not destroy the visual evidence. Power before signal means a "dead" signal stage is never investigated while the real fault is an absent rail upstream. Symmetry before bisection means you use the free reference channel before you start unsoldering half the board. Each phase either exits cleanly or hands the next phase a smaller bracket. Random part-testing hands the next phase nothing.
+</div>
+
+<div class="callout blue">
+  <strong>Where the masters genuinely differ</strong>
+  Two real forks in the method, and both are gear-driven:
+  <ul>
+    <li><strong>Finding shorts:</strong> Northridge reaches for the thermal camera plus voltage injection; Sorin demonstrates the same localization with a bench PSU and a wire (shorting coils one at a time, §7) and bans "short finder" gadgets on his forum. If you own a thermal cam, use it — it is fast. If you do not, Sorin's method gets you the same answer for the price of attention.</li>
+    <li><strong>Repair philosophy:</strong> Carlson and Mark restore to original intent — correct parts, measured alignment, "works like new, or even better." Alex at Northridge fixes for commerce — a justified bridge of a dead protection FET can be a legitimate repair when the alternative is a dead board and an unhappy customer. This guide teaches both: restore-craft when the device deserves it, triage-craft when the job is paid by the outcome. §12 covers how to choose.</li>
+  </ul>
+</div>
+<p class="sources-line">Sources: <a href="#sources">§22</a> — merged from all five channel-method distillations; the phase-exit conditions quote ERS's rail discipline, Mark's verification practice, and Northridge's no-fix framing.</p>
+</section>
+
+<!-- ============================================================ 5 -->
+<section id="no-schematic">
+<h2>5 · Boards without schematics <span class="tag">Read topology by eye, fingerprint rails by diode mode, sketch what you must</span></h2>
+<p class="lede">Most boards you will meet have no schematic, no boardview, and no manual — Sorin's Lenovo in the survey, Carlson's no-schematic SMPS, Richard's Dynacord mixer, Mark's deliberately obfuscated £25k phono stage. The masters do not treat this as an obstacle. A board is a printed argument about its own topology, and you can learn to read it in one slow pass.</p>
+
+<h3>Read the board by eye — the element table</h3>
+<p>Before any probe: turn the board under good light (and a microscope where you have one) and name what you see. Every structural element on a board is a topological statement:</p>
+<div class="table-wrap"><table>
+  <tr><th>You see</th><th>It means</th><th>Follow it to…</th></tr>
+  <tr><td>Every inductor (coil)</td><td>One switching supply — coil + 2 MOSFETs + caps is a buck stage</td><td>The largest coils near the CPU/GPU are their multiphase VRMs; count coils to count rails (ERS)</td></tr>
+  <tr><td>Clusters of small ceramics + one big electrolytic/poly</td><td>A power rail's output filter — clusters mark rail destinations</td><td>Rail boundaries; where to diode-mode to ground for a fingerprint</td></tr>
+  <tr><td>Two similar MOSFETs in a row near the input port</td><td>The back-to-back input protection pair with a current-sense resistor between</td><td>The power-entry walk of §6 (ERS's canonical chain)</td></tr>
+  <tr><td>Transformer + optocoupler + big primary cap</td><td>An isolated SMPS: hot side, cold side, feedback across the gap</td><td>§10's supply walk; the isolation boundary your probes must respect</td></tr>
+  <tr><td>Two identical channels of anything</td><td>A free known-good reference for every measurement</td><td>§4 phase 6 — the diff method; your fastest instrument</td></tr>
+  <tr><td>8-pin SOIC near the BIOS (25Qxx marking)</td><td>Serial-flash BIOS chip</td><td>Firmware recovery before board surgery (§6)</td></tr>
+  <tr><td>BQ-numbered IC near the battery/port</td><td>Battery/charger management — the IC that deliberately pulls gate drive when it smells a fault</td><td>Gate-voltage checks before condemning FETs (§6)</td></tr>
+  <tr><td>Connector + ESD-filter array (tiny caps/fuses in a row)</td><td>Port conditioning — first casualty of liquid events</td><td>Blown filters = OL diode-mode readings on data lines (§11)</td></tr>
+  <tr><td>Missing parts, half-soldered joints, flux tide-marks</td><td>Prior repair attempt — 8 of 10 consoles arrive pre-butchered (Alex)</td><td>Catalogue before you correct; the prior tech's errors are evidence</td></tr>
+</table></div>
+
+<h3>Diode mode: the board's fingerprint</h3>
+<p>Diode mode is the repair world's stethoscope because it is safe (low test voltage, current-limited) and information-dense. Black probe on ground, red on the node, record the voltage drop. A board's set of rail readings is a fingerprint: learn the healthy one — from the good channel, a donor board, or experience — and faults read as outliers.</p>
+<div class="table-wrap"><table>
+  <tr><th>Reading on a power rail</th><th>Meaning</th><th>Next move</th></tr>
+  <tr><td>OL / open on a rail that should show a diode drop</td><td>Open path — blown filter, missing fuse, dead rail entirely</td><td>Walk the rail back toward its source; find the break (Northridge's Switch method)</td></tr>
+  <tr><td>0.000 V (hard short)</td><td>Dead short to ground — most likely a ceramic cap, less likely a FET</td><td>§7 short hunt: injection + localization</td></tr>
+  <tr><td>Low ohms-scale (e.g. 8 Ω on a VRM output)</td><td><strong>Usually not a fault:</strong> the CPU/GPU die read backwards through the coil</td><td>Compare against a known-good board or the matching rail; never condemn on this alone (Sorin)</td></tr>
+  <tr><td>Partial drop that differs rail-to-rail asymmetrically</td><td>One branch loading differently than its twin</td><td>Diff against the symmetric channel/module (Mark's method)</td></tr>
+  <tr><td>~0.4–0.5 V on a data line</td><td>Healthy silicon termination — data lines should show a diode drop</td><td>NO drop where one belongs = blown-open filter, cracked trace (Alex's PI3USB find)</td></tr>
+</table></div>
+
+<div class="callout">
+  <strong>Diode mode reads both directions of wrong</strong>
+  Alex's framing from the Switch liquid-damage repair: beginners only hunt the short (0 Ω). But <em>OL where 0.4–0.5 V belongs</em> is just as diagnostic — it means the path is blown open: a vaporized filter, a corroded via, a lifted pad. Fingerprint both ways.
+</div>
+
+<h3>Reverse-engineer when the board is not enough</h3>
+<p>When a fault resists the eye and the fingerprint, reconstruct the circuit — this is the LER signature skill and Mark's fallback on the obfuscated phono stage:</p>
+<ol class="recipe">
+  <li>Photograph the board region at high resolution, both sides. You will forget the layout; the photo will not.</li>
+  <li>Identify the functional block (input stage, output stage, buck converter, feedback loop) around the symptom. Sketch its parts on paper with reference designators.</li>
+  <li>Trace connectivity with continuity mode — pad to pad, pin to pin. Mark suggested a sketch of the whole PCB with parts labeled when the control chip is unobtainable; the sketch <em>is</em> the schematic.</li>
+  <li>Test assumptions against the working channel wherever one exists — every deduced connection on the bad side must match the good side.</li>
+  <li>Annotate voltages as you measure them onto the sketch. The sketch becomes a service manual; Mark literally wrote one for the "unfixable" pre-amp and fixed it.</li>
+</ol>
+
+<div class="callout blue">
+  <strong>Component identity without markings</strong>
+  Richard's unmarked/blown-IC video exists for the worst case: the faulty chip has no readable marking. Identify by role, not by name — package, pin count, what it connects to (a 8-pin part between port and PMIC with ESD neighbors is a port mux/protector), and behavior in diode mode. A part that cannot be identified can still be identified by its <em>job</em>, and replaced by anything that does that job on the same footprint.
+</div>
+<p class="sources-line">Sources: <a href="#sources">§22</a> — ERS "How to diagnose a laptop motherboard" (board-by-eye, coil-per-supply, 8 Ω CPU-die trap); Northridge "Nintendo Switch Liquid Damage" (diode-mode both directions); Mark's Beocord and Tom Evans repairs (sketch-to-schematic); LER unmarked-IC video (identify by role).</p>
+</section>
+
+<!-- ============================================================ 6 -->
+<section id="power-entry">
+<h2>6 · Power entry &amp; rails <span class="tag">Walk the chain, watch the gates, trust the fuse last</span></h2>
+<p class="lede">A dead device is usually a device whose power never arrived. Sorin's most-watched repair (2.63M views) is one walk of one chain, and the walk generalizes to every laptop, console, and battery gadget you will ever meet: port → fuse → protection FETs → sense resistor → main rail. Voltage exists at every node or it does not. Where it stops, the fault lives — and only then do parts become suspects.</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 960 260" role="img" aria-label="Laptop power entry chain">
+  <title>Power entry chain: DC port, inductor, fuse, MOSFET 1, MOSFET 2, current-sense resistor, main 19V rail with BQ management IC watching the sense lines</title>
+  <defs><marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--ink2)"/></marker></defs>
+  <rect x="20" y="90" width="100" height="64" rx="10" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="70" y="116" text-anchor="middle" class="d-label">DC-in port</text>
+  <text x="70" y="138" text-anchor="middle" class="d-mono">19 V</text>
+  <line x1="120" y1="122" x2="158" y2="122" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar3)"/>
+  <rect x="158" y="90" width="86" height="64" rx="10" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="201" y="116" text-anchor="middle" class="d-label">Fuse</text>
+  <text x="201" y="138" text-anchor="middle" class="d-tiny">blows last</text>
+  <line x1="244" y1="122" x2="282" y2="122" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar3)"/>
+  <rect x="282" y="90" width="120" height="64" rx="10" fill="var(--surface)" stroke="var(--s1)" stroke-width="2"/>
+  <text x="342" y="116" text-anchor="middle" class="d-label">MOSFET 1</text>
+  <text x="342" y="138" text-anchor="middle" class="d-tiny">gate watched by BQ</text>
+  <line x1="402" y1="122" x2="440" y2="122" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar3)"/>
+  <rect x="440" y="90" width="120" height="64" rx="10" fill="var(--surface)" stroke="var(--s1)" stroke-width="2"/>
+  <text x="500" y="116" text-anchor="middle" class="d-label">MOSFET 2</text>
+  <text x="500" y="138" text-anchor="middle" class="d-tiny">back-to-back pair</text>
+  <line x1="560" y1="122" x2="598" y2="122" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar3)"/>
+  <rect x="598" y="90" width="130" height="64" rx="10" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="663" y="116" text-anchor="middle" class="d-label">Sense R</text>
+  <text x="663" y="138" text-anchor="middle" class="d-tiny">mΩ shunt</text>
+  <line x1="728" y1="122" x2="766" y2="122" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar3)"/>
+  <rect x="766" y="90" width="174" height="64" rx="10" fill="var(--surface)" stroke="var(--s3)" stroke-width="2"/>
+  <text x="853" y="116" text-anchor="middle" class="d-label">Main rail</text>
+  <text x="853" y="138" text-anchor="middle" class="d-mono">19 V → VRMs → 3V3/5V</text>
+  <!-- BQ above -->
+  <rect x="330" y="10" width="300" height="50" rx="10" fill="var(--surface)" stroke="var(--s4)" stroke-width="2"/>
+  <text x="480" y="30" text-anchor="middle" class="d-label">BQ charger-management IC</text>
+  <text x="480" y="48" text-anchor="middle" class="d-tiny">cuts gate drive on detected fault — innocent by design</text>
+  <line x1="420" y1="60" x2="354" y2="88" stroke="var(--s4)" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#ar3)"/>
+  <line x1="540" y1="60" x2="506" y2="88" stroke="var(--s4)" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#ar3)"/>
+  <text x="480" y="220" text-anchor="middle" class="d-tiny">Walk left to right: the first node reading 0 V instead of 19 V brackets the fault between it and the previous node.</text>
+</svg>
+<figcaption><b>The walk.</b> Confirm 19 V at the port, then measure at every boundary. ERS's HP case: 19 V in, 0.8 V at MOSFET 1's output — and 0.8 V <em>on its gate</em>. The FET was never guilty; the protection IC was holding the gate down for a reason. Measure gates before condemning FETs, every time.</figcaption>
+</figure>
+
+<h3>The walk, as procedure</h3>
+<ol class="recipe">
+  <li><strong>Verify the source.</strong> Adapter output at the port under no load, then with the meter watching while you connect. A dead or dying adapter is the cheapest fault you will ever "diagnose."</li>
+  <li><strong>Walk node to node.</strong> Port → any input inductor → fuse → FET 1 → FET 2 → sense resistor → main-rail caps. Voltage at each. The fault is bracketed between the last good node and the first dead one.</li>
+  <li><strong>Gate voltages before part removal.</strong> A FET with a good drain-source path but 0 V on its gate is being told to stay off. Check the gate driver, the BQ IC, and what they are reacting to downstream (Sorin's Toshiba case: gate held at 0.9 V on purpose; the <em>second</em> FET was shorted).</li>
+  <li><strong>Inject where voltage died.</strong> Bench supply, current-limited, feeding the main rail directly (ERS's "simple test"): if the machine powers on, everything downstream is exonerated and the fault is confined to the input chain.</li>
+  <li><strong>Then, and only then, the 3.3 V / 5 V rails.</strong> Sorin's rule from the HP repair: "no point checking the 3.3 when I don't have the 19." Rails are a dependency chain; test in dependency order.</li>
+</ol>
+
+<div class="callout warn">
+  <strong>The fuse never saves the board</strong>
+  Sorin: the fuse blows <em>after</em> the main MOSFET has already shorted — it protects the wiring, not the electronics. A blown fuse is a symptom with a cause upstream of it. Replace it, and if it blows again (Alex's HP Spectre repair — on camera), you have been handed a free short-localization event, not a repair failure.
+</div>
+
+<h3>Firmware before hardware</h3>
+<p>One whole class of "dead" boards is corrupt firmware. Sorin's HP no-picture case: Caps Lock blinking twice (when it blinks at all), recovery via the vendor's USB BIOS recovery utility with <kbd>Win</kbd>+<kbd>B</kbd> held through power-on — a free seven-minute fix for a fault that looks like motherboard death. Before board surgery on any no-picture/no-boot machine: vendor BIOS recovery first. A cheap USB BIOS-tester dongle (red LED = chip powered, flashing green = data lines talking) confirms the flash chip is alive in seconds.</p>
+<p class="sources-line">Sources: <a href="#sources">§22</a> — ERS "Most common fault on a Dead Laptop," "motherboard repair tips — Toshiba C850," "How to Reprogram a BIOS"; Northridge "Asus Laptop No power Not Charging."</p>
+</section>
+
+<!-- ============================================================ 7 -->
+<section id="shorts">
+<h2>7 · Short hunting <span class="tag">Taxonomy first, then current-limited injection — thermal camera optional</span></h2>
+<p class="lede">A short is a fault with a personality: it draws current, drops voltage, and — if you feed it carefully — gets warm. The masters hunt it in three moves: classify the short, localize it to a rail, then localize it to a part. What they refuse to do is poke randomly at caps with a meter and pray. And the survey's best news: Sorin's coil-shorting method finds shorts with a bench PSU and a piece of wire — no thermal camera required.</p>
+
+<h3>Taxonomy — what shorts and what does not</h3>
+<div class="table-wrap"><table>
+  <tr><th>Component</th><th>Short behavior</th><th>Why</th></tr>
+  <tr><td>Ceramic / decoupling caps</td><td>Hard 0 Ω short</td><td>Cracked die, transient over-voltage; sheer numbers make them the statistical favorite</td></tr>
+  <tr><td>MOSFETs (high-side especially)</td><td>Low-but-not-zero resistance</td><td>Failed die leaves partial conduction — why thermal methods see them easily</td></tr>
+  <tr><td>ICs (chargers, PMICs, muxes)</td><td>Low resistance on their rail pin</td><td>Alex's prior: "it's usually the chip, not the cap" on BQ-adjacent shorts</td></tr>
+  <tr><td>Resistors</td><td><strong>Never a short</strong></td><td>Alex, flatly: "resistors do not cause a short." Exclude them from the suspect list entirely</td></tr>
+  <tr><td>Solder bridges, loose screws, corrosion</td><td>Anything, anywhere</td><td>The inspection-first pass of §4 phase 1 exists to catch these for free</td></tr>
+</table></div>
+
+<h3>The hunt — injection, then two localization methods</h3>
+<ol class="recipe">
+  <li><strong>Feed the shorted rail from a bench supply, hard current-limited.</strong> Sorin's safety math: inject 0.8–1 V, limit ~500 mA. CPUs and GPUs draw tens of amps in normal operation — half an amp at one volt cannot hurt them, and the shorted rail will pull the supply into current limit and hold it there.</li>
+  <li><strong>Localize — method A, thermal (if you own the camera):</strong> whichever part warms first is dissipating the injected power. Alex's HP Spectre flow: inject 1.2 V, watch the thermal image, done.</li>
+  <li><strong>Localize — method B, coil-shorting (a wire and attention):</strong> with power injected on the main rail, short each VRM coil (phase output) to ground one at a time with tweezers while watching the PSU's voltage readout. <em>Healthy rail: no change</em> — its high-side FET is off and the body diode blocks any path from your injected voltage to the phase node. <em>Guilty rail: the voltage collapses</em> — the fault already connects that rail to ground, and shorting its coil swaps the short's partial resistance (~6 Ω) for 0 Ω, slamming the supply fully into current limit. The readout names the rail. For suspected high-side FET shorts, short the coil to <em>+V</em> instead of ground and the same logic tests the FET's own drain-source path.</li>
+  <li><strong>Bisect the rail.</strong> Pull an inductor or FET mid-rail to split the net into halves (Alex's Spectre bisect; Mark's regulator-output disconnect). The half that still loads the supply carries the short. Repeat.</li>
+  <li><strong>Condemn out of circuit.</strong> The last part standing gets pulled and confirmed: a shorted FET reads drain-source ohms both directions on the bench; a shorted cap reads 0 Ω alone on the table. In-circuit parallel paths are done lying to you.</li>
+  <li><strong>Repair and re-fingerprint.</strong> Replace, re-inject gently, confirm the rail now holds voltage at sensible current, then diode-mode the rail to verify the fingerprint returned to normal.</li>
+</ol>
+
+<div class="callout">
+  <strong>Why coil-shorting works — the impedance argument</strong>
+  Your injected voltage reaches a phase node only through that rail's high-side FET. FET off: the body diode blocks, so shorting a healthy coil to ground changes nothing — no path, no extra current, readout steady. But the <em>shorted</em> rail already has a path (a shorted FET is a wire; a shorted cap behind the coil is a resistor), so its rail was already drawing current and pulling the supply toward its limit. Adding a direct 0 Ω coil-to-ground short across that rail's remaining impedance drops the total load to zero ohms — the supply pins at its current limit and the voltage visibly collapses. The method is Kirchhoff with a tweezer. (Sorin's video walks the same logic for high-side FET shorts: short the coil to <em>+V</em> instead of ground.)
+</div>
+
+<div class="callout warn">
+  <strong>Beware the "short finder" gadget</strong>
+  Sorin has the phrase banned on his own Discord. Milliohm meters and short-finder boxes promise localization but fail exactly where you need them — dense multilayer boards with parallel paths. The bench supply plus the two methods above outperforms them at zero extra cost.
+</div>
+
+<h3>When the short fights back</h3>
+<p>Alex's HP Spectre case is the canonical cautionary tale: short located, BQ IC and both MOSFETs replaced from a donor — and the fresh MOSFETs shorted again on power-up. Second attempt made, second failure documented, and then the professional's exit: no-fix, board returned, customer informed. A short that kills replacement parts is telling you the damage is wider than the bracket (dead silicon elsewhere, internal plane damage) or the replacement parts were bad (mark his other lesson: donor parts get diode-tested <em>before</em> fitting). Two strikes, then a hard look at the economics. §12 formalizes the decision.</p>
+<p class="sources-line">Sources: <a href="#sources">§22</a> — ERS "How to find a shorted mosfet — safe &amp; fast" (injection limits, coil-shorting, taxonomy), "Most common fault" (fuse-after-FET); Northridge "HP Laptop No Power" (thermal, bisection, no-fix), "Asus" (resistors don't short, caps/ICs only).</p>
+</section>
+
+<!-- ============================================================ 8 -->
+<section id="signal-chain">
+<h2>8 · Signal-chain tracing <span class="tag">When power is fine but the function is gone</span></h2>
+<p class="lede">Rails up, board alive, function missing: no sound, no picture, no data, no deflection. Now the fault is in a signal path, and Carlson's method owns this territory: inject a known-good signal at the input and walk it stage by stage until it dies. The stage where it dies hands you a two-component bracket, and the good channel — when one exists — is your free reference for what the signal should look like at every point.</p>
+
+<h3>The trace, as procedure</h3>
+<ol class="recipe">
+  <li><strong>Quantify the symptom before opening the case.</strong> Mark's phono-stage repair starts with the scope: buzz on one channel, ripple period measured at 8 ms — 125 Hz, not 50/60 Hz. "That's not mains hum." One measurement killed the most popular wrong hypothesis before the screwdriver came out.</li>
+  <li><strong>Verify power to every stage first.</strong> Signal tracing on a stage with a collapsed rail is wasted motion (his +27 V rail was down — find that before touching the signal path).</li>
+  <li><strong>Inject a known-good signal at the chain's input.</strong> Audio: tone or music from a generator or a known-good source. Radio: Carlson feeds the antenna/IF from a generator. Use the real input whenever possible — some faults live in the input jack itself.</li>
+  <li><strong>Walk the chain, stage by stage.</strong> Probe each stage's output: Carlson's sequence on a radio is antenna → mixer/oscillator → IF → detector → audio, checking that the signal <em>exists</em> and <em>grows</em> as it should at each hop. The first stage whose output is dead or distorted owns the fault.</li>
+  <li><strong>Diff against the twin.</strong> Stereo? Mark strips the working channel's numbers at every test point and compares. Component-for-component, voltage-for-voltage. The fault is by definition an asymmetry.</li>
+  <li><strong>Probe live rails differentially.</strong> Mark's scope technique on the Beocord: two probes, channel math A−B, never grounding a live rail with a grounded scope. Or isolate the device (§3) and probe normally.</li>
+  <li><strong>Confirm the condemned part out of circuit</strong> (§4 phase 7), repair, then re-walk the whole chain — a stage you "fixed" can reveal the next fault only when signal flows through it again.</li>
+</ol>
+
+<div class="table-wrap"><table>
+  <tr><th>Symptom at a stage output</th><th>Most likely meaning</th><th>Confirming measurement</th></tr>
+  <tr><td>No signal at all</td><td>Dead stage: no bias, open coupling, dead device</td><td>DC voltages on every pin vs schematic/twin; coupling cap for opens (a "resistor" that reads odd might be a cap — Mark measured one at 12 nF)</td></tr>
+  <tr><td>Signal present but distorted</td><td>Bias drift: dried electros, drifted bias network, leaky junction</td><td>DC operating point of the stage vs the twin; ESR of its electrolytics</td></tr>
+  <tr><td>Oscillation / motorboating</td><td>Dead decoupling caps, ground loop from a prior repair</td><td>Scope the supply pins of the stage for ripple; ESR the decouplers</td></tr>
+  <tr><td>Hums at mains frequency (50/60 Hz)</td><td>Ripple on a supply, missing ground, open shield</td><td>Scope supply rails; measure ripple amplitude; check shield continuity</td></tr>
+  <tr><td>Buzz at 100/120 Hz or odd harmonics</td><td>Rectifier-fed ripple or switching noise — measure the period, name the source</td><td>Mark's 8 ms = 125 Hz identification: period tells you which stage of the supply owns it</td></tr>
+  <tr><td>DC offset at an audio output</td><td>Faulty differential pair or output stage bias</td><td>Offset across the output vs the twin; check for thermal runaway (offset drifting while warm)</td></tr>
+</table></div>
+
+<div class="callout blue">
+  <strong>Make the signal injector — Richard's DIY bench</strong>
+  LER's method is multimeter-first, but he builds the instruments the job needs at junk-box prices: a signal injector in a pen, a VI-curve tracer ("octopus") for fingerprinting junctions on a scope, a $1 ESR adapter. If you own a scope, an octopus (two resistors, a signal source, scope in X-Y) shows a component's entire V-I curve in one screen — and a shorted junction's curve looks nothing like a healthy one, in or out of circuit. Build the bench you need; do not buy the bench you are told to want.
+</div>
+<p class="sources-line">Sources: <a href="#sources">§22</a> — Mr. Carlson's Lab "Electronic Circuitry Diagnosis And Fault Finding" (stage tracing); Mend It Mark Tom Evans repair (ripple-period ID, rail-first, bisection, differential probing) and AIWA/Beocord repairs (twin diff, mechanical split); LER DIY-instrument practice.</p>
+</section>
+
+<!-- ============================================================ 9 -->
+<section id="mechanical">
+<h2>9 · Mechanical faults <span class="tag">Split motor from belt from binding before touching electronics</span></h2>
+<p class="lede">Half of what arrives as "electronic failure" in anything with moving parts is mechanical, and Mark's transport work (tape decks, turntables) is the survey's masterclass in splitting the two. His first move on a dead transport is not a meter — it is a marker pen: mark the motor pulley, press play, and watch. Pulley turns, tape does not: belt or mechanics. Pulley still: motor or its drive electronics.</p>
+
+<h3>The mechanical/electrical split</h3>
+<div class="table-wrap"><table>
+  <tr><th>Test</th><th>Result</th><th>Verdict</th></tr>
+  <tr><td rowspan="2">Mark the motor pulley, run the mechanism</td><td>Pulley turns, load doesn't move</td><td>Belts, idler tire, clutch — mechanical</td></tr>
+  <tr><td>Pulley does not turn</td><td>Motor or motor-drive electronics — now the meter comes out</td></tr>
+  <tr><td rowspan="2">Monitor motor current while it stalls</td><td>Voltage steady, current high, no rotation</td><td>Mechanical binding (the motor is trying)</td></tr>
+  <tr><td>Drive signal present, motor silent, low current</td><td>Motor open, or drive fault — isolate next</td></tr>
+  <tr><td>Drive the motor alone from a bench supply (current-limited)</td><td>Runs / doesn't run</td><td>Motor exonerated or condemned — subsystem isolation, Mark's AIWA method</td></tr>
+</table></div>
+
+<h3>The usual mechanical suspects</h3>
+<ul>
+  <li><strong>Belts:</strong> turned to goo or slack. Replace with correct cross-section, not "close enough." Old belt residue dissolves with isopropyl before the new belt goes on.</li>
+  <li><strong>Idler tires and pinch rollers:</strong> hardened, glazed, undersize. Mark sanded an oversize replacement pinch roller to size rather than waiting for NOS parts.</li>
+  <li><strong>Bearings and bushes:</strong> noise that quiets under finger pressure on the shaft = end-play or dry bearing; oil and run overnight to work it in. Worn egg-shaped pivot holes get re-bushed — clock-repair bushes, hand-reamed in 0.1 mm steps (Beocord).</li>
+  <li><strong>Grease gone to glue:</strong> thirty-year-old grease is a brake. Clean out, relube with the right grade for the speed of the part.</li>
+  <li><strong>Switches, relays, pots:</strong> oxide films. Ultrasonic tank, contact cleaner, dry thoroughly. Mark dries in an oven; Carlson's radio work treats every switch as a suspect until exercised under load.</li>
+  <li><strong>Connector fretting and cracked solder:</strong> any connector that carries mechanical stress (headphone jacks, barrel jacks) primes its solder joints for fracture — inspect, reflow, and mechanically support.</li>
+</ul>
+
+<div class="callout warn">
+  <strong>Measure mystery parts — never trust the markings</strong>
+  Mark's most-shared own-goal: a part reading "883 Ω" on the schematic-fragment of his mind was actually a 10 nF capacitor (measured 12 nF) — his resistor replacement sent the motor full-speed. Two lessons, both his: measure unknown parts before replacing them, and an honest repairer narrates the mistake. If your method cannot survive being wrong once, it is not a method.
+</div>
+
+<h3>Chemistry of decay — the restoration hit list</h3>
+<div class="table-wrap"><table>
+  <tr><th>Decay</th><th>Found in</th><th>Test</th><th>Treatment</th></tr>
+  <tr><td>Electrolytic dry-out</td><td>Every supply and audio board &gt; 15 years</td><td>ESR/D on your LCR meter — capacitance alone can read fine (his 0.22 µF read 0.9 µF)</td><td>Replace with same value, voltage ≥ original, low-ESR for switching positions</td></tr>
+  <tr><td>Corroded glue</td><td>Hot glue over components, aged</td><td>Visual — brown, conductive when damp</td><td>Scrape it all out ("glues can absorb moisture and cause all sorts of trouble" — Mark)</td></tr>
+  <tr><td>Corrosion from liquid</td><td>Anything with a beverage history</td><td>Green/white crust at connectors, coils, IC perimeters</td><td>Ultrasonic clean, treat affected pads/traces, replace corroded parts — they will not heal</td></tr>
+  <tr><td>Leaking battery electrolyte</td><td>Vintage gear with internal batteries</td><td>Crust spreading from the battery seat</td><td>Neutralize (vinegar for alkaline), wash, inspect every trace the plume crossed</td></tr>
+  <tr><td>Dry joints</td><td>High-stress and high-heat areas</td><td>Visual ring-crack; magnify suspicious joints</td><td>Reflow with fresh solder; add mechanical support if stress caused it</td></tr>
+  <tr><td>Fake "NOS" semiconductors</td><td>Anywhere rare parts are bought</td><td>Gain spread wildly off data sheet, tiny die visible through package window, mismatched date codes (Mark's Crown rebuild)</td><td>Substitute a modern part matched on Vce/Ic/gain — verified on your own tester before it goes in</td></tr>
+</table></div>
+<p class="sources-line">Sources: <a href="#sources">§22</a> — Mend It Mark AIWA and Beocord repairs (pulley marking, bearing diagnosis, re-bushing, the 883 Ω story); Mark Yamaha/Crown rebuilds (glue, fake NOS, gain matching); Mr. Carlson restoration trilogy (recap discipline, alignment).</p>
+</section>
+
+<!-- ============================================================ 10 -->
+<section id="smps">
+<h2>10 · SMPS deep dive <span class="tag">The one topology class that crosses every era of hardware</span></h2>
+<p class="lede">Switch-mode supplies are the common denominator of repair: they fail most, they kill most, and they appear in every device class this guide covers. Carlson's no-schematic supply video teaches the master move — identify the topology first, and the failure modes follow. Richard's SMPS guide supplies the failure taxonomy. Together with Mark's rail-first discipline, this module walks the whole supply, hot side to cold side, with a meter and respect.</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 960 300" role="img" aria-label="Switch-mode power supply block diagram">
+  <title>SMPS blocks: mains input, EMI filter, bridge rectifier, primary cap at 170 to 390 VDC, chopper FET with PWM controller, transformer as isolation boundary, secondary rectifier, output filter, feedback via optocoupler</title>
+  <defs><marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--ink2)"/></marker></defs>
+  <rect x="20" y="90" width="110" height="64" rx="10" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="75" y="116" text-anchor="middle" class="d-label">Mains in</text>
+  <text x="75" y="138" text-anchor="middle" class="d-tiny">fuse · NTC</text>
+  <line x1="130" y1="122" x2="162" y2="122" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar4)"/>
+  <rect x="162" y="90" width="120" height="64" rx="10" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="222" y="116" text-anchor="middle" class="d-label">EMI filter</text>
+  <text x="222" y="138" text-anchor="middle" class="d-tiny">X/Y caps · choke</text>
+  <line x1="282" y1="122" x2="314" y2="122" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar4)"/>
+  <rect x="314" y="90" width="120" height="64" rx="10" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="374" y="116" text-anchor="middle" class="d-label">Bridge</text>
+  <text x="374" y="138" text-anchor="middle" class="d-mono">→ 170–390 VDC</text>
+  <line x1="434" y1="122" x2="466" y2="122" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar4)"/>
+  <rect x="466" y="90" width="130" height="64" rx="10" fill="var(--surface)" stroke="var(--danger)" stroke-width="2"/>
+  <text x="531" y="110" text-anchor="middle" class="d-label d-danger">Primary cap</text>
+  <text x="531" y="130" text-anchor="middle" class="d-tiny d-danger">HOT SIDE — stores</text>
+  <text x="531" y="146" text-anchor="middle" class="d-tiny d-danger">a lethal charge</text>
+  <line x1="596" y1="122" x2="628" y2="122" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar4)"/>
+  <rect x="628" y="90" width="140" height="64" rx="10" fill="var(--surface)" stroke="var(--s1)" stroke-width="2"/>
+  <text x="698" y="110" text-anchor="middle" class="d-label">Chopper FET</text>
+  <text x="698" y="130" text-anchor="middle" class="d-tiny">PWM controller ·</text>
+  <text x="698" y="146" text-anchor="middle" class="d-tiny">startup cap nearby</text>
+  <line x1="768" y1="122" x2="800" y2="122" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar4)"/>
+  <rect x="800" y="60" width="140" height="124" rx="10" fill="var(--surface)" stroke="var(--s4)" stroke-width="2.5"/>
+  <text x="870" y="100" text-anchor="middle" class="d-label">Transformer</text>
+  <text x="870" y="122" text-anchor="middle" class="d-tiny">ISOLATION</text>
+  <text x="870" y="140" text-anchor="middle" class="d-tiny">BOUNDARY</text>
+  <text x="870" y="162" text-anchor="middle" class="d-tiny">hot ↔ cold</text>
+  <!-- secondary side row -->
+  <rect x="640" y="220" width="130" height="64" rx="10" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="705" y="246" text-anchor="middle" class="d-label">Rectifier</text>
+  <text x="705" y="268" text-anchor="middle" class="d-tiny">Schottky/fast diode</text>
+  <line x1="870" y1="184" x2="870" y2="252" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar4)"/>
+  <line x1="870" y1="252" x2="770" y2="252" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar4)"/>
+  <rect x="440" y="220" width="170" height="64" rx="10" fill="var(--surface)" stroke="var(--s3)" stroke-width="2"/>
+  <text x="525" y="246" text-anchor="middle" class="d-label">Output filter + rail</text>
+  <text x="525" y="268" text-anchor="middle" class="d-tiny">L + C · where you start</text>
+  <line x1="640" y1="252" x2="610" y2="252" stroke="var(--ink2)" stroke-width="2" marker-end="url(#ar4)"/>
+  <!-- feedback -->
+  <rect x="180" y="220" width="180" height="64" rx="10" fill="var(--surface)" stroke="var(--s2)" stroke-width="2"/>
+  <text x="270" y="246" text-anchor="middle" class="d-label">Feedback</text>
+  <text x="270" y="268" text-anchor="middle" class="d-tiny">optocoupler + TL431</text>
+  <line x1="440" y1="252" x2="360" y2="252" stroke="var(--s2)" stroke-width="2" marker-end="url(#ar4)"/>
+  <path d="M270,220 Q270,40 698,40 Q698,66 698,88" fill="none" stroke="var(--s2)" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ar4)"/>
+  <text x="300" y="34" class="d-tiny d-blue">regulation crosses the boundary, light only</text>
+</svg>
+<figcaption><b>The map every supply shares.</b> Diagnose cold side first (safe, and where the symptom lives), hot side only with §3's full safety floor. The optocoupler is the only conversation between sides — if regulation is broken, that conversation is where to listen.</figcaption>
+</figure>
+
+<h3>The supply walk</h3>
+<ol class="recipe">
+  <li><strong>Cold side first: diode-mode the outputs.</strong> Output rails shorted? That drags the primary down or keeps the supply in protection. Fingerprint every output before anything else.</li>
+  <li><strong>Unplug. Discharge. Verify discharged.</strong> The primary cap holds 170–390 VDC. This is not a step you do when rushed — it is the step that decides whether there is a rushed afternoon after this one.</li>
+  <li><strong>Fuse, NTC, EMI parts:</strong> continuity each. A blown fuse means a hot-side event — find it before replacing (§6: the fuse blows <em>after</em> the fault).</li>
+  <li><strong>Bridge rectifier in diode mode:</strong> four junctions, each ~0.5 V forward, OL reverse. Shorted bridge legs are a classic dead-short across mains.</li>
+  <li><strong>Chopper FET out-of-circuit:</strong> gate-source and drain-source both directions. The single most-failed hot-side part; test it on the bench, not in the board.</li>
+  <li><strong>PWM controller and its startup cap:</strong> Richard's taxonomy — see the table below. Measure the startup cap's ESR/capacitance before trusting it.</li>
+  <li><strong>Rectifier and filter on the cold side:</strong> diode-mode the secondary rectifier; ESR the output caps. High-ripple complaints usually end here.</li>
+  <li><strong>Dim-bulb first power-up.</strong> Flash-then-dim = healthy startup. Steady bright = short still present. Repeat the walk.</li>
+</ol>
+
+<h3>Richard's startup-capacitor failure family</h3>
+<p>The small cap that feeds the PWM controller until the auxiliary winding takes over fails in ways that look like four different faults. From the LER SMPS guide's own taxonomy:</p>
+<div class="table-wrap"><table>
+  <tr><th>Symptom</th><th>Mechanism</th><th>Confirm</th></tr>
+  <tr><td>Never starts</td><td>Cap open/lost capacitance — controller never reaches its start threshold</td><td>Measure the cap off-board; ESR high or C collapsed</td></tr>
+  <tr><td>Starts, runs, shuts down</td><td>Cap reaches start but not sustain threshold — runs on aux, browns out, restarts</td><td>Scope the controller's VCC for sawtooth sag</td></tr>
+  <tr><td>Pulsing / chirping</td><td>Start-fail-retry loop at audible rate</td><td>Listen — the supply is telling you the loop frequency</td></tr>
+  <tr><td>Starts only cold (or only hot)</td><td>ESR/capacitance drift with temperature right at the threshold</td><td>Heat/cold spray the startup cap while monitoring start behavior</td></tr>
+</table></div>
+
+<div class="callout">
+  <strong>Topology first, then failure modes — Carlson's no-schematic move</strong>
+  You do not need the schematic. Identify the converter class from the board (§5's element table): one switch and one transformer winding visible → flyback (the wall-wart majority); two switches driving a transformer with no output inductor → half-bridge (Carlson's case); switches plus output inductor → forward/buck-derived. Each class has a personality: flybacks kill their chopper FET and startup caps; half-bridges lose their switches in pairs and shift drive timing; both die at the primary cap when someone works without discharging. Name the class, and the fault list writes itself.
+</div>
+
+<div class="callout bite">
+  <strong>Hot-side probing rules</strong>
+  Isolation transformer mandatory (§3). Ground-referenced instruments clip to COLD ground only — the hot side's "ground" is a moving waveform, and a grounded scope probe on it is a fault you create. For hot-side waveforms: differential probing (two probes, A−B math) or an isolated handheld scope. Richard's one-line version: hot ground is not chassis ground.
+</div>
+<p class="sources-line">Sources: <a href="#sources">§22</a> — LER "Small Switch Mode Power Supply Repair Guide" (walk order, startup-cap family, hot ground); Mr. Carlson's Lab "Power Supply Troubleshooting and Repair Tips" (no-schematic topology method); Northridge Asus repair (bypass-cap sacrifice).</p>
+</section>
+
+<!-- ============================================================ 11 -->
+<section id="modern">
+<h2>11 · Consoles &amp; USB-C <span class="tag">The commercial mainstream: Switch, PS5, and everything with a rounded port</span></h2>
+<p class="lede">This is the device class that pays commercial rent: Nintendo Switch no-charge, PS5 HDMI, laptop USB-C dead. The unified method runs unchanged, but the priors shift — liquid damage and port abuse outrank component aging, and a small set of named ICs absorbs most of the probability. Northridge Fix's Switch and PS5 work in the survey is the map.</p>
+
+<h3>The Switch no-charge triage, as taught by Alex's liquid-damage repair</h3>
+<ol class="recipe">
+  <li><strong>Microscope pass over the known weak points</strong> before any probe: USB-C port pins, battery connector, Joy-Con connectors, then the IC neighborhoods — BQ (charging), M92 (protection), MAX (PMIC), PI3USB ("P13", the port mux), LCD connector. Liquid leaves crust exactly there.</li>
+  <li><strong>Diode-mode the data lines.</strong> Healthy: ~0.4–0.5 V drop each. Zero where a drop belongs = short. OL where a drop belongs = blown-open filter or cracked line. Both are liquid classics.</li>
+  <li><strong>Follow the corrosion.</strong> Discolored coil or IC perimeter is testimony — the customer's "it just stopped" becomes a chemistry story. Photograph it; you will want the before photo when you write the ticket (§12).</li>
+  <li><strong>Replace filters and caps from a donor board</strong> (donor parts diode-tested first — always). Protect adjacent connectors with silicone pads and a narrow nozzle during hot-air work.</li>
+  <li><strong>Prove the charge path on the bench.</strong> Watch USB-PD negotiate on a PD-capable supply: request at 12 V, settle at 9 V / ~1.7 A = healthy negotiation and real charging current, not just "icon appears."</li>
+</ol>
+
+<h3>Port and pad repair — the PS5 HDMI masterclass</h3>
+<p>Alex's PS5 disaster repair is the survey's rework-craft lesson. The prior tech's failed port job left ~8 missing pads and loose fragments — "8 out of 10 PlayStations we get in now have prior repair attempts." The recovery:</p>
+<ol class="recipe">
+  <li><strong>Catalogue every missing pad before touching the iron.</strong> Sort them by continuity-to-ground: only <em>signal</em> pads get jumper strips; ground pads just need re-connection.</li>
+  <li><strong>Board-level repair first, connector second.</strong> Replace the missing cap and diode <em>before</em> reflowing the new port — "otherwise you're creating more work for yourself."</li>
+  <li><strong>Jumper strips:</strong> pre-tinned copper from surviving trace to pad position, extended and sealed under UV solder mask.</li>
+  <li><strong>Reflow with intent:</strong> nozzle direction matters more than the dial ("it's not the temperature, it's where you point the nozzle"); press and hold 5–10 s for the settle.</li>
+  <li><strong>Verify like a spectator:</strong> tug-test every pin with a needle, check for bridges, re-inspect. "The person looking from the outside can see more than the person working on the board" — re-inspect your own work as if it were someone else's.</li>
+</ol>
+
+<div class="callout blue">
+  <strong>Donor boards are the commercial parts catalog</strong>
+  Alex's shop keeps dead boards by model; Sorin pulls input FETs from spares (they barely switch — substitution risk is low); Mark's Yamaha rebuild needed six gain-matched outputs and the Crown wanted a near-sibling's manual. A donor board is a schematic, a reference fingerprint, and a parts bin in one object. Buy dead boards of the models you service most.
+</div>
+
+<div class="callout warn">
+  <strong>USB-C is a negotiation, not a socket</strong>
+  A USB-C device that will not charge with a known-good cable and brick is usually failing negotiation, not conducting badly: the CC-line resistors, the port mux (PI3USB class), the PD controller, or their ESD filters. Diode-mode the CC and data lines first — before ordering a port you may not need. And always test with more than one known-good charger/cable pair: the fault must be shown to live in the device, not in the customer's pocket lint or $3 cable.
+</div>
+
+<h3>Modern-board fault priors — where probability lives</h3>
+<div class="table-wrap"><table>
+  <tr><th>Symptom</th><th>High-probability causes, in order</th><th>Fast confirming test</th></tr>
+  <tr><td>Switch/console no charge, no LED</td><td>1. USB-C port pins 2. M92/protection 3. BQ charging IC 4. PI3USB area 5. MAX PMIC</td><td>Diode-mode data lines; microscope the port; measure charge-IC rails</td></tr>
+  <tr><td>Powers, no display (console)</td><td>1. HDMI port pins/pads 2. ESD filters on the lines 3. Retimer/regulator near port</td><td>Continuity pin-to-pad per pin; diode-mode each line</td></tr>
+  <tr><td>Laptop no power, no charge</td><td>1. Input fuse 2. Input FET pair 3. Main-rail short (cap) 4. BQ pulling gates 5. BIOS corruption</td><td>§6's entry walk; then §7's hunt; Win+B recovery before surgery</td></tr>
+  <tr><td>GPU no display</td><td>1. Port solder damage 2. Port itself 3. Rail short under load 4. Memory/vram</td><td>Port inspection; diode-mode rails; thermal under injection</td></tr>
+  <tr><td>Liquid damage, anything</td><td>1. ESD filters 2. Corroded vias/traces 3. The IC nearest the crust 4. Everything the plume crossed</td><td>Full microscope pass; diode-mode fingerprint vs donor</td></tr>
+</table></div>
+<p class="sources-line">Sources: <a href="#sources">§22</a> — Northridge Fix Switch liquid-damage and PS5 disaster repairs (weak-point pass, diode-mode both ways, pad craft, spectator rule, donor discipline); RTX 3090 port video (donor matching by geometry, low-melt technique); ERS input-FET substitution guidance.</p>
+</section>
+
+<!-- ============================================================ 12 -->
+<section id="commercial">
+<h2>12 · Going commercial <span class="tag">Triage, time-boxing, and the no-fix that keeps you in business</span></h2>
+<p class="lede">Commercial repair is the same electronics with a clock and a customer attached. Northridge Fix is the survey's model here: mail-in volume, paying jobs, and the discipline that separates a shop from a hobby with a queue — time-boxed diagnosis, honest no-fixes, and documentation that protects both sides. Richard's industrial-repair video adds the other half: "fix just about anything for profit" means choosing jobs where your method beats the replacement price.</p>
+
+<h3>The commercial loop</h3>
+<ol class="recipe">
+  <li><strong>Intake as contract.</strong> Record the customer's exact words, what came with the device, and its condition photos — before you power it. Alex's Switch ticket: "customer wrote nothing else." The vague ticket is itself data: expect surprises, price accordingly.</li>
+  <li><strong>Triage on the clock.</strong> The fixed order (eyes → diode mode → thermal → injection) is fast <em>because</em> it is fixed. A commercial triage pass on a no-power laptop is 15–30 minutes to a bracketed fault; that is a diagnosable, quotable unit of work.</li>
+  <li><strong>Quote at the bracket.</strong> Once the fault is localized, the repair scope is known: parts (donor or ordered), rework time, risk. Quote after diagnosis, not before — and charge for diagnosis either way. "No fix, no fee is never an option" (Alex) — free diagnosis is a charity with your name on it.</li>
+  <li><strong>Time-box the rabbit holes.</strong> New parts that die on power-up twice = document, stop, return. "I cannot afford to spend the whole day working on one single board." The no-fix letter is a professional product: what was found, what was tried, what it would take.</li>
+  <li><strong>Repair for the job, not for the museum.</strong> Restore-craft (Carlson/Mark) for gear worth restoring; triage-craft (bridge the dead bypass cap — its siblings still filter the rail) for volume work. Both are legitimate. Silent shortcuts are not: every bypass or defeated protection goes in the notes.</li>
+  <li><strong>Verify like a skeptic, document like a lawyer.</strong> Real loads, real currents, burn-in. Then the ticket: symptom, cause, parts changed, evidence, advice to the customer. Your future self inherits every job you document and every job you don't.</li>
+</ol>
+
+<div class="table-wrap"><table>
+  <tr><th>Decision</th><th>Restore-craft (Carlson, Mark)</th><th>Triage-craft (Northridge, ERS)</th></tr>
+  <tr><td>When</td><td>Device value is historical/emotional; customer pays for craft</td><td>Device value is functional; customer pays for outcome</td></tr>
+  <tr><td>Parts</td><td>Correct-or-better, matched, tested on arrival (gain, breakdown)</td><td>Donor-first, diode-tested, availability beats purity</td></tr>
+  <tr><td>Shortcuts</td><td>None — replace only what testing proves bad, align to instruments</td><td>Justified bridges and omitted sacrificial parts, always documented</td></tr>
+  <tr><td>Verification</td><td>Full spec: alignment sweep, full-power test, calibrated jigs</td><td>Functional proof: correct currents, negotiation observed, real load</td></tr>
+  <tr><td>Failure policy</td><td>Keep digging — the device is the point</td><td>No-fix at the time box — the business is the point</td></tr>
+</table></div>
+
+<div class="callout">
+  <strong>The pricing question you must answer before the first customer</strong>
+  Richard's industrial video frames it: repair-for-profit means the fix competes with replacement price <em>and</em> with your own time. High-value dead boards (industrial controllers, pro audio, flagship consoles) are the sweet spot — replacement cost is huge, faults are concentrated (§11's priors), and your method is the scarce resource. Low-value commodity boards are the trap: every hour spent must be visible in the quote. Choose your device classes by where diagnosis is fast and replacement is expensive.
+</div>
+<p class="sources-line">Sources: <a href="#sources">§22</a> — Northridge Fix HP Spectre no-fix (time-box), business vlogs excluded by survey scope but quoted from repair framing; LER "Industrial Electronics Repair … For PROFIT"; ERS repair-economics framing throughout his channel.</p>
+</section>
+
+<!-- ============================================================ 13 -->
+<section id="bench">
+<h2>13 · The bench <span class="tag">What each instrument is for — and what you build instead of buy</span></h2>
+<p class="lede">The survey's masters own very different benches, and none of them owns everything. What they share is an instrument-per-job discipline: every tool on this list earns its place by answering a question the method asks. Buy against the method's phases, not against catalogs.</p>
+
+<div class="table-wrap"><table>
+  <tr><th>Instrument</th><th>Method phase</th><th>What it answers</th><th>Who leans on it hardest</th></tr>
+  <tr><td><strong>DMM with diode mode</strong></td><td>3, 4, 5, 7</td><td>Rail fingerprints, gate voltages, junction health, continuity, the entire entry walk</td><td>Sorin (the whole method), Richard (his "one meter" starting point)</td></tr>
+  <tr><td><strong>Bench PSU, current-limited, 0–30 V</strong></td><td>4, 7, 9</td><td>Safe rail substitution, short injection, motor testing, controlled bring-up — the single highest-value purchase</td><td>Sorin (the core instrument), Mark (subsystem isolation)</td></tr>
+  <tr><td><strong>Isolation transformer (≥300 VA)</strong></td><td>2 (the floor)</td><td>License to work mains-side at all; makes grounded instruments safe on hot-side work</td><td>Carlson (non-negotiable), Richard (hot ground rule)</td></tr>
+  <tr><td><strong>Dim-bulb tester</strong> (build: Lab 1)</td><td>2, 8</td><td>Damage-free first power-up; instant short verdict</td><td>Mark (mains bring-up), Richard (with startup-surge caveat)</td></tr>
+  <tr><td><strong>Variac</strong></td><td>2, 8</td><td>Gentle bring-up at rising voltage; correct supply for 100/110 V-market gear</td><td>Mark (AIWA), Carlson (vintage)</td></tr>
+  <tr><td><strong>LCR / ESR meter</strong> (your DE-5000)</td><td>7</td><td>Capacitance + D/ESR — catches dried electros that read fine on capacitance alone; D-mode on unknowns</td><td>Mark (dried-out detection), Carlson (cap discipline)</td></tr>
+  <tr><td><strong>Oscilloscope</strong></td><td>5, 7, 8</td><td>Ripple period ID, signal-trace stages, differential rail probing, VI curves with an octopus</td><td>Carlson (stage tracing), Mark (ripple and differential work)</td></tr>
+  <tr><td><strong>Signal generator / injector</strong></td><td>5</td><td>Known-good input for chain tracing (build Richard's pen injector)</td><td>Carlson (IF/RF), Mark (audio)</td></tr>
+  <tr><td><strong>Stereo microscope</strong></td><td>1, 8</td><td>The intake pass: cracks, corrosion, prior-repair crimes; all modern-board rework</td><td>Alex (every modern job), Sorin</td></tr>
+  <tr><td><strong>Hot-air rework + good iron</strong></td><td>8</td><td>SMD removal, port reflow, pad work — technique is the instrument (§11)</td><td>Alex (PS5/3090 craft)</td></tr>
+  <tr><td><strong>Thermal camera</strong></td><td>4</td><td>Fast short localization under injection — optional: coil-shorting replaces it (§7)</td><td>Alex (speed); Sorin demonstrates the no-camera path</td></tr>
+  <tr><td><strong>Ultrasonic cleaner</strong></td><td>8</td><td>Liquid-damage boards, switches/relays/pots, post-rework flux</td><td>Mark (Beocord, Yamaha), every modern shop</td></tr>
+  <tr><td><strong>Donor boards, binned by model</strong></td><td>7, 8</td><td>Parts, reference fingerprints, "manuals" for the unobtainable</td><td>Alex, Sorin, Mark (gain-matched outputs)</td></tr>
+  <tr><td><strong>Discharge probe</strong> (build)</td><td>2 (the floor)</td><td>Safe bleed of primary caps; verify zero with the DMM after</td><td>Carlson (sells his own design)</td></tr>
+  <tr><td><strong>Octopus VI tracer</strong> (build)</td><td>7</td><td>Junction fingerprints in-circuit, on a scope, for pennies</td><td>Richard (DIY instrument doctrine)</td></tr>
+</table></div>
+
+<div class="callout">
+  <strong>The wrong question: "what should I buy first?"</strong>
+  The right question: "which method phase am I currently unable to perform?" A DMM plus a bench PSU plus a built dim-bulb unlocks phases 3, 4, 5, 7 and safe bring-up — that is most of this guide for under the price of one thermal camera. The camera buys speed in phase 4, not capability; Sorin proves it weekly with a wire. Sequence: DMM → bench PSU → isolation transformer → microscope → hot air → everything else as jobs demand.
+</div>
+<p class="sources-line">Sources: <a href="#sources">§22</a> — instrument roles drawn from each channel's demonstrated practice: ERS bench-PSU doctrine, Carlson safety gear, Mark's jigs (torque cassette, azimuth tape, gain analyzer), Alex's shop kit, Richard's DIY builds.</p>
+</section>
+
+<!-- ============================================================ 14 -->
+<section id="simulator">
+<h2>14 · Dead-board simulator <span class="tag">Run the method against a ticket — wrong moves cost nothing here</span></h2>
+<p class="lede">Below is a real commercial ticket, one plausible fault, and the choices a working tech faces. Every option is something a real repairer would consider — several are tempting, two are outright dangerous. The simulator tracks your moves, tells you what each would have shown, and grades the path at the end. The pros' path is shown after you finish (or bail).</p>
+
+<div class="sim" id="simBoard">
+  <div class="sim-title">Repair ticket #4177 — Nintendo Switch, no charge</div>
+  <div class="sim-meta">customer statement unedited · board not yet opened · your bench: DMM, bench PSU, donor boards, hot air, no thermal camera</div>
+  <div class="sim-ticket"><span class="lbl">DEVICE:</span> Nintendo Switch (2019)
+<span class="lbl">COMPLAINT:</span> <span class="bad">"Won't charge. Nothing happens when I plug it in."</span>
+<span class="lbl">CUSTOMER NOTE:</span> none — that was the whole ticket
+<span class="lbl">INTAKE:</span> no third-party dock reported · unknown liquid history</div>
+  <div class="sim-node" id="simNode" aria-live="polite"></div>
+  <div class="sim-reading" id="simReading"></div>
+  <div class="sim-choices" id="simChoices"></div>
+  <div class="sim-feedback" id="simFeedback"></div>
+  <div class="sim-actions">
+    <button class="btn" id="simReset" type="button">↺ Restart</button>
+    <button class="btn" id="simSolution" type="button">Show the pros' path</button>
+  </div>
+  <div class="sim-log" id="simLog" style="display:none"><strong>Your moves:</strong><ol id="simLogList"></ol></div>
+</div>
+<p class="sources-line">Sources: <a href="#sources">§22</a> — scenario and decision structure from Northridge Fix's Switch liquid-damage repair, ERS's dead-laptop triage, and §3–§7 of this guide.</p>
+</section>
+
+<!-- ============================================================ 15 -->
+<section id="labs">
+<h2>15 · Labs <span class="tag">Skills are built on the bench, not on the couch</span></h2>
+<p class="lede">Every lab below uses dead or disposable hardware, mains safety where mains is involved, and ends at a checkpoint you can verify. Work them in order — each assumes the previous one's skill. Practice is not the appendix to this guide; it is the guide. The reading is just the license to practice.</p>
+
+<div class="lab">
+<div class="lab-title"><span class="n">Lab 1 ·</span> Build and use the dim-bulb tester</div>
+<div class="lab-meta">45 minutes + drying time · mains involved · materials: junction box, incandescent socket+bulb 60–100 W, IEC in/out or flex · from §3</div>
+<ol class="recipe">
+  <li>Wire the bulb in SERIES between input and output per the §3 diagram. In a proper enclosure, strain relief on every cord, no exposed conductors. Label it.</li>
+  <li>Test with a known-GOOD low-power device (a lamp or small radio, not a motor):</li>
+  <li class="expect"><b>Expect:</b> bulb flashes at power-on, settles dim or dark; device runs normally.</li>
+  <li>Test the short case with a sacrificial extension lead wired socket-to-plug-backwards (or simply trust the physics after step 3):</li>
+  <li class="expect"><b>Expect:</b> on a deliberate short, the bulb snaps to full brightness and the output voltage across the short collapses to a few volts. Nothing sparks. That is the whole point.</li>
+</ol>
+<div class="checkpoint"><strong>Checkpoint:</strong> you can state, before connecting any future repaired device, which bulb behavior means "healthy" (flash-then-dim), which means "startup surge" (brief bright, decays), and which means "do not proceed" (steady full glow).</div>
+</div>
+
+<div class="lab">
+<div class="lab-title"><span class="n">Lab 2 ·</span> Fingerprint a healthy board</div>
+<div class="lab-meta">30 minutes · Tier 1 only (battery disconnected) · dead laptop or console board from eBay/junk drawer · from §5</div>
+<ol class="recipe">
+  <li>Photograph the board both sides. Battery disconnected, no power applied — this lab is meter-only.</li>
+  <li>Identify by eye and annotate on the photo: DC-in port, fuse, input FET pair, sense resistor, main rail caps, every VRM coil, BIOS chip, battery connector.</li>
+  <li>Diode mode, black on ground: measure and record the drop at — the DC-in pad, the main rail, each VRM output (at its coil), and 3–4 data lines at any USB/port connector.</li>
+  <li class="expect"><b>Expect:</b> data lines ~0.4–0.5 V; rails a spread of OL, diode-ish, and low-ohm readings. The low ohms on VRM outputs is the CPU die through the coil — <em>write down the values</em>; this table is your fingerprint of "normal" for this model.</li>
+  <li>Re-measure three readings to see your own repeatability (probe pressure and pad oxidation move numbers more than beginners expect).</li>
+</ol>
+<div class="checkpoint"><strong>Checkpoint:</strong> you own a written, repeatable fingerprint table for one model, and you can point at the board and name every element of §5's table in the flesh.</div>
+</div>
+
+<div class="lab">
+<div class="lab-title"><span class="n">Lab 3 ·</span> Rail substitution on a dead board</div>
+<div class="lab-meta">30 minutes · Tier 1 · same board as Lab 2 (or any junk laptop board) · bench PSU · from §6</div>
+<ol class="recipe">
+  <li>Set the bench PSU to the board's main-rail voltage (19 V typical for laptops — check the adapter's label), current limit to 0.5 A.</li>
+  <li>Clip to the main-rail cap pads (or the sense-resistor output side). Power on the supply.</li>
+  <li class="expect"><b>Expect:</b> a healthy-ish board draws a trickle and may wake slightly (fans twitch on some models). A board with a short pins the supply at 0.5 A with the voltage dragged low.</li>
+  <li>If the voltage drags: you have a live short-hunt subject for Lab 4. Note the voltage it settles at — lower = harder short.</li>
+  <li>Practice ERS's "simple test" logic in reverse: inject at the main rail only after confirming nothing at the input chain, and always through the current limit.</li>
+</ol>
+<div class="checkpoint"><strong>Checkpoint:</strong> you can state what the board drew, whether that meant short or sleep, and why the current limit made the experiment safe.</div>
+</div>
+
+<div class="lab">
+<div class="lab-title"><span class="n">Lab 4 ·</span> Coil-shorting short hunt</div>
+<div class="lab-meta">30–45 minutes · Tier 1 · the shorted board from Lab 3 (or source a known-dead one) · bench PSU, tweezers · from §7</div>
+<ol class="recipe">
+  <li>Drop the PSU to 1 V, limit 0.5 A (Sorin's safety math — silicon cannot be hurt at half an amp, one volt). Reconnect to the main rail.</li>
+  <li>Short each VRM coil's output to ground, one at a time, with tweezers while watching the PSU voltage readout.</li>
+  <li class="expect"><b>Expect:</b> most rails — no change (FET off, body diode blocks). The shorted rail — readout collapses toward zero as the limit engages.</li>
+  <li>Bisect: pull the coil (or the FET) of the guilty rail. Half the net still loads the supply? The short is upstream of the break; not? Downstream. One removal = half the board exonerated.</li>
+  <li>Converge to a part, pull it, and confirm out of circuit: 0 Ω alone on the bench = guilty. Nothing else gets replaced.</li>
+</ol>
+<div class="checkpoint"><strong>Checkpoint:</strong> named rail, named part, out-of-circuit proof — with zero parts replaced except the guilty one. That is phase 4→7 of the method, executed.</div>
+</div>
+
+<div class="lab">
+<div class="lab-title"><span class="n">Lab 5 ·</span> Capacitor survey with your LCR meter</div>
+<div class="lab-meta">40 minutes · Tier 0 (unpowered bench work) · any old audio board or supply, 10+ electrolytics · DE-5000-class LCR · from §9, §13</div>
+<ol class="recipe">
+  <li>Pick ten electrolytics. For each: photograph markings (value, voltage, series), then measure capacitance AND D/ESR out of circuit at 100 Hz/1 kHz as your meter's manual directs.</li>
+  <li class="expect"><b>Expect:</b> most read within tolerance with modest D. Any with high D or C far off marking — especially in switching positions — is how dried-out caps announce themselves while capacitance-only meters say "fine."</li>
+  <li>Compare two same-value caps from different board regions (hot switching supply vs cool audio path) — aging tracks heat.</li>
+  <li>Re-test one in circuit, then out: see exactly how parallel paths corrupt the in-circuit number. That is §4 phase 7's out-of-circuit rule, felt.</li>
+</ol>
+<div class="checkpoint"><strong>Checkpoint:</strong> a ten-row table of value/D/ESR with at least one cap condemned on D despite passing on C — and you can explain to a customer why that cap was replaced.</div>
+</div>
+
+<div class="lab">
+<div class="lab-title"><span class="n">Lab 6 ·</span> Signal-chain diff on stereo gear</div>
+<div class="lab-meta">60–90 minutes · Tier 1/2 (mains via your new dim-bulb + isolation) · thrift-store stereo amp, one channel fault optional · scope + signal source · from §8</div>
+<ol class="recipe">
+  <li>Safety floor first: isolation transformer, dim-bulb in series, one hand habits (§3). No speaker connected yet — dummy load or open outputs for now.</li>
+  <li>Inject a 1 kHz tone at the input. Scope the good channel: input jack, each stage's test point, the output. Write the amplitudes down — you are writing the reference table.</li>
+  <li>Walk the bad channel identically. The first test point where its numbers diverge from the reference brackets the fault.</li>
+  <li>Measure DC voltages of both channels at that stage — asymmetric DC on a symmetric circuit is a confession.</li>
+  <li>Diode-test the semiconductors in the bracketed stage out of circuit. ESR its electrolytics (Lab 5 skill).</li>
+</ol>
+<div class="checkpoint"><strong>Checkpoint:</strong> fault bracketed to one stage with recorded evidence on both channels. If you found and fixed the part: verify DC offset &lt; 10 mV at the output and re-walk the chain end to end before declaring victory.</div>
+</div>
+</section>
+
+<!-- ============================================================ 16 -->
+<section id="capstone">
+<h2>16 · Capstone <span class="tag">A dead wall-powered device, cold side to hot side, end to end</span></h2>
+<p class="lede">The full method, one object, no skipping. Acquire a dead mains-powered device with an internal SMPS — a thrift-store boombox, a dead external hard-drive enclosure, a wall-wart with a circuit board inside, or an ATX supply. You will run every phase of §4 with the safety floor of §3 always under you. Budget an afternoon, not an hour.</p>
+
+<div class="lab">
+<div class="lab-title"><span class="n">Capstone ·</span> Full workup of a dead SMPS device</div>
+<div class="lab-meta">3–4 hours · Tier 2 — mains-side work · everything from the labs · deliverable: a repair ticket</div>
+<h4>Phase 1 — Intake &amp; eyes (20 min)</h4>
+<ol class="recipe">
+  <li>Write the ticket yourself as if from a customer: device, symptom, history unknown.</li>
+  <li>Open, photograph as-found both sides, and catalogue: bulging/vented caps, darkened resistors, corrosion, prior repairs, the §5 element table applied for real.</li>
+</ol>
+<h4>Phase 2 — Safety floor (10 min, non-negotiable)</h4>
+<ol class="recipe">
+  <li>Unplug. Discharge the primary cap through a resistor. <em>Measure</em> it at zero before every reach-in from here on.</li>
+  <li>Rig isolation transformer + dim-bulb. From now on, the device never sees bare mains.</li>
+</ol>
+<h4>Phase 3–4 — Cold side, then the walk (45 min)</h4>
+<ol class="recipe">
+  <li>Diode-mode every output rail — fingerprint before theory.</li>
+  <li>Short on an output? Run the §7 hunt at low voltage from your bench supply (cold side only — safe Tier 1 work): localize, bisect, condemn out of circuit.</li>
+  <li>Outputs clean? Walk §10's supply order: fuse, NTC, bridge junctions, chopper FET out-of-circuit, PWM startup cap on the LCR meter.</li>
+</ol>
+<h4>Phase 5–7 — Fix and prove (60–90 min)</h4>
+<ol class="recipe">
+  <li>Replace exactly the condemned part(s), correct rating, correct orientation (§8 phase 8 discipline).</li>
+  <li>Re-fingerprint the repaired node diode-mode. Compare to your written table.</li>
+</ol>
+<h4>Phase 8–9 — Bring-up and burn-in (45 min)</h4>
+<ol class="recipe">
+  <li>Dim-bulb power-up. Flash-then-dim: proceed to the variac (if you own one) rising to nominal while watching current.</li>
+  <li>Verify outputs under a real load (resistor or the actual device): voltage within spec, ripple on the scope &lt; the cap's promise, nothing warm that should not be.</li>
+  <li>Burn-in 30 minutes under load. Re-check ripple at the end — caps that fail hot fail here, on your bench, instead of in a customer's hands.</li>
+</ol>
+<h4>Phase 10 — The ticket (15 min)</h4>
+<ol class="recipe">
+  <li>Write it like §12 teaches: symptom, evidence trail (your photos and tables), cause, parts replaced, verification data, advice. An honest failed capstone — no-fix, well-documented — is also a pass, if the ticket shows the method.</li>
+</ol>
+<div class="checkpoint"><strong>Pass criteria:</strong> every phase left written evidence; exactly the guilty parts were replaced; the device (or the documented no-fix) survived honest verification; and you could hand the ticket to another tech who could follow your reasoning start to finish.</div>
+</div>
+</section>
+
+<!-- ============================================================ 17 -->
+<section id="troubleshooting">
+<h2>17 · Troubleshooting <span class="tag">Symptom → most likely cause → the confirming move</span></h2>
+<p class="lede">Tables like these are priors, not verdicts — every row names the fast confirming measurement, because the method's rules still hold: measure before condemning. Ordered by how often each cause owns the symptom in the survey's repairs.</p>
+
+<h3>No power — anything with a barrel/USB-C input</h3>
+<div class="table-wrap"><table>
+  <tr><th>Symptom</th><th>Cause (probability order)</th><th>Confirming move</th></tr>
+  <tr><td rowspan="4">Dead, no LED, no response</td><td>Adapter/cable (always suspect the cheapest)</td><td>Known-good adapter; meter at the port under connection</td></tr>
+  <tr><td>Input fuse open</td><td>Continuity — and remember it blew <em>after</em> the FET shorted; hunt continues (§6)</td></tr>
+  <tr><td>Input MOSFET(s)</td><td>Walk the chain; gate voltage FIRST, then diode-test out of circuit</td></tr>
+  <tr><td>BIOS corrupt (powers but no picture)</td><td>Vendor recovery USB, <kbd>Win</kbd>+<kbd>B</kbd> — before any iron (§6)</td></tr>
+  <tr><td>Dead after liquid event</td><td>ESD filters, port mux, corroded vias</td><td>Microscope pass; diode-mode data lines both directions (§11)</td></tr>
+</table></div>
+
+<h3>Powers, then faults</h3>
+<div class="table-wrap"><table>
+  <tr><th>Symptom</th><th>Cause (probability order)</th><th>Confirming move</th></tr>
+  <tr><td>Shuts down after seconds</td><td>Short drawing protection; dried output caps; overheating part</td><td>Current draw over time; thermal under injection; ESR the outputs (§7, §10)</td></tr>
+  <tr><td>Runs but no charge</td><td>Port pins; BQ/mux IC; negotiation circuit</td><td>Watch PD negotiation on bench supply; diode-mode CC/data lines (§11)</td></tr>
+  <tr><td>PSU chirps / pulses</td><td>Startup cap in its retry loop; shorted secondary</td><td>§10's startup-cap family table; cold-side fingerprint</td></tr>
+  <tr><td>Bulb glows steady at first power-up</td><td>Short still present after your repair</td><td>Do not proceed — re-walk the rail work (§3, §10)</td></tr>
+  <tr><td>Blows the fresh fuse/FETs again</td><td>Wider damage; bad donor part; wrong diagnosis</td><td>Diode-test donors BEFORE fitting; second strike = time-box decision (§7, §12)</td></tr>
+</table></div>
+
+<h3>Audio / analogue</h3>
+<div class="table-wrap"><table>
+  <tr><th>Symptom</th><th>Cause (probability order)</th><th>Confirming move</th></tr>
+  <tr><td>One channel dead</td><td>Anything asymmetric — output stage, coupling, that channel's rail</td><td>Good-channel diff at every test point; DC offset at output (§8)</td></tr>
+  <tr><td>Buzz/hum</td><td>Measure the period first: 50/60 Hz = ripple/ground; 100/120 Hz+ = rectifier/switching</td><td>Scope the output, read the period, name the source (Mark's 8 ms method)</td></tr>
+  <tr><td>Distortion at level</td><td>Bias drift; dried electros in the stage</td><td>DC operating point vs twin; ESR sweep the stage (Lab 5)</td></tr>
+  <tr><td>Transport dead</td><td>Belt/idler before electronics, always</td><td>Mark the pulley, run, watch (§9)</td></tr>
+  <tr><td>Intermittent, moves with handling</td><td>Dry joints at stressed connectors; cracked pads; loom flex</td><td>Magnify and wobble-test with the meter in continuity, listening</td></tr>
+</table></div>
+
+<h3>Your own process</h3>
+<div class="table-wrap"><table>
+  <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+  <tr><td>Readings jump around</td><td>Probe pressure, oxidized pads, meter leads</td><td>Re-probe consistently; clean the pad; verify the meter on a known part first (Carlson)</td></tr>
+  <tr><td>Every part you test reads shorted</td><td>You are reading parallel paths in circuit</td><td>Out-of-circuit confirmation before condemning anything (§4 phase 7)</td></tr>
+  <tr><td>Diagnosis stalls after an hour</td><td>Bracket never narrowed — a step was skipped</td><td>Restart at phase 1 with photos; usually the intake pass was rushed (§4)</td></tr>
+  <tr><td>Fix works on bench, fails in device</td><td>Verified under wrong conditions</td><td>Real load, real current, real duration — the capstone's burn-in rule (§16)</td></tr>
+  <tr><td>You replaced 6 parts, fault persists</td><td>Shotgunning — you skipped the walk</td><td>Put the old parts' photos next to the ticket; re-run §6 from the port. Then stop shotgunning.</td></tr>
+</table></div>
+</section>
+
+<!-- ============================================================ 18 -->
+<section id="cheat-sheet">
+<h2>18 · Cheat sheet <span class="tag">One column, bench-height — the method in cards</span></h2>
+
+<div class="cards">
+  <div class="card">
+    <h4>The universal starting pattern</h4>
+    <ul>
+      <li>Read ticket → photograph as-found → microscope pass</li>
+      <li>Safety floor: isolate · discharge · verify zero · dim-bulb staged</li>
+      <li>Diode-mode fingerprint the rails (write the numbers down)</li>
+      <li>Power entry walk: port → fuse → FETs → sense → main rail</li>
+      <li>Gates before parts. Rails in dependency order. Firmware before hardware.</li>
+      <li>Bracket → halve → condemn out of circuit → fix → verify like a skeptic</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>Safety, every mains job</h4>
+    <ul>
+      <li>Isolation transformer for anything line-powered — no exceptions</li>
+      <li>Discharge primary caps through a resistor; <em>measure</em> zero after</li>
+      <li>Dim-bulb at first power-up: flash-dim good, steady glow = stop</li>
+      <li>One hand in pocket on live circuits</li>
+      <li>Grounded instruments clip to cold ground only — hot ground is not chassis ground</li>
+      <li>Batteries out for diagnosis; current-limited supply in</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>Diode-mode fingerprint (black on ground)</h4>
+    <ul>
+      <li>Data line healthy: ~0.4–0.5 V drop</li>
+      <li>0.000 V on a rail: dead short — hunt caps/ICs (FETs partial)</li>
+      <li>OL where a drop belongs: blown-open path</li>
+      <li>Low ohms at VRM output: the CPU die through the coil — usually normal</li>
+      <li>Resistors never short (Alex) — exclude them</li>
+      <li>"Usually the chip, not the cap" near BQ circuits</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>Short hunt, no thermal camera</h4>
+    <ul>
+      <li>Bench PSU on the rail: 1 V, 0.5 A limit (safe for silicon)</li>
+      <li>Short each coil to ground; guilty rail = voltage collapses</li>
+      <li>High-side FET suspect: short coil to +V instead</li>
+      <li>Bisect by pulling coils/FETs — half the board exonerated per pull</li>
+      <li>Converge, pull, prove out of circuit, replace only that</li>
+      <li>Parts dying twice → time-box, document, no-fix (§12)</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>Gates &amp; priors</h4>
+    <ul>
+      <li>FET "off"? Check gate voltage and what's holding it before pulling it</li>
+      <li>BQ/protection IC pulls gate drive on detected faults — the FET is innocent</li>
+      <li>Fuse blows after the fault, never before it — keep hunting upstream</li>
+      <li>No-picture machine: BIOS recovery USB before board surgery</li>
+      <li>Switch no-charge order: port → M92 → BQ → PI3USB → MAX</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>Signal &amp; analogue</h4>
+    <ul>
+      <li>Rails to every stage before signal tracing</li>
+      <li>Inject known-good input; walk stage by stage until it dies</li>
+      <li>Stereo: the good channel is your free reference — diff everything</li>
+      <li>Hum: measure the period, name the source (8 ms = 125 Hz ≠ mains)</li>
+      <li>Live-rail probing: differential (two probes, A−B) or isolate first</li>
+      <li>Transport dead: mark the pulley, watch it turn — mechanical first</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>SMPS quick table</h4>
+    <ul>
+      <li>Cold side first: fingerprint outputs, ESR the output caps</li>
+      <li>Never starts / starts-dies / chirps / temp-dependent: the startup cap family</li>
+      <li>Chopper FET = most-failed hot-side part — out of circuit only</li>
+      <li>Name the topology (flyback/half-bridge) and the failure list writes itself</li>
+      <li>Primary cap = 170–390 V stored. Discharge. Verify. Every time.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>Pro habits</h4>
+    <ul>
+      <li>Photograph before, during, after — as-found beats memory</li>
+      <li>Donor parts get diode-tested before fitting</li>
+      <li>Measure mystery parts; markings lie (the 883 Ω capacitor)</li>
+      <li>Re-inspect your work like a spectator (Alex)</li>
+      <li>Time-box rabbit holes; a documented no-fix is a deliverable</li>
+      <li>Ticket: symptom → evidence → cause → parts → verification → advice</li>
+    </ul>
+  </div>
+</div>
+</section>
+
+<!-- ============================================================ 19 -->
+<section id="glossary">
+<h2>19 · Glossary <span class="tag">Every term of art, with where it was taught</span></h2>
+<dl class="glossary">
+  <dt id="g-bisect">Bisection</dt>
+  <dd>Splitting a fault domain in half by disconnecting at a boundary (pulling a coil, FET, or connector) and testing which half carries the fault. One pull exonerates half the board. (<a href="#shorts">§7</a>)</dd>
+  <dt id="g-bracket">Bracketing</dt>
+  <dd>Confining a fault between a last-known-good node and a first-known-bad node. The fundamental unit of diagnostic progress. (<a href="#mental-model">§1</a>)</dd>
+  <dt id="g-bq">BQ IC</dt>
+  <dd>TI's battery/charger-management family (BQ24xxx etc.). Watches the input chain's sense lines and deliberately pulls protection-FET gate drive when it detects a fault — the innocent reason a FET reads "off." (<a href="#power-entry">§6</a>)</dd>
+  <dt id="g-coldside">Cold side / hot side</dt>
+  <dd>The two halves of an SMPS split by the transformer's isolation boundary. Cold = output-referenced and (usually) safe; hot = mains-referenced, stores lethal charge in the primary cap. (<a href="#smps">§10</a>)</dd>
+  <dt id="g-dimbulb">Dim-bulb tester</dt>
+  <dd>A series incandescent lamp between mains and a device. Cold filament = low loss; fault current lights it and its rising resistance collapses the voltage across the device. Flash-then-dim = healthy startup; steady glow = short. (<a href="#safety">§3</a>)</dd>
+  <dt id="g-diodemode">Diode mode</dt>
+  <dd>DMM mode reporting forward voltage drop across a junction (≈0.5–0.7 V silicon), OL when reverse or absent. The safe, information-dense default for fingerprinting boards. (<a href="#no-schematic">§5</a>)</dd>
+  <dt id="g-fingerprint">Fingerprint (rail)</dt>
+  <dd>The set of diode-mode readings at a board's rails and data lines when healthy, used as the reference for spotting outliers. Built from a twin channel, donor board, or records. (<a href="#no-schematic">§5</a>)</dd>
+  <dt id="g-flyback">Flyback / half-bridge</dt>
+  <dd>Converter topologies. Flyback: one switch, energy stored in the transformer itself — the wall-wart majority. Half-bridge: two switches alternately driving the transformer — common in bigger supplies, notorious for losing switches in pairs. (<a href="#smps">§10</a>)</dd>
+  <dt id="g-fusible">Fusible resistor</dt>
+  <dd>A resistor designed to fail open on overload, protecting what follows. Mark checks these first after any blow-up — "they're designed to blow," so they lead you to the event. (<a href="#mechanical">§9</a>, <a href="#power-entry">§6</a>)</dd>
+  <dt id="g-gate">Gate (MOSFET)</dt>
+  <dd>The control terminal. Gate voltage decides conduction; measuring it before pulling a FET distinguishes a dead FET from a healthy one being deliberately held off. "The gate pin is the gatekeeper" (Alex). (<a href="#power-entry">§6</a>)</dd>
+  <dt id="g-hotground">Hot ground</dt>
+  <dd>The "ground" of a non-isolated supply's output, sitting at a fraction of mains potential. Clipping a grounded instrument to it creates a real fault. Isolate the device first. (<a href="#safety">§3</a>)</dd>
+  <dt id="g-injection">Voltage injection</dt>
+  <dd>Feeding a rail from a current-limited bench supply to substitute missing power, localize shorts (watch current/heat), or isolate fault domains. The bench PSU's core job. (<a href="#shorts">§7</a>)</dd>
+  <dt id="g-m92">M92 / PI3USB / MAX PMIC</dt>
+  <dd>Named ICs on Nintendo Switch-class boards: M92 = input protection; PI3USB ("P13") = USB-C port mux; MAX = power-management IC. Standard first suspects in no-charge triage. (<a href="#modern">§11</a>)</dd>
+  <dt id="g-noFix">No-fix</dt>
+  <dd>The professional outcome where a repair is stopped at its time-box and returned documented, not "fixed." A deliverable, not a defeat. (<a href="#commercial">§12</a>)</dd>
+  <dt id="g-octopus">Octopus (VI tracer)</dt>
+  <dd>A junk-box instrument: signal source + two resistors + scope in X-Y, drawing a component's V-I curve live. Shorted junctions look nothing like healthy ones. Richard's DIY doctrine in one object. (<a href="#signal-chain">§8</a>)</dd>
+  <dt id="g-esr">ESR / D</dt>
+  <dd>Equivalent series resistance / dissipation factor — loss metrics that catch dried-out electrolytics whose capacitance still reads in tolerance. D and ESR modes on your LCR meter. (<a href="#mechanical">§9</a>, Lab 5)</dd>
+  <dt id="g-pri">Primary capacitor</dt>
+  <dd>The main energy-storage cap after the bridge rectifier on an SMPS hot side: 170–390 VDC when charged, holding it long after unplugging. Discharge and verify before every reach-in. (<a href="#smps">§10</a>)</dd>
+  <dt id="g-pwm">PWM controller</dt>
+  <dd>The switching-supply brain, fed at startup by the small startup capacitor whose failure family (never starts / starts-dies / chirps / temperature-dependent) mimics four different faults. (<a href="#smps">§10</a>)</dd>
+  <dt id="g-sense">Sense resistor</dt>
+  <dd>The milliohm shunt between protection FETs and the main rail; the BQ IC watches its voltage to decide whether the input chain is healthy. A node on the §6 walk. (<a href="#power-entry">§6</a>)</dd>
+  <dt id="g-twin">Symmetry method (twin diff)</dt>
+  <dd>Using a duplicated structure — stereo channel, twin module — as a free known-good reference. Every measurement on the bad side gets a good-side comparison. Mark's core move. (<a href="#method">§4</a>, <a href="#signal-chain">§8</a>)</dd>
+  <dt id="g-topology">Topology recognition</dt>
+  <dd>Identifying a circuit's class (flyback, buck, half-bridge, output stage) from board structure alone — the skill that replaces missing schematics. "The schematic is a convenience; topology knowledge is the real instrument." (<a href="#no-schematic">§5</a>, <a href="#smps">§10</a>)</dd>
+  <dt id="g-vrm">VRM</dt>
+  <dd>Voltage-regulator module: the multiphase buck converters (coil + FET pair per phase) feeding CPU/GPU. Largest coils on a modern board; its high-side FETs are the most common dead-short silicon. (<a href="#no-schematic">§5</a>, <a href="#shorts">§7</a>)</dd>
+</dl>
+</section>
+
+<!-- ============================================================ 20 -->
+<section id="index">
+<h2>20 · Index <span class="tag">Terms, techniques, and named parts — where each is taught</span></h2>
+<div class="index-cols"><ul>
+  <li class="letter">A</li>
+  <li><a href="#shorts">AIWA motor isolation</a> — bench-supply subsystem test</li>
+  <li><a href="#method">alignment, instrument-verified</a> — Carlson</li>
+  <li class="letter">B</li>
+  <li><a href="#g-bisect">bisection</a></li>
+  <li><a href="#g-bq">BQ IC</a></li>
+  <li><a href="#g-bracket">bracketing</a></li>
+  <li><a href="#labs">burn-in</a> — capstone verification</li>
+  <li class="letter">C</li>
+  <li><a href="#power-entry">chain, power-entry walk</a></li>
+  <li><a href="#g-coldside">cold side / hot side</a></li>
+  <li><a href="#shorts">coil-shorting short hunt</a></li>
+  <li><a href="#troubleshooting">chirping supply</a> — startup cap loop</li>
+  <li class="letter">D</li>
+  <li><a href="#g-dimbulb">dim-bulb tester</a></li>
+  <li><a href="#g-diodemode">diode mode</a></li>
+  <li><a href="#no-schematic">diode-mode fingerprint</a></li>
+  <li><a href="#modern">donor boards</a></li>
+  <li><a href="#mechanical">dried glue, corroded</a></li>
+  <li><a href="#g-esr">ESR / D</a></li>
+  <li class="letter">F</li>
+  <li><a href="#g-fingerprint">fingerprint (rail)</a></li>
+  <li><a href="#g-flyback">flyback / half-bridge</a></li>
+  <li><a href="#power-entry">fuse, meaning of a blown one</a></li>
+  <li><a href="#g-fusible">fusible resistor</a></li>
+  <li class="letter">G</li>
+  <li><a href="#g-gate">gate voltage check</a></li>
+  <li class="letter">H</li>
+  <li><a href="#smps">half-bridge recognition</a></li>
+  <li><a href="#g-hotground">hot ground</a></li>
+  <li class="letter">I</li>
+  <li><a href="#commercial">intake as contract</a></li>
+  <li><a href="#g-injection">injection (voltage/current)</a></li>
+  <li><a href="#no-schematic">identify unmarked IC</a> — by role</li>
+  <li class="letter">J</li>
+  <li><a href="#modern">jumper strips + UV mask</a> — pad repair</li>
+  <li class="letter">L</li>
+  <li><a href="#power-entry">lowest-resistance path, meter reads the</a></li>
+  <li class="letter">M</li>
+  <li><a href="#g-m92">M92 / PI3USB / MAX</a></li>
+  <li><a href="#g-noFix">no-fix decision</a></li>
+  <li class="letter">O</li>
+  <li><a href="#g-octopus">octopus VI tracer</a></li>
+  <li><a href="#troubleshooting">one channel dead (audio)</a></li>
+  <li class="letter">P</li>
+  <li><a href="#g-pri">primary capacitor</a></li>
+  <li><a href="#g-pwm">PWM controller + startup cap</a></li>
+  <li class="letter">R</li>
+  <li><a href="#shorts">resistors never short</a></li>
+  <li><a href="#power-entry">rails in dependency order</a></li>
+  <li class="letter">S</li>
+  <li><a href="#g-sense">sense resistor</a></li>
+  <li><a href="#signal-chain">signal-chain tracing</a></li>
+  <li><a href="#g-twin">symmetry / twin diff</a></li>
+  <li class="letter">T</li>
+  <li><a href="#g-topology">topology recognition</a></li>
+  <li><a href="#modern">thermal camera vs coil-shorting</a></li>
+  <li><a href="#power-entry">ticket reading</a></li>
+  <li><a href="#mechanical">transport: motor vs belt vs binding</a></li>
+  <li><a href="#g-vrm">VRM</a></li>
+  <li class="letter">U</li>
+  <li><a href="#modern">USB-C negotiation (CC lines, PD)</a></li>
+  <li><a href="#safety">one-hand rule</a></li>
+  <li><a href="#modern">UV solder mask</a></li>
+  <li class="letter">V</li>
+  <li><a href="#g-vrm">VRM phases, counting coils</a></li>
+  <li class="letter">W</li>
+  <li><a href="#troubleshooting">Win+B BIOS recovery</a></li>
+  <li><a href="#commercial">work orders / documentation</a></li>
+</ul></div>
+</section>
+
+<!-- ============================================================ 21 -->
+<section id="quiz">
+<h2>21 · Quiz <span class="tag">Sixteen flashcards, self-scored — aim for 13/16</span></h2>
+<div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0/16 answered</div>
+<div class="quiz-reset"><button class="btn" id="quizReset" type="button">Reset quiz</button></div>
+
+<div class="quiz-item" data-q="1">
+  <div class="quiz-q"><span class="qnum">Q1</span>A DMM reads 8 Ω across a motherboard VRM output. What is it almost certainly measuring, and why?</div>
+  <div class="quiz-answer">The CPU/GPU die's resistance through the buck coil — a coil is just wire, and current takes the lowest-resistance path, so the meter sees the silicon, not a fault. Compare to a known-good rail before calling anything shorted. (<a href="#no-schematic">§5</a>, <a href="#shorts">§7</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="2">
+  <div class="quiz-q"><span class="qnum">Q2</span>What does a blown fuse on a dead laptop actually tell you — and what is the very next move?</div>
+  <div class="quiz-answer">The fuse blew <em>after</em> the fault — it protects wiring, not electronics (Sorin). Next move: find what killed it. Walk the input chain and short-hunt; a fuse that blows again on camera is free fault localization, not failure. (<a href="#power-entry">§6</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="3">
+  <div class="quiz-q"><span class="qnum">Q3</span>An input MOSFET shows 19 V on its drain and 0 V on its gate. Two explanations — one innocent, one guilty?</div>
+  <div class="quiz-answer">Innocent: a BQ/protection IC is deliberately holding gate drive off because it detected a downstream fault — fix the fault, not the FET. Guilty: the gate driver or its supply is dead. Measure what controls the gate before pulling the FET. (<a href="#power-entry">§6</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="4">
+  <div class="quiz-q"><span class="qnum">Q4</span>Name the injection limits Sorin uses when hunting shorts, and why they are safe for silicon.</div>
+  <div class="quiz-answer">0.8–1 V, current-limited to ~500 mA. CPUs/GPUs normally draw tens of amps at sub-ohm loads — half an amp through a short cannot damage the die, and low voltage cannot forward-bias anything destructively. (<a href="#shorts">§7</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="5">
+  <div class="quiz-q"><span class="qnum">Q5</span>During coil-shorting, what does the PSU readout do on a healthy rail versus the shorted rail — and what single component property explains the difference?</div>
+  <div class="quiz-answer">Healthy rail: no change — its high-side FET is off and the body diode blocks the path. Shorted rail: voltage collapses as the supply pins at its current limit — because the fault already provided a path, and your 0 Ω short removes its residual resistance. Impedance to ground is the property. (<a href="#shorts">§7</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="6">
+  <div class="quiz-q"><span class="qnum">Q6</span>Diode mode on a USB data line reads OL. Short or not — and what does it mean instead?</div>
+  <div class="quiz-answer">Not a short — the opposite. Data lines should read ~0.4–0.5 V; OL means the path is blown open: vaporized ESD filter, cracked trace, lifted pad. Diode mode reads both directions of wrong. (<a href="#no-schematic">§5</a>, <a href="#modern">§11</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="7">
+  <div class="quiz-q"><span class="qnum">Q7</span>What are the three bulb behaviors at first power-up of a repaired supply, and what does each mean?</div>
+  <div class="quiz-answer">Flash-then-dim: healthy startup surge. Brief bright decaying: legitimate inrush on some supplies (Richard's caveat). Steady full glow: short still present — stop and re-walk. (<a href="#safety">§3</a>, <a href="#smps">§10</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="8">
+  <div class="quiz-q"><span class="qnum">Q8</span>An audio channel buzzes. Mark scopes it: 8 ms period. Why does that one measurement change the entire diagnosis?</div>
+  <div class="quiz-answer">8 ms = 125 Hz, which is not 50/60 Hz mains hum — so the popular "ground loop or mains ripple" hypothesis dies immediately, and the hunt goes to rectifier/switching-related ripple or a collapsing rail instead. Measure the period; name the source. (<a href="#signal-chain">§8</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="9">
+  <div class="quiz-q"><span class="qnum">Q9</span>Tape deck transport is dead. Name Mark's first diagnostic move — no meter required.</div>
+  <div class="quiz-answer">Mark the motor pulley with a marker, run the mechanism, and watch. Pulley turns, tape doesn't: belts/idler (mechanical). Pulley still: motor or drive electronics. Split mechanical from electrical before probing. (<a href="#mechanical">§9</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="10">
+  <div class="quiz-q"><span class="qnum">Q10</span>List the startup-capacitor failure family in an SMPS — four symptoms, one part.</div>
+  <div class="quiz-answer">Never starts (cap open — controller never reaches start threshold); starts then shuts down (reaches start, not sustain); pulsing/chirping (audible retry loop); starts only cold or only hot (ESR/capacitance drift at the threshold). (<a href="#smps">§10</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="11">
+  <div class="quiz-q"><span class="qnum">Q11</span>Why does Carlson signal-trace instead of recapping a radio that "sounds bad" — what does the method buy that shotgunning cannot?</div>
+  <div class="quiz-answer">Stage-by-stage tracing with a known-good input localizes the fault to one stage, so you replace only what testing proves bad — and you learn the actual cause. Wholesale recapping that happens to fix it teaches nothing and destroys design intent. The reasoning is the product. (<a href="#method">§4</a>, <a href="#signal-chain">§8</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="12">
+  <div class="quiz-q"><span class="qnum">Q12</span>What does "the person looking from the outside can see more than the person working on the board" mean as a work procedure?</div>
+  <div class="quiz-answer">Re-inspect your own finished work as if someone else had done it: tug-test every pin, check for bridges, verify against photos. Self-review defeats the tunnel vision of having just reflowed it. (<a href="#modern">§11</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="13">
+  <div class="quiz-q"><span class="qnum">Q13</span>Order these for a no-power laptop: (a) diode-mode rails, (b) BIOS Win+B recovery, (c) power-entry walk, (d) microscope intake pass.</div>
+  <div class="quiz-answer">(d) microscope intake → (c) power-entry walk → (a) diode-mode rails/shorts → (b) BIOS recovery — though (b) jumps to first whenever the machine powers but shows no picture, because it is free. Order of cheapest-informativeness, with firmware before hardware as an override. (<a href="#method">§4</a>, <a href="#power-entry">§6</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="14">
+  <div class="quiz-q"><span class="qnum">Q14</span>A donor MOSFET's part number matches. What must still happen before it goes in the board?</div>
+  <div class="quiz-answer">Diode-test it out of circuit — donor parts from dead boards carry the faults that killed the donor (or its neighbors' fate). Alex diode-tests every donor part before fitting; the HP Spectre case shows what skipping verification costs. (<a href="#modern">§11</a>, <a href="#shorts">§7</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="15">
+  <div class="quiz-q"><span class="qnum">Q15</span>Your repair blows the replacement parts a second time. What are the two professional responses — and the unprofessional one?</div>
+  <div class="quiz-answer">Professional: verify the replacement parts themselves (bad donors exist), then widen the fault bracket — collateral damage or plane damage the first diagnosis missed. Unprofessional: a third unverified attempt. Two strikes → time-box, document, no-fix. (<a href="#shorts">§7</a>, <a href="#commercial">§12</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="16">
+  <div class="quiz-q"><span class="qnum">Q16</span>State the repair-versus-replacement economics rule that decides which devices are worth commercial repair.</div>
+  <div class="quiz-answer">Diagnose where the method is fast and replacement is expensive: high-value boards whose faults concentrate in a few known priors (pro audio, flagship consoles, industrial controllers). Commodity boards where every hour is invisible in the quote are the trap. Richard's "for profit" frame. (<a href="#commercial">§12</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+</section>
+
+<!-- ============================================================ 22 -->
+<section id="sources">
+<h2>22 · Sources <span class="tag">Twenty-five videos, five channels — annotated</span></h2>
+<p class="small">Surveyed 2026-09-21. Each channel's five videos were selected by view count weighted for transferable diagnostic technique, and every URL was verified against its watch page at survey time (oEmbed/player metadata). Techniques listed in this guide's modules trace to the videos' own titles, descriptions, chapter markers, and captions, as extracted by the survey agents. View counts are approximate and drift. <strong>Learn Electronics Repair status:</strong> the channel was hijacked and its videos delisted from YouTube between 2026-08-17 and 2026-09-21; its five entries below are dead at press time, verified instead against Internet Archive captures of the watch pages, and are expected to return as the rebuild (in progress) restores them. External links require a network; this guide works entirely offline.</p>
+
+<h3>Mend It Mark — <span class="small">vintage and analogue restoration; rails first, twin diff, honest dead ends</span></h3>
+<div class="channel">
+  <ul>
+    <li><a href="https://www.youtube.com/watch?v=touWKDKD_Fw" target="_blank" rel="noopener">YAMAHA's Professional Amp (P2201 rebuild)</a> — 1.03M · read the wreckage; the good channel as reference; current-limited bring-up; fake-NOS detection. Best for: output-stage rebuild discipline. → <a href="#mechanical">§9</a>, <a href="#signal-chain">§8</a></li>
+    <li><a href="https://www.youtube.com/watch?v=paUz6n_WIs8" target="_blank" rel="noopener">The 5 kilowatt Crown (XLS5000)</a> — 947k · rail verification against manual; gain-matching outputs; cross-model manuals. Best for: transistor QC and chassis-level verification. → <a href="#mechanical">§9</a></li>
+    <li><a href="https://www.youtube.com/watch?v=UpctKF-rhHE" target="_blank" rel="noopener">AIWA 3 Head Tape Deck Repair (AD-FF90)</a> — 891k · motor isolation on a bench supply; armature rebuild; measure mystery parts. Best for: subsystem isolation. → <a href="#mechanical">§9</a></li>
+    <li><a href="https://www.youtube.com/watch?v=HV6s2RHJfVk" target="_blank" rel="noopener">The BEOCORD problem (Beocord 5000)</a> — 806k · motor-stop vs belt-slip; differential scope probing; schematic-net tracing. Best for: mechanical/electrical triage. → <a href="#mechanical">§9</a>, <a href="#signal-chain">§8</a></li>
+    <li><a href="https://www.youtube.com/watch?v=-RJbpFSFziI" target="_blank" rel="noopener">The £25,000 Pre-Amp that went Wrong</a> — 760k · ripple-period ID; bisection; short-by-heat under current limit; write your own manual. Best for: the full §4 spine on one device. → <a href="#signal-chain">§8</a>, <a href="#shorts">§7</a></li>
+  </ul>
+</div>
+
+<h3>Mr. Carlson's Lab — <span class="small">safety authority; signal tracing; instrument-verified restoration</span></h3>
+<div class="channel">
+  <ul>
+    <li><a href="https://www.youtube.com/watch?v=DzaiZtRoqs8" target="_blank" rel="noopener">1938 Receiver Restoration! DeForest 7D832 Radio</a> — 2.14M · staged rebuild; point-to-point rewires; "works like new, or even better." Best for: restoration discipline. → <a href="#mechanical">§9</a></li>
+    <li><a href="https://www.youtube.com/watch?v=pffOJdCQ7kw" target="_blank" rel="noopener">Power Supply Troubleshooting and Repair Tips</a> — 1.52M · no-schematic SMPS; identify the topology first. Best for: §10's core move. → <a href="#smps">§10</a></li>
+    <li><a href="https://www.youtube.com/watch?v=GB37DyAQazw" target="_blank" rel="noopener">Stromberg-Carlson 145L restoration</a> — 1.38M · recap discipline; verify-the-tester-first; analyzer alignment. Best for: measurement trust. → <a href="#method">§4</a></li>
+    <li><a href="https://www.youtube.com/watch?v=LC7OjuYAOQE" target="_blank" rel="noopener">Electronic Circuitry Diagnosis And Fault Finding!</a> — 1.11M · isolation transformer; stage signal tracing; safety segment. Best for: §8's method. → <a href="#signal-chain">§8</a>, <a href="#safety">§3</a></li>
+    <li><a href="https://www.youtube.com/watch?v=LColZ8MOtd0" target="_blank" rel="noopener">Tube Audio Amplifier Troubleshoot Repair and Modification</a> — 977k · why it failed, then why each mod is justified. Best for: narrated reasoning. → <a href="#signal-chain">§8</a></li>
+  </ul>
+</div>
+
+<h3>Electronics Repair School — <span class="small">Windows-laptop board repair; the bench PSU as core instrument</span></h3>
+<div class="channel">
+  <ul>
+    <li><a href="https://www.youtube.com/watch?v=kOGGCGAb2d4" target="_blank" rel="noopener">Most common fault on a Dead Laptop</a> — 2.63M · the input-chain walk; 19V-before-3V3; injection isolation. Best for: §6 in full. → <a href="#power-entry">§6</a></li>
+    <li><a href="https://www.youtube.com/watch?v=GCLflqmne6k" target="_blank" rel="noopener">How to diagnose a laptop motherboard</a> — 1.28M · board-by-eye; coil-per-supply; the 8 Ω CPU-die trap. Best for: §5. → <a href="#no-schematic">§5</a></li>
+    <li><a href="https://www.youtube.com/watch?v=OkadkPyGjY4" target="_blank" rel="noopener">How to Reprogram a BIOS — the easy way</a> — 969k · Win+B recovery; BIOS-tester dongle; firmware before hardware. → <a href="#power-entry">§6</a></li>
+    <li><a href="https://www.youtube.com/watch?v=oNAzCkkU-Bc" target="_blank" rel="noopener">Toshiba C850 not charging — a simple test</a> — 755k · rail substitution; gate-held-down-by-BQ. Best for: gate-before-parts. → <a href="#power-entry">§6</a></li>
+    <li><a href="https://www.youtube.com/watch?v=eMhtHr_XVUM" target="_blank" rel="noopener">How to find a shorted mosfet — safe &amp; fast</a> — 321k · 1V/0.5A injection; coil-shorting; short taxonomy. Best for: §7 in full. → <a href="#shorts">§7</a></li>
+  </ul>
+</div>
+
+<h3>Northridge Fix — <span class="small">commercial board repair; triage order, donors, no-fix discipline</span></h3>
+<div class="channel">
+  <ul>
+    <li><a href="https://www.youtube.com/watch?v=tLPeG2YVM3Y" target="_blank" rel="noopener">Asus Laptop No power Not Charging — how MOSFETs work</a> — 1.24M · gate as gatekeeper; resistors don't short; sacrificial bypass cap. → <a href="#power-entry">§6</a>, <a href="#shorts">§7</a></li>
+    <li><a href="https://www.youtube.com/watch?v=ygXNzhH8lqs" target="_blank" rel="noopener">GeForce RTX 3090 No Display Repair</a> — 683k · donor matching by geometry; low-melt on lead-free; big tips. Best for: rework craft. → <a href="#modern">§11</a></li>
+    <li><a href="https://www.youtube.com/watch?v=XBAn2Ck8GeE" target="_blank" rel="noopener">HP Laptop No Power — watch component blow</a> — 607k · triage order; thermal + injection; inductor bisection; the documented no-fix. Best for: §12's hard call. → <a href="#shorts">§7</a>, <a href="#commercial">§12</a></li>
+    <li><a href="https://www.youtube.com/watch?v=vRD3ZMV2t2c" target="_blank" rel="noopener">PS5 Disaster repair</a> — 525k · pad catalogue; ground-vs-signal sorting; jumpers + UV mask; board-level before connector. → <a href="#modern">§11</a></li>
+    <li><a href="https://www.youtube.com/watch?v=ZpO3f5_f_Xo" target="_blank" rel="noopener">Nintendo Switch Liquid Damage</a> — 518k · weak-point microscope pass; diode-mode both directions; PD negotiation as proof. Best for: §11's priors. → <a href="#modern">§11</a></li>
+  </ul>
+</div>
+
+<h3>Learn Electronics Repair — <span class="small">⚠ channel hijacked 2026; links dead at press time, rebuild in progress — verified from Internet Archive captures</span></h3>
+<div class="channel">
+  <ul>
+    <li><a href="https://www.youtube.com/watch?v=1NTNfTgSzgw" target="_blank" rel="noopener">How to Diagnose and Repair Transistor Circuits — No Schematics (Dynacord Powermate 600)</a> — ~247k · multimeter-only fault finding on discrete stages. Best for: §1's thesis. → <a href="#no-schematic">§5</a></li>
+    <li><a href="https://www.youtube.com/watch?v=WMhpKR9x7Lg" target="_blank" rel="noopener">The Ultimate Short Circuit High Side MOSFET Tutorial — 10 ways to find the faulty VRM</a> — ~220k · VRM topology plus eleven locating methods. Best for: §7's toolbox view. → <a href="#shorts">§7</a></li>
+    <li><a href="https://www.youtube.com/watch?v=-UUXy8BxXb4" target="_blank" rel="noopener">Industrial Electronics Repair … For PROFIT</a> — ~135k · consumer skills on industrial boards; real-time dead ends. Best for: "it's all just electronics." → <a href="#mental-model">§1</a>, <a href="#commercial">§12</a></li>
+    <li><a href="https://www.youtube.com/watch?v=5duuoPm1JoQ" target="_blank" rel="noopener">Small Switch Mode Power Supply Repair Guide</a> — ~101k · the §10 walk order; startup-cap failure family; hot ground. → <a href="#smps">§10</a>, <a href="#safety">§3</a></li>
+    <li><a href="https://www.youtube.com/watch?v=-Mj_d6D_WDk" target="_blank" rel="noopener">How To Identify An Unmarked or Blown IC Chip</a> — ~79k · identify by role and footprint, not by name. → <a href="#no-schematic">§5</a></li>
+  </ul>
+</div>
+
+<h3>Channel pages</h3>
+<ul>
+  <li><a href="https://www.youtube.com/@MendItMark" target="_blank" rel="noopener">Mend It Mark</a> · <a href="https://www.youtube.com/@MrCarlsonsLab" target="_blank" rel="noopener">Mr. Carlson's Lab</a> · <a href="https://www.youtube.com/@electronicsrepairschool" target="_blank" rel="noopener">Electronics Repair School</a> · <a href="https://www.youtube.com/@NorthridgeFix" target="_blank" rel="noopener">Northridge Fix</a> · Learn Electronics Repair — handle currently not resolving; watch for the rebuilt channel.</li>
+  <li><a href="https://web.archive.org" target="_blank" rel="noopener">Internet Archive</a> — best used for: re-verifying the five Learn Electronics Repair entries' metadata as captured 2025–2026, until the rebuild restores the originals.</li>
+</ul>
+<p class="small" style="margin-top:20px">A guide built from other people's repairs is a map, not the territory. Every technique above was demonstrated by its credited repairer on real hardware; this guide reorganizes their method but replaces none of the practice. The labs and capstone are where the map becomes territory.</p>
+</section>
+
+</main>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var root = document.documentElement;
+
+  /* ---- theme toggle: auto → dark → light ---- */
+  var toggle = document.querySelector('.theme-toggle');
+  var THEME_KEY = 'elec-repair-guide-theme';
+  var themes = ['auto', 'dark', 'light'];
+  var labels = { auto: '◐ auto', dark: '● dark', light: '○ light' };
+  function applyTheme(t) {
+    if (t === 'auto') { root.removeAttribute('data-theme'); }
+    else { root.setAttribute('data-theme', t); }
+    toggle.textContent = labels[t];
+  }
+  var saved = null;
+  try { saved = localStorage.getItem(THEME_KEY); } catch (e) {}
+  var current = themes.indexOf(saved) >= 0 ? saved : 'auto';
+  applyTheme(current);
+  toggle.addEventListener('click', function () {
+    current = themes[(themes.indexOf(current) + 1) % themes.length];
+    applyTheme(current);
+    try { localStorage.setItem(THEME_KEY, current); } catch (e) {}
+  });
+
+  /* ---- mobile TOC ---- */
+  var toc = document.getElementById('toc');
+  var tocToggle = document.getElementById('tocToggle');
+  function setToc(open) {
+    toc.classList.toggle('open', open);
+    tocToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    tocToggle.textContent = open ? '✕ Close' : '☰ Contents';
+  }
+  tocToggle.addEventListener('click', function () { setToc(!toc.classList.contains('open')); });
+  toc.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && toc.classList.contains('open')) setToc(false);
+  });
+
+  /* ---- copy buttons on every pre ---- */
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var btn = document.createElement('button');
+    btn.className = 'copy-btn'; btn.type = 'button'; btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var clone = pre.cloneNode(true);
+      var b = clone.querySelector('.copy-btn'); if (b) b.remove();
+      var text = clone.textContent.replace(/^\s+|\s+$/g, '');
+      function done() { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1400); }
+      function fail() { btn.textContent = 'Select & copy'; setTimeout(function () { btn.textContent = 'Copy'; }, 1800); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(fail);
+      } else { fail(); }
+    });
+    pre.appendChild(btn);
+  });
+
+  /* ---- scrollspy ---- */
+  var tocLinks = document.querySelectorAll('nav.toc a[href^="#"]');
+  var byId = {};
+  tocLinks.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  if ('IntersectionObserver' in window) {
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) {
+          tocLinks.forEach(function (a) { a.classList.remove('active'); });
+          var link = byId[en.target.id];
+          if (link) link.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-15% 0px -70% 0px' });
+    document.querySelectorAll('main section[id]').forEach(function (s) { spy.observe(s); });
+  }
+
+  /* ---- quiz ---- */
+  var QUIZ_KEY = 'elec-repair-guide-quiz';
+  var quizState = {};
+  try { quizState = JSON.parse(localStorage.getItem(QUIZ_KEY) || '{}'); } catch (e) { quizState = {}; }
+  var items = document.querySelectorAll('.quiz-item');
+  var scoreEl = document.getElementById('quizScore');
+  function saveQuiz() { try { localStorage.setItem(QUIZ_KEY, JSON.stringify(quizState)); } catch (e) {} }
+  function renderScore() {
+    var got = 0, missed = 0;
+    Object.keys(quizState).forEach(function (k) {
+      if (quizState[k] === 'got') got++; else if (quizState[k] === 'missed') missed++;
+    });
+    if (!scoreEl) return;
+    scoreEl.textContent = 'Score: ' + got + ' learned · ' + missed + ' review · ' +
+      (got + missed) + '/' + items.length + ' answered — aim for 13/' + items.length;
+  }
+  function setAnswerOpen(item, open) { item.querySelector('.quiz-answer').classList.toggle('open', open); }
+  items.forEach(function (item) {
+    var q = item.getAttribute('data-q');
+    if (quizState[q]) item.classList.add(quizState[q]);
+    item.querySelector('.reveal').addEventListener('click', function () {
+      item.querySelector('.quiz-answer').classList.toggle('open');
+    });
+    item.querySelector('.got').addEventListener('click', function () {
+      quizState[q] = 'got'; item.classList.remove('missed'); item.classList.add('got');
+      setAnswerOpen(item, true); saveQuiz(); renderScore();
+    });
+    item.querySelector('.missed').addEventListener('click', function () {
+      quizState[q] = 'missed'; item.classList.remove('got'); item.classList.add('missed');
+      setAnswerOpen(item, true); saveQuiz(); renderScore();
+    });
+  });
+  var quizReset = document.getElementById('quizReset');
+  if (quizReset) quizReset.addEventListener('click', function () {
+    quizState = {};
+    items.forEach(function (item) { item.classList.remove('got', 'missed'); setAnswerOpen(item, false); });
+    saveQuiz(); renderScore();
+  });
+  renderScore();
+
+  /* ---- dead-board simulator ---- */
+  var SIM = {
+    nodes: {
+      start: {
+        prompt: 'Board on the bench, back cover off, battery still connected. First move?',
+        choices: [
+          { label: 'Disconnect the battery, then microscope-pass the USB-C port and the IC neighborhoods', verdict: 'good', to: 'n2',
+            fb: 'Right. Tier-1 safety (battery off) plus §4 phase 1 — the weak-point pass is where Switch faults live.' },
+          { label: 'Diode-mode every rail immediately — measurements before eyes', verdict: 'ok', to: 'n2',
+            fb: 'Workable but backwards: you skipped intake. The corrosion you would have photographed is evidence — and you just probed around a live battery.' },
+          { label: 'Connect a charger and watch for the charge LED', verdict: 'ok', to: 'n2',
+            fb: 'Confirming the symptom externally is legitimate triage — but the ticket already told you this. It bought you almost nothing.' },
+          { label: 'Clip the bench supply to the battery terminals, 4.2 V, current limit maxed', verdict: 'bad', to: 'n2',
+            fb: 'Dangerous on two counts: no current limit on a possibly shorted rail, and battery-territory current from a bench supply. The battery is OFF the board for diagnosis — always.' }
+        ]
+      },
+      n2: {
+        prompt: 'Battery off. Under the scope: faint green crust around the PI3USB (port mux) area and one discolored coil. Now?',
+        reading: 'MICROSCOPE: green-white crust, ~3 mm plume, PI3USB perimeter · coil L7 discolored · port pins look intact',
+        choices: [
+          { label: 'Photograph everything, catalogue the damage, then diode-mode the data lines', verdict: 'good', to: 'n3',
+            fb: 'The Alex sequence exactly: document first — the ticket said "nothing else," and you just found the liquid event — then measure.' },
+          { label: 'Straight into the ultrasonic tank — clean first, ask questions later', verdict: 'bad', to: 'n3',
+            fb: 'Ultrasonic is right, documentation-first is more right. You just washed the evidence (and the corrosion plume\'s extent) off the board before photographing it.' },
+          { label: 'Reflow the PI3USB with hot air — it looks bad, it probably needs it', verdict: 'bad', to: 'n3',
+            fb: 'Shotgunning. "It looks bad" is not a diagnosis. Discolored ≠ dead — heat is the last move, not the first (§4 phase 8 comes after phase 7 proof).' }
+        ]
+      },
+      n3: {
+        prompt: 'Diode mode, black on ground, at the USB-C data-line filters. What are you hoping to learn?',
+        reading: 'DIODE MODE: D+ line → OL · D− line → 0.44 V · CC1 → 0.41 V · SBU1 → 0.46 V',
+        choices: [
+          { label: 'OL on D+ means a blown-open path — hunt the open: filter, trace, or via', verdict: 'good', to: 'n4',
+            fb: 'Correct read. Data lines should show ~0.4–0.5 V. OL is the open-direction fault — a vaporized ESD filter is the liquid-damage classic.' },
+          { label: 'OL means short — inject 1 V at 0.5 A and find the heat', verdict: 'bad', to: 'n4',
+            fb: 'Backwards. A short reads 0.000 V, not OL. You would be hunting a heat source that does not exist. Diode mode reads both directions of wrong — know both (§5).' },
+          { label: 'OL is normal on a data line — no drop, no problem', verdict: 'bad', to: 'n4',
+            fb: 'No. Healthy silicon termination shows a diode drop. OL where 0.4–0.5 V belongs is precisely the blown-open signature (§11).' }
+        ]
+      },
+      n4: {
+        prompt: 'Trace confirms: the D+ ESD filter is open circuit, corrosion across its pads. The fix?',
+        choices: [
+          { label: 'Clean the area, replace the filter from a donor board — donor part diode-tested first', verdict: 'good', to: 'n5',
+            fb: 'The full craft chain: donor + verification before fitting. Nothing else on this board gets touched.' },
+          { label: 'Replace the PI3USB IC too — it sits in the corrosion plume', verdict: 'bad', to: 'n5',
+            fb: 'Condemned without proof. The plume is suspicion, not evidence — phase 7 requires out-of-circuit failure before the iron. If verification later fails, revisit then.' },
+          { label: 'Jumper D+ straight past the filter position, note it on the ticket', verdict: 'ok', to: 'n5',
+            fb: 'Triage-craft, defensible on a paid job IF documented (the filter is conditioning, not protection-critical) — but the donor part was available and correct. Restore-craft wins when the part is in your bin.' }
+        ]
+      },
+      n5: {
+        prompt: 'Filter replaced, area cleaned, board dried. How do you prove the charge path before assembly?',
+        choices: [
+          { label: 'Bench PSU with PD: watch negotiation — 12 V request, settle at 9 V / ~1.7 A, then battery icon', verdict: 'good', to: 'end',
+            fb: 'Alex\'s proof: observed negotiation and real charging current. An icon alone is testimony; current is evidence.' },
+          { label: 'Assemble, plug in a customer charger, see the icon, call it done', verdict: 'bad', to: 'end',
+            fb: 'You verified nothing you can cite. No negotiation observed, no current measured, no burn-in. §4 phase 9 exists precisely to prevent the comeback.' },
+          { label: 'Everything in the first option, plus a 30-minute charging burn-in before return', verdict: 'good', to: 'end',
+            fb: 'The commercial standard: prove it, then keep proving it for half an hour. Caps and joints that fail hot fail on your bench, not in the mail.' }
+        ]
+      },
+      end: {
+        prompt: 'Ticket closed. Diagnose → prove → fix → verify: the full §4 spine on one liquid-damaged Switch.',
+        choices: []
+      }
+    },
+    prosPath: [
+      'Battery off, microscope intake pass over the weak points (port, M92, BQ, PI3USB, MAX) — photograph everything',
+      'Diode-mode the data lines: D+ OL = blown-open ESD filter in the corrosion plume',
+      'Clean, replace filter from donor (diode-tested first) — replace nothing else',
+      'Verify on the bench: PD negotiation 12 V → 9 V / 1.7 A, battery icon, 30-min burn-in',
+      'Ticket: liquid damage found (customer said nothing), filter replaced, evidence attached'
+    ]
+  };
+
+  var nodeEl = document.getElementById('simNode');
+  var readingEl = document.getElementById('simReading');
+  var choicesEl = document.getElementById('simChoices');
+  var fbEl = document.getElementById('simFeedback');
+  var logEl = document.getElementById('simLog');
+  var logList = document.getElementById('simLogList');
+  var simState = { node: 'start', bad: 0, ok: 0, steps: [] };
+  if (nodeEl) {
+    function showPrompt() {
+      var n = SIM.nodes[simState.node];
+      nodeEl.textContent = n.prompt;
+      if (simState.node === 'end') {
+        var grade = simState.bad === 0 ? 'Clean run — bench-ready.'
+          : (simState.bad <= 2 ? 'Solid, with detours — note the ✗ moves against §4.'
+          : 'Re-read §4 before this touches a customer board.');
+        nodeEl.textContent = n.prompt + ' Wrong moves: ' + simState.bad + ' · inefficient: ' + simState.ok + '. ' + grade;
+      }
+    }
+    function render(clearAll) {
+      var n = SIM.nodes[simState.node];
+      if (clearAll) {
+        readingEl.classList.remove('show');
+        fbEl.classList.remove('show', 'good', 'bad');
+      }
+      showPrompt();
+      choicesEl.textContent = '';
+      n.choices.forEach(function (c) {
+        var b = document.createElement('button');
+        b.className = 'sim-choice'; b.type = 'button'; b.textContent = c.label;
+        b.addEventListener('click', function () {
+          simState.steps.push(c.label);
+          var li = document.createElement('li'); li.textContent = c.label;
+          logList.appendChild(li); logEl.style.display = 'block';
+          if (c.verdict === 'bad') simState.bad++;
+          if (c.verdict === 'ok') simState.ok++;
+          if (n.reading) {
+            readingEl.textContent = n.reading;
+            readingEl.classList.add('show');
+          }
+          fbEl.textContent = (c.verdict === 'good' ? '✓ ' : c.verdict === 'ok' ? '~ ' : '✗ ') + c.fb;
+          fbEl.classList.add('show', c.verdict === 'bad' ? 'bad' : 'good');
+          choicesEl.textContent = '';
+          simState.node = c.to;
+          setTimeout(function () { render(false); }, 900);
+        });
+        choicesEl.appendChild(b);
+      });
+    }
+    document.getElementById('simReset').addEventListener('click', function () {
+      simState = { node: 'start', bad: 0, ok: 0, steps: [] };
+      logList.textContent = ''; logEl.style.display = 'none';
+      render(true);
+    });
+    document.getElementById('simSolution').addEventListener('click', function () {
+      fbEl.textContent = 'The pros\' path (Alex\'s Switch liquid-damage repair + this guide\'s §4): ' +
+        SIM.prosPath.map(function (s, i) { return (i + 1) + ') ' + s; }).join('  ');
+      fbEl.classList.add('show', 'good');
+    });
+    render(true);
+  }
+}());
+</script>
+</body>
+</html>
