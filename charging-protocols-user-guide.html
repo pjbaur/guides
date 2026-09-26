@@ -1,0 +1,2274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Charging Protocols</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+<style>
+  /* =====================================================================
+     Voltage palette: electric violet on warm-cool greys, with a "volt"
+     yellow for power readouts. Light values on :root, dark via media
+     query (guarded so an explicit light choice wins) and via data-theme.
+     Terminal panels are fixed dark in both themes.
+     Diagram series: --s1 violet = CC / PD messages · --s2 blue = D+/D- ·
+     --s3 green = VBUS power · --s4 amber = caution / proprietary.
+     ===================================================================== */
+  :root {
+    --bg: #f5f4f8;
+    --surface: #ffffff;
+    --surface2: #ebe8f3;
+    --ink: #1b1726;
+    --ink2: #4a4460;
+    --muted: #7a748c;
+    --line: #d9d4e6;
+    --hairline: rgba(27,23,38,0.10);
+    --code-bg: #ebe8f3;
+    --accent: #5b34c7;
+    --accent-wash: rgba(91,52,199,0.10);
+    --on-accent: #ffffff;
+    --volt: #8a6400;
+    --volt-bg: rgba(230,180,0,0.16);
+    --warn: #8a5a00;
+    --warn-bg: rgba(200,140,0,0.13);
+    --danger: #b0261c;
+    --danger-bg: rgba(176,38,28,0.08);
+    --blue: #1f5fae;
+    --blue-bg: rgba(31,95,174,0.08);
+    --good: #1f7a3c;
+    --good-bg: rgba(31,122,60,0.10);
+    --lab-bg: rgba(91,52,199,0.05);
+    --shadow: rgba(27,23,38,0.10);
+    --terminal: #15111f;
+    --terminal-2: #1f1930;
+    --terminal-line: #342b4d;
+    --terminal-ink: #e6e0f5;
+    --terminal-dim: #9a91b3;
+    --terminal-accent: #b69cff;
+    --terminal-yellow: #ffd866;
+    --terminal-red: #ff6b61;
+    --terminal-green: #6fe39a;
+    --s1: #5b34c7; --s2: #1f5fae; --s3: #1f7a3c; --s4: #a86a00;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #110e19; --surface: #1a1526; --surface2: #221c33;
+      --ink: #f0ecfa; --ink2: #c6bedb; --muted: #968dae;
+      --line: #342b4d; --hairline: rgba(255,255,255,0.10);
+      --code-bg: #221c33;
+      --accent: #b69cff; --accent-wash: rgba(182,156,255,0.13); --on-accent: #1a0f3d;
+      --volt: #ffd24d; --volt-bg: rgba(255,210,77,0.12);
+      --warn: #f0c04a; --warn-bg: rgba(240,192,74,0.12);
+      --danger: #ff6b61; --danger-bg: rgba(255,107,97,0.10);
+      --blue: #7fb3ff; --blue-bg: rgba(127,179,255,0.10);
+      --good: #5ad27a; --good-bg: rgba(90,210,122,0.12);
+      --lab-bg: rgba(182,156,255,0.05); --shadow: rgba(0,0,0,0.45);
+      --s1: #b69cff; --s2: #7fb3ff; --s3: #5ad27a; --s4: #f0c04a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f5f4f8; --surface: #ffffff; --surface2: #ebe8f3;
+    --ink: #1b1726; --ink2: #4a4460; --muted: #7a748c;
+    --line: #d9d4e6; --hairline: rgba(27,23,38,0.10);
+    --code-bg: #ebe8f3;
+    --accent: #5b34c7; --accent-wash: rgba(91,52,199,0.10); --on-accent: #ffffff;
+    --volt: #8a6400; --volt-bg: rgba(230,180,0,0.16);
+    --warn: #8a5a00; --warn-bg: rgba(200,140,0,0.13);
+    --danger: #b0261c; --danger-bg: rgba(176,38,28,0.08);
+    --blue: #1f5fae; --blue-bg: rgba(31,95,174,0.08);
+    --good: #1f7a3c; --good-bg: rgba(31,122,60,0.10);
+    --lab-bg: rgba(91,52,199,0.05); --shadow: rgba(27,23,38,0.10);
+    --s1: #5b34c7; --s2: #1f5fae; --s3: #1f7a3c; --s4: #a86a00;
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    --bg: #110e19; --surface: #1a1526; --surface2: #221c33;
+    --ink: #f0ecfa; --ink2: #c6bedb; --muted: #968dae;
+    --line: #342b4d; --hairline: rgba(255,255,255,0.10);
+    --code-bg: #221c33;
+    --accent: #b69cff; --accent-wash: rgba(182,156,255,0.13); --on-accent: #1a0f3d;
+    --volt: #ffd24d; --volt-bg: rgba(255,210,77,0.12);
+    --warn: #f0c04a; --warn-bg: rgba(240,192,74,0.12);
+    --danger: #ff6b61; --danger-bg: rgba(255,107,97,0.10);
+    --blue: #7fb3ff; --blue-bg: rgba(127,179,255,0.10);
+    --good: #5ad27a; --good-bg: rgba(90,210,122,0.12);
+    --lab-bg: rgba(182,156,255,0.05); --shadow: rgba(0,0,0,0.45);
+    --s1: #b69cff; --s2: #7fb3ff; --s3: #5ad27a; --s4: #f0c04a;
+    color-scheme: dark;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg); color: var(--ink);
+    line-height: 1.62; font-size: 16px;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .skip-link {
+    position: absolute; left: -9999px; top: 0; z-index: 100;
+    background: var(--accent); color: var(--on-accent);
+    padding: 8px 16px; border-radius: 0 8px 0 0;
+  }
+  .skip-link:focus { left: 0; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- layout ---- */
+  .layout { display: flex; max-width: 1300px; margin: 0 auto; }
+  nav.toc {
+    position: sticky; top: 0; align-self: flex-start;
+    width: 262px; flex-shrink: 0; height: 100vh; overflow-y: auto;
+    padding: 22px 8px 24px 18px; border-right: 1px solid var(--line);
+    background: var(--bg);
+  }
+  nav.toc .brand {
+    display: flex; align-items: center; gap: 9px;
+    font-weight: 800; font-size: 15px; margin-bottom: 2px; letter-spacing: 0.2px;
+  }
+  .brand-mark {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 6px;
+    background: var(--accent); color: var(--on-accent);
+    font: 700 10px/1 ui-monospace, "SF Mono", Menlo, monospace;
+    flex-shrink: 0;
+  }
+  nav.toc .brand-sub { font-size: 12px; color: var(--muted); margin: 0 0 14px 35px; line-height: 1.4; }
+  nav.toc .part {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.9px;
+    color: var(--muted); margin: 14px 0 3px; padding-left: 10px; font-weight: 700;
+  }
+  nav.toc a {
+    display: block; padding: 4.5px 10px; border-radius: 6px;
+    color: var(--ink2); font-size: 13.5px; margin-bottom: 1px;
+  }
+  nav.toc a:hover { background: var(--accent-wash); text-decoration: none; }
+  nav.toc a.active { background: var(--accent-wash); color: var(--accent); font-weight: 600; }
+  main { flex: 1; min-width: 0; padding: 30px 40px 90px; }
+
+  .toc-toggle {
+    display: none; position: fixed; left: 12px; top: 12px; z-index: 12;
+    background: var(--surface); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer;
+    font-family: inherit; box-shadow: 0 2px 8px var(--shadow);
+  }
+  @media (max-width: 940px) {
+    .layout { flex-direction: column; }
+    .toc-toggle { display: inline-block; }
+    nav.toc {
+      position: fixed; top: 0; left: 0; width: min(300px, 86vw); height: 100vh;
+      transform: translateX(-104%); transition: transform 0.2s ease;
+      z-index: 11; box-shadow: 0 0 30px var(--shadow); padding-top: 54px;
+    }
+    nav.toc.open { transform: translateX(0); }
+    main { padding: 64px 16px 60px; }
+  }
+  @media print {
+    nav.toc, .theme-toggle, .toc-toggle, .quiz-actions, .quiz-reset, .sim-actions button { display: none !important; }
+    .quiz-answer { display: block !important; }
+    details { display: block; }
+    details > *:not(summary) { display: block !important; }
+    section, .lab, .callout, figure { break-inside: avoid-page; }
+    main { padding: 0; }
+    body { font-size: 12.5px; }
+  }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 14px; z-index: 12;
+    background: var(--surface); border: 1px solid var(--line); color: var(--ink2);
+    border-radius: 20px; padding: 5px 14px; font-size: 13px; cursor: pointer;
+    font-family: inherit; box-shadow: 0 2px 8px var(--shadow);
+  }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ---- type ---- */
+  h1 { font-size: clamp(30px, 4.2vw, 46px); line-height: 1.08; font-weight: 800; letter-spacing: -0.02em; }
+  h1 .accent-clause { color: var(--accent); }
+  h2 {
+    font-size: 27px; font-weight: 800; letter-spacing: -0.015em;
+    margin: 0 0 6px; padding-top: 44px; scroll-margin-top: 10px;
+  }
+  h2 .tag { display: block; font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0.02em; margin-top: 2px; }
+  h3 { font-size: 19px; font-weight: 700; margin: 30px 0 8px; scroll-margin-top: 10px; }
+  h4 { font-size: 15.5px; font-weight: 700; margin: 20px 0 6px; }
+  p { margin: 0 0 14px; max-width: 78ch; }
+  ul, ol { margin: 0 0 14px 22px; max-width: 78ch; }
+  li { margin-bottom: 5px; }
+  li > ul, li > ol { margin-top: 5px; }
+  strong { font-weight: 700; }
+  section { border-bottom: 1px solid var(--line); padding-bottom: 36px; }
+  section:last-of-type { border-bottom: none; }
+  .lede { font-size: 18.5px; line-height: 1.55; color: var(--ink); margin-bottom: 18px; max-width: 72ch; }
+  .lede::first-letter { color: var(--accent); }
+  .sources-line { font-size: 13px; color: var(--muted); margin-top: 22px; }
+  .sources-line a { color: var(--muted); text-decoration: underline; text-decoration-color: var(--line); }
+  .sources-line a:hover { color: var(--accent); }
+  .small { font-size: 13.5px; color: var(--ink2); }
+  hr.thin { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
+
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.88em; background: var(--code-bg); padding: 1px 6px; border-radius: 5px;
+    color: var(--ink);
+  }
+  pre {
+    position: relative; background: var(--terminal); color: var(--terminal-ink);
+    border-radius: 10px; padding: 14px 16px; overflow-x: auto; margin: 0 0 16px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13.5px; line-height: 1.55;
+    border: 1px solid var(--terminal-line);
+  }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+  pre .cmd { color: var(--terminal-accent); font-weight: 600; }
+  pre .comment { color: var(--terminal-dim); }
+  pre .hot { color: var(--terminal-red); }
+  pre .val { color: var(--terminal-yellow); }
+  .copy-btn {
+    position: absolute; top: 8px; right: 8px;
+    background: var(--terminal-2); color: var(--terminal-dim); border: 1px solid var(--terminal-line);
+    border-radius: 6px; padding: 2px 9px; font-size: 11.5px; cursor: pointer; font-family: inherit;
+  }
+  .copy-btn:hover { color: var(--terminal-yellow); border-color: var(--terminal-yellow); }
+
+  kbd {
+    display: inline-block; font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12.5px; font-weight: 600; line-height: 1;
+    padding: 5px 8px 4px; border-radius: 6px;
+    background: var(--surface); color: var(--ink);
+    border: 1px solid var(--line); border-bottom-width: 3px;
+    box-shadow: 0 1px 0 var(--hairline); vertical-align: middle; white-space: nowrap;
+  }
+  .keys { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .keys .then { color: var(--muted); font-size: 13px; }
+
+  /* ---- recipes (numbered procedures) ---- */
+  ol.recipe { list-style: none; margin: 0 0 18px; counter-reset: step; max-width: 82ch; }
+  ol.recipe > li {
+    position: relative; padding: 9px 12px 9px 46px; margin: 0 0 6px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    counter-increment: step;
+  }
+  ol.recipe > li::before {
+    content: counter(step); position: absolute; left: 12px; top: 10px;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--accent); color: var(--on-accent);
+    font: 700 12px/24px system-ui, sans-serif; text-align: center;
+  }
+  .expect {
+    display: block; margin-top: 6px; font-size: 13.5px; color: var(--ink2);
+    padding-left: 10px; border-left: 3px solid var(--good);
+  }
+  .expect b { color: var(--good); font-weight: 700; }
+
+  /* ---- callouts ---- */
+  .callout {
+    background: var(--surface2); border-left: 4px solid var(--accent);
+    border-radius: 0 10px 10px 0; padding: 12px 16px; margin: 0 0 18px; max-width: 82ch;
+    font-size: 15px;
+  }
+  .callout > strong:first-child { display: block; margin-bottom: 3px; }
+  .callout.warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .callout.danger { border-left-color: var(--danger); background: var(--danger-bg); }
+  .callout.blue { border-left-color: var(--blue); background: var(--blue-bg); }
+  .callout.good { border-left-color: var(--good); background: var(--good-bg); }
+  .callout.bite { border-left-color: var(--danger); background: var(--danger-bg); }
+  .callout.bite > strong::before {
+    content: "✱ things that bite"; display: block; font-size: 10.5px; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--danger); margin-bottom: 2px;
+  }
+  .callout p:last-child, .callout ul:last-child { margin-bottom: 0; }
+
+  /* ---- tables ---- */
+  .table-wrap { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--line); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; background: var(--surface); }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.9px; color: var(--muted);
+    background: var(--surface2); font-weight: 700;
+  }
+  tr:last-child td { border-bottom: none; }
+  td code { white-space: nowrap; }
+  .num { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* ---- hero ---- */
+  .hero { padding: 6px 0 30px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+  .eyebrow { font-size: 12.5px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); font-weight: 700; margin-bottom: 12px; }
+  .subtitle { font-size: 18px; color: var(--ink2); margin: 14px 0 18px; max-width: 70ch; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge {
+    font-size: 12.5px; padding: 4px 11px; border-radius: 20px;
+    border: 1px solid var(--line); color: var(--ink2); background: var(--surface);
+  }
+  .badge.ok { border-color: var(--good); color: var(--good); }
+  .badge.soft { border-style: dashed; }
+
+  /* ---- diagrams ---- */
+  figure.diagram { margin: 18px 0 24px; max-width: 960px; }
+  figure.diagram svg { width: 100%; height: auto; display: block; }
+  figure.diagram figcaption { font-size: 13.5px; color: var(--muted); margin-top: 8px; line-height: 1.5; max-width: 78ch; }
+  figure.diagram figcaption b { color: var(--ink2); }
+  .d-label { font: 600 15px system-ui, sans-serif; fill: var(--ink); }
+  .d-mono { font: 600 13px ui-monospace, "SF Mono", Menlo, monospace; fill: var(--ink); }
+  .d-tiny { font: 12px system-ui, sans-serif; fill: var(--muted); }
+  .d-accent { fill: var(--accent); }
+  .d-danger { fill: var(--danger); }
+  .d-blue { fill: var(--blue); }
+
+  /* ---- labs ---- */
+  .lab {
+    background: var(--lab-bg); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 20px; margin: 20px 0 24px; max-width: 86ch;
+  }
+  .lab-title { font-size: 17px; font-weight: 800; margin: 0 0 2px; }
+  .lab-title .n { color: var(--accent); }
+  .lab-meta { font-size: 12.5px; color: var(--muted); margin: 0 0 12px; letter-spacing: 0.2px; }
+  .checkpoint {
+    margin-top: 12px; padding: 10px 14px; border-radius: 8px;
+    background: var(--good-bg); border: 1px dashed var(--good); font-size: 14.5px;
+  }
+  .checkpoint strong { color: var(--good); }
+
+  /* ---- level-1 primer ---- */
+  details.level { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); margin: 0 0 22px; max-width: 86ch; }
+  details.level > summary { cursor: pointer; padding: 12px 16px; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+  details.level > summary::-webkit-details-marker { display: none; }
+  details.level > summary .pill { font-size: 11px; text-transform: uppercase; letter-spacing: 0.9px; color: var(--accent); background: var(--accent-wash); padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+  details.level > summary::after { content: "▸"; color: var(--muted); }
+  details.level[open] > summary::after { content: "▾"; }
+  details.level > .inner { padding: 4px 18px 14px; border-top: 1px solid var(--line); }
+
+  /* ---- cards / cheat sheet ---- */
+  .cards { display: grid; grid-template-columns: 1fr; gap: 14px; margin: 0 0 20px; max-width: 860px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .card h4 { margin: 0 0 8px; font-size: 14.5px; }
+  .card ul { margin: 0 0 0 18px; font-size: 14px; }
+  .card li { margin-bottom: 4px; }
+  .card .keys { margin: 4px 0; }
+
+  /* ---- prereq check ---- */
+  .check li { list-style: none; position: relative; padding-left: 26px; }
+  .check li::before { content: "☐"; position: absolute; left: 0; color: var(--accent); }
+
+  /* ---- glossary / index ---- */
+  dl.glossary dt { font-weight: 700; margin-top: 12px; scroll-margin-top: 10px; }
+  dl.glossary dd { margin: 2px 0 0 0; color: var(--ink2); max-width: 78ch; font-size: 15px; }
+  .index-cols { columns: 3 220px; column-gap: 28px; font-size: 14px; }
+  .index-cols ul { list-style: none; margin: 0; }
+  .index-cols li { break-inside: avoid; margin-bottom: 3px; }
+  .index-cols .letter { font-weight: 800; color: var(--accent); margin: 10px 0 3px; break-after: avoid; }
+
+  /* ---- quiz ---- */
+  .quiz-score { font-weight: 700; margin: 0 0 14px; padding: 10px 14px; background: var(--surface2); border-radius: 8px; display: inline-block; }
+  .quiz-reset { margin: -6px 0 16px; }
+  .quiz-item { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 0 0 12px; max-width: 86ch; }
+  .quiz-item.got { border-color: var(--good); background: var(--good-bg); }
+  .quiz-item.missed { border-color: var(--warn); background: var(--warn-bg); }
+  .quiz-q { font-weight: 600; margin-bottom: 8px; }
+  .qnum { display: inline-block; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; color: var(--accent); background: var(--accent-wash); padding: 2px 7px; border-radius: 5px; margin-right: 8px; }
+  .quiz-answer { display: none; padding: 8px 12px; border-left: 3px solid var(--accent); background: var(--surface2); border-radius: 0 8px 8px 0; margin-bottom: 10px; font-size: 15px; }
+  .quiz-answer.open { display: block; }
+  .quiz-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .quiz-actions button, .btn {
+    font: inherit; font-size: 13px; padding: 5px 13px; border-radius: 7px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  }
+  .quiz-actions button:hover, .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .quiz-actions .got { border-color: var(--good); color: var(--good); }
+  .quiz-actions .missed { border-color: var(--warn); color: var(--warn); }
+
+  /* ---- simulator: the dead-board trainer ---- */
+  .sim {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px 20px; margin: 20px 0 24px; max-width: 860px;
+  }
+  .sim-title { font-size: 17px; font-weight: 800; margin: 0 0 2px; }
+  .sim-meta { font-size: 12.5px; color: var(--muted); margin: 0 0 14px; }
+  .sim-ticket {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13.5px;
+    background: var(--terminal); color: var(--terminal-ink); border: 1px solid var(--terminal-line);
+    border-radius: 10px; padding: 12px 14px; margin: 0 0 14px; white-space: pre-wrap;
+  }
+  .sim-ticket .lbl { color: var(--terminal-accent); font-weight: 700; }
+  .sim-ticket .bad { color: var(--terminal-red); }
+  .sim-node { min-height: 24px; }
+  .sim-reading {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px;
+    background: var(--code-bg); color: var(--ink); border-radius: 8px;
+    padding: 10px 12px; margin: 10px 0; white-space: pre-wrap; display: none;
+  }
+  .sim-reading.show { display: block; }
+  .sim-choices { display: grid; gap: 8px; margin: 12px 0; }
+  .sim-choice {
+    text-align: left; font: inherit; font-size: 14px; padding: 9px 13px;
+    border-radius: 9px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  }
+  .sim-choice:hover { border-color: var(--accent); }
+  .sim-choice.good { border-color: var(--good); background: var(--good-bg); }
+  .sim-choice.bad { border-color: var(--danger); background: var(--danger-bg); }
+  .sim-feedback {
+    display: none; border-radius: 8px; padding: 10px 13px; margin: 10px 0; font-size: 14px;
+    border-left: 3px solid var(--accent); background: var(--surface2);
+  }
+  .sim-feedback.show { display: block; }
+  .sim-feedback.bad { border-left-color: var(--danger); background: var(--danger-bg); }
+  .sim-feedback.good { border-left-color: var(--good); background: var(--good-bg); }
+  .sim-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .sim-actions .btn { font-size: 12.5px; }
+  .sim-log {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px;
+    color: var(--ink2); border-top: 1px dashed var(--line); margin-top: 14px; padding-top: 10px;
+  }
+  .sim-log ol { margin: 6px 0 0 20px; max-width: 80ch; }
+
+  /* ---- misc ---- */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .two-col { grid-template-columns: 1fr; } }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
+  .pill { font-size: 12.5px; padding: 3px 10px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--line); color: var(--ink2); }
+  .pill.on { background: var(--accent-wash); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .channel { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); padding: 14px 16px; margin: 0 0 14px; max-width: 86ch; }
+  .channel h4 { margin: 0 0 4px; }
+  .channel .ch-meta { font-size: 12.5px; color: var(--muted); margin: 0 0 8px; }
+  .channel ul { font-size: 14px; }
+  .timeline { list-style: none; margin: 0 0 20px; padding: 0; max-width: 86ch; }
+  .timeline li { position: relative; padding: 0 0 14px 30px; border-left: 2px solid var(--line); margin-left: 10px; }
+  .timeline li:last-child { border-left-color: transparent; }
+  .timeline li::before { content: ""; position: absolute; left: -7px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); }
+  .timeline b { display: block; }
+  .timeline .t { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; color: var(--muted); }
+
+  .cards { grid-template-columns: minmax(0, 1fr); }
+  .card { min-width: 0; }
+
+  /* ---- volt readout chip ---- */
+  .volt { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-weight: 700; color: var(--volt); background: var(--volt-bg); padding: 1px 7px; border-radius: 5px; white-space: nowrap; font-size: 0.9em; }
+  .tagline { font-size: 12px; text-transform: uppercase; letter-spacing: 0.9px; font-weight: 700; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+  .t-old { color: var(--muted); background: var(--surface2); }
+  .t-now { color: var(--good); background: var(--good-bg); }
+  .t-new { color: var(--accent); background: var(--accent-wash); }
+  .t-dead { color: var(--danger); background: var(--danger-bg); }
+
+  /* ---- protocol profile cards ---- */
+  .proto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin: 0 0 20px; max-width: 980px; }
+  .proto { background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: 10px; padding: 12px 14px; font-size: 14px; }
+  .proto.fam-bc { border-top-color: var(--s2); }
+  .proto.fam-pd { border-top-color: var(--s1); }
+  .proto.fam-qc, .proto.fam-prop { border-top-color: var(--s4); }
+  .proto.fam-qi { border-top-color: var(--s3); }
+  .proto h4 { margin: 0 0 2px; font-size: 15.5px; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .proto .meta { font-size: 12.5px; color: var(--muted); margin: 0 0 8px; }
+  .proto dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 0; }
+  .proto dt { color: var(--muted); font-size: 12.5px; }
+  .proto dd { margin: 0; }
+  .proto p { margin: 8px 0 0; font-size: 13.5px; color: var(--ink2); }
+
+  /* ---- timeline (interactive) ---- */
+  .tl-filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 16px; }
+  .tl-filters button { font: inherit; font-size: 12.5px; padding: 4px 12px; border-radius: 20px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink2); }
+  .tl-filters button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+  ol.tl { list-style: none; margin: 0 0 20px; padding: 0; max-width: 88ch; position: relative; }
+  ol.tl::before { content: ""; position: absolute; left: 78px; top: 4px; bottom: 4px; width: 2px; background: var(--line); }
+  ol.tl li { display: grid; grid-template-columns: 64px 1fr; gap: 0 42px; padding: 0 0 12px; position: relative; }
+  ol.tl li[hidden] { display: none; }
+  ol.tl li::before { content: ""; position: absolute; left: 72px; top: 5px; width: 14px; height: 14px; border-radius: 50%; background: var(--surface); border: 3px solid var(--accent); }
+  ol.tl li.fam-bc::before { border-color: var(--s2); }
+  ol.tl li.fam-pd::before { border-color: var(--s1); }
+  ol.tl li.fam-prop::before { border-color: var(--s4); }
+  ol.tl li.fam-qi::before { border-color: var(--s3); }
+  ol.tl li.fam-reg::before { border-color: var(--danger); }
+  ol.tl .yr { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-weight: 700; font-size: 14px; text-align: right; color: var(--ink2); }
+  ol.tl .ev b { display: inline; }
+  ol.tl .ev { font-size: 14.5px; }
+  ol.tl .ev .w { margin-left: 6px; }
+  @media (max-width: 560px) {
+    ol.tl::before { left: 50px; }
+    ol.tl li { grid-template-columns: 40px 1fr; gap: 0 38px; }
+    ol.tl li::before { left: 44px; }
+    ol.tl .yr { font-size: 12.5px; }
+  }
+
+  /* ---- negotiation simulator ---- */
+  .nsim { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; margin: 20px 0 24px; max-width: 900px; }
+  .nsim-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 0 0 14px; }
+  @media (max-width: 760px) { .nsim-grid { grid-template-columns: 1fr; } }
+  .nsim label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.9px; color: var(--muted); font-weight: 700; margin-bottom: 4px; }
+  .nsim select { width: 100%; font: inherit; font-size: 14px; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface2); color: var(--ink); }
+  .nsim .desc { font-size: 12.5px; color: var(--muted); margin-top: 4px; min-height: 2.6em; line-height: 1.4; }
+  .nsim-result { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 22px; padding: 12px 16px; border-radius: 10px; background: var(--terminal); color: var(--terminal-ink); border: 1px solid var(--terminal-line); margin: 0 0 12px; }
+  .nsim-result .big { font: 800 30px/1 ui-monospace, "SF Mono", Menlo, monospace; color: var(--terminal-yellow); }
+  .nsim-result .via { font-size: 14px; color: var(--terminal-accent); font-weight: 700; }
+  .nsim-result .lim { font-size: 13px; color: var(--terminal-dim); flex-basis: 100%; }
+  .nsim-log { font: 13px/1.6 ui-monospace, "SF Mono", Menlo, monospace; background: var(--terminal); color: var(--terminal-ink); border: 1px solid var(--terminal-line); border-radius: 10px; padding: 12px 14px; margin: 0; max-height: 380px; overflow: auto; white-space: pre-wrap; }
+  .nsim-log .src { color: var(--terminal-accent); }
+  .nsim-log .snk { color: var(--terminal-green); }
+  .nsim-log .cab { color: var(--terminal-yellow); }
+  .nsim-log .bad { color: var(--terminal-red); }
+  .nsim-log .dim { color: var(--terminal-dim); }
+  .nsim-presets { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
+  .nsim-presets .btn { font-size: 12.5px; }
+
+  /* ---- decision matrix ---- */
+  table.matrix td, table.matrix th { text-align: center; }
+  table.matrix td:first-child, table.matrix th:first-child { text-align: left; }
+  .y { color: var(--good); font-weight: 700; }
+  .n { color: var(--danger); font-weight: 700; }
+  .p { color: var(--warn); font-weight: 700; }
+
+  /* ---- bar chart of max power ---- */
+  .bars { max-width: 860px; margin: 0 0 20px; }
+  .bar-row { display: grid; grid-template-columns: 170px 1fr 70px; gap: 10px; align-items: center; font-size: 13.5px; margin-bottom: 5px; }
+  .bar-row .track { background: var(--surface2); border-radius: 5px; height: 16px; overflow: hidden; }
+  .bar-row .fill { height: 100%; border-radius: 5px; background: var(--accent); }
+  .bar-row .fill.fam-bc { background: var(--s2); }
+  .bar-row .fill.fam-prop { background: var(--s4); }
+  .bar-row .fill.fam-qi { background: var(--s3); }
+  .bar-row .w { font-family: ui-monospace, "SF Mono", Menlo, monospace; text-align: right; font-weight: 700; }
+  @media (max-width: 560px) { .bar-row { grid-template-columns: 110px 1fr 56px; font-size: 12.5px; } }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--ink2); margin: 0 0 12px; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<button class="toc-toggle" id="tocToggle" type="button" aria-expanded="false" aria-controls="toc">☰ Contents</button>
+<button class="theme-toggle" type="button" aria-label="Toggle colour theme">◐ auto</button>
+
+<div class="layout">
+<nav class="toc" id="toc" aria-label="Table of contents">
+  <div class="brand"><span class="brand-mark" aria-hidden="true">PD</span>Charging Protocols</div>
+  <div class="brand-sub">Every handshake from 500 mA to 240 W, wired and wireless</div>
+  <div class="part">Foundations</div>
+  <a href="#mental-model">1 · Mental model</a>
+  <a href="#prereqs">2 · Prerequisite floor</a>
+  <a href="#timeline">3 · Timeline</a>
+  <a href="#heat">4 · Where the heat goes</a>
+  <div class="part">USB standards</div>
+  <a href="#legacy">5 · Legacy USB &amp; BC 1.2</a>
+  <a href="#type-c">6 · Type-C Current</a>
+  <a href="#pd">7 · USB PD, 1.0 → 3.0</a>
+  <a href="#pps">8 · PPS</a>
+  <a href="#epr">9 · EPR, AVS &amp; PD 3.2</a>
+  <a href="#cables">10 · Cables &amp; e-markers</a>
+  <div class="part">Proprietary</div>
+  <a href="#dividers">11 · Apple &amp; Samsung dividers</a>
+  <a href="#qc">12 · Qualcomm Quick Charge</a>
+  <a href="#vendors">13 · The vendor zoo</a>
+  <a href="#ufcs">14 · UFCS &amp; the law</a>
+  <div class="part">Wireless &amp; future</div>
+  <a href="#wireless">15 · Qi, Qi2 &amp; MagSafe</a>
+  <a href="#future">16 · Proposed &amp; emerging</a>
+  <div class="part">Practice</div>
+  <a href="#simulator">17 · Negotiation simulator</a>
+  <a href="#matrix">18 · Decision matrix</a>
+  <a href="#labs">19 · Labs</a>
+  <a href="#capstone">20 · Capstone</a>
+  <a href="#troubleshooting">21 · Troubleshooting</a>
+  <div class="part">Reference</div>
+  <a href="#cheat-sheet">22 · Cheat sheet</a>
+  <a href="#glossary">23 · Glossary</a>
+  <a href="#index">24 · Index</a>
+  <a href="#quiz">25 · Quiz</a>
+  <a href="#sources">26 · Sources</a>
+</nav>
+
+<main id="content">
+
+<header class="hero">
+  <div class="eyebrow">For the reader who owns a USB tester and wants to understand every number on it</div>
+  <h1>Every charger is a menu.<br><span class="accent-clause">Your phone orders. The cable can veto.</span></h1>
+  <p class="subtitle">A wire-level tour of every charging protocol that matters: USB defaults, BC 1.2, Type-C Current, USB PD 1.0 through 3.2, PPS, EPR and AVS, Quick Charge, VOOC and the proprietary zoo, UFCS, Qi through Qi2 25W, and what is being argued about for 2027 and beyond.</p>
+  <div class="badges">
+    <span class="badge ok">USB PD R3.2 v1.2 · Type-C R2.5 · BC 1.2 read from usb.org spec zips</span>
+    <span class="badge ok">Qi 2.3 · checked 2026-09-25</span>
+    <span class="badge">single file · works offline</span>
+    <span class="badge">negotiation simulator</span>
+    <span class="badge">interactive timeline</span>
+    <span class="badge">decision matrix</span>
+    <span class="badge">18-question quiz</span>
+  </div>
+</header>
+
+<!-- ============================================================ 1 -->
+<section id="mental-model">
+<h2>1 · Mental model <span class="tag">Charging is a conversation before it is a current.</span></h2>
+<p class="lede">A charger never pushes power into your phone. It offers power, and the phone decides how much to take. Every protocol in this guide, from a 2007 resistor to a 2026 PD packet, is a different answer to one question: <em>how does the phone learn what the charger can safely deliver, and how does it ask for more?</em></p>
+
+<p>Three parties take part in every wired charge. The <strong>source</strong> (charger) knows its limits. The <strong>sink</strong> (phone, laptop) knows what its battery wants right now. The <strong>cable</strong> sits between them and has limits of its own. Old protocols ignored the cable. Modern ones interrogate it.</p>
+
+<p>The protocols differ mainly in <em>where the conversation happens</em>. There are only four channels, and once you know them, every acronym in this guide slots into one:</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 960 420" role="img" aria-labelledby="d1t">
+  <title id="d1t">The four signalling channels of charging protocols</title>
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker>
+  </defs>
+  <rect x="20" y="40" width="200" height="330" rx="14" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="120" y="72" text-anchor="middle" class="d-label">SOURCE</text>
+  <text x="120" y="92" text-anchor="middle" class="d-tiny">charger · "here is my menu"</text>
+  <rect x="740" y="40" width="200" height="330" rx="14" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="840" y="72" text-anchor="middle" class="d-label">SINK</text>
+  <text x="840" y="92" text-anchor="middle" class="d-tiny">phone / laptop · "I'll have…"</text>
+  <rect x="250" y="40" width="460" height="330" rx="14" fill="var(--accent-wash)" stroke="var(--line)" stroke-dasharray="6 5"/>
+  <text x="480" y="66" text-anchor="middle" class="d-label">CABLE</text>
+  <text x="480" y="84" text-anchor="middle" class="d-tiny">passive wires · or e-marker chip that answers questions</text>
+
+  <line x1="220" y1="130" x2="740" y2="130" stroke="var(--s2)" stroke-width="5"/>
+  <text x="480" y="120" text-anchor="middle" class="d-mono" style="fill:var(--s2)">D+ / D− · static voltages &amp; pulses</text>
+  <text x="480" y="150" text-anchor="middle" class="d-tiny">BC 1.2 · Apple/Samsung dividers · QC 2/3 · AFC · FCP/SCP · VOOC · UFCS</text>
+
+  <line x1="220" y1="200" x2="740" y2="200" stroke="var(--s1)" stroke-width="5"/>
+  <text x="480" y="190" text-anchor="middle" class="d-mono" style="fill:var(--s1)">CC · resistors, then 300 kbps digital packets</text>
+  <text x="480" y="220" text-anchor="middle" class="d-tiny">Type-C Current (Rp/Rd) · USB PD 2.0+ · PPS · EPR · AVS · QC 4+/5 (PD inside)</text>
+
+  <line x1="220" y1="270" x2="740" y2="270" stroke="var(--s3)" stroke-width="7"/>
+  <text x="480" y="260" text-anchor="middle" class="d-mono" style="fill:var(--s3)">VBUS · the power wire itself</text>
+  <text x="480" y="290" text-anchor="middle" class="d-tiny">PD 1.0 (24 MHz BFSK, dead) · MediaTek Pump Express (current-draw patterns)</text>
+
+  <path d="M220,340 C360,310 600,370 740,340" fill="none" stroke="var(--s4)" stroke-width="4" stroke-dasharray="3 7"/>
+  <text x="480" y="362" text-anchor="middle" class="d-mono" style="fill:var(--s4)">magnetic field · no cable at all</text>
+  <text x="480" y="400" text-anchor="middle" class="d-tiny">Qi: phone → pad by load modulation (ASK) · pad → phone by frequency shift (FSK)</text>
+</svg>
+<figcaption><b>Four channels, every protocol.</b> Learn which wire a protocol talks on and you know what can break it: a cable missing D+/D− kills QC; a USB-A port has no CC, so it can never speak PD.</figcaption>
+</figure>
+
+<h3>The three laws of charging</h3>
+<ol class="recipe">
+  <li><strong>The default is always safe and slow.</strong> Every protocol starts at 5 V with a small current. Higher power exists only after both ends prove they understand each other. Silence means 5 V.</li>
+  <li><strong>The weakest link sets the power.</strong> Charger limit, cable limit, phone limit, and phone temperature: the delivered watts are the <em>minimum</em> of all four, not the charger's label.</li>
+  <li><strong>Power = voltage × current, and heat = current² × resistance.</strong> Every fast-charge scheme is a strategy for getting more watts without cooking a cable connector or the phone. Raise voltage (QC, PD fixed), or raise current and move the conversion (VOOC, PPS direct charging). See <a href="#heat">§4</a>.</li>
+</ol>
+
+<div class="callout warn">
+  <strong>Misconception: "a 100 W charger will push 100 W into my phone."</strong>
+  The label is the menu, not the meal. A 100 W charger connected to a phone that asks for 9 V × 2.22 A delivers 20 W. The charger cannot force more, and that is the whole safety model.
+</div>
+
+<h3>Old, current, proposed: the whole map</h3>
+<div class="legend"><span><i style="background:var(--s2)"></i>USB-IF basics (D+/D−, CC)</span><span><i style="background:var(--s1)"></i>USB PD family</span><span><i style="background:var(--s4)"></i>proprietary</span><span><i style="background:var(--s3)"></i>wireless</span></div>
+<div class="bars" role="img" aria-label="Maximum power by protocol, bar chart">
+  <div class="bar-row"><span>USB 2.0 port</span><span class="track"><span class="fill fam-bc" style="width:1%;display:block"></span></span><span class="w">2.5 W</span></div>
+  <div class="bar-row"><span>BC 1.2 DCP</span><span class="track"><span class="fill fam-bc" style="width:3.1%;display:block"></span></span><span class="w">7.5 W</span></div>
+  <div class="bar-row"><span>Apple 2.4 A</span><span class="track"><span class="fill fam-prop" style="width:5%;display:block"></span></span><span class="w">12 W</span></div>
+  <div class="bar-row"><span>Type-C Current 3 A</span><span class="track"><span class="fill fam-bc" style="width:6.25%;display:block"></span></span><span class="w">15 W</span></div>
+  <div class="bar-row"><span>Qi BPP / EPP</span><span class="track"><span class="fill fam-qi" style="width:6.25%;display:block"></span></span><span class="w">5–15 W</span></div>
+  <div class="bar-row"><span>QC 2.0 / 3.0</span><span class="track"><span class="fill fam-prop" style="width:15%;display:block"></span></span><span class="w">18–36 W</span></div>
+  <div class="bar-row"><span>Qi2 25W</span><span class="track"><span class="fill fam-qi" style="width:10.4%;display:block"></span></span><span class="w">25 W</span></div>
+  <div class="bar-row"><span>PD SPR (3 A cable)</span><span class="track"><span class="fill" style="width:25%;display:block"></span></span><span class="w">60 W</span></div>
+  <div class="bar-row"><span>PD SPR (5 A cable)</span><span class="track"><span class="fill" style="width:41.7%;display:block"></span></span><span class="w">100 W</span></div>
+  <div class="bar-row"><span>QC 5+</span><span class="track"><span class="fill fam-prop" style="width:58.3%;display:block"></span></span><span class="w">140 W</span></div>
+  <div class="bar-row"><span>PD EPR 48 V</span><span class="track"><span class="fill" style="width:100%;display:block"></span></span><span class="w">240 W</span></div>
+  <div class="bar-row"><span>SuperVOOC 240W</span><span class="track"><span class="fill fam-prop" style="width:100%;display:block"></span></span><span class="w">240 W</span></div>
+</div>
+<p class="small">Maximum rated power per scheme. Bars scale to 240 W. Real phones rarely hold the peak for more than a few minutes.</p>
+
+<p class="sources-line">Sources: <a href="https://en.wikipedia.org/wiki/USB_hardware#USB_Power_Delivery" target="_blank" rel="noopener">Wikipedia · USB hardware, power</a> · <a href="https://www.usb.org/document-library/usb-power-delivery" target="_blank" rel="noopener">USB-IF · USB PD document library</a> · <a href="https://en.wikipedia.org/wiki/Quick_Charge" target="_blank" rel="noopener">Wikipedia · Quick Charge</a></p>
+</section>
+
+<!-- ============================================================ 2 -->
+<section id="prereqs">
+<h2>2 · Prerequisite floor <span class="tag">Four ideas. If these are solid, the rest is vocabulary.</span></h2>
+<p class="lede">Charging protocols are electrical engineering wearing a software costume. You do not need to design a buck converter, but you do need four ideas to read a USB tester without guessing.</p>
+
+<ul class="check">
+  <li><strong>P = V × I.</strong> 9 V × 2 A = 18 W. 20 V × 5 A = 100 W. Every PD offer is a (voltage, current) pair; the watts are derived.</li>
+  <li><strong>Loss in a wire = I² × R.</strong> Double the current, quadruple the heat in the cable and connector. That is why 5 A needs a thicker, certified cable and 3 A does not.</li>
+  <li><strong>Lithium-ion charges in two phases.</strong> Constant current (CC) until the cell nears about 4.2–4.5 V, then constant voltage (CV) with current tapering off. Fast charging only matters in the CC phase, which is why "0 to 50%" marketing numbers look so much better than "0 to 100%".</li>
+  <li><strong>A converter trades voltage for current.</strong> A buck converter turning 9 V into 4.2 V roughly doubles current, minus losses that become heat inside whatever box the converter lives in.</li>
+</ul>
+
+<details class="level">
+  <summary>Self-check: can you answer these in your head? <span class="pill">2 minutes</span></summary>
+  <div class="inner">
+    <ol>
+      <li>A charger offers 15 V at 3 A. How many watts? <em>(45 W)</em></li>
+      <li>A cable runs 3 A with 0.2 Ω round-trip resistance. How much heat, and what voltage drop? <em>(1.8 W; 0.6 V)</em></li>
+      <li>Same cable at 5 A? <em>(5 W; 1 V. That is why the 5 A spec insists on an e-marked cable.)</em></li>
+      <li>Your phone shows "charging slowly" at 85%. Is the charger broken? <em>(No. That is the CV phase.)</em></li>
+    </ol>
+    <p>Missed two or more? Re-read the bullets above before §5. Everything later assumes them.</p>
+  </div>
+</details>
+
+<h3>Units and prefixes you will see on testers</h3>
+<div class="table-wrap"><table>
+  <thead><tr><th>Symbol</th><th>Means</th><th>Where it shows up</th></tr></thead>
+  <tbody>
+    <tr><td class="num">VBUS</td><td>The USB power wire</td><td>Every USB connector; 5 V default</td></tr>
+    <tr><td class="num">D+ / D−</td><td>USB 2.0 data pair</td><td>BC 1.2, dividers, QC, AFC, VOOC, UFCS signalling</td></tr>
+    <tr><td class="num">CC1 / CC2</td><td>Configuration Channel pins</td><td>USB-C only. Orientation, current advertisement, PD packets</td></tr>
+    <tr><td class="num">VCONN</td><td>Power for chips inside the cable plug</td><td>E-marked cables, powered by the unused CC pin</td></tr>
+    <tr><td class="num">PDO / APDO</td><td>(Augmented) Power Data Object</td><td>One line on the charger's PD menu</td></tr>
+    <tr><td class="num">RDO</td><td>Request Data Object</td><td>The sink's order</td></tr>
+  </tbody>
+</table></div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section id="timeline">
+<h2>3 · Timeline <span class="tag">Thirty years from 2.5 W to 240 W, and back to a single connector.</span></h2>
+<p class="lede">Charging history is a cycle: a standard ships too slow, vendors fork it with proprietary hacks, the market fragments, and a regulator or a standards body pulls everyone back together. You are living in the third pull-back. Filter by family to see each thread on its own.</p>
+
+<div class="tl-filters" role="group" aria-label="Filter timeline by family">
+  <button type="button" data-f="all" aria-pressed="true">All</button>
+  <button type="button" data-f="fam-bc" aria-pressed="false">USB basics</button>
+  <button type="button" data-f="fam-pd" aria-pressed="false">USB PD</button>
+  <button type="button" data-f="fam-prop" aria-pressed="false">Proprietary</button>
+  <button type="button" data-f="fam-qi" aria-pressed="false">Wireless</button>
+  <button type="button" data-f="fam-reg" aria-pressed="false">Law &amp; regulation</button>
+</div>
+<ol class="tl" id="tl">
+  <li class="fam-bc"><span class="yr">1996</span><span class="ev"><b>USB 1.0.</b> 5 V bus; one unit load = 100 mA. Charging was an accident of the power pin.</span></li>
+  <li class="fam-bc"><span class="yr">2000</span><span class="ev"><b>USB 2.0.</b> Up to 5 unit loads = 500 mA (2.5 W) after the host configures the device.</span></li>
+  <li class="fam-reg"><span class="yr">2007</span><span class="ev"><b>China mandates USB charging ports on new phones</b>; YD/T 1591-2009 later specifies shorted D+/D− in the adapter.</span></li>
+  <li class="fam-bc"><span class="yr">2008</span><span class="ev"><b>USB 3.0.</b> Unit load 150 mA, up to 900 mA (4.5 W).</span></li>
+  <li class="fam-qi"><span class="yr">2008</span><span class="ev"><b>Wireless Power Consortium founded.</b></span></li>
+  <li class="fam-prop"><span class="yr">~2010</span><span class="ev"><b>Apple divider chargers</b> (iPad 2.1 A, later 2.4 A) signal current with fixed D+/D− voltages. Samsung uses 1.2 V on both lines.</span></li>
+  <li class="fam-bc"><span class="yr">2010</span><span class="ev"><b>Battery Charging 1.2.</b> SDP / CDP / DCP detection over D+/D−; up to 1.5 A.</span></li>
+  <li class="fam-qi"><span class="yr">2010</span><span class="ev"><b>Qi 1.0</b>, July. 5 W inductive.</span></li>
+  <li class="fam-pd"><span class="yr">2012</span><span class="ev"><b>USB PD 1.0</b>, 5 July. BFSK on VBUS, profiles up to 20 V × 5 A. Almost nothing shipped.</span></li>
+  <li class="fam-qi"><span class="yr">2012</span><span class="ev"><b>Power Matters Alliance</b> (PMA) founded by P&amp;G and Powermat. Rival to Qi.</span></li>
+  <li class="fam-prop"><span class="yr">2013</span><span class="ev"><b>Qualcomm Quick Charge 1.0.</b> Up to 10 W.</span></li>
+  <li class="fam-prop"><span class="yr">2014</span><span class="ev"><b>QC 2.0</b>: 5/9/12 V selected by D+/D− voltage codes. <b>OPPO VOOC</b>: 5 V × 4 A with a special cable.</span></li>
+  <li class="fam-pd"><span class="yr">2014</span><span class="ev"><b>USB PD 2.0</b>, 11 August. BMC packets on the new CC wire of USB-C. The modern protocol is born.</span></li>
+  <li class="fam-prop"><span class="yr">2015</span><span class="ev"><b>MediaTek Pump Express Plus</b> (current-pulse signalling on VBUS). <b>Huawei FCP</b> 9 V × 2 A.</span></li>
+  <li class="fam-qi"><span class="yr">2015</span><span class="ev"><b>Qi 1.2</b>: Extended Power Profile, 15 W. <b>A4WP + PMA merge</b> into the AirFuel Alliance.</span></li>
+  <li class="fam-pd"><span class="yr">2015</span><span class="ev"><b>USB PD 3.0</b>, 11 December. Extended messages, alerts, and later PPS.</span></li>
+  <li class="fam-prop"><span class="yr">2016</span><span class="ev"><b>QC 3.0</b>: 200 mV steps from 3.6 V. <b>SuperVOOC</b> 10 V × 5 A into a two-cell battery.</span></li>
+  <li class="fam-prop"><span class="yr">2017</span><span class="ev"><b>QC 4 / 4+</b>: Qualcomm joins USB PD, adds 20 mV steps.</span></li>
+  <li class="fam-pd"><span class="yr">2018</span><span class="ev"><b>USB-IF Certified Fast Charger logo</b> requires PPS. PD 3.0 v1.2 (June) consolidates PPS.</span></li>
+  <li class="fam-prop"><span class="yr">2018</span><span class="ev"><b>Huawei 40 W SuperCharge</b> (10 V × 4 A) on the Mate 20 Pro.</span></li>
+  <li class="fam-qi"><span class="yr">2020</span><span class="ev"><b>Apple MagSafe</b> for iPhone 12: magnets + 15 W.</span></li>
+  <li class="fam-prop"><span class="yr">2020</span><span class="ev"><b>QC 5</b>: 100 W+, built on PD PPS, two-cell batteries. <b>SuperVOOC 2.0</b> 65 W.</span></li>
+  <li class="fam-pd"><span class="yr">2021</span><span class="ev"><b>USB PD 3.1</b> (May): Extended Power Range, 28/36/48 V, 240 W, EPR AVS. <b>60W / 240W cable logos</b> (September).</span></li>
+  <li class="fam-qi"><span class="yr">2021</span><span class="ev"><b>Qi 1.3</b>: cryptographic charger authentication.</span></li>
+  <li class="fam-prop"><span class="yr">2021</span><span class="ev"><b>UFCS</b> first published in China (28 May). <b>Xiaomi 200 W</b> demo: 0–100% in 8 minutes.</span></li>
+  <li class="fam-reg"><span class="yr">2022</span><span class="ev"><b>EU Directive 2022/2380</b> adopted (23 November): USB-C and PD for chargeable devices.</span></li>
+  <li class="fam-qi"><span class="yr">2023</span><span class="ev"><b>Qi2</b> announced (January), spec in April: Magnetic Power Profile from Apple MagSafe, 15 W. iPhone 15 is first.</span></li>
+  <li class="fam-prop"><span class="yr">2023</span><span class="ev"><b>SuperVOOC 240 W</b> ships (realme GT3): 20 V × 12 A.</span></li>
+  <li class="fam-pd"><span class="yr">2023</span><span class="ev"><b>USB PD 3.2</b> (October): SPR AVS, 9–20 V adjustable.</span></li>
+  <li class="fam-reg"><span class="yr">2024</span><span class="ev"><b>EU common charger applies</b> to phones and 11 other categories (28 December).</span></li>
+  <li class="fam-prop"><span class="yr">2025</span><span class="ev"><b>UFCS 2.0</b> (May; Huawei, Honor, OPPO, vivo). <b>QC 5+</b> (September): up to 20 V × 7 A.</span></li>
+  <li class="fam-qi"><span class="yr">2025</span><span class="ev"><b>Qi 2.2 / Qi2 25W</b> (spec April, launch July). <b>Qi2 Ready</b>. <b>Qi 2.3</b> (December) adds gain reporting.</span></li>
+  <li class="fam-pd"><span class="yr">2026</span><span class="ev"><b>USB PD 3.2 v1.2</b> (January): spec restructure, Dynamic Power Supply. <b>Type-C R2.5</b> (March).</span></li>
+  <li class="fam-reg"><span class="yr">2026</span><span class="ev"><b>EU common charger reaches laptops</b> (28 April).</span></li>
+  <li class="fam-qi"><span class="yr">2026</span><span class="ev"><b>Qi 50 W discussed</b> at a WPC meeting in Beijing (June). Proposal only. See <a href="#future">§16</a>.</span></li>
+</ol>
+<p class="sources-line">Sources: <a href="https://www.usb.org/document-library/usb-power-delivery" target="_blank" rel="noopener">USB PD R3.2 v1.2, Appendix A revision history</a> · <a href="https://www.wirelesspowerconsortium.com/knowledge-base/qi-specification/history-of-the-qi-specifications/" target="_blank" rel="noopener">WPC · History of the Qi specifications</a> · <a href="https://en.wikipedia.org/wiki/Quick_Charge" target="_blank" rel="noopener">Wikipedia · Quick Charge</a> · <a href="https://en.wikipedia.org/wiki/VOOC" target="_blank" rel="noopener">Wikipedia · VOOC</a> · <a href="https://eur-lex.europa.eu/eli/dir/2022/2380/oj" target="_blank" rel="noopener">EUR-Lex · Directive 2022/2380</a></p>
+</section>
+
+<!-- ============================================================ 4 -->
+<section id="heat">
+<h2>4 · Where the heat goes <span class="tag">Every fast-charge design is a decision about which box gets warm.</span></h2>
+<p class="lede">Watts are easy. Cool watts are hard. A charger can make 240 W all day; a 9 mm-thick phone cannot shed more than about one watt of waste heat without the battery suffering. The entire proprietary-protocol war of 2014–2022 was a fight over where to put the voltage conversion.</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 960 360" role="img" aria-labelledby="d2t">
+  <title id="d2t">High-voltage charging versus direct charging: where the conversion loss lands</title>
+  <defs><marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker></defs>
+  <text x="20" y="30" class="d-label">A · High voltage, low current (QC 2/3, PD fixed)</text>
+  <rect x="20" y="50" width="150" height="70" rx="10" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="95" y="82" text-anchor="middle" class="d-label">Charger</text><text x="95" y="102" text-anchor="middle" class="d-tiny">makes 9 V</text>
+  <line x1="170" y1="85" x2="360" y2="85" stroke="var(--s3)" stroke-width="4" marker-end="url(#arr2)"/>
+  <text x="265" y="75" text-anchor="middle" class="d-mono">9 V × 2 A</text><text x="265" y="108" text-anchor="middle" class="d-tiny">cable: cool, low current</text>
+  <rect x="365" y="45" width="560" height="80" rx="12" fill="var(--danger-bg)" stroke="var(--danger)" stroke-width="2"/>
+  <text x="385" y="70" class="d-label">Phone</text>
+  <rect x="470" y="60" width="200" height="50" rx="8" fill="var(--surface)" stroke="var(--danger)"/>
+  <text x="570" y="82" text-anchor="middle" class="d-label">Buck converter</text><text x="570" y="100" text-anchor="middle" class="d-tiny">~90%: &gt;1 W becomes heat here</text>
+  <line x1="670" y1="85" x2="760" y2="85" stroke="var(--s3)" stroke-width="4" marker-end="url(#arr2)"/>
+  <rect x="765" y="62" width="140" height="46" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+  <text x="835" y="90" text-anchor="middle" class="d-mono">4.2 V × ~4 A</text>
+
+  <text x="20" y="190" class="d-label">B · Low voltage, high current, "direct charging" (VOOC, SCP, PPS + charge pump)</text>
+  <rect x="20" y="210" width="150" height="110" rx="10" fill="var(--danger-bg)" stroke="var(--danger)" stroke-width="2"/>
+  <text x="95" y="245" text-anchor="middle" class="d-label">Charger</text><text x="95" y="265" text-anchor="middle" class="d-tiny">regulates exact V/I</text><text x="95" y="283" text-anchor="middle" class="d-tiny">loss lands here,</text><text x="95" y="299" text-anchor="middle" class="d-tiny">outside the phone</text>
+  <line x1="170" y1="265" x2="360" y2="265" stroke="var(--s3)" stroke-width="9" marker-end="url(#arr2)"/>
+  <text x="265" y="250" text-anchor="middle" class="d-mono">8.6 V × 3 A</text><text x="265" y="292" text-anchor="middle" class="d-tiny">PPS: 20 mV steps</text>
+  <rect x="365" y="215" width="560" height="100" rx="12" fill="var(--good-bg)" stroke="var(--good)" stroke-width="2"/>
+  <text x="385" y="240" class="d-label">Phone</text>
+  <rect x="470" y="235" width="200" height="60" rx="8" fill="var(--surface)" stroke="var(--good)"/>
+  <text x="570" y="260" text-anchor="middle" class="d-label">2:1 charge pump</text><text x="570" y="280" text-anchor="middle" class="d-tiny">~97%, no regulation</text>
+  <line x1="670" y1="265" x2="760" y2="265" stroke="var(--s3)" stroke-width="9" marker-end="url(#arr2)"/>
+  <rect x="765" y="242" width="140" height="46" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+  <text x="835" y="270" text-anchor="middle" class="d-mono">4.3 V × 6 A</text>
+</svg>
+<figcaption><b>Same watts, different hot spot.</b> In A the phone's buck converter burns over a watt. In B the phone only halves the voltage with a switched-capacitor divider at about 97%, so the charger must regulate precisely. That is the job PPS was invented for (<a href="#pps">§8</a>). Figures follow TI's SLYT743 example.</figcaption>
+</figure>
+
+<p>TI's numbers make the argument concrete. A good buck charger in the phone is over 90% efficient at 6 A, and that still means more than 2 W of heat inside the handset. A 2:1 switched-capacitor charger reaches about 97% at 6 A into the battery with only 3 A in the cable, and loses under 800 mW. The catch: a charge pump does not regulate. It just halves whatever arrives. So the charger has to hit the target voltage and current exactly, which a fixed 9 V PDO cannot do. You need a programmable source.</p>
+
+<h3>The two-cell trick</h3>
+<p>Put two cells in series (a "2S" pack) and the battery sits at 8–9 V instead of 4 V. Now the phone can take 20 V from the cable and divide it to about 10 V at double the current inside the phone. SuperVOOC 240W and Quick Charge 5 both do this. The display still shows one battery percentage; the pack is two cells wired as one.</p>
+
+<div class="callout blue">
+  <strong>Why this matters for you</strong>
+  When a Samsung or Pixel refuses to "fast charge" from a perfectly good 65 W laptop charger, the reason is almost always that the phone wants <em>PPS</em> for its charge pump and the charger only offers fixed voltages. Fixed-voltage fallback runs through the buck path, which the phone throttles to stay cool.
+</div>
+<p class="sources-line">Sources: <a href="https://www.ti.com/lit/an/slyt743/slyt743.pdf" target="_blank" rel="noopener">TI SLYT743 · switched-capacitor charging</a> · <a href="https://en.wikipedia.org/wiki/VOOC" target="_blank" rel="noopener">Wikipedia · VOOC (240 W internal conversion)</a> · <a href="https://en.wikipedia.org/wiki/Quick_Charge" target="_blank" rel="noopener">Wikipedia · Quick Charge 5 (2S example)</a></p>
+</section>
+
+<!-- ============================================================ 5 -->
+<section id="legacy">
+<h2>5 · Legacy USB &amp; BC 1.2 <span class="tag">Before packets, there were resistors and a 0.6 V probe.</span></h2>
+<p class="lede">The original USB spec did not think of phones as batteries. It thought of them as mice. A device got 100 mA until the computer said it could have 500 mA, and a wall charger, having no computer inside, had no way to say anything at all. Battery Charging 1.2 is the patch: a tiny analog handshake on the data lines that lets a phone recognize "this port is just for power".</p>
+
+<h3>Unit loads</h3>
+<div class="table-wrap"><table>
+  <thead><tr><th>Bus</th><th>Unit load</th><th>Max after configuration</th><th>Watts at 5 V</th></tr></thead>
+  <tbody>
+    <tr><td>USB 1.x / 2.0</td><td class="num">100 mA</td><td class="num">5 loads = 500 mA</td><td class="num">2.5 W</td></tr>
+    <tr><td>USB 3.x</td><td class="num">150 mA</td><td class="num">6 loads = 900 mA</td><td class="num">4.5 W</td></tr>
+    <tr><td>Multi-lane (USB 3.2 x2)</td><td class="num">250 mA</td><td class="num">6 loads = 1.5 A</td><td class="num">7.5 W</td></tr>
+  </tbody>
+</table></div>
+<p>Every device must start at one unit load until the host configures it. A phone that draws 1 A from a laptop port before enumeration is out of spec, though many do it anyway.</p>
+
+<h3>The three port types</h3>
+<div class="proto-grid">
+  <div class="proto fam-bc"><h4>SDP <span class="tagline t-old">data port</span></h4><p class="meta">Standard Downstream Port</p><dl><dt>Current</dt><dd>100 mA → 500 mA / 900 mA once configured</dd><dt>D+/D−</dt><dd>15 kΩ pull-downs (host)</dd></dl><p>Your laptop's ordinary USB-A port.</p></div>
+  <div class="proto fam-bc"><h4>CDP <span class="tagline t-old">data + charge</span></h4><p class="meta">Charging Downstream Port</p><dl><dt>Current</dt><dd>1.5 A, even with data</dd><dt>Tell</dt><dd>Answers the probe on D− </dd></dl><p>Often marked with a lightning bolt on laptops and hubs.</p></div>
+  <div class="proto fam-bc"><h4>DCP <span class="tagline t-now">wall charger</span></h4><p class="meta">Dedicated Charging Port</p><dl><dt>Current</dt><dd>0.5–5 A allowed; devices draw ≤ 1.5 A</dd><dt>D+/D−</dt><dd>Shorted, ≤ 200 Ω</dd></dl><p>No data at all. The short <em>is</em> the message.</p></div>
+</div>
+
+<figure class="diagram">
+<svg viewBox="0 0 960 330" role="img" aria-labelledby="d3t">
+  <title id="d3t">BC 1.2 primary and secondary detection flow</title>
+  <defs><marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker></defs>
+  <rect x="20" y="30" width="200" height="90" rx="10" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="120" y="60" text-anchor="middle" class="d-label">Data Contact Detect</text>
+  <text x="120" y="82" text-anchor="middle" class="d-tiny">7–13 µA on D+, wait until</text>
+  <text x="120" y="98" text-anchor="middle" class="d-tiny">pins seated (≤ 900 ms)</text>
+  <line x1="220" y1="75" x2="285" y2="75" stroke="var(--muted)" stroke-width="2" marker-end="url(#arr3)"/>
+  <rect x="290" y="30" width="250" height="90" rx="10" fill="var(--blue-bg)" stroke="var(--s2)" stroke-width="2"/>
+  <text x="415" y="58" text-anchor="middle" class="d-label">Primary detection</text>
+  <text x="415" y="80" text-anchor="middle" class="d-mono">drive 0.5–0.7 V on D+</text>
+  <text x="415" y="100" text-anchor="middle" class="d-tiny">≥ 40 ms, then read D− vs 0.25–0.4 V</text>
+  <line x1="415" y1="120" x2="415" y2="175" stroke="var(--muted)" stroke-width="2" marker-end="url(#arr3)"/>
+  <text x="425" y="152" class="d-tiny">D− high → charging port</text>
+  <line x1="540" y1="75" x2="700" y2="75" stroke="var(--muted)" stroke-width="2" marker-end="url(#arr3)"/>
+  <text x="620" y="66" text-anchor="middle" class="d-tiny">D− stays low</text>
+  <rect x="705" y="40" width="230" height="70" rx="10" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="820" y="70" text-anchor="middle" class="d-label">SDP · 500 mA</text>
+  <text x="820" y="92" text-anchor="middle" class="d-tiny">enumerate, ask the host</text>
+  <rect x="290" y="180" width="250" height="90" rx="10" fill="var(--blue-bg)" stroke="var(--s2)" stroke-width="2"/>
+  <text x="415" y="208" text-anchor="middle" class="d-label">Secondary detection</text>
+  <text x="415" y="230" text-anchor="middle" class="d-mono">drive 0.5–0.7 V on D−</text>
+  <text x="415" y="250" text-anchor="middle" class="d-tiny">read D+ (optional since errata)</text>
+  <line x1="540" y1="205" x2="700" y2="205" stroke="var(--muted)" stroke-width="2" marker-end="url(#arr3)"/>
+  <text x="620" y="196" text-anchor="middle" class="d-tiny">D+ high (shorted)</text>
+  <rect x="705" y="175" width="230" height="60" rx="10" fill="var(--good-bg)" stroke="var(--good)" stroke-width="2"/>
+  <text x="820" y="210" text-anchor="middle" class="d-label">DCP · up to 1.5 A</text>
+  <line x1="540" y1="250" x2="700" y2="275" stroke="var(--muted)" stroke-width="2" marker-end="url(#arr3)"/>
+  <text x="615" y="280" text-anchor="middle" class="d-tiny">D+ low</text>
+  <rect x="705" y="250" width="230" height="60" rx="10" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="820" y="285" text-anchor="middle" class="d-label">CDP · 1.5 A + data</text>
+</svg>
+<figcaption><b>BC 1.2 in one picture.</b> The phone becomes the tester. It puts about 0.6 V on one data line and listens on the other. A DCP's short loops the voltage straight back. Values from BC 1.2 Tables 5-1 to 5-5.</figcaption>
+</figure>
+
+<h3>BC 1.2 numbers worth memorizing</h3>
+<div class="table-wrap"><table>
+  <thead><tr><th>Parameter</th><th>Value</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td class="num">VDP_SRC</td><td class="num">0.5–0.7 V</td><td>Probe voltage the phone drives</td></tr>
+    <tr><td class="num">VDAT_REF</td><td class="num">0.25–0.4 V</td><td>Threshold for "the probe came back"</td></tr>
+    <tr><td class="num">RDCP_DAT</td><td class="num">≤ 200 Ω</td><td>The DCP's D+/D− short</td></tr>
+    <tr><td class="num">IDEV_CHG</td><td class="num">≤ 1.5 A</td><td>Max a device may draw from a charging port</td></tr>
+    <tr><td class="num">TVDPSRC_ON</td><td class="num">≥ 40 ms</td><td>How long the probe is held</td></tr>
+    <tr><td class="num">TDCD_TIMEOUT</td><td class="num">300–900 ms</td><td>Give up on contact detect and assume seated</td></tr>
+  </tbody>
+</table></div>
+
+<div class="callout warn">
+  <strong>Misconception: "BC 1.2 is obsolete."</strong>
+  It is the fallback under nearly every USB-A charger sold today, and the first thing Quick Charge does is <em>pretend to be a DCP</em>. QC's handshake starts exactly where BC 1.2 ends (<a href="#qc">§12</a>).
+</div>
+<p class="sources-line">Sources: <a href="https://www.usb.org/sites/default/files/BCv1.2_070312_0.zip" target="_blank" rel="noopener">USB-IF · Battery Charging 1.2 spec (zip)</a> · <a href="https://en.wikipedia.org/wiki/USB_hardware" target="_blank" rel="noopener">Wikipedia · USB hardware (unit loads)</a> · <a href="https://www.ti.com/lit/ds/symlink/tps2514a.pdf" target="_blank" rel="noopener">TI TPS2514A datasheet</a></p>
+</section>
+
+<!-- ============================================================ 6 -->
+<section id="type-c">
+<h2>6 · Type-C Current <span class="tag">One resistor on one pin replaced the whole BC 1.2 dance.</span></h2>
+<p class="lede">USB-C added two pins, CC1 and CC2, whose first job is analog: a resistor in the charger and a resistor in the phone form a voltage divider, and the voltage on that pin tells the phone how much current it may draw at 5 V. No packets, no firmware. Up to 15 W from a resistor.</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 960 300" role="img" aria-labelledby="d4t">
+  <title id="d4t">Rp pull-up in the source and Rd pull-down in the sink form a divider on CC</title>
+  <rect x="20" y="30" width="300" height="240" rx="12" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="170" y="58" text-anchor="middle" class="d-label">Source (charger)</text>
+  <line x1="120" y1="80" x2="120" y2="100" stroke="var(--ink2)" stroke-width="2"/>
+  <text x="120" y="76" text-anchor="middle" class="d-mono">5 V</text>
+  <rect x="105" y="100" width="30" height="70" rx="3" fill="var(--accent-wash)" stroke="var(--s1)" stroke-width="2"/>
+  <text x="150" y="130" class="d-mono" style="fill:var(--s1)">Rp</text>
+  <text x="150" y="150" class="d-tiny">56k · 22k · 10k</text>
+  <line x1="120" y1="170" x2="120" y2="200" stroke="var(--ink2)" stroke-width="2"/>
+  <line x1="120" y1="200" x2="640" y2="200" stroke="var(--s1)" stroke-width="4"/>
+  <text x="480" y="190" text-anchor="middle" class="d-mono" style="fill:var(--s1)">CC wire (through cable)</text>
+  <rect x="620" y="30" width="320" height="240" rx="12" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="780" y="58" text-anchor="middle" class="d-label">Sink (phone)</text>
+  <line x1="640" y1="200" x2="720" y2="200" stroke="var(--s1)" stroke-width="4"/>
+  <line x1="720" y1="200" x2="720" y2="130" stroke="var(--ink2)" stroke-width="2"/>
+  <rect x="705" y="90" width="30" height="40" rx="3" fill="var(--accent-wash)" stroke="var(--s1)" stroke-width="2"/>
+  <text x="750" y="115" class="d-mono" style="fill:var(--s1)">Rd 5.1k</text>
+  <line x1="720" y1="90" x2="720" y2="80" stroke="var(--ink2)" stroke-width="2"/>
+  <text x="720" y="76" text-anchor="middle" class="d-mono">GND</text>
+  <circle cx="720" cy="200" r="6" fill="var(--volt)"/>
+  <text x="640" y="230" class="d-mono" style="fill:var(--volt)">measure V(CC)</text>
+  <text x="640" y="250" class="d-tiny">≈0.4 V default · ≈0.9 V 1.5 A · ≈1.7 V 3 A</text>
+</svg>
+<figcaption><b>The divider.</b> 5 V × 5.1k / (Rp + 5.1k) lands in one of three voltage bands. The phone reads the band and draws accordingly. The unused CC pin tells both ends which way the plug is flipped.</figcaption>
+</figure>
+
+<div class="table-wrap"><table>
+  <thead><tr><th>Advertisement</th><th>Rp to 5 V</th><th>Rp to 3.3 V</th><th>Current source</th><th>Sink sees vRd band</th></tr></thead>
+  <tbody>
+    <tr><td>Default USB power (500/900 mA)</td><td class="num">56 kΩ ±20%</td><td class="num">36 kΩ</td><td class="num">80 µA</td><td class="num">0.277–0.612 V</td></tr>
+    <tr><td>1.5 A @ 5 V</td><td class="num">22 kΩ ±5%</td><td class="num">12 kΩ</td><td class="num">180 µA</td><td class="num">0.746–1.164 V</td></tr>
+    <tr><td>3.0 A @ 5 V</td><td class="num">10 kΩ ±5%</td><td class="num">4.7 kΩ</td><td class="num">330 µA</td><td class="num">1.369–2.042 V</td></tr>
+  </tbody>
+</table></div>
+<p>Below 0.276 V the sink treats CC as disconnected. The gaps between bands (0.613–0.745 V and 1.165–1.368 V) are guard zones. The source must debounce a new attach for <code>tCCDebounce</code> = 100–200 ms and turn VBUS on within <code>tVBUSON</code> ≤ 275 ms.</p>
+
+<div class="callout bite">
+  <strong>The 56 kΩ legacy-cable rule</strong>
+  A USB-A-to-C cable has no CC wire back to the charger, so the resistor lives <em>inside the C plug</em>. It must be 56 kΩ. Cheap early cables used 10 kΩ, telling the phone "3 A available" when the USB-A port behind it might only manage 500 mA. That is how the 2015-era Benson Leung cable reviews started. If a phone pulls suspicious current from a laptop USB-A port, check the cable.
+</div>
+<div class="callout warn">
+  <strong>Misconception: "0.66 V and 1.23 V are the thresholds."</strong>
+  Those numbers circulate widely, but they are not in Type-C R2.5. The current tables give ranges, listed above. Design to the ranges.
+</div>
+<p class="sources-line">Sources: <a href="https://www.usb.org/sites/default/files/USB%20Type-C%202.5%20Release%20202603.zip" target="_blank" rel="noopener">USB-IF · Type-C R2.5 (Tables 4-27, 4-28, 4-36)</a> · <a href="https://en.wikipedia.org/wiki/USB-C" target="_blank" rel="noopener">Wikipedia · USB-C</a></p>
+</section>
+
+<!-- ============================================================ 7 -->
+<section id="pd">
+<h2>7 · USB PD, 1.0 → 3.0 <span class="tag">The charger publishes a menu. The phone orders one line. Both sign.</span></h2>
+<p class="lede">USB Power Delivery turns charging into a tiny network protocol. Once the resistors in §6 establish attachment, the charger sends a <code>Source_Capabilities</code> message listing every voltage and current it offers. The phone picks exactly one with a <code>Request</code>. The charger says <code>Accept</code>, moves the voltage, and says <code>PS_RDY</code>. Four messages, under half a second, and you are at 20 V.</p>
+
+<h3>PD 1.0: the version that did not happen</h3>
+<p>PD 1.0 (5 July 2012) predates USB-C. It signalled by superimposing 24 MHz BFSK on VBUS itself, and defined five fixed profiles:</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Profile</th><th>Offer</th><th>Max</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td class="num">5 V × 2 A</td><td class="num">10 W</td></tr>
+    <tr><td>2</td><td class="num">5 V × 2 A, 12 V × 1.5 A</td><td class="num">18 W</td></tr>
+    <tr><td>3</td><td class="num">+ 12 V × 3 A</td><td class="num">36 W</td></tr>
+    <tr><td>4</td><td class="num">+ 20 V × 3 A</td><td class="num">60 W</td></tr>
+    <tr><td>5</td><td class="num">+ 20 V × 5 A</td><td class="num">100 W</td></tr>
+  </tbody>
+</table></div>
+<p>Profiles were deprecated in PD 2.0 v1.2 (March 2016) and replaced by <strong>Power Rules</strong>. BFSK was deprecated in PD 3.0. Treat PD 1.0 as history: you will not meet it in the wild.</p>
+
+<h3>PD 2.0: BMC on CC</h3>
+<p>PD 2.0 (11 August 2014) moved signalling onto the CC wire as <strong>Biphase Mark Coding</strong> at about 300 kbps (270–330 kbps allowed), with 4b5b symbol encoding. It also introduced addressing: <code>SOP</code> packets go to the port partner, <code>SOP′</code> and <code>SOP″</code> go to the chips in the near and far cable plugs.</p>
+
+<h3>The Power Rules</h3>
+<div class="table-wrap"><table>
+  <thead><tr><th>Voltage</th><th>Max with any USB-C cable (3 A)</th><th>Max with 5 A e-marked cable</th></tr></thead>
+  <tbody>
+    <tr><td class="num">5 V</td><td class="num">15 W</td><td class="num">15 W</td></tr>
+    <tr><td class="num">9 V</td><td class="num">27 W</td><td class="num">27 W</td></tr>
+    <tr><td class="num">15 V</td><td class="num">45 W</td><td class="num">45 W</td></tr>
+    <tr><td class="num">20 V</td><td class="num">60 W</td><td class="num">100 W</td></tr>
+  </tbody>
+</table></div>
+<p>A charger rated above a threshold must also offer every lower voltage. A 45 W charger offers 5, 9 and 15 V. A 100 W charger offers all four. That rule is why any PD charger works with any PD phone, just not always at full speed.</p>
+
+<h3>The negotiation, message by message</h3>
+<figure class="diagram">
+<svg viewBox="0 0 960 520" role="img" aria-labelledby="d5t">
+  <title id="d5t">USB PD negotiation sequence between source, cable, and sink</title>
+  <defs>
+    <marker id="aS" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--s1)"/></marker>
+    <marker id="aK" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--s3)"/></marker>
+    <marker id="aC" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--s4)"/></marker>
+  </defs>
+  <text x="140" y="30" text-anchor="middle" class="d-label">Source</text>
+  <text x="480" y="30" text-anchor="middle" class="d-label">Cable e-marker</text>
+  <text x="820" y="30" text-anchor="middle" class="d-label">Sink</text>
+  <line x1="140" y1="42" x2="140" y2="505" stroke="var(--line)" stroke-width="3"/>
+  <line x1="480" y1="42" x2="480" y2="505" stroke="var(--line)" stroke-width="3" stroke-dasharray="5 5"/>
+  <line x1="820" y1="42" x2="820" y2="505" stroke="var(--line)" stroke-width="3"/>
+
+  <text x="480" y="66" text-anchor="middle" class="d-tiny">attach: Rp/Rd seen · debounce 100–200 ms · VBUS 5 V on</text>
+  <line x1="140" y1="95" x2="475" y2="95" stroke="var(--s4)" stroke-width="2.5" marker-end="url(#aC)"/>
+  <text x="300" y="88" text-anchor="middle" class="d-mono" style="fill:var(--s4)">Discover Identity (SOP′)</text>
+  <line x1="480" y1="125" x2="145" y2="125" stroke="var(--s4)" stroke-width="2.5" marker-end="url(#aC)"/>
+  <text x="300" y="118" text-anchor="middle" class="d-mono" style="fill:var(--s4)">ACK: 5 A · 20 V · USB 3.2</text>
+
+  <line x1="140" y1="170" x2="815" y2="170" stroke="var(--s1)" stroke-width="2.5" marker-end="url(#aS)"/>
+  <text x="480" y="162" text-anchor="middle" class="d-mono" style="fill:var(--s1)">Source_Capabilities [5V 3A · 9V 3A · 15V 3A · 20V 5A]</text>
+  <line x1="820" y1="195" x2="145" y2="195" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="480" y="190" text-anchor="middle" class="d-tiny">GoodCRC (≈1 ms)</text>
+
+  <line x1="820" y1="240" x2="145" y2="240" stroke="var(--s3)" stroke-width="2.5" marker-end="url(#aK)"/>
+  <text x="480" y="232" text-anchor="middle" class="d-mono" style="fill:var(--s3)">Request: object #4, 20 V, 3.25 A</text>
+  <line x1="140" y1="265" x2="815" y2="265" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="480" y="260" text-anchor="middle" class="d-tiny">GoodCRC</text>
+
+  <line x1="140" y1="310" x2="815" y2="310" stroke="var(--s1)" stroke-width="2.5" marker-end="url(#aS)"/>
+  <text x="480" y="302" text-anchor="middle" class="d-mono" style="fill:var(--s1)">Accept</text>
+  <rect x="60" y="330" width="160" height="70" rx="8" fill="var(--volt-bg)" stroke="var(--volt)"/>
+  <text x="140" y="358" text-anchor="middle" class="d-mono" style="fill:var(--volt)">VBUS 5 → 20 V</text>
+  <text x="140" y="380" text-anchor="middle" class="d-tiny">tPSTransition ≤ 550 ms</text>
+  <line x1="140" y1="430" x2="815" y2="430" stroke="var(--s1)" stroke-width="2.5" marker-end="url(#aS)"/>
+  <text x="480" y="422" text-anchor="middle" class="d-mono" style="fill:var(--s1)">PS_RDY</text>
+  <rect x="720" y="450" width="200" height="45" rx="8" fill="var(--good-bg)" stroke="var(--good)"/>
+  <text x="820" y="478" text-anchor="middle" class="d-label">draw up to 3.25 A</text>
+</svg>
+<figcaption><b>A 65 W laptop attach.</b> The source sends <code>Source_Capabilities</code> within <code>tFirstSourceCap</code> ≤ 250 ms of VBUS, and must get a <code>Request</code> back within <code>tSenderResponse</code> 27–50 ms of its GoodCRC or it retries. It re-sends caps up to <code>nCapsCount</code> = 50 times before deciding the sink is not PD-capable. Every message is individually acknowledged by <code>GoodCRC</code>.</figcaption>
+</figure>
+
+<h3>The packet</h3>
+<figure class="diagram">
+<svg viewBox="0 0 960 170" role="img" aria-labelledby="d6t">
+  <title id="d6t">USB PD 16-bit message header field layout</title>
+  <g font-family="ui-monospace, monospace">
+  <rect x="20" y="40" width="60" height="60" fill="var(--accent-wash)" stroke="var(--s1)"/><text x="50" y="75" text-anchor="middle" class="d-mono">15</text>
+  <rect x="80" y="40" width="150" height="60" fill="var(--surface)" stroke="var(--s1)"/><text x="155" y="75" text-anchor="middle" class="d-mono">14–12</text>
+  <rect x="230" y="40" width="150" height="60" fill="var(--accent-wash)" stroke="var(--s1)"/><text x="305" y="75" text-anchor="middle" class="d-mono">11–9</text>
+  <rect x="380" y="40" width="60" height="60" fill="var(--surface)" stroke="var(--s1)"/><text x="410" y="75" text-anchor="middle" class="d-mono">8</text>
+  <rect x="440" y="40" width="110" height="60" fill="var(--accent-wash)" stroke="var(--s1)"/><text x="495" y="75" text-anchor="middle" class="d-mono">7–6</text>
+  <rect x="550" y="40" width="60" height="60" fill="var(--surface)" stroke="var(--s1)"/><text x="580" y="75" text-anchor="middle" class="d-mono">5</text>
+  <rect x="610" y="40" width="330" height="60" fill="var(--accent-wash)" stroke="var(--s1)"/><text x="775" y="75" text-anchor="middle" class="d-mono">4–0</text>
+  </g>
+  <text x="50" y="125" text-anchor="middle" class="d-tiny">Extended</text>
+  <text x="155" y="125" text-anchor="middle" class="d-tiny"># data objects (0 = control)</text>
+  <text x="305" y="125" text-anchor="middle" class="d-tiny">MessageID (0–7)</text>
+  <text x="410" y="125" text-anchor="middle" class="d-tiny">Power role</text>
+  <text x="495" y="125" text-anchor="middle" class="d-tiny">Spec rev</text>
+  <text x="580" y="125" text-anchor="middle" class="d-tiny">Data role</text>
+  <text x="775" y="125" text-anchor="middle" class="d-tiny">Message Type</text>
+  <text x="20" y="25" class="d-label">16-bit header, then 0–7 data objects of 32 bits each</text>
+  <text x="20" y="158" class="d-tiny">Spec rev: 00 = 1.0 (deprecated) · 01 = 2.0 · 10 = 3.x. Bit 8 means "cable plug" on SOP′/SOP″ packets.</text>
+</svg>
+<figcaption><b>The header.</b> Three bits of data-object count caps a normal message at seven objects, which is why a Source_Capabilities message can list at most seven PDOs. EPR uses an <em>extended</em> message to go further (<a href="#epr">§9</a>).</figcaption>
+</figure>
+
+<div class="table-wrap"><table>
+  <thead><tr><th>Message</th><th>Kind</th><th>Type code</th><th>Job</th></tr></thead>
+  <tbody>
+    <tr><td><code>GoodCRC</code></td><td>Control</td><td class="num">00001</td><td>"Received intact." Sent for every message</td></tr>
+    <tr><td><code>Accept</code> / <code>Reject</code></td><td>Control</td><td class="num">00011 / 00100</td><td>Source's answer to a Request</td></tr>
+    <tr><td><code>PS_RDY</code></td><td>Control</td><td class="num">00110</td><td>"New voltage is stable, go"</td></tr>
+    <tr><td><code>Get_Source_Cap</code></td><td>Control</td><td class="num">00111</td><td>Sink asks for the menu again</td></tr>
+    <tr><td><code>Wait</code></td><td>Control</td><td class="num">01100</td><td>"Not now, ask later"</td></tr>
+    <tr><td><code>Soft_Reset</code></td><td>Control</td><td class="num">01101</td><td>Resync message IDs, keep power</td></tr>
+    <tr><td><code>Source_Capabilities</code></td><td>Data</td><td class="num">00001</td><td>The menu: up to 7 PDOs</td></tr>
+    <tr><td><code>Request</code></td><td>Data</td><td class="num">00010</td><td>The order: one RDO</td></tr>
+    <tr><td><code>Sink_Capabilities</code></td><td>Data</td><td class="num">00100</td><td>What the sink could use</td></tr>
+    <tr><td><code>Vendor_Defined</code></td><td>Data</td><td class="num">01111</td><td>Discover Identity, alt modes, e-marker reads</td></tr>
+    <tr><td><code>EPR_Request</code> / <code>EPR_Mode</code></td><td>Data</td><td class="num">01001 / 01010</td><td>Above 20 V (§9)</td></tr>
+    <tr><td>Hard Reset</td><td colspan="2">K-code ordered set, not a message</td><td>Drop VBUS to 0 V and start over</td></tr>
+  </tbody>
+</table></div>
+
+<h3>The four kinds of PDO</h3>
+<div class="table-wrap"><table>
+  <thead><tr><th>Bits 31–30</th><th>Type</th><th>What it promises</th><th>Where you see it</th></tr></thead>
+  <tbody>
+    <tr><td class="num">00</td><td>Fixed</td><td>One voltage, up to a max current</td><td>Every PD charger. First PDO is always 5 V</td></tr>
+    <tr><td class="num">01</td><td>Battery</td><td>A voltage range at a max power</td><td>Rare; battery-backed sources</td></tr>
+    <tr><td class="num">10</td><td>Variable</td><td>A voltage range at a max current, unregulated</td><td>Rare</td></tr>
+    <tr><td class="num">11</td><td>APDO (augmented)</td><td>Programmable: PPS, SPR AVS, EPR AVS</td><td>§8, §9</td></tr>
+  </tbody>
+</table></div>
+
+<h3>PD 3.0: what changed</h3>
+<ul>
+  <li><strong>Extended messages</strong> (header bit 15) for payloads over 7 objects: battery status, manufacturer info, and later <code>EPR_Source_Capabilities</code>.</li>
+  <li><strong>Collision avoidance</strong>: the source toggles its Rp value to tell the sink when it may start an exchange.</li>
+  <li><strong>Fast Role Swap</strong>, <strong>Alert</strong> messages, and <strong>PPS</strong> (§8).</li>
+  <li>Spec revision field <code>10</code>. A PD 3.x device talking to a PD 2.0 partner falls back to 2.0 behavior automatically.</li>
+</ul>
+<p class="sources-line">Sources: <a href="https://www.usb.org/document-library/usb-power-delivery" target="_blank" rel="noopener">USB PD R3.2 v1.2 (Table 6.2 header, message tables, Table 7-10 timers)</a> · <a href="https://en.wikipedia.org/wiki/USB_hardware#USB_Power_Delivery" target="_blank" rel="noopener">Wikipedia · PD 1.0 profiles and power rules</a></p>
+</section>
+
+<!-- ============================================================ 8 -->
+<section id="pps">
+<h2>8 · Programmable Power Supply (PPS) <span class="tag">Stop picking from a menu. Dial the exact voltage.</span></h2>
+<p class="lede">Fixed PDOs force the phone to accept 9 V and throw the difference away as heat. PPS lets the phone say "give me 8.62 V at 2.9 A" and then keep adjusting it every few seconds as the battery fills. The charger becomes the phone's external, remote-controlled charging circuit. This is what Samsung Super Fast Charging, Google Pixel, and Qualcomm QC 4+/5 actually run on.</p>
+
+<div class="proto-grid">
+  <div class="proto fam-pd"><h4>PPS APDO</h4><p class="meta">Augmented PDO, bits 29–28 = 00</p>
+    <dl><dt>Advertised in</dt><dd>100 mV (voltage) · 50 mA (current)</dd>
+    <dt>Requested in</dt><dd>20 mV · 50 mA steps</dd>
+    <dt>Ranges</dt><dd>5–11 V · 5–16 V · 5–21 V</dd>
+    <dt>Keep-alive</dt><dd>Sink re-requests ≤ 10 s; source times out after 12–15 s</dd></dl>
+    <p>Current limit mode: if the phone draws more than requested, the charger lowers voltage instead of shutting off. That is exactly what a charge pump needs.</p></div>
+  <div class="proto fam-pd"><h4>Named ranges</h4><p class="meta">PD R3.2 Table 4.2</p>
+    <dl><dt>9V Prog</dt><dd>5–11 V</dd><dt>15V Prog</dt><dd>5–16 V</dd><dt>20V Prog</dt><dd>5–21 V</dd></dl>
+    <p>Older chargers advertise 3.3 V minimums (3.3–5.9 V, 3.3–11 V, 3.3–21 V). The current spec marks 3.3 V <strong>deprecated</strong>, but you will still see it on testers.</p></div>
+</div>
+
+<pre><code><span class="comment"># What a USB tester shows for a typical 25 W Samsung PPS charger</span>
+PDO1  Fixed   5.00V  3.00A
+PDO2  Fixed   9.00V  2.77A
+PDO3  PPS     3.30-5.90V  3.00A
+PDO4  PPS     3.30-11.00V 2.25A
+<span class="comment"># Phone's request while charging at ~40%</span>
+RDO   obj#4  PPS  <span class="val">8.64V</span>  <span class="val">2.25A</span>   <span class="comment"># 19.4 W, retuned every few seconds</span></code></pre>
+<p class="small">The PDO list is Samsung's published 25 W profile. The RDO line is illustrative: exact values vary with battery state.</p>
+
+<div class="callout bite">
+  <strong>The "only 25 W" trap</strong>
+  Samsung's 45 W mode needs a PPS range reaching 11 V at up to 4.5 A <em>and</em> a 5 A e-marked cable. A 65 W laptop charger with no PPS, or a PPS charger through a plain 3 A cable, silently drops the phone to the 25 W or 15 W tier. The charger and phone are both fine. Test it in the <a href="#simulator">simulator</a>.
+</div>
+<p class="sources-line">Sources: <a href="https://www.usb.org/document-library/usb-power-delivery" target="_blank" rel="noopener">USB PD R3.2 v1.2 (Table 4.2, tPPSRequest, tPPSTimeout)</a> · <a href="https://www.tinkervault.com/usb-fast-charging-protocols/samsung-afc-sfc" target="_blank" rel="noopener">TinkerVault · Samsung AFC/SFC profiles</a> · <a href="https://www.ti.com/lit/an/slyt743/slyt743.pdf" target="_blank" rel="noopener">TI SLYT743</a></p>
+</section>
+
+<!-- ============================================================ 9 -->
+<section id="epr">
+<h2>9 · EPR, AVS &amp; PD 3.2 <span class="tag">Past 20 V, the protocol stops trusting anyone.</span></h2>
+<p class="lede">PD 3.1 (May 2021) raised the ceiling from 100 W to 240 W by adding 28, 36 and 48 V. Everything under 20 V was renamed <strong>SPR</strong> (Standard Power Range) and the new territory is <strong>EPR</strong> (Extended Power Range). Because 48 V into a cable rated for 20 V is a genuine hazard, EPR adds a formal entry ceremony, cable interrogation, and a heartbeat.</p>
+
+<div class="table-wrap"><table>
+  <thead><tr><th>EPR fixed</th><th>× 5 A</th><th>Typical use</th></tr></thead>
+  <tbody>
+    <tr><td class="num">28 V</td><td class="num">140 W</td><td>Apple 140 W, 16" laptops</td></tr>
+    <tr><td class="num">36 V</td><td class="num">180 W</td><td>Gaming laptops, monitors</td></tr>
+    <tr><td class="num">48 V</td><td class="num">240 W</td><td>Workstations, power tools, docks</td></tr>
+  </tbody>
+</table></div>
+
+<h3>Entering EPR mode</h3>
+<ol class="recipe">
+  <li><strong>Normal SPR contract first.</strong> The source's 5 V PDO carries an <em>EPR Capable</em> bit. The sink sets <em>EPR Capable</em> in its Request.</li>
+  <li><strong>Sink sends <code>EPR_Mode (Enter)</code>.</strong> Source replies <code>EPR_Mode (Enter Acknowledged)</code>.</li>
+  <li><strong>Cable check.</strong> The source becomes VCONN source if needed and reads the e-marker with Discover Identity. The cable must report 50 V, 5 A, and EPR Capable. Anything else: <code>Enter Failed</code>.</li>
+  <li><strong><code>EPR_Mode (Enter Succeeded)</code></strong>, all within <code>tEnterEPR</code> 450–550 ms.</li>
+  <li><strong><code>EPR_Source_Capabilities</code></strong> (extended message): positions 1–7 are SPR PDOs, EPR PDOs start at position 8, up to four of them.</li>
+  <li><strong><code>EPR_Request</code> → Accept → PS_RDY.</strong> The voltage transition may take up to 830–1020 ms.</li>
+  <li><strong>Heartbeat.</strong> The sink sends <code>EPR_KeepAlive</code> every 250–500 ms. Silence past 750–1000 ms and the source drops out of EPR.</li>
+</ol>
+
+<h3>Adjustable Voltage Supply (AVS)</h3>
+<p>AVS is PPS's big sibling, with coarser steps and no current-limit mode. It exists so laptops and tools can ask for, say, 42.3 V without the charger having to build an exotic fixed rail.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th></th><th>PPS</th><th>SPR AVS (PD 3.2)</th><th>EPR AVS (PD 3.1)</th></tr></thead>
+  <tbody>
+    <tr><td>Range</td><td class="num">5–21 V</td><td class="num">9–15 V, 9–20 V</td><td class="num">15–28 / 36 / 48 V</td></tr>
+    <tr><td>Step</td><td class="num">20 mV</td><td class="num">100 mV</td><td class="num">100 mV</td></tr>
+    <tr><td>Current-limit mode</td><td class="y">yes</td><td class="n">no</td><td class="n">no</td></tr>
+    <tr><td>Built for</td><td>Phone charge pumps</td><td>Efficient laptop charging</td><td>High-power tools, laptops</td></tr>
+  </tbody>
+</table></div>
+<p>The AVS request field uses 25 mV units with the low two bits forced to zero, so the effective step is 100 mV.</p>
+
+<h3>PD 3.2 in 2026</h3>
+<ul>
+  <li><strong>3.2 v1.0</strong> (October 2023): adds SPR AVS.</li>
+  <li><strong>3.2 v1.1</strong> (October 2024): deprecates GotoMin/GiveBack and Ping.</li>
+  <li><strong>3.2 v1.2</strong> (January 2026, corrected printings through 19 August 2026): restructures the entire spec and adds <strong>Dynamic Power Supply (DPS)</strong>. A DPS source guarantees one power level and can offer more when conditions allow, for example when it is still cold.</li>
+</ul>
+<div class="callout warn">
+  <strong>Misconception: "PD 4.0 is out."</strong>
+  As of September 2026 there is no PD 4.0. The current spec is PD Revision 3.2 Version 1.2. Anything marketed as "PD 4.0" is a marketing name, a USB4 confusion, or a rumor.
+</div>
+<p class="sources-line">Sources: <a href="https://www.usb.org/document-library/usb-power-delivery" target="_blank" rel="noopener">USB PD R3.2 v1.2 (Tables 4.3, 4.4, 6.16; EPR entry; Appendix A)</a> · <a href="https://en.wikipedia.org/wiki/USB_hardware#USB_Power_Delivery" target="_blank" rel="noopener">Wikipedia · EPR summary</a></p>
+</section>
+
+<!-- ============================================================ 10 -->
+<section id="cables">
+<h2>10 · Cables &amp; e-markers <span class="tag">The cable is the only party that cannot lie about its copper, so it carries a chip that can.</span></h2>
+<p class="lede">A USB-C cable looks identical at 3 A and 5 A, at 20 V and 48 V. So PD lets the cable speak. An <strong>e-marker</strong> is a small chip in the plug, powered by VCONN, that answers <code>Discover Identity</code> on <code>SOP′</code> with a Cable VDO describing its limits. No e-marker means the source assumes 3 A and 20 V.</p>
+
+<div class="table-wrap"><table>
+  <thead><tr><th>Passive Cable VDO bits</th><th>Field</th><th>Values</th></tr></thead>
+  <tbody>
+    <tr><td class="num">31–28 · 27–24</td><td>HW / FW version</td><td>Vendor-defined</td></tr>
+    <tr><td class="num">17</td><td>EPR Capable</td><td>1 = rated for EPR</td></tr>
+    <tr><td class="num">10–9</td><td>Max VBUS voltage</td><td>00 = 20 V · 11 = 50 V</td></tr>
+    <tr><td class="num">6–5</td><td>VBUS current</td><td>01 = 3 A · 10 = 5 A</td></tr>
+    <tr><td class="num">2–0</td><td>Highest USB speed</td><td>USB 2.0 up to USB4 Gen4</td></tr>
+  </tbody>
+</table></div>
+
+<div class="proto-grid">
+  <div class="proto fam-pd"><h4>60W logo</h4><p class="meta">USB-IF, September 2021</p><p>3 A · 20 V. May have no e-marker if USB 2.0 only.</p></div>
+  <div class="proto fam-pd"><h4>240W logo</h4><p class="meta">USB-IF, September 2021</p><p>5 A · 50 V rated, EPR Capable e-marker. Needed for anything above 60 W.</p></div>
+  <div class="proto fam-prop"><h4>Proprietary</h4><p class="meta">VOOC, SuperVOOC, HyperCharge</p><p>Vendor ID chip or extra pin, often 6.5–13.7 A. Outside the USB-IF model entirely.</p></div>
+</div>
+<div class="callout bite">
+  <strong>"100 W" is not "240 W"</strong>
+  A 5 A cable rated for 20 V passes the 5 A check but fails the 50 V check. EPR entry fails and your 140 W laptop sits at 100 W. The cable printed "100W" on it is telling the truth.
+</div>
+<p class="sources-line">Sources: <a href="https://www.usb.org/document-library/usb-power-delivery" target="_blank" rel="noopener">USB PD R3.2 v1.2 (Table 6.42 Passive Cable VDO)</a> · <a href="https://www.usb.org/sites/default/files/2021-09/USB-IF_Cable%20Power%20Rating%20USB4%20Logo%20Announcement_FINAL.pdf" target="_blank" rel="noopener">USB-IF · cable power logo announcement (2021)</a> · <a href="https://en.wikipedia.org/wiki/USB-C" target="_blank" rel="noopener">Wikipedia · USB-C e-marker rule</a></p>
+</section>
+
+<!-- ============================================================ 11 -->
+<section id="dividers">
+<h2>11 · Apple &amp; Samsung dividers <span class="tag">Two resistors, one secret handshake.</span></h2>
+<p class="lede">Before BC 1.2 was widespread, Apple wanted iPads to charge at 2 A+ from its own bricks and not from random ones. The solution was a pair of resistor dividers holding D+ and D− at specific voltages. The phone reads the voltages and knows the current budget. No negotiation, no reply. It is a label written in volts.</p>
+
+<div class="table-wrap"><table>
+  <thead><tr><th>D+</th><th>D−</th><th>Commonly read as</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td class="num">2.0 V</td><td class="num">2.0 V</td><td>Apple 0.5 A</td><td>Hobbyist sources only</td></tr>
+    <tr><td class="num">2.0 V</td><td class="num">2.7 V</td><td>Apple 1 A (5 W)</td><td>TI "Divider 1", paired with 5 W chargers</td></tr>
+    <tr><td class="num">2.7 V</td><td class="num">2.0 V</td><td>Apple 2.1 A (10 W)</td><td>TI "Divider 2", paired with 10 W chargers</td></tr>
+    <tr><td class="num">2.7 V</td><td class="num">2.7 V</td><td>Apple 2.4 A (12 W)</td><td>TI "Divider 3"; the 2.4 A reading is common but not confirmed in TI's text</td></tr>
+    <tr><td class="num">1.2 V</td><td class="num">1.2 V</td><td>"Samsung" 2 A</td><td>TI: a scheme from "specific yet popular device makers"</td></tr>
+    <tr><td>shorted</td><td>shorted</td><td>BC 1.2 DCP, 1.5 A</td><td>Standard</td></tr>
+  </tbody>
+</table></div>
+<p>Tolerances from TI's TPS2514A: the 2.7 V level is 2.57–2.84 V, the 2.0 V level is 1.9–2.1 V, and the 1.2 V level is 1.12–1.28 V. Smart USB-A chargers use chips like the TPS2514A to cycle through these modes until the attached device starts drawing current.</p>
+<div class="callout blue">
+  <strong>Why your old iPad brick charges Android phones slowly</strong>
+  A phone that only knows BC 1.2 looks for a short between D+ and D−. An Apple divider is not a short, so the phone does not recognize a DCP and may fall back to 500 mA. Many Android vendors added divider detection later. Behavior varies by phone.
+</div>
+<p class="sources-line">Sources: <a href="https://www.ti.com/lit/ds/symlink/tps2514a.pdf" target="_blank" rel="noopener">TI TPS2513A/2514A datasheet (divider modes and tolerances)</a> · <a href="https://www.tinkervault.com/usb-fast-charging-protocols/apple-fast-charge" target="_blank" rel="noopener">TinkerVault · Apple 2.4 A</a></p>
+</section>
+
+<!-- ============================================================ 12 -->
+<section id="qc">
+<h2>12 · Qualcomm Quick Charge <span class="tag">Hijack the data lines, raise the voltage, never tell USB-IF.</span></h2>
+<p class="lede">Quick Charge was the first protocol to reach tens of millions of phones, because it lived where the phones already were: in the Snapdragon power-management chip. QC 2.0 and 3.0 speak by holding D+ and D− at voltage codes. QC 4 onward quietly surrendered and adopted USB PD. The history of QC is the history of proprietary charging in miniature.</p>
+
+<div class="table-wrap"><table>
+  <thead><tr><th>Version</th><th>Year</th><th>Signalling</th><th>Voltage</th><th>Max</th></tr></thead>
+  <tbody>
+    <tr><td>QC 1.0</td><td>2013</td><td>D+/D− (DCP-style)</td><td class="num">≤ 6.3 V, 2 A</td><td class="num">10 W</td></tr>
+    <tr><td>QC 2.0</td><td>2014</td><td>D+/D− voltage codes</td><td class="num">5 / 9 / 12 V (Class A) · + 20 V (Class B)</td><td class="num">18 W typical</td></tr>
+    <tr><td>QC 3.0</td><td>2016</td><td>D+/D− pulses</td><td class="num">3.6–20 V in 200 mV steps</td><td class="num">36 W</td></tr>
+    <tr><td>QC 4 / 4+</td><td>2017</td><td>USB PD + PPS</td><td class="num">20 mV steps</td><td class="num">PD-defined</td></tr>
+    <tr><td>QC 3+</td><td>2020</td><td>D+/D−, borrows 20 mV steps</td><td class="num">—</td><td class="num">—</td></tr>
+    <tr><td>QC 5</td><td>2020</td><td>USB PD PPS</td><td class="num">2S batteries</td><td class="num">100 W+</td></tr>
+    <tr><td>QC 5+</td><td>2025</td><td>USB PD PPS</td><td class="num">up to 20 V × 7 A</td><td class="num">140 W</td></tr>
+  </tbody>
+</table></div>
+
+<h3>QC 2.0 handshake, step by step</h3>
+<ol class="recipe">
+  <li><strong>Pretend to be a DCP.</strong> The charger shorts D+ and D−. The phone runs BC 1.2 and sees a DCP.</li>
+  <li><strong>Phone holds D+ at 0.325–2 V for ≥ 1.25 s.</strong> Its own 0.6 V probe, held long. The charger notices and opens the short.<span class="expect"><b>Watch:</b> D− drops, because the short is gone.</span></li>
+  <li><strong>Phone pulls D− low for ≥ 1 ms.</strong> QC mode entered. VBUS still 5 V.</li>
+  <li><strong>Phone sets the code.</strong> The charger reads the pair and moves VBUS.</li>
+</ol>
+<div class="table-wrap"><table>
+  <thead><tr><th>D+</th><th>D−</th><th>VBUS</th></tr></thead>
+  <tbody>
+    <tr><td class="num">0.6 V</td><td class="num">0 V</td><td class="num">5 V (default)</td></tr>
+    <tr><td class="num">3.3 V</td><td class="num">0.6 V</td><td class="num">9 V</td></tr>
+    <tr><td class="num">0.6 V</td><td class="num">0.6 V</td><td class="num">12 V</td></tr>
+    <tr><td class="num">3.3 V</td><td class="num">3.3 V</td><td class="num">20 V (Class B only)</td></tr>
+    <tr><td class="num">0.6 V</td><td class="num">3.3 V</td><td class="num">QC 3.0 continuous mode</td></tr>
+  </tbody>
+</table></div>
+
+<h3>QC 3.0 pulses</h3>
+<figure class="diagram">
+<svg viewBox="0 0 960 250" role="img" aria-labelledby="d7t">
+  <title id="d7t">QC 3.0 incremental pulses on D+ and D-</title>
+  <text x="20" y="40" class="d-mono" style="fill:var(--s2)">D+</text>
+  <polyline points="70,70 200,70 200,30 215,30 215,70 300,70 300,30 315,30 315,70 900,70" fill="none" stroke="var(--s2)" stroke-width="3"/>
+  <text x="20" y="120" class="d-mono" style="fill:var(--s2)">D−</text>
+  <polyline points="70,100 560,100 560,140 575,140 575,100 900,100" fill="none" stroke="var(--s2)" stroke-width="3"/>
+  <text x="20" y="200" class="d-mono" style="fill:var(--s3)">VBUS</text>
+  <polyline points="70,215 205,215 205,200 305,200 305,185 565,185 565,200 900,200" fill="none" stroke="var(--s3)" stroke-width="4"/>
+  <text x="250" y="178" text-anchor="middle" class="d-tiny">+0.2 V</text>
+  <text x="400" y="170" text-anchor="middle" class="d-tiny">+0.2 V</text>
+  <text x="680" y="222" text-anchor="middle" class="d-tiny">−0.2 V</text>
+  <text x="215" y="22" class="d-tiny">0.6 → 3.3 V blip = up</text>
+  <text x="585" y="155" class="d-tiny">3.3 → 0.6 V blip = down</text>
+</svg>
+<figcaption><b>Continuous mode.</b> A short D+ blip raises VBUS by 200 mV; a short D− dip lowers it by 200 mV. Pulse edges are 100–200 µs and VBUS settles in about 2 ms. It is PPS done in analog, two years before PPS existed.</figcaption>
+</figure>
+
+<div class="callout warn">
+  <strong>Misconception: "QC 5 is a rival to USB PD."</strong>
+  From QC 4 onward, Quick Charge <em>is</em> USB PD, plus Qualcomm's own certification and in-phone charge-pump chips. A QC 5 phone fast-charges from a good PPS charger with no Qualcomm logo on it. QC 5+ is backward compatible down to QC 2.0.
+</div>
+<p class="sources-line">Sources: <a href="https://www.ti.com/lit/ug/tidu917/tidu917.pdf" target="_blank" rel="noopener">TI TIDU917 · QC 2.0 entry sequence and 5/9/12 V table</a> · <a href="https://www.graniteriverlabs.com/en-us/technical-blog/qualcomm-quickcharge-qc2-qc3" target="_blank" rel="noopener">Granite River Labs · QC 2/3 mechanics</a> · <a href="https://en.wikipedia.org/wiki/Quick_Charge" target="_blank" rel="noopener">Wikipedia · Quick Charge</a> · <a href="https://www.gsmarena.com/qualcomm_announces_quick_charge_5_100_w_chargers_that_can_fill_a_battery_to_50_in_5_minutes-news-44473.php" target="_blank" rel="noopener">GSMArena · QC 5 announcement</a> · <a href="https://techaeris.com/2025/09/21/qualcomm-announces-quick-charge-5/" target="_blank" rel="noopener">Techaeris · QC 5+ announcement</a></p>
+</section>
+
+<!-- ============================================================ 13 -->
+<section id="vendors">
+<h2>13 · The vendor zoo <span class="tag">Every big phone maker built its own highway. Most are now on-ramps to PD.</span></h2>
+<p class="lede">Between 2014 and 2022, the fastest phone chargers in the world were all proprietary. The reason was physics, not greed: direct charging (§4) needed a charger that took precise orders, and USB PD had no way to take them until PPS. Vendors filled the gap with private protocols, private cables, and private chips. Here is the zoo, species by species.</p>
+
+<div class="proto-grid">
+  <div class="proto fam-prop"><h4>MediaTek Pump Express <span class="tagline t-old">2015</span></h4><p class="meta">The only one that talks on VBUS</p>
+    <dl><dt>PE+</dt><dd>5 / 7 / 9 / 12 V, 1.5–2 A</dd><dt>PE+ 2.0</dt><dd>5–20 V in 0.5 V steps, ≤ 3 A</dd><dt>PE 3.0</dt><dd>Direct charging over PD, 3–6 V</dd><dt>PE 4.0</dt><dd>USB PD PPS, 5 A</dd></dl>
+    <p>PE+ signals by modulating the phone's <em>current draw</em> in patterns meaning up or down. The adapter watches its own output current, so no data wires are needed. If current stays below a minimum for 240 ms, the adapter resets to 5 V.</p></div>
+  <div class="proto fam-prop"><h4>Samsung AFC / SFC <span class="tagline t-now">now PPS</span></h4><p class="meta">Adaptive Fast Charging · Super Fast Charging</p>
+    <dl><dt>AFC</dt><dd>9 V × 1.67 A = 15 W (some 12 V × 2.1 A)</dd><dt>SFC 25 W</dt><dd>PPS 3.3–5.9 V 3 A · 3.3–11 V 2.25 A</dd><dt>SFC 2.0 45 W</dt><dd>PPS to 11 V × 4.5 A, 5 A cable</dd><dt>SFC 3.0 60 W</dt><dd>Galaxy S26 Ultra (2026), PPS ≥ 60 W charger</dd></dl>
+    <p>AFC is Samsung's D+/D− era. Everything since the S20 is standard PPS with Samsung-chosen targets.</p></div>
+  <div class="proto fam-prop"><h4>Huawei FCP / SCP <span class="tagline t-now">UFCS founder</span></h4><p class="meta">Fast / Super Charge Protocol</p>
+    <dl><dt>FCP (2015)</dt><dd>9 V × 2 A</dd><dt>SCP gen 1</dt><dd>4.5 V × 5 A · 5 V × 4.5 A</dd><dt>40 W (2018)</dt><dd>10 V × 4 A</dd><dt>66–100 W</dt><dd>11 V × 6 A · 20 V × 5 A</dd></dl>
+    <p>FCP raises voltage; SCP is direct charging at low voltage and high current, needing 5–6 A cables.</p></div>
+  <div class="proto fam-prop"><h4>OPPO VOOC family <span class="tagline t-now">active</span></h4><p class="meta">VOOC · Dash · Warp · SuperVOOC</p>
+    <dl><dt>VOOC (2014)</dt><dd>5 V × 4 A</dd><dt>SuperVOOC</dt><dd>10 V × 5 A, 2S battery</dd><dt>SuperVOOC 2.0</dt><dd>10 V × 6.5 A (65 W)</dd><dt>80 W</dt><dd>11 V × 7.3 A</dd><dt>240 W</dt><dd>20 V × 12 A</dd></dl>
+    <p>The purest direct-charging design: the brick does all regulation, the cable carries an extra signal pin or ID chip, and the phone barely converts at all. The 240 W phone steps 20 V down to 10 V with three 100 W charge pumps, then charges each cell at about 4.5 V.</p></div>
+  <div class="proto fam-prop"><h4>Xiaomi HyperCharge <span class="tagline t-now">active</span></h4><p class="meta">MiPPS · Surge Charge</p>
+    <dl><dt>120 W</dt><dd>11 V × 6 A or 20 V × 6 A, 6 A cable</dd><dt>200 W demo (2021)</dt><dd>4,000 mAh full in 8 min</dd><dt>210 W tier</dt><dd>20 V × 10.5 A</dd></dl>
+    <p>MiPPS is PPS-based, up to 120 W.</p></div>
+  <div class="proto fam-prop"><h4>vivo FlashCharge</h4><p class="meta">VFCP</p>
+    <dl><dt>80 W</dt><dd>11 V × 7.3 A</dd><dt>120 W</dt><dd>20 V × 6 A, 2S + charge pumps</dd><dt>200 W</dt><dd>20 V × 10 A, 10 A cable</dd></dl></div>
+  <div class="proto fam-prop"><h4>Motorola TurboPower</h4><p class="meta">A brand, not a protocol</p>
+    <dl><dt>18–20 W</dt><dd>QC 3.0</dd><dt>27–68 W</dt><dd>QC 4+ and PD</dd><dt>125 W</dt><dd>PD PPS, 6.5 A e-marked</dd></dl></div>
+  <div class="proto fam-pd"><h4>Apple &amp; Google <span class="tagline t-now">pure PD</span></h4><p class="meta">No proprietary protocol at all</p>
+    <dl><dt>Apple</dt><dd>PD since the 18 W A1695 adapter</dd><dt>iPhone 17 Pro Max</dt><dd>Measured 14.41 V × 2.55 A = 36.7 W on Apple's 40 W adapter (PD 15 V)</dd><dt>Pixel 10 Pro XL</dt><dd>PPS only; 70% in 30 min on 45 W PPS</dd></dl></div>
+</div>
+<div class="callout bite">
+  <strong>Proprietary chargers fall back hard</strong>
+  A SuperVOOC brick with a generic cable, or a generic PD charger with a OnePlus/OPPO phone, usually drops to a basic PD or BC 1.2 rate. You get safe charging, not fast charging. The magic needs all three parties from the same vendor.
+</div>
+<p class="sources-line">Sources: <a href="https://www.mediatek.com/hubfs/MediaTek%20Assets/Pdfs/White_Papers/Pump-Express-Plus.pdf" target="_blank" rel="noopener">MediaTek · Pump Express Plus white paper</a> · <a href="https://en.wikipedia.org/wiki/VOOC" target="_blank" rel="noopener">Wikipedia · VOOC</a> · <a href="https://www.tinkervault.com/usb-fast-charging-protocols" target="_blank" rel="noopener">TinkerVault · per-vendor profiles</a> · <a href="https://www.sammobile.com/news/heres-what-you-need-charge-galaxy-s26-ultra-60w/" target="_blank" rel="noopener">SamMobile · S26 Ultra 60 W</a> · <a href="https://www.chargerlab.com/charging-review-of-iphone-17-pro-max" target="_blank" rel="noopener">ChargerLAB · iPhone 17 Pro Max review</a> · <a href="https://9to5google.com/2025/08/20/google-upgrades-pixel-10-wired-charging-speeds/" target="_blank" rel="noopener">9to5Google · Pixel 10 charging</a> · <a href="https://www.gizmochina.com/2021/05/31/xiaomi-introduces-200w-wired-and-120w-wireless-hypercharge-solutions-fully-charges-in-8-minutes/" target="_blank" rel="noopener">Gizmochina · Xiaomi 200 W</a></p>
+</section>
+
+<!-- ============================================================ 14 -->
+<section id="ufcs">
+<h2>14 · UFCS &amp; the law <span class="tag">When the market will not converge, somebody makes it.</span></h2>
+<p class="lede">Two forces are ending the zoo. In China, the vendors who built it wrote a shared protocol, UFCS. In Europe, the law now requires USB-C and USB PD. Neither kills proprietary modes outright; both guarantee a fast, interoperable floor.</p>
+
+<div class="proto-grid">
+  <div class="proto fam-prop"><h4>UFCS 融合快充 <span class="tagline t-now">China</span></h4><p class="meta">Universal Fast Charging Specification · T/TAF 083-2022</p>
+    <dl><dt>First published</dt><dd>28 May 2021; revised 9 Aug 2022</dd><dt>Founders</dt><dd>Huawei, OPPO, vivo, Xiaomi + chip vendors</dd><dt>Wire</dt><dd>Full-duplex on D+/D−; USB-A or USB-C</dd><dt>Voltage bands</dt><dd>3.4–5.5 · 5.5–12 · 12–21 · 21–36 V</dd><dt>UFCS 2.0</dt><dd>May 2025: Huawei, Honor, OPPO, vivo. 40 W without authentication; certified chargers to ~120 W</dd></dl>
+    <p>By May 2023, 41 products from 19 companies were certified. Xiaomi is not named on the 2.0 signing.</p></div>
+  <div class="proto fam-pd"><h4>EU Directive 2022/2380 <span class="tagline t-now">in force</span></h4><p class="meta">The "common charger" law</p>
+    <dl><dt>Adopted</dt><dd>23 November 2022</dd><dt>Phones + 11 categories</dt><dd>from 28 December 2024</dd><dt>Laptops</dt><dd>from 28 April 2026</dd><dt>Rule</dt><dd>USB-C receptacle; &gt; 15 W must support USB PD</dd><dt>Unbundling</dt><dd>Device must be sold without a charger too</dd></dl>
+    <p>Proprietary modes remain legal as long as USB PD also works.</p></div>
+  <div class="proto fam-bc"><h4>China YD/T 1591 <span class="tagline t-old">2009</span></h4><p class="meta">The first common-charger rule</p>
+    <dl><dt>Rule</dt><dd>USB charging port; D+/D− shorted ≤ 200 Ω in the adapter</dd><dt>Successor</dt><dd>YD/T 1591-2021</dd></dl>
+    <p>Effectively BC 1.2 DCP, before BC 1.2.</p></div>
+</div>
+<p class="sources-line">Sources: <a href="https://eur-lex.europa.eu/eli/dir/2022/2380/oj" target="_blank" rel="noopener">EUR-Lex · Directive (EU) 2022/2380</a> · <a href="https://www.chongdiantou.com/archives/243125.html" target="_blank" rel="noopener">ChargerLAB CN · UFCS standard numbers and dates</a> · <a href="https://www.tinkervault.com/usb-fast-charging-protocols/ufcs" target="_blank" rel="noopener">TinkerVault · UFCS voltage bands</a> · <a href="https://nokiamob.net/2025/05/25/huawei-honor-oppo-and-vivo-introduce-ufcs-2-0-unified-fast-charging-standard/" target="_blank" rel="noopener">Nokiamob · UFCS 2.0</a> · <a href="https://www.codeofchina.com/standard/YDT1591-2021.html" target="_blank" rel="noopener">Code of China · YD/T 1591-2021</a></p>
+</section>
+
+<!-- ============================================================ 15 -->
+<section id="wireless">
+<h2>15 · Qi, Qi2 &amp; MagSafe <span class="tag">No wires, so the conversation rides on the power itself.</span></h2>
+<p class="lede">A wireless charger is a transformer with its core cut in half: one coil in the pad, one in the phone, and a few millimetres of air and glass between them. With no data wires, the phone talks by rhythmically changing how much power it absorbs, and the pad talks back by nudging its frequency. The magnet ring of Qi2 exists for one reason: a misaligned coil wastes energy as heat.</p>
+
+<h3>The standards war, briefly</h3>
+<div class="proto-grid">
+  <div class="proto fam-qi"><h4>Qi (WPC) <span class="tagline t-now">won</span></h4><p class="meta">Inductive, 87–205 kHz</p><p>WPC founded 2008, Qi 1.0 in 2010. BPP ≤ 5 W, EPP ≤ 15 W (v1.2, 2015), authentication in v1.3 (2021).</p></div>
+  <div class="proto fam-qi"><h4>PMA / Powermat <span class="tagline t-dead">merged</span></h4><p class="meta">Inductive</p><p>Founded 2012 by P&amp;G and Powermat; Starbucks tables in 2014. Merged into AirFuel in 2015.</p></div>
+  <div class="proto fam-qi"><h4>A4WP / Rezence <span class="tagline t-dead">merged</span></h4><p class="meta">Resonant, 6.78 MHz</p><p>Loosely coupled, multi-device. Merged with PMA in 2015 as the AirFuel Alliance. AirFuel RF (released 2023) targets centimetres to metres of range.</p></div>
+</div>
+
+<h3>How a Qi pad and phone talk</h3>
+<figure class="diagram">
+<svg viewBox="0 0 960 300" role="img" aria-labelledby="d8t">
+  <title id="d8t">Qi power transfer phases</title>
+  <defs><marker id="a8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--s3)"/></marker></defs>
+  <g>
+    <rect x="15" y="40" width="130" height="70" rx="10" fill="var(--surface)" stroke="var(--s3)" stroke-width="2"/><text x="80" y="70" text-anchor="middle" class="d-label">Selection</text><text x="80" y="92" text-anchor="middle" class="d-tiny">analog sense</text>
+    <line x1="145" y1="75" x2="170" y2="75" stroke="var(--s3)" stroke-width="2" marker-end="url(#a8)"/>
+    <rect x="175" y="40" width="130" height="70" rx="10" fill="var(--surface)" stroke="var(--s3)" stroke-width="2"/><text x="240" y="70" text-anchor="middle" class="d-label">Ping</text><text x="240" y="92" text-anchor="middle" class="d-tiny">Signal Strength</text>
+    <line x1="305" y1="75" x2="330" y2="75" stroke="var(--s3)" stroke-width="2" marker-end="url(#a8)"/>
+    <rect x="335" y="40" width="130" height="70" rx="10" fill="var(--surface)" stroke="var(--s3)" stroke-width="2"/><text x="400" y="66" text-anchor="middle" class="d-label">ID &amp; config</text><text x="400" y="88" text-anchor="middle" class="d-tiny">Identification,</text><text x="400" y="102" text-anchor="middle" class="d-tiny">Configuration</text>
+    <line x1="465" y1="75" x2="490" y2="75" stroke="var(--s3)" stroke-width="2" marker-end="url(#a8)"/>
+    <rect x="495" y="40" width="130" height="70" rx="10" fill="var(--accent-wash)" stroke="var(--s3)" stroke-width="2" stroke-dasharray="5 4"/><text x="560" y="66" text-anchor="middle" class="d-label">Negotiation</text><text x="560" y="88" text-anchor="middle" class="d-tiny">+ Calibration</text><text x="560" y="102" text-anchor="middle" class="d-tiny">EPP only</text>
+    <line x1="625" y1="75" x2="650" y2="75" stroke="var(--s3)" stroke-width="2" marker-end="url(#a8)"/>
+    <rect x="655" y="40" width="160" height="70" rx="10" fill="var(--good-bg)" stroke="var(--good)" stroke-width="2"/><text x="735" y="66" text-anchor="middle" class="d-label">Power transfer</text><text x="735" y="88" text-anchor="middle" class="d-tiny">Control Error loop +</text><text x="735" y="102" text-anchor="middle" class="d-tiny">Received Power (FOD)</text>
+    <path d="M735,110 C735,170 80,170 80,112" fill="none" stroke="var(--danger)" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#a8)"/>
+    <text x="410" y="160" text-anchor="middle" class="d-tiny" style="fill:var(--danger)">End Power Transfer, timeout, or foreign object → back to Selection</text>
+  </g>
+  <rect x="15" y="190" width="440" height="95" rx="10" fill="var(--surface)" stroke="var(--line)"/>
+  <text x="30" y="215" class="d-label">Phone → pad · ASK</text>
+  <text x="30" y="238" class="d-tiny">Switches a load in and out: coil current changes, pad sees it.</text>
+  <text x="30" y="256" class="d-tiny">2 kbps, differential bi-phase; 11-bit bytes (start, 8 data, odd parity, stop).</text>
+  <text x="30" y="274" class="d-tiny">Packets: preamble · header · message · checksum.</text>
+  <rect x="490" y="190" width="455" height="95" rx="10" fill="var(--surface)" stroke="var(--line)"/>
+  <text x="505" y="215" class="d-label">Pad → phone · FSK</text>
+  <text x="505" y="238" class="d-tiny">Shifts the power carrier frequency slightly.</text>
+  <text x="505" y="256" class="d-tiny">~200 bps: 512 carrier cycles per bit.</text>
+  <text x="505" y="274" class="d-tiny">Used for ACK/NAK and transmitter capability (EPP+).</text>
+</svg>
+<figcaption><b>Qi's state machine.</b> The phone runs the show: it reports its signal strength, identifies itself, then streams <em>Control Error</em> packets ("more power" / "less power") to steer the pad. The pad compares <em>Received Power</em> reports against what it transmitted; a gap means a coin or key is soaking up energy, and the pad stops.</figcaption>
+</figure>
+
+<div class="table-wrap"><table>
+  <thead><tr><th>Header</th><th>Packet (phone → pad)</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td class="num">0x01</td><td>Signal Strength</td><td>First answer to the ping</td></tr>
+    <tr><td class="num">0x02</td><td>End Power Transfer</td><td>Stop, with a reason code (0x01 = charge complete)</td></tr>
+    <tr><td class="num">0x03</td><td>Control Error</td><td>Signed error: steer the pad up or down</td></tr>
+    <tr><td class="num">0x04 / 0x31</td><td>Received Power (8 / 24-bit)</td><td>Feeds foreign object detection</td></tr>
+    <tr><td class="num">0x51</td><td>Configuration</td><td>Max power, options</td></tr>
+    <tr><td class="num">0x71 / 0x81</td><td>Identification / Extended ID</td><td>Manufacturer and device ID</td></tr>
+  </tbody>
+</table></div>
+
+<h3>Qi2 and MagSafe</h3>
+<div class="table-wrap"><table>
+  <thead><tr><th>Version</th><th>Date</th><th>What changed</th></tr></thead>
+  <tbody>
+    <tr><td>Apple MagSafe</td><td>2020</td><td>Magnet ring + 15 W on iPhone 12</td></tr>
+    <tr><td>Qi 2.0</td><td>April 2023</td><td>Magnetic Power Profile (MPP) from Apple's MagSafe contribution; 15 W at 360 kHz; "cloak" phase; not required to be 100% backward compatible</td></tr>
+    <tr><td>Qi 2.1</td><td>September 2024</td><td>Automatic Alignment Profile (moving coil), magnetic accessory covers</td></tr>
+    <tr><td>Qi 2.2 / Qi2 25W</td><td>April / July 2025</td><td>25 W; "nearly 70% more" power, 0→50% in ~30 min</td></tr>
+    <tr><td>Qi2 Ready</td><td>2025</td><td>Phone without magnets + approved magnetic case (e.g. Galaxy S25)</td></tr>
+    <tr><td>Qi 2.3</td><td>December 2025</td><td>System gain change reporting; no new wattage</td></tr>
+  </tbody>
+</table></div>
+<p><strong>MagSafe today:</strong> up to 25 W on iPhone 16 Plus, 16 Pro Max, iPhone 17 models except 17e, and iPhone 18 Pro/Pro Max, with a ≥ 30 W adapter supplying 15 V × 2 A. iPhone 16 and 16 Pro peak at 22.5 W. iPhone 15 and earlier get 15 W.</p>
+
+<div class="callout warn">
+  <strong>Wireless is a luxury tax in watts</strong>
+  A 2020 test on a Pixel 4 found wireless charging used 39% more energy than wired, and up to 80% more when misaligned. The magnets of Qi2 fix alignment, not physics.
+</div>
+<p><strong>Also in the family:</strong> reverse wireless charging (Huawei Mate 20 Pro, 2018, a few watts), proprietary high-power wireless (Xiaomi 50 W on the Mi 10 Ultra; OPPO AirVOOC 50 W with a thermoelectric-cooled pad), and <strong>Ki Cordless Kitchen</strong>, WPC's appliance standard at up to 2,200 W with NFC pairing, first certified in May 2025.</p>
+<p class="sources-line">Sources: <a href="https://www.wirelesspowerconsortium.com/knowledge-base/qi-specification/history-of-the-qi-specifications/" target="_blank" rel="noopener">WPC · Qi version history</a> · <a href="https://www.wirelesspowerconsortium.com/media/cd4ljryt/qi-v13-introduction.pdf" target="_blank" rel="noopener">WPC · Qi v1.3 introduction</a> · <a href="https://www.ti.com/lit/ds/symlink/bq51003.pdf" target="_blank" rel="noopener">TI bq51003 datasheet (packets, encoding)</a> · <a href="https://www.renesas.com/en/document/apn/introduction-band-communication-qi-based-wireless-power-designs-and-system-level-challenges" target="_blank" rel="noopener">Renesas · Qi in-band communication</a> · <a href="https://support.apple.com/en-us/105047" target="_blank" rel="noopener">Apple · MagSafe charger wattage</a> · <a href="https://en.wikipedia.org/wiki/Inductive_charging" target="_blank" rel="noopener">Wikipedia · Inductive charging (efficiency test)</a></p>
+</section>
+
+<!-- ============================================================ 16 -->
+<section id="future">
+<h2>16 · Proposed &amp; emerging <span class="tag">What is real, what is prototype, and what is just a rumor.</span></h2>
+<p class="lede">Charging news is full of demos that never ship and version numbers that do not exist. This section sorts the 2025–2026 horizon into three bins, and states which bin each item sits in. Check again before you buy anything based on it.</p>
+
+<div class="table-wrap"><table>
+  <thead><tr><th>Item</th><th>Status (Sept 2026)</th><th>What it means for you</th></tr></thead>
+  <tbody>
+    <tr><td><strong>PD 3.2 v1.2 · Dynamic Power Supply</strong></td><td><span class="tagline t-now">published Jan 2026</span></td><td>Chargers may advertise a guaranteed floor plus a conditional boost. Expect it in multi-port GaN bricks first.</td></tr>
+    <tr><td><strong>SPR AVS</strong></td><td><span class="tagline t-now">spec since 2023</span></td><td>9–20 V adjustable for laptops. One lab blog claims it became mandatory above 27 W; not confirmed in the spec text.</td></tr>
+    <tr><td><strong>Samsung SFC 3.0 (60 W)</strong></td><td><span class="tagline t-now">shipping 2026</span></td><td>Galaxy S26 Ultra; needs a ≥ 60 W PPS charger, 5 A cable recommended.</td></tr>
+    <tr><td><strong>QC 5+ (140 W)</strong></td><td><span class="tagline t-now">announced Sept 2025</span></td><td>PD PPS based. Which phones shipped with it was not confirmed for this guide.</td></tr>
+    <tr><td><strong>UFCS 2.0</strong></td><td><span class="tagline t-now">May 2025</span></td><td>Chinese phones converge on a shared 40 W+ floor; outside China, PD remains the floor.</td></tr>
+    <tr><td><strong>EU external power supply rules</strong></td><td><span class="tagline t-new">reported</span></td><td>Wikipedia reports Regulation 2025/2052 requiring USB-C on external power supplies from December 2028. Not verified against the regulation text.</td></tr>
+    <tr><td><strong>Qi 50 W</strong></td><td><span class="tagline t-new">prototype talk</span></td><td>Discussed at a WPC meeting at Xiaomi's Beijing HQ in June 2026. No published spec; press says "as soon as 2028". WPC has made no official announcement.</td></tr>
+    <tr><td><strong>AirFuel RF</strong></td><td><span class="tagline t-new">niche</span></td><td>Certification opened January 2024. Watts over metres for sensors and wearables, not phones.</td></tr>
+    <tr><td><strong>"USB PD 4.0"</strong></td><td><span class="tagline t-dead">does not exist</span></td><td>No such revision. Treat the label as marketing.</td></tr>
+    <tr><td><strong>Above 240 W / above 48 V on USB-C</strong></td><td><span class="tagline t-dead">not in any spec</span></td><td>No USB-IF document raises the ceiling. Past 240 W, you need a different connector.</td></tr>
+  </tbody>
+</table></div>
+<div class="callout blue">
+  <strong>The trend line</strong>
+  Wired phone charging has converged on USB PD PPS, with vendor flavors riding inside it. Laptops are moving from fixed 20 V to EPR and AVS. Wireless is converging on Qi2 with magnets. The remaining forks are Chinese ultra-fast systems (VOOC, HyperCharge, FlashCharge), and UFCS is their shared fallback.
+</div>
+<p class="sources-line">Sources: <a href="https://www.usb.org/document-library/usb-power-delivery" target="_blank" rel="noopener">USB PD R3.2 v1.2 (DPS, §3.3)</a> · <a href="https://9to5google.com/2026/06/29/qi2-50w-upgrade-meeting-report/" target="_blank" rel="noopener">9to5Google · Qi2 50 W meeting report</a> · <a href="https://www.wirelesspowerconsortium.com/media/swbi2x4r/wpc_ces_2026-_news_-release-v6-12-22-2026.pdf" target="_blank" rel="noopener">WPC · CES 2026 release</a> · <a href="https://www.usb.org/euconformity" target="_blank" rel="noopener">USB-IF · EU conformity program</a></p>
+</section>
+
+<!-- ============================================================ 17 -->
+<section id="simulator">
+<h2>17 · Negotiation simulator <span class="tag">Pick a charger, a cable, and a device. Watch who vetoes whom.</span></h2>
+<p class="lede">Reading about handshakes is not the same as predicting them. Before each run, guess the wattage. Then press nothing: the simulator re-runs on every change and prints the conversation, the result, and the party that set the limit.</p>
+
+<div class="nsim" id="nsim">
+  <div class="nsim-presets" role="group" aria-label="Scenario presets">
+    <button class="btn" type="button" data-preset="samsung3a">Why is my Samsung stuck at 25 W?</button>
+    <button class="btn" type="button" data-preset="mac100">140 W MacBook on a 100 W cable</button>
+    <button class="btn" type="button" data-preset="ipadandroid">Old iPad brick, old Android</button>
+    <button class="btn" type="button" data-preset="voocmix">SuperVOOC brick, generic cable</button>
+    <button class="btn" type="button" data-preset="epr">Full 240 W EPR</button>
+  </div>
+  <div class="nsim-grid">
+    <div><label for="simCharger">Charger (source)</label><select id="simCharger"></select><div class="desc" id="descCharger"></div></div>
+    <div><label for="simCable">Cable</label><select id="simCable"></select><div class="desc" id="descCable"></div></div>
+    <div><label for="simDevice">Device (sink)</label><select id="simDevice"></select><div class="desc" id="descDevice"></div></div>
+  </div>
+  <div class="nsim-result" aria-live="polite">
+    <span class="big" id="simWatts">—</span>
+    <span class="via" id="simVia">enable JavaScript to run the simulator</span>
+    <span class="lim" id="simLimit"></span>
+  </div>
+  <pre class="nsim-log" id="simLog" aria-label="Negotiation log">The simulator needs JavaScript. Everything it models is described in §5–§13.</pre>
+</div>
+<div class="callout blue">
+  <strong>What this model is, and is not</strong>
+  Charger PDO lists follow the vendors' published profiles where §8–§13 cite them; the generic 65 W and 240 W chargers are typical, not a specific product. Device behavior is simplified to each phone's documented tiers. Timers are the spec's ranges, not measurements. Real phones also throttle for temperature and battery level, which this model ignores.
+</div>
+</section>
+
+<!-- ============================================================ 18 -->
+<section id="matrix">
+<h2>18 · Decision matrix <span class="tag">The wrong question is "which charger is best?" The right one is "what does my device ask for?"</span></h2>
+<p class="lede">Buy the protocol your device speaks, then the cable that will not veto it, then the wattage. In that order. Wattage is the last and least important number on the box.</p>
+
+<div class="table-wrap"><table class="matrix">
+  <thead><tr><th>Device</th><th>Protocol it wants</th><th>Charger must offer</th><th>Cable</th><th>Enough watts</th></tr></thead>
+  <tbody>
+    <tr><td>iPhone 15–17 (USB-C)</td><td>PD fixed</td><td>9 V, or 15 V for 17 Pro</td><td>Any C-to-C (3 A)</td><td class="num">20–40 W</td></tr>
+    <tr><td>iPhone 8–14 (Lightning)</td><td>PD fixed 9 V</td><td>PD 9 V</td><td>C-to-Lightning</td><td class="num">20 W</td></tr>
+    <tr><td>Galaxy S2x (base)</td><td>PPS</td><td>PPS to 11 V, 2.25 A+</td><td>3 A</td><td class="num">25 W</td></tr>
+    <tr><td>Galaxy S2x Ultra</td><td>PPS</td><td>PPS to 11 V at 4.5 A, or ≥ 60 W PPS (S26)</td><td><strong>5 A e-marked</strong></td><td class="num">45–60 W</td></tr>
+    <tr><td>Pixel 8–10</td><td>PPS</td><td>PPS (a fixed-only charger is slower)</td><td>3 A</td><td class="num">30–45 W</td></tr>
+    <tr><td>OPPO / OnePlus / realme</td><td>SuperVOOC</td><td>Vendor brick for peak; PD for travel</td><td>Vendor cable for peak</td><td class="num">vendor-specific</td></tr>
+    <tr><td>Xiaomi / vivo / Honor (China)</td><td>Vendor + UFCS</td><td>Vendor brick for peak; UFCS/PD fallback</td><td>Vendor cable for peak</td><td class="num">vendor-specific</td></tr>
+    <tr><td>MacBook Air</td><td>PD fixed 20 V</td><td>PD 20 V</td><td>3 A</td><td class="num">30–70 W</td></tr>
+    <tr><td>MacBook Pro 16"</td><td>PD EPR 28 V</td><td>EPR 28 V</td><td><strong>240 W EPR</strong></td><td class="num">140 W</td></tr>
+    <tr><td>Nintendo Switch / handhelds</td><td>PD fixed 15 V</td><td>15 V</td><td>3 A</td><td class="num">39–45 W</td></tr>
+    <tr><td>Anything Micro-USB</td><td>BC 1.2 / QC 2–3</td><td>USB-A DCP or QC</td><td>A-to-Micro</td><td class="num">5–18 W</td></tr>
+  </tbody>
+</table></div>
+<p class="small">Switch wattage and MacBook Air range are general guidance, not verified for this guide. Check your device's own spec page.</p>
+
+<h3>Charger features vs device needs</h3>
+<div class="table-wrap"><table class="matrix">
+  <thead><tr><th>Charger offers →</th><th>BC 1.2</th><th>QC 3</th><th>PD fixed</th><th>PD + PPS</th><th>PD EPR</th></tr></thead>
+  <tbody>
+    <tr><td>Micro-USB QC phone</td><td class="p">slow</td><td class="y">fast</td><td class="n">no C</td><td class="n">no C</td><td class="n">no C</td></tr>
+    <tr><td>iPhone (USB-C)</td><td class="p">slow</td><td class="p">slow</td><td class="y">fast</td><td class="y">fast</td><td class="y">fast</td></tr>
+    <tr><td>Samsung / Pixel</td><td class="p">slow</td><td class="p">slow</td><td class="p">reduced</td><td class="y">fast</td><td class="y">fast (if PPS too)</td></tr>
+    <tr><td>140 W laptop</td><td class="n">no</td><td class="n">no</td><td class="p">≤ 100 W</td><td class="p">≤ 100 W</td><td class="y">full</td></tr>
+  </tbody>
+</table></div>
+<p class="small"><span class="y">fast</span> = device's full wired rate · <span class="p">partial</span> = works, below peak · <span class="n">no</span> = will not charge or will not fit.</p>
+</section>
+
+<!-- ============================================================ 19 -->
+<section id="labs">
+<h2>19 · Labs <span class="tag">Reading is not knowing. A USB tester turns every claim in this guide into a number you can see.</span></h2>
+<p class="lede">These labs need a USB-C power meter that can read PD messages, like the FNIRSI FNB58 or ChargerLAB POWER-Z KM003C. The companion <a href="usb-testers-user-guide.html">USB tester shootout</a> compares them. The labs were designed from the specs; "Expect" lines state what the spec predicts, not captured output, so your tester's wording will differ.</p>
+
+<div class="callout danger">
+  <strong>Trigger safety</strong>
+  Tester trigger modes raise VBUS to 9, 12, 20 V or more. Only trigger with <em>nothing</em> connected on the tester's output, or with an electronic load. A 5 V-only gadget on a manually triggered 20 V line is a dead gadget.
+</div>
+
+<div class="lab">
+  <div class="lab-title"><span class="n">Lab 1 ·</span> Read a charger's menu</div>
+  <div class="lab-meta">10 minutes · any USB-C PD charger · tester with PD capture</div>
+  <ol class="recipe">
+    <li>Plug the tester into the charger, then a phone or laptop into the tester.</li>
+    <li>Open the tester's PD analyzer or "PDO list" screen.<span class="expect"><b>Expect:</b> a list starting with Fixed 5 V, then higher fixed voltages, then PPS lines if supported. At most 7 entries in SPR.</span></li>
+    <li>Find the RDO line: which object number the device requested.<span class="expect"><b>Expect:</b> the object number and requested current. The live voltage matches that PDO.</span></li>
+    <li>Compute the menu's max watts and compare with the label.</li>
+  </ol>
+  <div class="checkpoint"><strong>Checkpoint:</strong> you can name every PDO, whether PPS is present, and which one your device chose.</div>
+</div>
+
+<div class="lab">
+  <div class="lab-title"><span class="n">Lab 2 ·</span> Catch the cable veto</div>
+  <div class="lab-meta">10 minutes · a 65 W+ charger · one plain 3 A cable and one 5 A e-marked cable</div>
+  <ol class="recipe">
+    <li>Repeat Lab 1 with the 3 A cable. Note the current on the 20 V PDO.<span class="expect"><b>Expect:</b> 3 A or less on every PDO.</span></li>
+    <li>Swap to the 5 A cable. If your tester has an e-marker reader, read the cable VDO first.<span class="expect"><b>Expect:</b> e-marker reports 5 A; a 100 W+ charger now lists 5 A on 20 V.</span></li>
+  </ol>
+  <div class="checkpoint"><strong>Checkpoint:</strong> you have seen the source rewrite its own menu based on the cable (<a href="#cables">§10</a>).</div>
+</div>
+
+<div class="lab">
+  <div class="lab-title"><span class="n">Lab 3 ·</span> Speak Quick Charge by hand</div>
+  <div class="lab-meta">10 minutes · a USB-A QC 3.0 charger · tester with QC trigger · nothing on the output</div>
+  <ol class="recipe">
+    <li>Plug the tester into the QC charger, nothing downstream. Read D+ and D− voltages if your tester shows them.<span class="expect"><b>Expect:</b> VBUS about 5 V. D+ and D− read similar because the charger shorts them (DCP).</span></li>
+    <li>Trigger QC 2.0 at 9 V.<span class="expect"><b>Expect:</b> VBUS jumps to about 9 V after the ≥ 1.25 s entry hold.</span></li>
+    <li>Switch to QC 3.0 and step up and down.<span class="expect"><b>Expect:</b> VBUS moves in 0.2 V increments per pulse.</span></li>
+    <li>Unplug to reset. The charger falls back to 5 V.</li>
+  </ol>
+  <div class="checkpoint"><strong>Checkpoint:</strong> you have seen that QC is just voltage codes on D+/D− (<a href="#qc">§12</a>).</div>
+</div>
+
+<div class="lab">
+  <div class="lab-title"><span class="n">Lab 4 ·</span> Watch PPS breathe</div>
+  <div class="lab-meta">20 minutes · a PPS charger · a Samsung or Pixel phone below 50%</div>
+  <ol class="recipe">
+    <li>Charge through the tester and record voltage once a minute for ten minutes.<span class="expect"><b>Expect:</b> an odd voltage like 8.3–9.5 V that drifts in small steps, not a flat 9.00 V.</span></li>
+    <li>Swap to a fixed-only PD charger of the same wattage.<span class="expect"><b>Expect:</b> a flat 9 V and fewer watts.</span></li>
+  </ol>
+  <div class="checkpoint"><strong>Checkpoint:</strong> you can explain why the phone keeps re-requesting (<a href="#pps">§8</a>, <a href="#heat">§4</a>).</div>
+</div>
+
+<div class="lab">
+  <div class="lab-title"><span class="n">Lab 5 ·</span> Measure the wireless tax</div>
+  <div class="lab-meta">20 minutes · a Qi or Qi2 pad · tester between pad and its charger</div>
+  <ol class="recipe">
+    <li>Put the phone centered on the pad. Record input watts after two minutes.</li>
+    <li>Offset the phone about 1 cm and record again.<span class="expect"><b>Expect:</b> the pad draws similar or more power while the phone's own charging rate falls, or charging stops.</span></li>
+    <li>Compare with the same phone wired at the same battery level.</li>
+  </ol>
+  <div class="checkpoint"><strong>Checkpoint:</strong> you have a personal number for the wireless tax (<a href="#wireless">§15</a>).</div>
+</div>
+</section>
+
+<!-- ============================================================ 20 -->
+<section id="capstone">
+<h2>20 · Capstone <span class="tag">Audit the drawer.</span></h2>
+<p class="lede">Everybody owns a drawer of chargers and cables that "all work". The capstone turns that drawer into a known inventory, so you never again wonder why something charges slowly.</p>
+<div class="lab">
+  <div class="lab-title"><span class="n">Capstone ·</span> The charging inventory</div>
+  <div class="lab-meta">60–90 minutes · every charger and cable you own · tester · spreadsheet or paper</div>
+  <ol class="recipe">
+    <li><strong>Chargers.</strong> For each: port type, protocols the tester detects (BC 1.2, QC, PD, PPS, EPR), full PDO list.</li>
+    <li><strong>Cables.</strong> For each C-to-C: e-marker yes/no, rated current, rated voltage (20 V or 50 V), EPR bit. Label them with tape: "3A", "5A", "240".</li>
+    <li><strong>Devices.</strong> For each: charge through the tester from the best charger, record steady-state watts at 20–40% battery, and the protocol used.</li>
+    <li><strong>Predict, then test.</strong> Pick three odd combinations. Predict the result using the <a href="#simulator">simulator</a> logic, then measure.</li>
+    <li><strong>Retire.</strong> Anything with a 10 kΩ A-to-C cable, an unreadable 5 A claim, or no protocol but 5 V × 1 A goes in the e-waste box.</li>
+  </ol>
+  <div class="checkpoint"><strong>Done when:</strong> every device in your house has a named "best charger + cable" pair and you predicted at least two of three odd combinations correctly.</div>
+</div>
+</section>
+
+<!-- ============================================================ 21 -->
+<section id="troubleshooting">
+<h2>21 · Troubleshooting <span class="tag">Symptom → cause → fix.</span></h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr></thead>
+  <tbody>
+    <tr><td>Samsung shows "Fast charging" not "Super fast"</td><td>No PPS, or PPS without enough current at 11 V</td><td>PPS charger; for 45 W, a 5 A cable too</td></tr>
+    <tr><td>Laptop says "slow charger" on a 100 W brick</td><td>3 A cable caps at 60 W</td><td>5 A e-marked cable</td></tr>
+    <tr><td>140 W laptop stuck at ~100 W</td><td>Cable is 5 A/20 V, not EPR</td><td>240 W-logo cable</td></tr>
+    <tr><td>Phone charges at 5 V from a QC brick with a USB-C phone</td><td>Phone does not speak QC 2/3; A-port chargers cannot do PD</td><td>USB-C PD charger</td></tr>
+    <tr><td>Charging stops and restarts every few seconds</td><td>PD Hard Reset loop: bad cable, dirty CC contact, or a firmware mismatch</td><td>Different cable; clean the port; try a PD 3.0 charger</td></tr>
+    <tr><td>Fast charge works, then drops after 10 minutes</td><td>Thermal throttling or CV phase</td><td>Normal; remove the case, avoid charging while gaming</td></tr>
+    <tr><td>VOOC phone slow on its own brick</td><td>Generic cable: no ID chip or signal pin</td><td>Vendor cable</td></tr>
+    <tr><td>Wireless pad blinks and stops</td><td>Foreign object detection or misalignment</td><td>Remove card/coin; use a Qi2 magnetic pad</td></tr>
+    <tr><td>Old device will not charge from a USB-C charger at all</td><td>C-to-Micro adapter or cable without a 5.1 kΩ Rd: the source never sees a sink and never turns on VBUS</td><td>Proper C-to-Micro cable with Rd, or an A-port charger</td></tr>
+    <tr><td>USB-A-to-C cable makes a laptop port brown out</td><td>Non-compliant 10 kΩ Rp in the C plug</td><td>Replace with a 56 kΩ cable</td></tr>
+  </tbody>
+</table></div>
+</section>
+
+<!-- ============================================================ 22 -->
+<section id="cheat-sheet">
+<h2>22 · Cheat sheet <span class="tag">One screen. Print it.</span></h2>
+<div class="cards">
+  <div class="card"><h4>The universal starting pattern</h4>
+<pre><code>1. What protocol does the DEVICE speak?   (PD fixed · PPS · EPR · QC · vendor)
+2. Does the CHARGER offer that exact thing? (read its PDO list)
+3. Will the CABLE allow it?                 (3 A / 5 A · 20 V / 50 V · vendor ID)
+4. Watts = min(charger, cable, device, temperature)</code></pre></div>
+  <div class="card"><h4>Numbers</h4><ul>
+    <li>USB 2.0: 500 mA · USB 3: 900 mA · BC 1.2 DCP: 1.5 A · Type-C: 1.5 / 3 A @ 5 V</li>
+    <li>Rp 56k / 22k / 10k · Rd 5.1k · DCP short ≤ 200 Ω · BC probe 0.5–0.7 V</li>
+    <li>PD fixed: 5 / 9 / 15 / 20 V · EPR: 28 / 36 / 48 V · 3 A any cable · 5 A e-marked</li>
+    <li>PPS: 20 mV steps, 5–21 V, re-request ≤ 10 s · AVS: 100 mV steps</li>
+    <li>QC 2.0: D+ 3.3 / D− 0.6 = 9 V · 0.6 / 0.6 = 12 V · QC 3.0: 200 mV steps</li>
+    <li>Qi: 87–205 kHz · ASK 2 kbps up · FSK ~200 bps down · Qi2: 360 kHz, 15 / 25 W</li>
+  </ul></div>
+  <div class="card"><h4>PD message flow</h4>
+<pre><code>Source_Capabilities → GoodCRC
+Request             → GoodCRC
+Accept              → GoodCRC
+          (VBUS moves)
+PS_RDY              → GoodCRC</code></pre></div>
+</div>
+</section>
+
+<!-- ============================================================ 23 -->
+<section id="glossary">
+<h2>23 · Glossary</h2>
+<dl class="glossary">
+  <dt id="g-apdo">APDO</dt><dd>Augmented Power Data Object: a programmable PD offer (PPS, SPR AVS, EPR AVS). (<a href="#pps">§8</a>)</dd>
+  <dt id="g-ask">ASK</dt><dd>Amplitude-shift keying: how a Qi phone talks to the pad by switching a load. (<a href="#wireless">§15</a>)</dd>
+  <dt id="g-avs">AVS</dt><dd>Adjustable Voltage Supply: 100 mV-step programmable PD supply, SPR 9–20 V or EPR 15–48 V. (<a href="#epr">§9</a>)</dd>
+  <dt id="g-bc12">BC 1.2</dt><dd>USB Battery Charging spec, 2010: SDP/CDP/DCP detection on D+/D−. (<a href="#legacy">§5</a>)</dd>
+  <dt id="g-bmc">BMC</dt><dd>Biphase Mark Coding: PD's line code on CC, about 300 kbps. (<a href="#pd">§7</a>)</dd>
+  <dt id="g-bpp">BPP / EPP</dt><dd>Qi Baseline (≤ 5 W) and Extended (≤ 15 W) Power Profiles. (<a href="#wireless">§15</a>)</dd>
+  <dt id="g-cc">CC</dt><dd>Configuration Channel pins on USB-C: attach detection, current advertisement, PD packets. (<a href="#type-c">§6</a>)</dd>
+  <dt id="g-cdp">CDP</dt><dd>Charging Downstream Port: data plus 1.5 A. (<a href="#legacy">§5</a>)</dd>
+  <dt id="g-chargepump">Charge pump</dt><dd>Switched-capacitor divider in the phone; ~97% efficient, does not regulate. (<a href="#heat">§4</a>)</dd>
+  <dt id="g-dcp">DCP</dt><dd>Dedicated Charging Port: D+/D− shorted, no data. (<a href="#legacy">§5</a>)</dd>
+  <dt id="g-direct">Direct charging</dt><dd>Charger regulates battery current directly; phone only divides or passes through. (<a href="#heat">§4</a>)</dd>
+  <dt id="g-dps">DPS</dt><dd>Dynamic Power Supply, PD 3.2 v1.2 (2026): guaranteed floor plus conditional boost. (<a href="#epr">§9</a>)</dd>
+  <dt id="g-emarker">E-marker</dt><dd>Chip in a USB-C plug that reports the cable's current, voltage, and speed. (<a href="#cables">§10</a>)</dd>
+  <dt id="g-epr">EPR</dt><dd>Extended Power Range: 28/36/48 V, up to 240 W, PD 3.1+. (<a href="#epr">§9</a>)</dd>
+  <dt id="g-fod">FOD</dt><dd>Foreign Object Detection: Qi pad compares sent and received power. (<a href="#wireless">§15</a>)</dd>
+  <dt id="g-goodcrc">GoodCRC</dt><dd>PD acknowledgment sent for every received message. (<a href="#pd">§7</a>)</dd>
+  <dt id="g-hardreset">Hard Reset</dt><dd>PD ordered set that drops VBUS and restarts negotiation. (<a href="#pd">§7</a>)</dd>
+  <dt id="g-mpp">MPP</dt><dd>Magnetic Power Profile: Qi2's magnet-aligned profile, from MagSafe. (<a href="#wireless">§15</a>)</dd>
+  <dt id="g-pdo">PDO</dt><dd>Power Data Object: one line on a PD source's menu. (<a href="#pd">§7</a>)</dd>
+  <dt id="g-pps">PPS</dt><dd>Programmable Power Supply: 20 mV-step PD supply with current limiting. (<a href="#pps">§8</a>)</dd>
+  <dt id="g-psrdy">PS_RDY</dt><dd>PD message: new voltage is stable. (<a href="#pd">§7</a>)</dd>
+  <dt id="g-rdo">RDO</dt><dd>Request Data Object: the sink's order. (<a href="#pd">§7</a>)</dd>
+  <dt id="g-rprd">Rp / Rd</dt><dd>Pull-up in the source, 5.1 kΩ pull-down in the sink, on CC. (<a href="#type-c">§6</a>)</dd>
+  <dt id="g-sdp">SDP</dt><dd>Standard Downstream Port: an ordinary data port, 500/900 mA. (<a href="#legacy">§5</a>)</dd>
+  <dt id="g-sop">SOP / SOP′ / SOP″</dt><dd>PD packet addresses: port partner, near cable plug, far cable plug. (<a href="#pd">§7</a>)</dd>
+  <dt id="g-spr">SPR</dt><dd>Standard Power Range: PD up to 20 V / 100 W. (<a href="#epr">§9</a>)</dd>
+  <dt id="g-2s">2S battery</dt><dd>Two cells in series, ~8–9 V, lets 20 V cables feed fast phones. (<a href="#heat">§4</a>)</dd>
+  <dt id="g-ufcs">UFCS</dt><dd>China's Universal Fast Charging Specification, T/TAF 083. (<a href="#ufcs">§14</a>)</dd>
+  <dt id="g-unitload">Unit load</dt><dd>USB current quantum: 100 mA (USB 2.0), 150 mA (USB 3.x). (<a href="#legacy">§5</a>)</dd>
+  <dt id="g-vbus">VBUS</dt><dd>The USB power wire. (<a href="#prereqs">§2</a>)</dd>
+  <dt id="g-vconn">VCONN</dt><dd>Power for e-marker and active cable chips, carried on the spare CC pin. (<a href="#cables">§10</a>)</dd>
+  <dt id="g-vdo">VDO</dt><dd>Vendor Defined Object: payload of Discover Identity replies, e.g. the Cable VDO. (<a href="#cables">§10</a>)</dd>
+</dl>
+</section>
+
+<!-- ============================================================ 24 -->
+<section id="index">
+<h2>24 · Index</h2>
+<div class="index-cols"><ul>
+  <li class="letter">A</li>
+  <li><a href="#dividers">Apple 2.4 A divider</a></li>
+  <li><a href="#vendors">AFC (Samsung)</a></li>
+  <li><a href="#wireless">AirFuel / A4WP</a></li>
+  <li><a href="#g-apdo">APDO</a></li>
+  <li><a href="#epr">AVS</a></li>
+  <li class="letter">B</li>
+  <li><a href="#legacy">BC 1.2</a></li>
+  <li><a href="#pd">BFSK (PD 1.0)</a></li>
+  <li><a href="#pd">BMC</a></li>
+  <li class="letter">C</li>
+  <li><a href="#cables">Cable VDO</a></li>
+  <li><a href="#type-c">CC pins</a></li>
+  <li><a href="#legacy">CDP</a></li>
+  <li><a href="#heat">Charge pump</a></li>
+  <li><a href="#wireless">Control Error packet</a></li>
+  <li class="letter">D</li>
+  <li><a href="#legacy">DCP</a></li>
+  <li><a href="#pd">Discover Identity</a></li>
+  <li><a href="#epr">DPS</a></li>
+  <li class="letter">E</li>
+  <li><a href="#cables">E-marker</a></li>
+  <li><a href="#epr">EPR / EPR_Mode</a></li>
+  <li><a href="#epr">EPR_KeepAlive</a></li>
+  <li><a href="#ufcs">EU 2022/2380</a></li>
+  <li class="letter">F</li>
+  <li><a href="#vendors">FCP / SCP (Huawei)</a></li>
+  <li><a href="#wireless">FOD</a></li>
+  <li><a href="#wireless">FSK (Qi)</a></li>
+  <li class="letter">G</li>
+  <li><a href="#pd">GoodCRC</a></li>
+  <li class="letter">H</li>
+  <li><a href="#pd">Hard Reset</a></li>
+  <li><a href="#vendors">HyperCharge</a></li>
+  <li class="letter">K</li>
+  <li><a href="#wireless">Ki Cordless Kitchen</a></li>
+  <li class="letter">M</li>
+  <li><a href="#wireless">MagSafe</a></li>
+  <li><a href="#pd">Message header</a></li>
+  <li><a href="#vendors">Pump Express (MediaTek)</a></li>
+  <li class="letter">P</li>
+  <li><a href="#pd">PD 1.0 profiles</a></li>
+  <li><a href="#wireless">PMA / Powermat</a></li>
+  <li><a href="#pd">Power Rules</a></li>
+  <li><a href="#pps">PPS</a></li>
+  <li><a href="#pd">PS_RDY</a></li>
+  <li class="letter">Q</li>
+  <li><a href="#qc">QC 2.0 voltage codes</a></li>
+  <li><a href="#qc">QC 3.0 pulses</a></li>
+  <li><a href="#qc">QC 5 / 5+</a></li>
+  <li><a href="#wireless">Qi 1.x · Qi2 · Qi2 Ready</a></li>
+  <li><a href="#future">Qi 50 W proposal</a></li>
+  <li class="letter">R</li>
+  <li><a href="#type-c">Rp / Rd</a></li>
+  <li><a href="#pd">Request / RDO</a></li>
+  <li class="letter">S</li>
+  <li><a href="#legacy">SDP</a></li>
+  <li><a href="#pd">SOP′ / SOP″</a></li>
+  <li><a href="#pd">Source_Capabilities</a></li>
+  <li><a href="#epr">SPR / SPR AVS</a></li>
+  <li><a href="#vendors">Super Fast Charging</a></li>
+  <li><a href="#vendors">SuperVOOC</a></li>
+  <li class="letter">T</li>
+  <li><a href="#pd">tFirstSourceCap</a></li>
+  <li><a href="#pps">tPPSRequest</a></li>
+  <li><a href="#vendors">TurboPower</a></li>
+  <li><a href="#heat">2S battery</a></li>
+  <li class="letter">U</li>
+  <li><a href="#ufcs">UFCS</a></li>
+  <li><a href="#legacy">Unit load</a></li>
+  <li class="letter">V</li>
+  <li><a href="#cables">VCONN</a></li>
+  <li><a href="#vendors">VOOC / Warp / Dash</a></li>
+  <li><a href="#type-c">vRd bands</a></li>
+  <li class="letter">Y</li>
+  <li><a href="#ufcs">YD/T 1591</a></li>
+</ul></div>
+</section>
+
+<!-- ============================================================ 25 -->
+<section id="quiz">
+<h2>25 · Quiz <span class="tag">Eighteen flashcards, self-scored. Aim for 15/18.</span></h2>
+<div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0/18 answered</div>
+<div class="quiz-reset"><button class="btn" id="quizReset" type="button">Reset quiz</button></div>
+<div class="quiz-item" data-q="1">
+  <div class="quiz-q"><span class="qnum">Q1</span>A 100 W charger is connected to a phone. What decides how many watts actually flow?</div>
+  <div class="quiz-answer">The minimum of charger limit, cable limit, and what the phone requests (plus the phone's temperature throttling). The charger only offers; the sink orders. (<a href="#mental-model">§1</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="2">
+  <div class="quiz-q"><span class="qnum">Q2</span>Name the four channels charging protocols signal on, with one protocol each.</div>
+  <div class="quiz-answer">D+/D− (BC 1.2, QC 2/3, VOOC, UFCS) · CC (Type-C Current, USB PD) · VBUS (PD 1.0 BFSK, MediaTek Pump Express) · the magnetic field (Qi). (<a href="#mental-model">§1</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="3">
+  <div class="quiz-q"><span class="qnum">Q3</span>How does a BC 1.2 phone recognize a dedicated wall charger?</div>
+  <div class="quiz-answer">It drives 0.5–0.7 V on D+ and reads D−. A DCP's D+/D− short (≤ 200 Ω) loops the voltage back above the 0.25–0.4 V reference. (<a href="#legacy">§5</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="4">
+  <div class="quiz-q"><span class="qnum">Q4</span>What Rp values advertise default, 1.5 A and 3 A on a 5 V pull-up, and what is Rd?</div>
+  <div class="quiz-answer">56 kΩ, 22 kΩ, 10 kΩ; Rd is 5.1 kΩ in the sink. (<a href="#type-c">§6</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="5">
+  <div class="quiz-q"><span class="qnum">Q5</span>Why must a USB-A-to-C cable contain a 56 kΩ resistor, and what goes wrong with 10 kΩ?</div>
+  <div class="quiz-answer">The A side has no CC, so the C plug supplies Rp. 56 kΩ advertises default USB power; 10 kΩ falsely advertises 3 A and a phone may overload the A port. (<a href="#type-c">§6</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="6">
+  <div class="quiz-q"><span class="qnum">Q6</span>List the four messages of a basic PD contract, in order.</div>
+  <div class="quiz-answer">Source_Capabilities → Request → Accept → PS_RDY, each acknowledged by GoodCRC. (<a href="#pd">§7</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="7">
+  <div class="quiz-q"><span class="qnum">Q7</span>Why can a normal Source_Capabilities message list at most seven PDOs?</div>
+  <div class="quiz-answer">The header's data-object count field is 3 bits. EPR uses an extended message to list more. (<a href="#pd">§7</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="8">
+  <div class="quiz-q"><span class="qnum">Q8</span>What maximum power does PD allow with a non-e-marked cable, and why?</div>
+  <div class="quiz-answer">60 W (20 V × 3 A). Without an e-marker the source must assume the cable is only rated for 3 A. (<a href="#pd">§7</a>, <a href="#cables">§10</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="9">
+  <div class="quiz-q"><span class="qnum">Q9</span>What does PPS let the phone do that fixed PDOs do not?</div>
+  <div class="quiz-answer">Request exact voltages in 20 mV steps and currents in 50 mA steps, re-requested at least every 10 s, with the source current-limiting. This lets the phone use an efficient charge pump. (<a href="#pps">§8</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="10">
+  <div class="quiz-q"><span class="qnum">Q10</span>Why does direct charging keep the phone cooler?</div>
+  <div class="quiz-answer">The lossy regulation happens in the charger. The phone only halves voltage with a ~97% charge pump instead of a ~90% buck converter. (<a href="#heat">§4</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="11">
+  <div class="quiz-q"><span class="qnum">Q11</span>Name the three EPR fixed voltages and the maximum power.</div>
+  <div class="quiz-answer">28, 36, 48 V at 5 A; up to 240 W. (<a href="#epr">§9</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="12">
+  <div class="quiz-q"><span class="qnum">Q12</span>What must the cable report for EPR entry to succeed?</div>
+  <div class="quiz-answer">50 V rating, 5 A, and the EPR Capable bit in its Cable VDO. (<a href="#epr">§9</a>, <a href="#cables">§10</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="13">
+  <div class="quiz-q"><span class="qnum">Q13</span>How does QC 2.0 select 9 V?</div>
+  <div class="quiz-answer">After entry (D+ held ~0.6 V ≥ 1.25 s, then D− pulled low), the phone sets D+ = 3.3 V and D− = 0.6 V. (<a href="#qc">§12</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="14">
+  <div class="quiz-q"><span class="qnum">Q14</span>Is Quick Charge 5 a competitor to USB PD?</div>
+  <div class="quiz-answer">No. QC 4 onward is built on USB PD and PPS; QC 5 adds Qualcomm's certification and 2S charge-pump hardware. (<a href="#qc">§12</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="15">
+  <div class="quiz-q"><span class="qnum">Q15</span>Why does a SuperVOOC brick with a generic cable charge slowly?</div>
+  <div class="quiz-answer">SuperVOOC needs the vendor cable's signal pin or ID chip and its high-current rating. Without it, the brick falls back to a basic rate. (<a href="#vendors">§13</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="16">
+  <div class="quiz-q"><span class="qnum">Q16</span>What does the EU common-charger directive require of a phone charging above 15 W?</div>
+  <div class="quiz-answer">A USB-C receptacle and USB PD support; proprietary modes may exist alongside. Phones since 28 Dec 2024, laptops since 28 Apr 2026. (<a href="#ufcs">§14</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="17">
+  <div class="quiz-q"><span class="qnum">Q17</span>How does a Qi phone talk to the pad, and how does the pad talk back?</div>
+  <div class="quiz-answer">Phone → pad by ASK load modulation at 2 kbps; pad → phone by FSK on the carrier at about 200 bps. (<a href="#wireless">§15</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+<div class="quiz-item" data-q="18">
+  <div class="quiz-q"><span class="qnum">Q18</span>Is there a USB PD 4.0 or a Qi 50 W standard as of September 2026?</div>
+  <div class="quiz-answer">No. The current PD spec is Revision 3.2 Version 1.2; Qi 50 W was only discussed at a June 2026 WPC meeting, with no published spec. (<a href="#future">§16</a>)</div>
+  <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+</section>
+
+<!-- ============================================================ 26 -->
+<section id="sources">
+<h2>26 · Sources <span class="tag">Primary specs first, then datasheets, then reporting.</span></h2>
+<p class="small">Checked 2026-09-25. USB PD Revision 3.2 Version 1.2, USB Type-C Release 2.5 and Battery Charging 1.2 were read from the official usb.org spec downloads. Qi facts come from WPC's published history and v1.3 introduction and the v1.2.3 packet definitions as reproduced in TI and Renesas application material. Vendor protocols are mostly undocumented publicly; figures come from datasheets where possible and from independent protocol references otherwise, and the guide marks what could not be confirmed. External links need a network; the guide itself works offline.</p>
+<ul>
+  <li><a href="https://www.usb.org/document-library/usb-power-delivery" target="_blank" rel="noopener">USB-IF · USB Power Delivery document library</a> · best used for: message formats, PDO/APDO layouts, timers, EPR entry, Cable VDO, revision history.</li>
+  <li><a href="https://www.usb.org/sites/default/files/USB%20Type-C%202.5%20Release%20202603.zip" target="_blank" rel="noopener">USB-IF · USB Type-C Release 2.5</a> · best used for: Rp/Rd values, vRd bands, attach timing.</li>
+  <li><a href="https://www.usb.org/sites/default/files/BCv1.2_070312_0.zip" target="_blank" rel="noopener">USB-IF · Battery Charging 1.2</a> · best used for: every BC detection voltage and timer.</li>
+  <li><a href="https://en.wikipedia.org/wiki/USB_hardware#USB_Power_Delivery" target="_blank" rel="noopener">Wikipedia · USB hardware, power sections</a> · best used for: history, PD 1.0 profiles, power-rules overview.</li>
+  <li><a href="https://eur-lex.europa.eu/eli/dir/2022/2380/oj" target="_blank" rel="noopener">EUR-Lex · Directive (EU) 2022/2380</a> · best used for: legal dates and the &gt; 15 W PD requirement.</li>
+  <li><a href="https://www.ti.com/lit/ds/symlink/tps2514a.pdf" target="_blank" rel="noopener">TI · TPS2513A/2514A datasheet</a> · best used for: divider voltages and tolerances, BC 1.2 detection.</li>
+  <li><a href="https://www.ti.com/lit/ug/tidu917/tidu917.pdf" target="_blank" rel="noopener">TI · TIDU917 QC 2.0 reference design</a> · best used for: QC 2.0 entry sequence and voltage table.</li>
+  <li><a href="https://www.graniteriverlabs.com/en-us/technical-blog/qualcomm-quickcharge-qc2-qc3" target="_blank" rel="noopener">Granite River Labs · QC 2/3</a> · best used for: QC 3.0 pulse timing.</li>
+  <li><a href="https://www.ti.com/lit/an/slyt743/slyt743.pdf" target="_blank" rel="noopener">TI · SLYT743</a> · best used for: why charge pumps and PPS exist, with efficiency numbers.</li>
+  <li><a href="https://www.mediatek.com/hubfs/MediaTek%20Assets/Pdfs/White_Papers/Pump-Express-Plus.pdf" target="_blank" rel="noopener">MediaTek · Pump Express Plus</a> · best used for: VBUS current-pattern signalling.</li>
+  <li><a href="https://en.wikipedia.org/wiki/VOOC" target="_blank" rel="noopener">Wikipedia · VOOC</a> and <a href="https://en.wikipedia.org/wiki/Quick_Charge" target="_blank" rel="noopener">Quick Charge</a> · best used for: version timelines.</li>
+  <li><a href="https://www.tinkervault.com/usb-fast-charging-protocols" target="_blank" rel="noopener">TinkerVault · USB fast-charging protocols</a> · best used for: per-vendor voltage/current profiles (secondary source).</li>
+  <li><a href="https://www.chongdiantou.com/archives/243125.html" target="_blank" rel="noopener">ChargerLAB CN · UFCS</a> · best used for: UFCS standard numbers and dates (Chinese).</li>
+  <li><a href="https://www.wirelesspowerconsortium.com/knowledge-base/qi-specification/history-of-the-qi-specifications/" target="_blank" rel="noopener">WPC · History of the Qi specifications</a> · best used for: Qi 1.0 through 2.3.</li>
+  <li><a href="https://www.ti.com/lit/ds/symlink/bq51003.pdf" target="_blank" rel="noopener">TI · bq51003 Qi receiver datasheet</a> · best used for: packet format and bi-phase encoding in plain English.</li>
+  <li><a href="https://support.apple.com/en-us/105047" target="_blank" rel="noopener">Apple · MagSafe Charger wattage</a> · best used for: per-iPhone wireless rates.</li>
+  <li><a href="https://9to5google.com/2026/06/29/qi2-50w-upgrade-meeting-report/" target="_blank" rel="noopener">9to5Google · Qi2 50 W meeting</a> · best used for: status of the 50 W proposal.</li>
+  <li><a href="https://www.chargerlab.com/charging-review-of-iphone-17-pro-max" target="_blank" rel="noopener">ChargerLAB · iPhone 17 Pro Max</a> · best used for: measured modern PD behavior.</li>
+</ul>
+</section>
+
+</main>
+</div>
+<script>
+(function () {
+  'use strict';
+  var root = document.documentElement;
+
+  /* ---- theme toggle: auto → dark → light ---- */
+  var toggle = document.querySelector('.theme-toggle');
+  var THEME_KEY = 'charging-protocols-guide-theme';
+  var themes = ['auto', 'dark', 'light'];
+  var labels = { auto: '◐ auto', dark: '● dark', light: '○ light' };
+  function applyTheme(t) {
+    if (t === 'auto') { root.removeAttribute('data-theme'); }
+    else { root.setAttribute('data-theme', t); }
+    toggle.textContent = labels[t];
+  }
+  var saved = null;
+  try { saved = localStorage.getItem(THEME_KEY); } catch (e) {}
+  var current = themes.indexOf(saved) >= 0 ? saved : 'auto';
+  applyTheme(current);
+  toggle.addEventListener('click', function () {
+    current = themes[(themes.indexOf(current) + 1) % themes.length];
+    applyTheme(current);
+    try { localStorage.setItem(THEME_KEY, current); } catch (e) {}
+  });
+
+  /* ---- mobile TOC ---- */
+  var toc = document.getElementById('toc');
+  var tocToggle = document.getElementById('tocToggle');
+  function setToc(open) {
+    toc.classList.toggle('open', open);
+    tocToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    tocToggle.textContent = open ? '✕ Close' : '☰ Contents';
+  }
+  tocToggle.addEventListener('click', function () { setToc(!toc.classList.contains('open')); });
+  toc.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && toc.classList.contains('open')) setToc(false);
+  });
+
+  /* ---- copy buttons on every pre ---- */
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var btn = document.createElement('button');
+    btn.className = 'copy-btn'; btn.type = 'button'; btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var clone = pre.cloneNode(true);
+      var b = clone.querySelector('.copy-btn'); if (b) b.remove();
+      var text = clone.textContent.replace(/^\s+|\s+$/g, '');
+      function done() { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1400); }
+      function fail() { btn.textContent = 'Select & copy'; setTimeout(function () { btn.textContent = 'Copy'; }, 1800); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(fail);
+      } else { fail(); }
+    });
+    pre.appendChild(btn);
+  });
+
+  /* ---- scrollspy ---- */
+  var tocLinks = document.querySelectorAll('nav.toc a[href^="#"]');
+  var byId = {};
+  tocLinks.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  if ('IntersectionObserver' in window) {
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) {
+          tocLinks.forEach(function (a) { a.classList.remove('active'); });
+          var link = byId[en.target.id];
+          if (link) link.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-15% 0px -70% 0px' });
+    document.querySelectorAll('main section[id]').forEach(function (s) { spy.observe(s); });
+  }
+
+  /* ---- quiz ---- */
+  var QUIZ_KEY = 'charging-protocols-guide-quiz';
+  var quizState = {};
+  try { quizState = JSON.parse(localStorage.getItem(QUIZ_KEY) || '{}'); } catch (e) { quizState = {}; }
+  var items = document.querySelectorAll('.quiz-item');
+  var scoreEl = document.getElementById('quizScore');
+  function saveQuiz() { try { localStorage.setItem(QUIZ_KEY, JSON.stringify(quizState)); } catch (e) {} }
+  function renderScore() {
+    var got = 0, missed = 0;
+    Object.keys(quizState).forEach(function (k) {
+      if (quizState[k] === 'got') got++; else if (quizState[k] === 'missed') missed++;
+    });
+    if (!scoreEl) return;
+    scoreEl.textContent = 'Score: ' + got + ' learned · ' + missed + ' review · ' +
+      (got + missed) + '/' + items.length + ' answered — aim for 15/' + items.length;
+  }
+  function setAnswerOpen(item, open) { item.querySelector('.quiz-answer').classList.toggle('open', open); }
+  items.forEach(function (item) {
+    var q = item.getAttribute('data-q');
+    if (quizState[q]) item.classList.add(quizState[q]);
+    item.querySelector('.reveal').addEventListener('click', function () {
+      item.querySelector('.quiz-answer').classList.toggle('open');
+    });
+    item.querySelector('.got').addEventListener('click', function () {
+      quizState[q] = 'got'; item.classList.remove('missed'); item.classList.add('got');
+      setAnswerOpen(item, true); saveQuiz(); renderScore();
+    });
+    item.querySelector('.missed').addEventListener('click', function () {
+      quizState[q] = 'missed'; item.classList.remove('got'); item.classList.add('missed');
+      setAnswerOpen(item, true); saveQuiz(); renderScore();
+    });
+  });
+  var quizReset = document.getElementById('quizReset');
+  if (quizReset) quizReset.addEventListener('click', function () {
+    quizState = {};
+    items.forEach(function (item) { item.classList.remove('got', 'missed'); setAnswerOpen(item, false); });
+    saveQuiz(); renderScore();
+  });
+  renderScore();
+
+
+  /* ---- timeline filter ---- */
+  var tlButtons = document.querySelectorAll('.tl-filters button');
+  var tlItems = document.querySelectorAll('#tl li');
+  tlButtons.forEach(function (b) {
+    b.addEventListener('click', function () {
+      var f = b.getAttribute('data-f');
+      tlButtons.forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+      tlItems.forEach(function (li) { li.hidden = !(f === 'all' || li.classList.contains(f)); });
+    });
+  });
+
+  /* ---- negotiation simulator ----
+     Deliberately simple model: each party is a small record; negotiate()
+     walks the same decision path §5–§13 describe and returns a log. */
+  var CHARGERS = {
+    usb2:    { name: 'Laptop USB 2.0 port (USB-A)', port: 'A', bc: 'SDP',
+               desc: 'Standard data port. 500 mA after enumeration.' },
+    apple12: { name: 'Apple 12 W USB-A brick', port: 'A', bc: 'apple',
+               desc: 'D+ 2.7 V / D− 2.7 V divider → read as 2.4 A by Apple devices.' },
+    qc3:     { name: 'Quick Charge 3.0 18 W (USB-A)', port: 'A', bc: 'DCP', qc: 3, qcMaxW: 18,
+               desc: 'DCP short at rest; QC 2.0 5/9/12 V and QC 3.0 3.6–12 V, 18 W cap.' },
+    vooc80:  { name: 'SuperVOOC 80 W brick (USB-A)', port: 'A', bc: 'DCP', vooc: { v: 11, a: 7.3 },
+               desc: '11 V × 7.3 A with vendor cable + phone. Otherwise a plain DCP.' },
+    apple20: { name: 'Apple 20 W USB-C', port: 'C', rp: 3,
+               pdos: [{ t: 'fixed', v: 5, a: 3 }, { t: 'fixed', v: 9, a: 2.22 }],
+               desc: 'PD fixed 5 V 3 A, 9 V 2.22 A. No PPS.' },
+    sam25:   { name: 'Samsung 25 W USB-C (PPS)', port: 'C', rp: 3,
+               pdos: [{ t: 'fixed', v: 5, a: 3 }, { t: 'fixed', v: 9, a: 2.77 },
+                      { t: 'pps', min: 3.3, max: 5.9, a: 3 }, { t: 'pps', min: 3.3, max: 11, a: 2.25 }],
+               desc: 'Samsung published profile: fixed 5/9 V + PPS 3.3–5.9 V 3 A, 3.3–11 V 2.25 A.' },
+    gan65:   { name: 'Generic 65 W GaN, fixed only', port: 'C', rp: 3,
+               pdos: [{ t: 'fixed', v: 5, a: 3 }, { t: 'fixed', v: 9, a: 3 }, { t: 'fixed', v: 15, a: 3 }, { t: 'fixed', v: 20, a: 3.25 }],
+               desc: 'Typical laptop brick: 5/9/15/20 V, no PPS. (Illustrative.)' },
+    gan100:  { name: 'Generic 100 W GaN, PD + PPS', port: 'C', rp: 3,
+               pdos: [{ t: 'fixed', v: 5, a: 3 }, { t: 'fixed', v: 9, a: 3 }, { t: 'fixed', v: 15, a: 3 }, { t: 'fixed', v: 20, a: 5 },
+                      { t: 'pps', min: 5, max: 11, a: 5 }, { t: 'pps', min: 5, max: 21, a: 5 }],
+               desc: 'Typical 100 W: fixed to 20 V 5 A + PPS 5–11 V 5 A, 5–21 V 5 A. (Illustrative.)' },
+    apple140:{ name: 'Apple 140 W USB-C (EPR)', port: 'C', rp: 3,
+               pdos: [{ t: 'fixed', v: 5, a: 3 }, { t: 'fixed', v: 9, a: 3 }, { t: 'fixed', v: 15, a: 5 }, { t: 'fixed', v: 20, a: 4.7 }],
+               epr: [{ t: 'fixed', v: 28, a: 5 }],
+               desc: 'SPR to 20 V 4.7 A, EPR 28 V 5 A. No PPS.' },
+    epr240:  { name: 'Generic 240 W EPR', port: 'C', rp: 3,
+               pdos: [{ t: 'fixed', v: 5, a: 3 }, { t: 'fixed', v: 9, a: 3 }, { t: 'fixed', v: 15, a: 3 }, { t: 'fixed', v: 20, a: 5 },
+                      { t: 'pps', min: 5, max: 21, a: 5 }],
+               epr: [{ t: 'fixed', v: 28, a: 5 }, { t: 'fixed', v: 36, a: 5 }, { t: 'fixed', v: 48, a: 5 }, { t: 'avs', min: 15, max: 48, a: 5 }],
+               desc: 'SPR 100 W + PPS, EPR 28/36/48 V and EPR AVS 15–48 V. (Illustrative.)' }
+  };
+  var CABLES = {
+    a2c:     { name: 'USB-A to USB-C (56 kΩ Rp)', a: 'A', b: 'C', desc: 'Legacy cable. C plug holds a 56 kΩ Rp: default USB power.' },
+    a2micro: { name: 'USB-A to Micro-USB', a: 'A', b: 'micro', desc: 'D+/D−, VBUS, GND. No CC anywhere.' },
+    vooc:    { name: 'SuperVOOC USB-A to USB-C (vendor)', a: 'A', b: 'C', vooc: true, desc: 'Extra signal pin + ID, rated far above 5 A.' },
+    c3:      { name: 'USB-C to USB-C, 3 A (no e-marker)', a: 'C', b: 'C', maxA: 3, maxV: 20, desc: 'The common cable. Source must assume 3 A, 20 V.' },
+    c5:      { name: 'USB-C to USB-C, 5 A e-marked (100 W)', a: 'C', b: 'C', maxA: 5, maxV: 20, emark: true, desc: 'E-marker: 5 A, 20 V. Not EPR.' },
+    c240:    { name: 'USB-C to USB-C, 240 W EPR', a: 'C', b: 'C', maxA: 5, maxV: 50, emark: true, epr: true, desc: 'E-marker: 5 A, 50 V, EPR Capable.' },
+    a2l:     { name: 'USB-A to Lightning', a: 'A', b: 'lightning', desc: 'Classic iPhone cable. D+/D− only.' },
+    c2l:     { name: 'USB-C to Lightning', a: 'C', b: 'lightning', maxA: 3, maxV: 20, desc: 'PD-capable Apple cable, 3 A.' }
+  };
+  var DEVICES = {
+    old:     { name: '2013 Android (Micro-USB, BC 1.2)', port: 'micro', bcA: 1.0, maxW: 5,
+               desc: 'Knows BC 1.2 only. Draws about 1 A from a DCP. (Illustrative.)' },
+    qcphone: { name: '2017 phone (USB-C, QC 3.0 + PD 18 W)', port: 'C', bcA: 1.5, qc: 3, pd: true, maxFixedV: 9, maxW: 18,
+               desc: 'Snapdragon-era: QC 3.0 over D+/D−, or PD fixed 9 V.' },
+    iphone14:{ name: 'iPhone 14 (Lightning)', port: 'lightning', apple: true, bcA: 1.5, pd: true, maxFixedV: 9, maxW: 20,
+               desc: 'PD fixed 9 V, ~20 W peak. Reads Apple dividers.' },
+    iphone17:{ name: 'iPhone 17 Pro Max (USB-C)', port: 'C', apple: true, bcA: 1.5, pd: true, maxFixedV: 15, maxW: 36.7,
+               desc: 'PD fixed to 15 V. ChargerLAB measured 36.7 W peak.' },
+    galaxy:  { name: 'Galaxy S2x Ultra (SFC 2.0, 45 W)', port: 'C', bcA: 1.5, pd: true, maxFixedV: 9, fixedCapW: 15,
+               pps: { maxV: 11, maxA: 4.5 }, tiers: [45, 25], maxW: 45,
+               desc: 'Wants PPS ≤ 11 V; 45 W needs ~4.5 A (5 A cable), else 25 W, else 15 W fixed.' },
+    pixel:   { name: 'Pixel 10 Pro XL (PPS 45 W)', port: 'C', bcA: 1.5, pd: true, maxFixedV: 9, fixedCapW: 27,
+               pps: { maxV: 21, maxA: 3 }, maxW: 45,
+               desc: 'PPS-first; slower on fixed-only chargers. (Fallback numbers illustrative.)' },
+    oneplus: { name: 'SuperVOOC 80 W phone', port: 'C', bcA: 1.5, vooc: true, pd: true, maxFixedV: 9, fixedCapW: 18, maxW: 80,
+               desc: '11 V × 7.3 A with vendor brick + cable; basic PD otherwise. (Fallback illustrative.)' },
+    mbp16:   { name: 'MacBook Pro 16" (140 W EPR)', port: 'C', bcA: 1.5, pd: true, maxFixedV: 20, eprMaxV: 28, maxW: 140,
+               desc: 'PD to 20 V; EPR 28 V × 5 A for 140 W.' },
+    laptop240:{ name: '240 W gaming laptop (EPR 48 V)', port: 'C', bcA: 0, pd: true, maxFixedV: 20, eprMaxV: 48, maxW: 240,
+               desc: 'Needs EPR 48 V for full power; SPR for battery top-up only.' }
+  };
+
+  function fmt(n) { return (Math.round(n * 100) / 100).toString(); }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function pdoText(p) {
+    if (p.t === 'fixed') return 'Fixed ' + fmt(p.v) + 'V ' + fmt(p.a) + 'A';
+    if (p.t === 'pps') return 'PPS ' + fmt(p.min) + '-' + fmt(p.max) + 'V ' + fmt(p.a) + 'A';
+    return 'EPR AVS ' + fmt(p.min) + '-' + fmt(p.max) + 'V ' + fmt(p.a) + 'A';
+  }
+
+  function negotiate(ch, cab, dev) {
+    var L = [];
+    var t = 0;
+    function log(cls, msg) { L.push('<span class="dim">' + ('     ' + t).slice(-5) + ' ms</span>  <span class="' + cls + '">' + esc(msg) + '</span>'); }
+    function res(w, via, lim) { return { w: w, via: via, lim: lim, log: L.join('\n') }; }
+
+    if (cab.a !== ch.port) {
+      log('bad', 'Cable plug USB-' + cab.a + ' does not fit a USB-' + ch.port + ' port.');
+      return res(null, 'Does not fit', 'Physical veto: the ' + (ch.port === 'A' ? 'USB-A' : 'USB-C') + ' charger needs a cable with that plug.');
+    }
+    if (cab.b !== dev.port) {
+      log('bad', 'Cable end (' + cab.b + ') does not fit the device port (' + dev.port + ').');
+      return res(null, 'Does not fit', 'Physical veto: wrong device-end connector.');
+    }
+
+    /* ---- USB-A world: no CC to the charger, D+/D− only ---- */
+    if (ch.port === 'A') {
+      log('src', 'VBUS 5 V is always on. A USB-A port has no CC pin, so USB PD is impossible.');
+      if (cab.b === 'C') log('cab', 'C plug contains Rp = 56 kΩ → sink reads vRd-USB (default power).');
+      if (ch.vooc && cab.vooc && dev.vooc) {
+        t = 20; log('snk', 'D+/D− vendor handshake; cable ID chip answers.');
+        t = 120; log('src', 'Brick confirms vendor phone + vendor cable → direct charging mode.');
+        t = 300; log('src', 'VBUS → ' + ch.vooc.v + ' V, current regulated by brick up to ' + ch.vooc.a + ' A.');
+        var vw = Math.min(ch.vooc.v * ch.vooc.a, dev.maxW);
+        return res(vw, 'SuperVOOC (proprietary)', 'All three parties are vendor-matched. The phone\'s charge pumps take it from here.');
+      }
+      if (ch.vooc && dev.vooc && !cab.vooc) log('bad', 'Vendor handshake fails: generic cable has no ID chip or signal pin.');
+      t = 10; log('snk', 'BC 1.2 data contact detect, then drive 0.6 V on D+ (primary detection).');
+      t = 60;
+      if (ch.bc === 'SDP') {
+        log('snk', 'D− stays low → SDP. Enumerate and ask the host for 500 mA.');
+        var sw = 5 * Math.min(0.5, dev.bcA || 0.5);
+        return res(sw, 'USB 2.0 default', 'Charger (a data port) is the limit: 500 mA.');
+      }
+      if (ch.bc === 'apple') {
+        log('src', 'D+ held at 2.7 V, D− at 2.7 V by divider.');
+        if (dev.apple) {
+          log('snk', 'Apple device reads divider → 2.4 A budget.');
+          return res(Math.min(12, dev.maxW), 'Apple 2.4 A divider', 'Charger: the divider advertises 12 W.');
+        }
+        log('bad', 'No D+/D− short → not a DCP. BC 1.2-only phone falls back to SDP behavior.');
+        return res(2.5, 'Fallback 500 mA', 'Protocol mismatch: the phone does not understand Apple dividers. (Many later Androids do.)');
+      }
+      log('snk', 'D− follows D+ (short ≤ 200 Ω) → DCP detected.');
+      if (ch.qc && dev.qc) {
+        t = 1310; log('snk', 'Held D+ ≥ 1.25 s → charger opens the D+/D− short.');
+        t = 1312; log('snk', 'Pulled D− low ≥ 1 ms → Quick Charge mode entered.');
+        t = 1320; log('snk', 'D+ 0.6 V / D− 3.3 V → QC 3.0 continuous mode; pulsing up in 200 mV steps.');
+        t = 1400; log('src', 'VBUS settles at 9 V (18 W budget: ~9 V × 2 A).');
+        return res(Math.min(ch.qcMaxW, dev.maxW), 'Quick Charge 3.0', 'Charger cap: 18 W.');
+      }
+      if (ch.qc && !dev.qc) log('dim', 'Charger also speaks QC, but the phone never starts the QC handshake.');
+      var a = Math.min(dev.bcA || 0.5, 1.5);
+      return res(5 * a, 'BC 1.2 DCP, 5 V', a < 1.5 ? 'Device limit: it only draws ' + fmt(a) + ' A from a DCP.' : 'BC 1.2 limit: 1.5 A at 5 V.');
+    }
+
+    /* ---- USB-C world ---- */
+    t = 0; log('src', 'Rp advertises 3.0 A (10 kΩ). Sink Rd 5.1 kΩ pulls CC to ~1.7 V.');
+    t = 150; log('src', 'tCCDebounce passed (100–200 ms). VBUS 5 V on (≤ 275 ms).');
+    var cabA = cab.maxA || 3, cabV = cab.maxV || 20;
+    if (cab.emark) {
+      t = 170; log('cab', 'Discover Identity (SOP′) → Cable VDO: ' + cabA + ' A, ' + cabV + ' V' + (cab.epr ? ', EPR Capable' : '') + '.');
+    } else {
+      t = 170; log('cab', 'No e-marker answers SOP′ → source assumes 3 A, 20 V.');
+    }
+    var caps = ch.pdos.map(function (p) { var q = {}; for (var k in p) q[k] = p[k]; q.orig = q.a; q.a = Math.min(q.a, cabA); return q; });
+    t = 200; log('src', 'Source_Capabilities: [' + caps.map(pdoText).join(' · ') + ']');
+    if (!dev.pd) {
+      log('bad', 'Sink never answers. Source retries caps (nCapsCount 50) then stays at Type-C Current.');
+      return res(5 * Math.min(3, dev.bcA || 1.5), 'Type-C Current, 5 V', 'Device does not speak PD.');
+    }
+    t = 201; log('snk', 'GoodCRC');
+
+    /* choose best SPR option */
+    var best = null;
+    caps.forEach(function (p, i) {
+      var w, v, a;
+      if (p.t === 'fixed' && p.v <= dev.maxFixedV) {
+        v = p.v; a = p.a; w = v * a;
+        if (p.v > 5 && dev.fixedCapW) w = Math.min(w, dev.fixedCapW);
+        w = Math.min(w, dev.maxW);
+        if (!best || w >= best.w - 0.01) best = { w: w, i: i + 1, p: p, v: v, a: Math.min(a, w / v), kind: 'fixed' };
+      }
+      if (p.t === 'pps' && dev.pps) {
+        v = Math.min(p.max, dev.pps.maxV); a = Math.min(p.a, dev.pps.maxA); w = Math.min(v * a, dev.maxW);
+        if (dev.tiers) {
+          var tier = 0;
+          dev.tiers.forEach(function (tt) { if (w >= tt * 0.95 && tt > tier) tier = tt; });
+          w = tier || Math.min(w, dev.fixedCapW);
+        }
+        if (!best || w > best.w + 0.01) best = { w: w, i: i + 1, p: p, v: v, a: a, kind: 'pps' };
+      }
+    });
+    var lim = '';
+    if (best.kind === 'pps') {
+      t = 230; log('snk', 'Request: object #' + best.i + ' (PPS), tracking battery up to ' + fmt(best.v) + ' V, ' + fmt(best.a) + ' A');
+    } else {
+      t = 230; log('snk', 'Request: object #' + best.i + ' (Fixed ' + fmt(best.v) + ' V), ' + fmt(best.a) + ' A');
+    }
+    t = 232; log('src', 'Accept');
+    t = 260; log('src', 'VBUS moving (tSrcTransition 25–35 ms, then ramp)…');
+    t = 480; log('src', 'PS_RDY → contract established.');
+
+    /* EPR */
+    if (dev.eprMaxV) {
+      if (!ch.epr) {
+        log('dim', 'Source did not set EPR Capable in its 5 V PDO. No EPR.');
+        lim = 'Charger has no EPR: capped at SPR.';
+      } else {
+        t = 500; log('snk', 'EPR_Mode (Enter)');
+        t = 505; log('src', 'EPR_Mode (Enter Acknowledged); checking cable…');
+        if (!cab.epr) {
+          t = 540; log('bad', 'Cable VDO: ' + cabV + ' V' + (cab.emark ? '' : ' (assumed)') + ', not EPR Capable → EPR_Mode (Enter Failed).');
+          lim = 'Cable veto: EPR needs a 50 V / 5 A / EPR-capable e-marker.';
+        } else {
+          t = 560; log('src', 'EPR_Mode (Enter Succeeded) within tEnterEPR 450–550 ms.');
+          var eprs = ch.epr.filter(function (p) { return p.t === 'fixed' && p.v <= dev.eprMaxV; });
+          var top = eprs[eprs.length - 1];
+          t = 580; log('src', 'EPR_Source_Capabilities: SPR objects #1–7, EPR from #8: [' + ch.epr.map(pdoText).join(' · ') + ']');
+          t = 600; log('snk', 'EPR_Request: Fixed ' + top.v + ' V, ' + top.a + ' A');
+          t = 602; log('src', 'Accept');
+          t = 1500; log('src', 'PS_RDY (EPR transition up to 830–1020 ms).');
+          t = 1900; log('snk', 'EPR_KeepAlive every 250–500 ms from now on…');
+          return res(Math.min(top.v * top.a, dev.maxW), 'USB PD EPR ' + top.v + ' V', 'Full contract: charger, cable, and device all EPR.');
+        }
+      }
+    }
+    if (best.kind === 'pps') log('snk', 'Re-requests every few seconds (≤ 10 s, tPPSRequest) as the battery fills.');
+
+    if (!lim) {
+      if (dev.pps && best.kind !== 'pps') lim = 'Protocol mismatch: phone wants PPS; charger only offers fixed voltages, so it throttles.';
+      else if (dev.tiers && best.w < dev.maxW && best.kind === 'pps' && best.p.orig > cabA) lim = 'Cable veto: 45 W needs ~4.5 A, a 3 A cable caps the PPS offer.';
+      else if (dev.fixedCapW && best.kind === 'fixed' && best.w >= dev.fixedCapW - 0.1 && !dev.pps) lim = 'Device fallback: without its native protocol, the phone caps fixed-voltage PD at ' + dev.fixedCapW + ' W.';
+      else if (best.w >= dev.maxW - 0.1) lim = 'Device limit: the phone asked for everything it can take.';
+      else if (best.p.a >= cabA && cabA < 5 && best.v >= 20) lim = 'Cable veto: no e-marker means 3 A max (60 W at 20 V).';
+      else lim = 'Charger limit: the best PDO this device can use.';
+    }
+    var via = best.kind === 'pps' ? 'USB PD PPS' : 'USB PD fixed ' + fmt(best.v) + ' V';
+    return res(best.w, via, lim);
+  }
+
+  var selC = document.getElementById('simCharger');
+  var selK = document.getElementById('simCable');
+  var selD = document.getElementById('simDevice');
+  if (selC && selK && selD) {
+    [[selC, CHARGERS], [selK, CABLES], [selD, DEVICES]].forEach(function (pair) {
+      Object.keys(pair[1]).forEach(function (k) {
+        var o = document.createElement('option'); o.value = k; o.textContent = pair[1][k].name; pair[0].appendChild(o);
+      });
+    });
+    var outW = document.getElementById('simWatts'), outV = document.getElementById('simVia'),
+        outL = document.getElementById('simLimit'), outLog = document.getElementById('simLog');
+    function run() {
+      var ch = CHARGERS[selC.value], cab = CABLES[selK.value], dev = DEVICES[selD.value];
+      document.getElementById('descCharger').textContent = ch.desc;
+      document.getElementById('descCable').textContent = cab.desc;
+      document.getElementById('descDevice').textContent = dev.desc;
+      var r = negotiate(ch, cab, dev);
+      outW.textContent = r.w === null ? '✕' : fmt(r.w) + ' W';
+      outV.textContent = r.via;
+      outL.textContent = r.lim;
+      outLog.innerHTML = r.log;
+    }
+    var PRESETS = {
+      samsung3a:  ['gan100', 'c3', 'galaxy'],
+      mac100:     ['apple140', 'c5', 'mbp16'],
+      ipadandroid:['apple12', 'a2micro', 'old'],
+      voocmix:    ['vooc80', 'a2c', 'oneplus'],
+      epr:        ['epr240', 'c240', 'laptop240']
+    };
+    document.querySelectorAll('[data-preset]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var p = PRESETS[b.getAttribute('data-preset')];
+        selC.value = p[0]; selK.value = p[1]; selD.value = p[2]; run();
+      });
+    });
+    [selC, selK, selD].forEach(function (s) { s.addEventListener('change', run); });
+    selC.value = 'gan100'; selK.value = 'c3'; selD.value = 'galaxy';
+    run();
+  }
+})();
+</script>
+</body>
+</html>

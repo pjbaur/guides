@@ -133,6 +133,13 @@
       "subject": "Seven USB power meters compared straight from their manuals — voltage/current range, fast-charge protocol coverage, cable diagnostics, and a filterable pick for budget, pocket, cable-detective, pro-bench, and hacker use cases",
       "verified": "7 devices · manuals surveyed 2026-09-22",
       "accent": "lime"
+    },
+    {
+      "file": "charging-protocols-user-guide.html",
+      "name": "charging protocols",
+      "subject": "Every charging handshake from 500 mA to 240 W - BC 1.2, Type-C Current, USB PD 1.0 to 3.2, PPS, EPR and AVS, Quick Charge, VOOC and the vendor zoo, UFCS, Qi to Qi2 25W - with a negotiation simulator and what is proposed next",
+      "verified": "USB PD R3.2 v1.2 · Qi 2.3 · 2026-09-25",
+      "accent": "violet"
     }
   ]
 }
