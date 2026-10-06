@@ -81,6 +81,7 @@ command works as a local pre-commit hook.
 | [`tmux-user-guide.html`](tmux-user-guide.html) | Terminal multiplexing — sessions that outlive your connection, the client/server model, panes, copy-mode, scripting | tmux 3.7b · 2026-08-22 |
 | [`bw150-user-guide.html`](bw150-user-guide.html) | ATorch BW150 electronic load — wiring, every mode, battery capacity and health, charger and cable tests, cycling, the apps | firmware 1.1.0 · screens 2026-09-05 |
 | [`charging-protocols-user-guide.html`](charging-protocols-user-guide.html) | Charging protocols wire-level — BC 1.2, Type-C Current, USB PD through 3.2 (PPS, EPR, AVS), Quick Charge, VOOC and vendor protocols, UFCS, Qi/Qi2, negotiation simulator | USB PD R3.2 v1.2 · Qi 2.3 · 2026-09-25 |
+| [`dictation-cheat-sheet.html`](dictation-cheat-sheet.html) | One-page Mac Dictation and Voice Control cheat sheet — layout words, punctuation, symbols, select/delete/move/correct, each command tagged tested, docs or reported from a spoken run | macOS 15.6 · spoken 2026-10-05 |
 
 ## How they are built
 
