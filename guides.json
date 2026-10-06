@@ -140,6 +140,13 @@
       "subject": "Every charging handshake from 500 mA to 240 W - BC 1.2, Type-C Current, USB PD 1.0 to 3.2, PPS, EPR and AVS, Quick Charge, VOOC and the vendor zoo, UFCS, Qi to Qi2 25W - with a negotiation simulator and what is proposed next",
       "verified": "USB PD R3.2 v1.2 · Qi 2.3 · 2026-09-25",
       "accent": "violet"
+    },
+    {
+      "file": "dictation-cheat-sheet.html",
+      "name": "dictation cheat sheet",
+      "subject": "One-page Mac cheat sheet - Dictation (Fn Fn) layout words, punctuation and symbols, plus Voice Control select, delete, move and correct, each command tagged tested, docs or reported from a spoken run on macOS 15.6",
+      "verified": "macOS 15.6 · spoken 2026-10-05",
+      "accent": "cyan"
     }
   ]
 }
