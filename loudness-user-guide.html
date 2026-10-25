@@ -1,0 +1,1872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loudness</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+<style>
+  /* =====================================================================
+     VU-meter palette: signal rose on warm paper greys, with a "level"
+     green for verified numbers and amber for limits. Light values on
+     :root, dark via media query (guarded so an explicit light choice
+     wins) and via data-theme. Terminal panels are fixed dark in both
+     themes. Diagram series: --s1 rose = loudness / LUFS · --s2 blue =
+     sample peak / dBFS · --s3 green = true peak / passing · --s4 amber
+     = ceilings / limits.
+     ===================================================================== */
+  :root {
+    --bg: #faf6f8;
+    --surface: #ffffff;
+    --surface2: #f4eaef;
+    --ink: #241419;
+    --ink2: #5c4450;
+    --muted: #8d7580;
+    --line: #e4d5dc;
+    --hairline: rgba(36,20,25,0.10);
+    --code-bg: #f4eaef;
+    --accent: #b01f6a;
+    --accent-wash: rgba(176,31,106,0.09);
+    --on-accent: #ffffff;
+    --volt: #8a6400;
+    --volt-bg: rgba(230,180,0,0.16);
+    --warn: #8a5a00;
+    --warn-bg: rgba(200,140,0,0.13);
+    --danger: #b0261c;
+    --danger-bg: rgba(176,38,28,0.08);
+    --blue: #1f5fae;
+    --blue-bg: rgba(31,95,174,0.08);
+    --good: #1f7a3c;
+    --good-bg: rgba(31,122,60,0.10);
+    --lab-bg: rgba(176,31,106,0.05);
+    --shadow: rgba(36,20,25,0.10);
+    --terminal: #1b1016;
+    --terminal-2: #2a1a22;
+    --terminal-line: #45303c;
+    --terminal-ink: #f2e6ec;
+    --terminal-dim: #b39aa6;
+    --terminal-accent: #ff8ab8;
+    --terminal-yellow: #ffd866;
+    --terminal-red: #ff6b61;
+    --terminal-green: #6fe39a;
+    --s1: #b01f6a; --s2: #1f5fae; --s3: #1f7a3c; --s4: #a86a00;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #150d11; --surface: #1e1319; --surface2: #281a21;
+      --ink: #f5ecf0; --ink2: #d4bfc9; --muted: #a08a95;
+      --line: #45303c; --hairline: rgba(255,255,255,0.10);
+      --code-bg: #281a21;
+      --accent: #ff8ab8; --accent-wash: rgba(255,138,184,0.12); --on-accent: #2a0a18;
+      --volt: #ffd24d; --volt-bg: rgba(255,210,77,0.12);
+      --warn: #f0c04a; --warn-bg: rgba(240,192,74,0.12);
+      --danger: #ff6b61; --danger-bg: rgba(255,107,97,0.10);
+      --blue: #7fb3ff; --blue-bg: rgba(127,179,255,0.10);
+      --good: #5ad27a; --good-bg: rgba(90,210,122,0.12);
+      --lab-bg: rgba(255,138,184,0.05); --shadow: rgba(0,0,0,0.45);
+      --s1: #ff8ab8; --s2: #7fb3ff; --s3: #5ad27a; --s4: #f0c04a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #faf6f8; --surface: #ffffff; --surface2: #f4eaef;
+    --ink: #241419; --ink2: #5c4450; --muted: #8d7580;
+    --line: #e4d5dc; --hairline: rgba(36,20,25,0.10);
+    --code-bg: #f4eaef;
+    --accent: #b01f6a; --accent-wash: rgba(176,31,106,0.09); --on-accent: #ffffff;
+    --volt: #8a6400; --volt-bg: rgba(230,180,0,0.16);
+    --warn: #8a5a00; --warn-bg: rgba(200,140,0,0.13);
+    --danger: #b0261c; --danger-bg: rgba(176,38,28,0.08);
+    --blue: #1f5fae; --blue-bg: rgba(31,95,174,0.08);
+    --good: #1f7a3c; --good-bg: rgba(31,122,60,0.10);
+    --lab-bg: rgba(176,31,106,0.05); --shadow: rgba(36,20,25,0.10);
+    --s1: #b01f6a; --s2: #1f5fae; --s3: #1f7a3c; --s4: #a86a00;
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    --bg: #150d11; --surface: #1e1319; --surface2: #281a21;
+    --ink: #f5ecf0; --ink2: #d4bfc9; --muted: #a08a95;
+    --line: #45303c; --hairline: rgba(255,255,255,0.10);
+    --code-bg: #281a21;
+    --accent: #ff8ab8; --accent-wash: rgba(255,138,184,0.12); --on-accent: #2a0a18;
+    --volt: #ffd24d; --volt-bg: rgba(255,210,77,0.12);
+    --warn: #f0c04a; --warn-bg: rgba(240,192,74,0.12);
+    --danger: #ff6b61; --danger-bg: rgba(255,107,97,0.10);
+    --blue: #7fb3ff; --blue-bg: rgba(127,179,255,0.10);
+    --good: #5ad27a; --good-bg: rgba(90,210,122,0.12);
+    --lab-bg: rgba(255,138,184,0.05); --shadow: rgba(0,0,0,0.45);
+    --s1: #ff8ab8; --s2: #7fb3ff; --s3: #5ad27a; --s4: #f0c04a;
+    color-scheme: dark;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg); color: var(--ink);
+    line-height: 1.62; font-size: 16px;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .skip-link {
+    position: absolute; left: -9999px; top: 0; z-index: 100;
+    background: var(--accent); color: var(--on-accent);
+    padding: 8px 16px; border-radius: 0 8px 0 0;
+  }
+  .skip-link:focus { left: 0; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- layout ---- */
+  .layout { display: flex; max-width: 1300px; margin: 0 auto; }
+  nav.toc {
+    position: sticky; top: 0; align-self: flex-start;
+    width: 262px; flex-shrink: 0; height: 100vh; overflow-y: auto;
+    padding: 22px 8px 24px 18px; border-right: 1px solid var(--line);
+    background: var(--bg);
+  }
+  nav.toc .brand {
+    display: flex; align-items: center; gap: 9px;
+    font-weight: 800; font-size: 15px; margin-bottom: 2px; letter-spacing: 0.2px;
+  }
+  .brand-mark {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 6px;
+    background: var(--accent); color: var(--on-accent);
+    font: 700 10px/1 ui-monospace, "SF Mono", Menlo, monospace;
+    flex-shrink: 0;
+  }
+  nav.toc .brand-sub { font-size: 12px; color: var(--muted); margin: 0 0 14px 35px; line-height: 1.4; }
+  nav.toc .part {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.9px;
+    color: var(--muted); margin: 14px 0 3px; padding-left: 10px; font-weight: 700;
+  }
+  nav.toc a {
+    display: block; padding: 4.5px 10px; border-radius: 6px;
+    color: var(--ink2); font-size: 13.5px; margin-bottom: 1px;
+  }
+  nav.toc a:hover { background: var(--accent-wash); text-decoration: none; }
+  nav.toc a.active { background: var(--accent-wash); color: var(--accent); font-weight: 600; }
+  main { flex: 1; min-width: 0; padding: 30px 40px 90px; }
+
+  .toc-toggle {
+    display: none; position: fixed; left: 12px; top: 12px; z-index: 12;
+    background: var(--surface); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer;
+    font-family: inherit; box-shadow: 0 2px 8px var(--shadow);
+  }
+  @media (max-width: 940px) {
+    .layout { flex-direction: column; }
+    .toc-toggle { display: inline-block; }
+    nav.toc {
+      position: fixed; top: 0; left: 0; width: min(300px, 86vw); height: 100vh;
+      transform: translateX(-104%); transition: transform 0.2s ease;
+      z-index: 11; box-shadow: 0 0 30px var(--shadow); padding-top: 54px;
+    }
+    nav.toc.open { transform: translateX(0); }
+    main { padding: 64px 16px 60px; }
+  }
+  @media print {
+    nav.toc, .theme-toggle, .toc-toggle, .quiz-actions, .quiz-reset { display: none !important; }
+    .quiz-answer { display: block !important; }
+    details { display: block; }
+    details > *:not(summary) { display: block !important; }
+    section, .lab, .callout, figure { break-inside: avoid-page; }
+    main { padding: 0; }
+    body { font-size: 12.5px; }
+  }
+
+  .theme-toggle {
+    position: fixed; top: 12px; right: 14px; z-index: 12;
+    background: var(--surface); border: 1px solid var(--line); color: var(--ink2);
+    border-radius: 20px; padding: 5px 14px; font-size: 13px; cursor: pointer;
+    font-family: inherit; box-shadow: 0 2px 8px var(--shadow);
+  }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ---- type ---- */
+  h1 { font-size: clamp(30px, 4.2vw, 46px); line-height: 1.08; font-weight: 800; letter-spacing: -0.02em; }
+  h1 .accent-clause { color: var(--accent); }
+  h2 {
+    font-size: 27px; font-weight: 800; letter-spacing: -0.015em;
+    margin: 0 0 6px; padding-top: 44px; scroll-margin-top: 10px;
+  }
+  h2 .tag { display: block; font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0.02em; margin-top: 2px; }
+  h3 { font-size: 19px; font-weight: 700; margin: 30px 0 8px; scroll-margin-top: 10px; }
+  h4 { font-size: 15.5px; font-weight: 700; margin: 20px 0 6px; }
+  p { margin: 0 0 14px; max-width: 78ch; }
+  ul, ol { margin: 0 0 14px 22px; max-width: 78ch; }
+  li { margin-bottom: 5px; }
+  li > ul, li > ol { margin-top: 5px; }
+  strong { font-weight: 700; }
+  section { border-bottom: 1px solid var(--line); padding-bottom: 36px; }
+  section:last-of-type { border-bottom: none; }
+  .lede { font-size: 18.5px; line-height: 1.55; color: var(--ink); margin-bottom: 18px; max-width: 72ch; }
+  .lede::first-letter { color: var(--accent); }
+  .sources-line { font-size: 13px; color: var(--muted); margin-top: 22px; }
+  .sources-line a { color: var(--muted); text-decoration: underline; text-decoration-color: var(--line); }
+  .sources-line a:hover { color: var(--accent); }
+  .small { font-size: 13.5px; color: var(--ink2); }
+  hr.thin { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
+
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.88em; background: var(--code-bg); padding: 1px 6px; border-radius: 5px;
+    color: var(--ink);
+  }
+  pre {
+    position: relative; background: var(--terminal); color: var(--terminal-ink);
+    border-radius: 10px; padding: 14px 16px; overflow-x: auto; margin: 0 0 16px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13.5px; line-height: 1.55;
+    border: 1px solid var(--terminal-line);
+  }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+  pre .cmd { color: var(--terminal-accent); font-weight: 600; }
+  pre .comment { color: var(--terminal-dim); }
+  pre .hot { color: var(--terminal-red); }
+  pre .val { color: var(--terminal-yellow); }
+  .copy-btn {
+    position: absolute; top: 8px; right: 8px;
+    background: var(--terminal-2); color: var(--terminal-dim); border: 1px solid var(--terminal-line);
+    border-radius: 6px; padding: 2px 9px; font-size: 11.5px; cursor: pointer; font-family: inherit;
+  }
+  .copy-btn:hover { color: var(--terminal-yellow); border-color: var(--terminal-yellow); }
+
+  kbd {
+    display: inline-block; font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12.5px; font-weight: 600; line-height: 1;
+    padding: 5px 8px 4px; border-radius: 6px;
+    background: var(--surface); color: var(--ink);
+    border: 1px solid var(--line); border-bottom-width: 3px;
+    box-shadow: 0 1px 0 var(--hairline); vertical-align: middle; white-space: nowrap;
+  }
+
+  /* ---- recipes (numbered procedures) ---- */
+  ol.recipe { list-style: none; margin: 0 0 18px; counter-reset: step; max-width: 82ch; }
+  ol.recipe > li {
+    position: relative; padding: 9px 12px 9px 46px; margin: 0 0 6px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    counter-increment: step;
+  }
+  ol.recipe > li::before {
+    content: counter(step); position: absolute; left: 12px; top: 10px;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--accent); color: var(--on-accent);
+    font: 700 12px/24px system-ui, sans-serif; text-align: center;
+  }
+  .expect {
+    display: block; margin-top: 6px; font-size: 13.5px; color: var(--ink2);
+    padding-left: 10px; border-left: 3px solid var(--good);
+  }
+  .expect b { color: var(--good); font-weight: 700; }
+
+  /* ---- callouts ---- */
+  .callout {
+    background: var(--surface2); border-left: 4px solid var(--accent);
+    border-radius: 0 10px 10px 0; padding: 12px 16px; margin: 0 0 18px; max-width: 82ch;
+    font-size: 15px;
+  }
+  .callout > strong:first-child { display: block; margin-bottom: 3px; }
+  .callout.warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .callout.danger { border-left-color: var(--danger); background: var(--danger-bg); }
+  .callout.blue { border-left-color: var(--blue); background: var(--blue-bg); }
+  .callout.good { border-left-color: var(--good); background: var(--good-bg); }
+  .callout p:last-child, .callout ul:last-child { margin-bottom: 0; }
+
+  /* ---- tables ---- */
+  .table-wrap { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--line); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; background: var(--surface); }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.9px; color: var(--muted);
+    background: var(--surface2); font-weight: 700;
+  }
+  tr:last-child td { border-bottom: none; }
+  td code { white-space: nowrap; }
+  .num { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* ---- hero ---- */
+  .hero { padding: 6px 0 30px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+  .eyebrow { font-size: 12.5px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); font-weight: 700; margin-bottom: 12px; }
+  .subtitle { font-size: 18px; color: var(--ink2); margin: 14px 0 18px; max-width: 70ch; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge {
+    font-size: 12.5px; padding: 4px 11px; border-radius: 20px;
+    border: 1px solid var(--line); color: var(--ink2); background: var(--surface);
+  }
+  .badge.ok { border-color: var(--good); color: var(--good); }
+  .badge.soft { border-style: dashed; }
+
+  /* ---- diagrams ---- */
+  figure.diagram { margin: 18px 0 24px; max-width: 960px; }
+  figure.diagram svg { width: 100%; height: auto; display: block; }
+  figure.diagram figcaption { font-size: 13.5px; color: var(--muted); margin-top: 8px; line-height: 1.5; max-width: 78ch; }
+  figure.diagram figcaption b { color: var(--ink2); }
+  .d-label { font: 600 15px system-ui, sans-serif; fill: var(--ink); }
+  .d-mono { font: 600 13px ui-monospace, "SF Mono", Menlo, monospace; fill: var(--ink); }
+  .d-tiny { font: 12px system-ui, sans-serif; fill: var(--muted); }
+  .d-accent { fill: var(--accent); }
+  .d-danger { fill: var(--danger); }
+  .d-blue { fill: var(--blue); }
+
+  /* ---- labs ---- */
+  .lab {
+    background: var(--lab-bg); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 20px; margin: 20px 0 24px; max-width: 86ch;
+  }
+  .lab-title { font-size: 17px; font-weight: 800; margin: 0 0 2px; }
+  .lab-title .n { color: var(--accent); }
+  .lab-meta { font-size: 12.5px; color: var(--muted); margin: 0 0 12px; letter-spacing: 0.2px; }
+  .checkpoint {
+    margin-top: 12px; padding: 10px 14px; border-radius: 8px;
+    background: var(--good-bg); border: 1px dashed var(--good); font-size: 14.5px;
+  }
+  .checkpoint strong { color: var(--good); }
+
+  /* ---- flow diagrams (CSS) ---- */
+  .flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px; margin: 0 0 16px; }
+  .flow .node {
+    background: var(--surface); border: 1.5px solid var(--line); border-radius: 9px;
+    padding: 8px 12px; font-size: 13.5px; display: flex; flex-direction: column;
+    justify-content: center; gap: 2px; min-width: 90px;
+  }
+  .flow .node b { font-size: 13.5px; }
+  .flow .node span { font-size: 11.5px; color: var(--muted); line-height: 1.35; }
+  .flow .arrow { align-self: center; color: var(--muted); font-size: 17px; flex-shrink: 0; }
+  .flow .node.hot { border-color: var(--danger); }
+  .flow .node.accent { border-color: var(--accent); background: var(--accent-wash); }
+
+  /* ---- meter bars ---- */
+  .scale { margin: 0 0 16px; max-width: 920px; }
+  .scale-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .scale-row .lbl { width: 130px; font-size: 12.5px; color: var(--ink2); text-align: right; flex-shrink: 0; }
+  .scale-row .track {
+    flex: 1; height: 20px; background: var(--surface2); border-radius: 4px;
+    position: relative; overflow: hidden;
+  }
+  .scale-row .fill { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
+
+  /* ---- quiz ---- */
+  .quiz-item { border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; background: var(--surface); max-width: 86ch; }
+  .quiz-q { font-weight: 600; margin-bottom: 8px; }
+  .qnum { color: var(--accent); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; margin-right: 6px; }
+  .quiz-answer { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); color: var(--ink2); }
+  .quiz-answer.open { display: block; }
+  .quiz-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .quiz-actions button {
+    background: var(--surface2); border: 1px solid var(--line); color: var(--ink2);
+    border-radius: 7px; padding: 4px 12px; font-size: 13px; cursor: pointer; font-family: inherit;
+  }
+  .quiz-actions button:hover { border-color: var(--accent); color: var(--accent); }
+  .quiz-actions .got:hover { border-color: var(--good); color: var(--good); }
+  .quiz-actions .missed:hover { border-color: var(--danger); color: var(--danger); }
+  .quiz-item.got { border-color: var(--good); background: var(--good-bg); }
+  .quiz-item.missed { border-color: var(--danger); background: var(--danger-bg); }
+  #quizScore { font-size: 14px; color: var(--ink2); margin: 10px 0 14px; }
+  .quiz-reset { background: none; border: 1px dashed var(--line); color: var(--muted); border-radius: 7px; padding: 4px 12px; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .quiz-reset:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* ---- glossary & index ---- */
+  .glos dt { font-weight: 700; margin-top: 14px; }
+  .glos dd { margin: 2px 0 0 0; color: var(--ink2); max-width: 78ch; }
+  .idx { columns: 3; column-gap: 34px; font-size: 14px; }
+  .idx li { break-inside: avoid; margin-bottom: 3px; }
+  @media (max-width: 800px) { .idx { columns: 2; } }
+  @media print { .idx { columns: 3; } }
+
+  details { border: 1px solid var(--line); border-radius: 9px; padding: 10px 14px; margin: 0 0 12px; background: var(--surface); max-width: 82ch; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details[open] summary { margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<button class="toc-toggle" id="tocToggle" type="button" aria-expanded="false" aria-controls="toc">☰ Contents</button>
+<button class="theme-toggle" type="button" aria-label="Toggle colour theme">◐ auto</button>
+
+<div class="layout">
+<nav class="toc" id="toc" aria-label="Table of contents">
+  <div class="brand"><span class="brand-mark" aria-hidden="true">dB</span>Loudness</div>
+  <div class="brand-sub">dB to LUFS, how meters think, and hitting platform targets</div>
+  <div class="part">Foundations</div>
+  <a href="#mental-model">1 · Mental model</a>
+  <a href="#prereqs">2 · Prerequisite floor</a>
+  <a href="#decibels">3 · Decibels from zero</a>
+  <div class="part">Measurement</div>
+  <a href="#meter">4 · How a meter thinks</a>
+  <a href="#standards">5 · The standards</a>
+  <div class="part">Platforms</div>
+  <a href="#platforms">6 · What platforms do</a>
+  <div class="part">Tools &amp; workflows</div>
+  <a href="#toolchain">7 · The toolchain</a>
+  <a href="#live">8 · Live sessions</a>
+  <a href="#post">9 · Post-production</a>
+  <a href="#auditing">10 · Auditing published audio</a>
+  <a href="#voiceover">11 · Voiceover craft</a>
+  <a href="#matrix">12 · Which tool when</a>
+  <div class="part">Practice</div>
+  <a href="#labs">13 · Labs</a>
+  <a href="#capstone">14 · Capstone</a>
+  <a href="#troubleshooting">15 · Troubleshooting</a>
+  <div class="part">Reference</div>
+  <a href="#cheat-sheet">16 · Cheat sheet</a>
+  <a href="#glossary">17 · Glossary</a>
+  <a href="#index">18 · Index</a>
+  <a href="#quiz">19 · Quiz</a>
+  <a href="#sources">20 · Sources</a>
+</nav>
+
+<main id="content">
+
+<header class="hero">
+  <div class="eyebrow">For the podcaster, voiceover artist and channel operator who wants every episode to land on target</div>
+  <h1>Loud is a number,<br><span class="accent-clause">not a feeling.</span></h1>
+  <p class="subtitle">Every decibel suffix from dBSPL to LUFS, how a BS.1770 loudness meter actually thinks, what YouTube, Rumble, Spotify and Apple Podcasts really do to your audio, and how to hit the target every time with YouLean Loudness Meter, dpMeter5 and Audio Hijack.</p>
+  <div class="badges">
+    <span class="badge ok">YouLean Loudness Meter 2 · 2.5.15 installed</span>
+    <span class="badge ok">dpMeter5 5.3.9 · Audio Hijack 4.6.0 · macOS 15.6</span>
+    <span class="badge">single file · works offline</span>
+    <span class="badge">real ffmpeg ebur128 measurements</span>
+    <span class="badge">decision matrix</span>
+    <span class="badge">16-question quiz</span>
+  </div>
+</header>
+
+<!-- ============================================================ 1 -->
+<section id="mental-model">
+<h2>1 · Mental model <span class="tag">Loudness is perception, measured. Level is voltage, counted. Volume is a knob.</span></h2>
+<p class="lede">Three words get used as synonyms and none of them are. <strong>Level</strong> is the height of your audio signal — countable in the file. <strong>Loudness</strong> is how loud a human perceives that signal — estimable by a model of the ear. <strong>Volume</strong> is where the listener's playback knob sits — yours to predict, not to control. Everything in this guide exists because platforms stopped trusting level and started measuring loudness.</p>
+
+<p>From about 1990 to 2010, recorded music and ads fought the <strong>loudness war</strong>. Radio and CD playback had no normalization, so the loudest content won the moment of channel-flipping. Mastering engineers crushed dynamics with limiters to squeeze every last decibel of average level out of a fixed peak ceiling. The result: fatiguing audio and a race to the bottom no single participant could stop.</p>
+
+<p>Streaming platforms and podcast apps ended the arms race by changing the referee. Instead of passing your file through untouched, they <strong>measure its integrated loudness and apply gain to hit a house target</strong> before playback. Deliver hotter than the target and the platform turns you down — your crushed dynamics buy you nothing. Deliver quieter and most platforms turn you up — your dynamics survive. The competitive incentive to crush audio collapses.</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 960 300" role="img" aria-labelledby="d1t">
+  <title id="d1t">Who controls loudness: producer, platform, listener</title>
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker>
+  </defs>
+  <rect x="20" y="60" width="270" height="180" rx="14" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="155" y="92" text-anchor="middle" class="d-label">YOU · PRODUCER</text>
+  <text x="155" y="116" text-anchor="middle" class="d-tiny">mix, process, export</text>
+  <text x="155" y="140" text-anchor="middle" class="d-mono d-accent">integrated LUFS</text>
+  <text x="155" y="160" text-anchor="middle" class="d-tiny">you choose the program loudness</text>
+  <text x="155" y="184" text-anchor="middle" class="d-mono d-blue">true peak dBTP</text>
+  <text x="155" y="204" text-anchor="middle" class="d-tiny">you keep it under the ceiling</text>
+  <text x="155" y="228" text-anchor="middle" class="d-tiny">dynamics, noise floor: yours forever</text>
+
+  <rect x="345" y="60" width="270" height="180" rx="14" fill="var(--accent-wash)" stroke="var(--accent)" stroke-width="2"/>
+  <text x="480" y="92" text-anchor="middle" class="d-label">PLATFORM</text>
+  <text x="480" y="116" text-anchor="middle" class="d-tiny">measures your file once, at ingest</text>
+  <text x="480" y="140" text-anchor="middle" class="d-mono d-accent">gain = target − measured</text>
+  <text x="480" y="164" text-anchor="middle" class="d-tiny">louder than target → turned down</text>
+  <text x="480" y="184" text-anchor="middle" class="d-tiny">quieter than target → usually turned up</text>
+  <text x="480" y="208" text-anchor="middle" class="d-tiny">policy differs per platform — §6</text>
+
+  <rect x="670" y="60" width="270" height="180" rx="14" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="805" y="92" text-anchor="middle" class="d-label">LISTENER</text>
+  <text x="805" y="116" text-anchor="middle" class="d-tiny">plays at their chosen volume</text>
+  <text x="805" y="140" text-anchor="middle" class="d-mono d-accent">perceived loudness</text>
+  <text x="805" y="164" text-anchor="middle" class="d-tiny">≈ equal across all content</text>
+  <text x="805" y="188" text-anchor="middle" class="d-tiny">your dynamics are what's left</text>
+  <text x="805" y="212" text-anchor="middle" class="d-tiny">to make quiet parts feel quiet</text>
+
+  <line x1="290" y1="150" x2="345" y2="150" stroke="var(--muted)" stroke-width="2.5" marker-end="url(#arr)"/>
+  <line x1="615" y1="150" x2="670" y2="150" stroke="var(--muted)" stroke-width="2.5" marker-end="url(#arr)"/>
+</svg>
+<figcaption><b>One pass of gain, three zones of control.</b> You own the mix and the ceiling; the platform owns one scalar adjustment; the listener owns the knob. Normalization moves one number — it cannot restore dynamics or remove hiss. <a href="#platforms">§6</a> details each platform's policy.</figcaption>
+</figure>
+
+<h3>The four numbers of every loudness conversation</h3>
+<p>Every tool in this guide — YouLean, dpMeter5, ffmpeg's ebur128 — reports some permutation of four measurements. Learn what question each answers and the readouts stop being noise:</p>
+<div class="table-wrap"><table>
+<tr><th>Number</th><th>Question it answers</th><th>Window</th><th>You use it for</th></tr>
+<tr><td><strong>Integrated (I)</strong></td><td>How loud is the whole program, end to end?</td><td class="num">entire file, gated</td><td>The delivery number. The one platforms normalize.</td></tr>
+<tr><td><strong>Short-term (S)</strong></td><td>How loud is right now, smoothed?</td><td class="num">3 s</td><td>Riding gain live; checking section-to-section consistency.</td></tr>
+<tr><td><strong>Momentary (M)</strong></td><td>How loud is this instant?</td><td class="num">400 ms</td><td>Catching transients and sudden jumps.</td></tr>
+<tr><td><strong>True peak (TP)</strong></td><td>Could reconstruction overshoot full scale?</td><td class="num">4× oversampled</td><td>The ceiling. Keep under it or downstream codecs distort.</td></tr>
+</table></div>
+
+<p>Two more readouts matter often enough to know: <strong>LRA</strong> (loudness range) summarizes how much your short-term loudness varies across the program — the difference between dense pop mastering and a dynamic audiobook — and <strong>Loudness Range Low/High</strong> gives the percentile bounds behind that single number. All five terms get the full treatment in <a href="#meter">§4</a>.</p>
+
+<div class="callout warn">
+<strong>Misconception: "louder files sound better on the platform."</strong>
+On a normalizing platform the opposite can happen. Deliver at −8 LUFS and YouTube turns you down 6 dB — your noise floor and crushed dynamics come along for the ride, while the competitor who delivered at −14 keeps breathing dynamics at the same perceived volume. Loudness is not a competition you can win by pushing; it is a target you land on.
+</div>
+
+<h3>Why you cannot skip this with "I'll just watch the meter"</h3>
+<p>Watching a loudness meter without knowing what it measures produces confident nonsense: chasing the momentary readout with your hand on the gain, or concluding your episode is "too quiet" from a single short-term glance at a pause between sentences. The meter is a model of average human hearing, averaged over defined windows, with silence excluded by defined gates. When you know the windows and the gates, every number on the screen becomes actionable. That is what the next three sections install.</p>
+
+<p class="sources-line">Sources: <a href="https://www.itu.int/rec/R-REC-BS.1770" target="_blank" rel="noopener">ITU-R · BS.1770 series</a> · <a href="https://tech.ebu.ch/docs/r/r128.pdf" target="_blank" rel="noopener">EBU · R128 (PDF)</a> · <a href="https://en.wikipedia.org/wiki/Loudness_war" target="_blank" rel="noopener">Wikipedia · Loudness war</a></p>
+</section>
+
+<!-- ============================================================ 2 -->
+<section id="prereqs">
+<h2>2 · Prerequisite floor <span class="tag">You need ears, arithmetic, and one idea about digital audio.</span></h2>
+<p class="lede">This guide assumes no audio engineering background. It builds every unit from first principles in <a href="#decibels">§3</a>. There is exactly one idea you should bring with you: audio in a computer is a long list of numbers, each number being the air-pressure deviation at one instant.</p>
+
+<h3>Hard prerequisites (all three, or the labs won't land)</h3>
+<ol class="recipe">
+<li><strong>Sampled audio.</strong> A WAV file stores the waveform as thousands of amplitude numbers per second — 44 100 or 48 000 are the common rates. Bigger number = more pressure at that instant. You never have to touch the individual numbers; you just can't think of the file as "analog."</li>
+<li><strong>Channels.</strong> Mono is one list; stereo is two — left and right — usually near-identical for spoken word. A meter reads the channels together with defined weights (<a href="#meter">§4</a>).</li>
+<li><strong>Arithmetic with negative numbers.</strong> All loudness math is one subtraction: <em>gain needed = target − measured</em>. Both sides are negative; the difference still works. −16 − (−22) = +6.</li>
+</ol>
+
+<h3>Soft prerequisites (helpful, not required)</h3>
+<ul>
+<li>Any exposure to a recording app — GarageBand, Audacity, Audio Hijack. You know what a record button and an input level are.</li>
+<li>Rough familiarity with what a compressor or limiter does. Not needed until <a href="#post">§9</a>; the guide defines both before using them.</li>
+<li>Owning the tools in <a href="#toolchain">§7</a>. Not required to read; required to do the labs. YouLean's free edition covers most of them.</li>
+</ul>
+
+<h3>Self-assessment</h3>
+<p>Answer honestly; each "no" points at the fix:</p>
+<div class="table-wrap"><table>
+<tr><th>Can you…</th><th>If no</th></tr>
+<tr><td>Say what the numbers in a WAV represent?</td><td>Re-read the hard prerequisite above, then run Lab 1's <code>ffmpeg</code> probe anyway — seeing real numbers replace a lot of theory.</td></tr>
+<tr><td>Compute −14 − (−20.5) without hesitating?</td><td>Work the examples in <a href="#decibels">§3</a>'s gain-math drill. It is always single-step subtraction.</td></tr>
+<tr><td>Find and open a plugin inside Audio Hijack?</td><td>Start with <a href="#toolchain">§7</a>'s install-and-verify path; it walks the whole chain.</td></tr>
+<tr><td>Explain why a podcast episode and a scream into the mic can both show the same peak?</td><td>That's the entire point of <a href="#meter">§4</a>. If this question feels unanswerable, you are exactly the reader it was written for.</td></tr>
+</table></div>
+
+<div class="callout blue">
+<strong>Just-in-time prerequisites.</strong> Logarithms (§3), K-weighting and gating (§4), codec overshoot (§9), and compressor controls (§9) are each introduced at the moment they're needed, defined in plain language, and cross-linked from the glossary. Nothing in this guide leans on outside material.
+</div>
+
+<p class="sources-line">Sources: none — this section is self-contained orientation.</p>
+</section>
+
+<!-- ============================================================ 3 -->
+<section id="decibels">
+<h2>3 · Decibels from zero <span class="tag">A decibel is a ratio. The suffix is the only thing that tells you a ratio to what.</span></h2>
+<p class="lede">"It's minus 16" means nothing. <strong>−16 dBFS</strong> is nearly digital maximum; <strong>−16 dBSPL</strong> is a whisper in a library; <strong>−16 LUFS</strong> is the most common podcast delivery target on earth. The number carries the arithmetic; the suffix carries the meaning. Collect the suffixes and every audio conversation you'll ever have decodes.</p>
+
+<h3>Why decibels exist at all</h3>
+<p>Your hearing spans roughly a <strong>trillion-fold</strong> range of air pressures — from the rustle of a leaf (about 0 dBSPL) to the threshold of pain (about 120 dBSPL). Writing that range as raw numbers is unusable. The decibel compresses it with a logarithm: every <strong>×10 in amplitude becomes +20 dB</strong>, so the trillion-fold range (10<sup>12</sup>) fits into 240 dB. The price of compression: you now think in ratios and differences, not absolute amounts.</p>
+
+<p>The two formulas, stated once so they stop being mysterious:</p>
+<pre><code>amplitude dB  =  20 · log₁₀( amplitude / reference )     ← sample height, voltage, pressure
+power dB      =  10 · log₁₀( power / reference )           ← watts, energy</code></pre>
+<p>Doubling the amplitude is +6.02 dB. Doubling the power is +3.01 dB. You will never evaluate a logarithm by hand in this workflow; you will constantly use three memorized anchors:</p>
+<div class="table-wrap"><table>
+<tr><th>Change</th><th>Amplitude factor</th><th>Memorize as</th></tr>
+<tr><td class="num">+6 dB</td><td class="num">×2</td><td>one doubling of signal height</td></tr>
+<tr><td class="num">−6 dB</td><td class="num">×½</td><td>one halving</td></tr>
+<tr><td class="num">+20 dB</td><td class="num">×10</td><td>one decade — the compressor's "10:1" cousin is unrelated</td></tr>
+</table></div>
+
+<h3>The suffix map: ratio to what?</h3>
+<p>A bare dB value is unfinished — like saying "20 kilometers away." The suffix completes it. Six suffixes cover daily work:</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 960 430" role="img" aria-labelledby="d3t">
+  <title id="d3t">What each decibel suffix is referenced to</title>
+  <defs>
+    <marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker>
+  </defs>
+  <!-- digital realm -->
+  <rect x="20" y="34" width="430" height="360" rx="14" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="235" y="62" text-anchor="middle" class="d-label">DIGITAL · inside the file</text>
+  <text x="235" y="82" text-anchor="middle" class="d-tiny">reference = the largest number the format can store</text>
+  <text x="45" y="118" class="d-mono d-blue">dBFS</text>
+  <text x="115" y="118" class="d-tiny">0 = full scale (max sample). Everything real is negative.</text>
+  <text x="45" y="142" class="d-tiny">Sample peak readout of any editor.</text>
+  <text x="45" y="174" class="d-mono d-blue">dBTP</text>
+  <text x="115" y="174" class="d-tiny">0 = full scale after 4× oversampled reconstruction.</text>
+  <text x="45" y="198" class="d-tiny">True peak: samples say −0.1, rebuilt wave can say +0.7. §4.</text>
+  <text x="45" y="230" class="d-mono d-accent">LUFS</text>
+  <text x="115" y="230" class="d-tiny">absolute loudness, BS.1770 model. −16 LUFS ≈ podcast</text>
+  <text x="45" y="254" class="d-tiny">target. Identical unit to LKFS (US legal naming). §4–5.</text>
+  <text x="45" y="286" class="d-mono d-accent">LU</text>
+  <text x="115" y="286" class="d-tiny">the SAME scale, used for differences only: "2 LU quieter."</text>
+  <text x="45" y="310" class="d-tiny">A gain change of −3.5 dBFS is a change of −3.5 LU.</text>
+  <text x="45" y="352" class="d-mono" style="fill:var(--s4)">LUFS / LRA / LU</text>
+  <text x="45" y="372" class="d-tiny">live here too, but they measure perception,</text>
+  <text x="45" y="390" class="d-tiny">not the number list. §4 bridges the two.</text>
+
+  <!-- physical realm -->
+  <rect x="510" y="34" width="430" height="170" rx="14" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="725" y="62" text-anchor="middle" class="d-label">ACOUSTIC · air at the ear</text>
+  <text x="725" y="82" text-anchor="middle" class="d-tiny">reference = 20 micropascals, hearing threshold at 1 kHz</text>
+  <text x="535" y="118" class="d-mono d-danger">dBSPL</text>
+  <text x="615" y="118" class="d-tiny">Sound pressure level. 60 = conversation.</text>
+  <text x="535" y="142" class="d-tiny">120 = pain. Your room, your ears, OSHA tables.</text>
+  <text x="535" y="174" class="d-mono d-danger">dB(A)</text>
+  <text x="615" y="174" class="d-tiny">dBSPL through an A-weighting curve ≈ how</text>
+  <text x="535" y="198" class="d-tiny">the ear responds at modest levels; noise regs use it.</text>
+
+  <!-- electrical realm -->
+  <rect x="510" y="224" width="430" height="170" rx="14" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="725" y="252" text-anchor="middle" class="d-label">ELECTRICAL · wire voltage</text>
+  <text x="725" y="272" text-anchor="middle" class="d-tiny">analog gear, mic level vs line level</text>
+  <text x="535" y="308" class="d-mono" style="fill:var(--s1)">dBu</text>
+  <text x="595" y="308" class="d-tiny">reference 0.775 V. +4 dBu = pro line level.</text>
+  <text x="535" y="332" class="d-tiny">−10 dBV = consumer line level.</text>
+  <text x="535" y="364" class="d-mono" style="fill:var(--s1)">dBV</text>
+  <text x="595" y="364" class="d-tiny">reference 1 V. Same idea, rounder number.</text>
+  <text x="535" y="388" class="d-tiny">You meet these at interface inputs, rarely elsewhere.</text>
+</svg>
+<figcaption><b>Three realms, six references.</b> Digital suffixes compare against the file's storage ceiling (dBFS, dBTP); acoustic suffixes against the ear's threshold (dBSPL, dB(A)); electrical suffixes against fixed voltages (dBu, dBV). LUFS and LU are the digital realm's attempt to model the acoustic one — the subject of <a href="#meter">§4</a>.</figcaption>
+</figure>
+
+<div class="callout danger">
+<strong>The trap that costs real work: mixing suffixes.</strong>
+"−16" from a compressor threshold (dBFS) is not the "−16" of a podcast target (LUFS), and neither is the "−16" a sound-pressure meter shows in a room (dBSPL). When a number appears anywhere in this workflow, say the suffix out loud. Every formula in this guide becomes safe the moment suffixes are explicit: gain in dBFS <em>moves</em> loudness in LU one-for-one, but a <em>level of</em> −16 dBFS and a <em>loudness of</em> −16 LUFS are different measurements of different things.
+</div>
+
+<h3>Peak, RMS, and the thing neither measures</h3>
+<p>Three ways to summarize a waveform, in increasing order of "sounds like listening":</p>
+<ul>
+<li><strong>Peak</strong> — the single largest sample magnitude in a window. Guarantees nothing about perceived loudness: a kick drum alone at −1 dBFS peak can be almost inaudible between hits.</li>
+<li><strong>RMS</strong> — the root-mean-square of the samples, i.e. the energy averaged over a window. Much closer to perception; still wrong in a specific, fixable way: it weights all frequencies equally, and your ear does not (§4's K-weighting is the fix).</li>
+<li><strong>Loudness (LUFS)</strong> — RMS per channel, frequency-weighted like an ear, channel-summed, then aggregated over windows with gates. The complete model. §4 dissects it.</li>
+</ul>
+
+<figure class="diagram">
+<svg viewBox="0 0 960 320" role="img" aria-labelledby="d3b">
+  <title id="d3b">Peak, RMS, and loudness on the same speech burst</title>
+  <rect x="30" y="20" width="900" height="250" rx="10" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <!-- waveform: speech-like bursts -->
+  <path d="M60,145 C70,95 80,95 90,145 C95,120 100,120 105,145 C110,60 118,55 126,145 C130,105 136,105 142,145 C146,80 152,75 158,145 C162,115 168,115 174,145 C178,95 184,95 190,145 L190,145
+           C200,138 210,140 220,142 C240,135 250,140 260,142
+           C270,90 278,85 286,145 C292,110 298,108 304,145 C310,70 320,65 330,145 C336,100 342,100 348,145 C354,80 360,76 366,145 C372,118 378,116 384,145 C390,98 396,96 402,145
+           C412,140 422,141 432,143 C442,136 452,139 462,142
+           C472,110 480,105 488,145 C494,120 500,118 506,145 C512,85 522,80 532,145 C538,105 544,104 550,145 C556,92 562,88 568,145 C574,125 580,123 586,145
+           C596,140 606,141 616,143 C660,141 680,142 700,142
+           C710,120 716,116 724,145 C730,135 736,133 742,145 C748,112 756,108 764,145 C770,128 776,126 782,145 C788,118 794,115 800,145 C806,138 812,137 818,145 C824,128 830,125 836,145
+           C850,142 870,142 900,143"
+        fill="none" stroke="var(--s2)" stroke-width="2"/>
+  <!-- mirror -->
+  <path d="M60,145 C70,195 80,195 90,145 C95,170 100,170 105,145 C110,230 118,235 126,145 C130,185 136,185 142,145 C146,210 152,215 158,145 C162,175 168,175 174,145 C178,195 184,195 190,145
+           C200,152 210,150 220,148 C240,155 250,150 260,148
+           C270,200 278,205 286,145 C292,180 298,182 304,145 C310,220 320,225 330,145 C336,190 342,190 348,145 C354,210 360,214 366,145 C372,172 378,174 384,145 C390,192 396,194 402,145
+           C412,150 422,149 432,147 C442,154 452,151 462,148
+           C472,180 480,185 488,145 C494,170 500,172 506,145 C512,205 522,210 532,145 C538,185 544,186 550,145 C556,198 562,202 568,145 C574,165 580,167 586,145
+           C596,150 606,149 616,147 C660,149 680,148 700,148
+           C710,170 716,174 724,145 C730,155 736,157 742,145 C748,178 756,182 764,145 C770,162 776,164 782,145 C788,172 794,175 800,145 C806,152 812,153 818,145 C824,162 830,165 836,145
+           C850,148 870,148 900,147"
+        fill="none" stroke="var(--s2)" stroke-width="2" opacity="0.55"/>
+  <!-- peak line: highest burst tip -->
+  <line x1="40" y1="65" x2="920" y2="65" stroke="var(--s2)" stroke-width="2" stroke-dasharray="7 5"/>
+  <text x="912" y="55" text-anchor="end" class="d-mono" style="fill:var(--s2)">peak · tallest single sample</text>
+  <!-- rms line -->
+  <line x1="40" y1="112" x2="920" y2="112" stroke="var(--s4)" stroke-width="2" stroke-dasharray="7 5"/>
+  <text x="912" y="132" text-anchor="end" class="d-mono" style="fill:var(--s4)">RMS · energy of the burst</text>
+  <!-- loudness band -->
+  <rect x="40" y="118" width="880" height="52" fill="var(--s1)" opacity="0.10"/>
+  <line x1="40" y1="144" x2="920" y2="144" stroke="var(--s1)" stroke-width="2"/>
+  <text x="912" y="176" text-anchor="end" class="d-mono d-accent">loudness · ear-weighted, gated over seconds</text>
+  <text x="480" y="300" text-anchor="middle" class="d-tiny">spoken phrase · pause · phrase — note the peak only spikes on consonant transients, while loudness rides the voiced energy</text>
+</svg>
+<figcaption><b>Same signal, three summaries.</b> Peak catches the "t" in "to" and nothing else; RMS tracks the energy of each phrase; loudness smooths across phrases and ignores the pause. A file can have −1 dBFS peaks and still measure −26 LUFS integrated — this is why peak-only normalization failed for thirty years.</figcaption>
+</figure>
+
+<h3>The gain-math drill</h3>
+<p>One pattern covers every adjustment in this guide:</p>
+<pre><code><span class="comment"># how much gain to apply, in dB (or LU — same step size):</span>
+gain = target − measured
+
+<span class="comment"># worked: file measures −22.2 LUFS integrated, target −16:</span>
+gain = (−16) − (−22.2) = <span class="val">+6.2 dB</span>
+
+<span class="comment"># worked: same file after a +6.2 dB gain, new true peak:</span>
+old TP −10.5 dBTP + 6.2 = <span class="val">−4.3 dBTP</span>   → still under −1.0, safe
+
+<span class="comment"># worked: file at −12.5 LUFS, TP −0.9 dBTP, target −16:</span>
+gain = −3.5 dB, new TP = −4.4 dBTP   → turning DOWN is always safe</code></pre>
+<p>Turning up is where ceilings bite: any gain that would push true peak past your ceiling needs a limiter, not just a fader. That trade-off — the entire craft of §9 — is why "just normalize it" is simultaneously always correct as a goal and never sufficient as an instruction.</p>
+
+<div class="callout good">
+<strong>Rule of thumb worth memorizing.</strong> Perceived "twice as loud" is about +10 LU. A 1 LU error is one just-noticeable difference for trained ears. Platform tolerances of ±1 LU (§6) therefore exist because most listeners cannot hear less.
+</div>
+
+<h3>Where each suffix actually appears in your workflow</h3>
+<div class="table-wrap"><table>
+<tr><th>You are looking at</th><th>Suffix on screen</th><th>Comes from</th></tr>
+<tr><td>Audio Hijack level meter / recorder input</td><td class="num">dBFS</td><td>Signal level before any loudness model</td></tr>
+<tr><td>YouLean main readouts (I, S, M)</td><td class="num">LUFS</td><td>BS.1770 measurement chain (§4)</td></tr>
+<tr><td>YouLean true-peak bars</td><td class="num">dBTP</td><td>Oversampled peak (§4)</td></tr>
+<tr><td>dpMeter5 main meters</td><td class="num">RMS in dBFS, plus loudness</td><td>Switchable measurement modes (§7)</td></tr>
+<tr><td>Room noise measurement (phone app)</td><td class="num">dBSPL, dB(A)</td><td>Microphone calibration, unrelated to files</td></tr>
+<tr><td>Mixer/interface gain markings</td><td class="num">dBu / dBV occasionally</td><td>Analog heritage; ignore unless wiring hardware</td></tr>
+</table></div>
+
+<p class="sources-line">Sources: <a href="https://www.itu.int/rec/R-REC-BS.1770" target="_blank" rel="noopener">ITU-R · BS.1770 (loudness unit definitions)</a> · <a href="https://en.wikipedia.org/wiki/Decibel" target="_blank" rel="noopener">Wikipedia · Decibel (suffix taxonomy)</a> · <a href="https://en.wikipedia.org/wiki/DBFS" target="_blank" rel="noopener">Wikipedia · dBFS</a> · <a href="https://en.wikipedia.org/wiki/Equal-loudness_contour" target="_blank" rel="noopener">Wikipedia · Equal-loudness contours</a></p>
+</section>
+
+<!-- ============================================================ 4 -->
+<section id="meter">
+<h2>4 · How a meter thinks <span class="tag">BS.1770 in five stages: weight, square, sum, window, gate.</span></h2>
+<p class="lede">A loudness meter is not a level meter with a nicer label. It runs your signal through a five-stage model of average human hearing, defined — arithmetic and all — in ITU-R BS.1770, with the M/S/I display conventions your tools follow added by the EBU (§5). Every tool you own that says LUFS implements this stack. Learn the five stages once and you can predict what every readout will do before you touch it.</p>
+
+<h3>Stage 1–2 · Weight the spectrum like an ear, then square</h3>
+<p>The ear is not equally sensitive to all frequencies. At conversation level it is roughly 20 dB less sensitive to 60 Hz than to 1 kHz, and a few dB more sensitive around 2–4 kHz. A plain RMS calculation treats them all the same. BS.1770's fix is the <strong>K-weighting</strong> filter — two stages bolted in front of the energy math:</p>
+<ul>
+<li>a <strong>high-pass around 60 Hz</strong> (the "RLB" curve), which attenuates rumble the ear mostly discounts — handling noise, HVAC, plosive thumps;</li>
+<li>a <strong>high shelf lifting about +4 dB above roughly 2 kHz</strong>, matching the ear's extra sensitivity where consonants and presence live.</li>
+</ul>
+<p>After filtering, each channel's samples are <strong>squared</strong> — energy, not amplitude — because perceived loudness tracks energy. This is why loudness is a <em>power</em>-domain measurement: the 10·log half of §3's formulas.</p>
+
+<h3>Stage 3 · Sum the channels with weights</h3>
+<p>Energy from all channels adds. Stereo left and right each count fully (weight 1.0); in 5.1 surround, the rear channels get 1.41 (×2 energy) because sounds behind you read as louder. Spoken-word work is stereo or mono, so this stage is invisible to you — but it explains a classic gotcha: <strong>the same material in mono measures ~−3 LUFS louder than one channel alone</strong>, because two channels of identical energy sum to +3.01 LU.</p>
+
+<h3>Stage 4 · Window it</h3>
+<p class="small">The momentary and short-term windows below are EBU Mode metering definitions (Tech 3341, §5); BS.1770 itself defines the 400 ms gating grid and the integrated result — the windows are how meters <em>display</em> the algorithm's building blocks.</p>
+<div class="table-wrap"><table>
+<tr><th>Readout</th><th>Window</th><th>Update</th><th>Made for</th></tr>
+<tr><td><strong>Momentary (M)</strong></td><td class="num">400 ms</td><td class="num">every 100 ms (75% overlap)</td><td>Instant reaction: transients, sudden jumps, live protection</td></tr>
+<tr><td><strong>Short-term (S)</strong></td><td class="num">3 s</td><td class="num">every 100 ms</td><td>Riding gain, section-to-section consistency — the live engineer's number</td></tr>
+<tr><td><strong>Integrated (I)</strong></td><td class="num">whole program</td><td class="num">running total, gated</td><td>The one delivery number platforms use</td></tr>
+</table></div>
+<p>The overlap matters in practice: momentary is deliberately twitchy, short-term deliberately settled. If you stare at momentary during a pause between sentences you will conclude you are failing a target you are actually hitting — the pause is not your program.</p>
+
+<h3>Stage 5 · Gate the integrated measurement</h3>
+<p>Naively averaging everything, including silence, would let dead air drag your program loudness down — the meter would then over-report how loud you sound. BS.1770's gating excludes blocks below two thresholds, applied to 400 ms blocks with overlap:</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 960 360" role="img" aria-labelledby="d4t">
+  <title id="d4t">How the two gates exclude silence from integrated loudness</title>
+  <!-- axis -->
+  <line x1="70" y1="300" x2="920" y2="300" stroke="var(--muted)" stroke-width="2"/>
+  <text x="920" y="322" text-anchor="end" class="d-tiny">400 ms blocks along the program, loudness of each shown as bar height</text>
+  <!-- blocks: silence, quiet, loud, pause, loud, silence -->
+  <rect x="90"  y="288" width="52" height="12"  fill="var(--line)"/>
+  <rect x="150" y="288" width="52" height="12"  fill="var(--line)"/>
+  <rect x="210" y="200" width="52" height="100" fill="var(--s4)" opacity="0.55"/>
+  <rect x="270" y="140" width="52" height="160" fill="var(--s1)" opacity="0.75"/>
+  <rect x="330" y="150" width="52" height="150" fill="var(--s1)" opacity="0.75"/>
+  <rect x="390" y="290" width="52" height="10"  fill="var(--line)"/>
+  <rect x="450" y="145" width="52" height="155" fill="var(--s1)" opacity="0.75"/>
+  <rect x="510" y="130" width="52" height="170" fill="var(--s1)" opacity="0.75"/>
+  <rect x="570" y="235" width="52" height="65"  fill="var(--s4)" opacity="0.55"/>
+  <rect x="630" y="150" width="52" height="150" fill="var(--s1)" opacity="0.75"/>
+  <rect x="690" y="288" width="52" height="12"  fill="var(--line)"/>
+  <!-- absolute gate -->
+  <line x1="70" y1="272" x2="920" y2="272" stroke="var(--danger)" stroke-width="2" stroke-dasharray="6 5"/>
+  <text x="80" y="264" class="d-mono d-danger">absolute gate · −70 LUFS</text>
+  <text x="80" y="248" class="d-tiny">below this: not signal — room tone, dither, hiss. Excluded.</text>
+  <!-- relative gate -->
+  <line x1="70" y1="105" x2="920" y2="105" stroke="var(--s4)" stroke-width="2" stroke-dasharray="6 5"/>
+  <text x="80" y="97" class="d-mono" style="fill:var(--s4)">relative gate · ungated loudness − 10 LU</text>
+  <text x="80" y="81" class="d-tiny">a second pass: anything 10 LU below the loud part of the program is excluded too</text>
+  <text x="80" y="65" class="d-tiny">→ a long quiet outro or intro cannot drag your integrated number down</text>
+  <!-- annotations -->
+  <path d="M483,300 L483,338" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="3 4"/>
+  <text x="483" y="352" text-anchor="middle" class="d-tiny">pause between sentences: excluded by relative gate, not "heard quieter"</text>
+</svg>
+<figcaption><b>Two gates, two passes.</b> First pass drops blocks under −70 LUFS (hiss, room tone). Then the loudness of everything that survived is computed, and a second pass drops anything more than 10 LU below that level. Your integrated readout describes the part of the program that is actually speech, not its silences.</figcaption>
+</figure>
+
+<p>The relative gate is the subtle one, and it has a consequence you will hit in the field: <strong>adding loudness changes what counts.</strong> Turn a quiet file up and blocks that were previously gated out may cross the relative threshold, pulling the integrated value slightly back down. Gated integrated loudness therefore does not track a pure linear gain perfectly at the margins — one more reason §9's workflow ends with a re-measure, never a trust-me.</p>
+
+<div class="callout blue">
+<strong>Proof with a real file.</strong> The 40-second lab file used throughout this guide (pink noise shaped into loud, medium, quiet and silent stretches — built in Lab 1) measures:
+<pre><code>Integrated loudness:
+  I:         <span class="val">-22.2 LUFS</span>
+  Threshold: -33.9 LUFS        ← the relative gate, 10 LU below the loud part
+Loudness range:
+  LRA:        14.0 LU</code></pre>
+The silence at the end contributed nothing. The quiet stretch mostly survived (it was within 10 LU of the loud part). That is the gate doing its job on a file you can rebuild yourself in five minutes.
+</div>
+
+<h3>LRA · loudness range</h3>
+<p><strong>Loudness Range</strong> compresses the whole program's dynamics into one number: after gating, it takes the short-term loudness of all blocks, and reports the spread between the 10th and 95th percentiles (from EBU Tech 3342, riding on R128). Percentiles make it robust — one scream or one door slam cannot blow it up.</p>
+<div class="table-wrap"><table>
+<tr><th>LRA</th><th>Typical material</th><th>What a platform thinks</th></tr>
+<tr><td class="num">2–5 LU</td><td>Dense pop mastering, ads, aggressive podcast processing</td><td>Consistent; survives any normalization unchanged</td></tr>
+<tr><td class="num">5–12 LU</td><td>Well-produced speech, most podcasts, voiceover</td><td>The sweet spot for spoken word</td></tr>
+<tr><td class="num">12–20+ LU</td><td>Classical, film, dynamic audiobooks, unprocessed field audio</td><td>Fine on normalizing platforms; rough in noisy car listening</td></tr>
+</table></div>
+<p>LRA is descriptive, not a delivery spec — no major platform rejects on it — but it is the honest answer to "how compressed is my audio?" and the number to watch when you process speech for car and earbud listeners.</p>
+
+<h3>True peak · the ceiling that isn't on the samples</h3>
+<p>Your file is a list of numbers; the <em>rebuilt</em> analog waveform those numbers represent passes <em>between</em> them. Reconstruction can therefore overshoot the largest sample — an <strong>inter-sample peak</strong>. Two samples at 0.99 with the true sine crest falling between them rebuild to a wave taller than either:</p>
+<pre><code><span class="comment"># full-scale 1 kHz sine, generated and measured locally:</span>
+sample peak:  <span class="val">+0.02 dBFS</span>   ← the tallest number in the file
+true peak:    <span class="hot">+3.0 dBFS</span>    ← the rebuilt wave, 4× oversampled</code></pre>
+<p>Nearly 3 dB of overshoot hiding in a file whose samples never touched the ceiling. This is why the delivery world measures <strong>dBTP</strong> — sample level, reconstructed with 4× oversampling (more for audio between sample points) — and why ceilings are specified in true peak: −1.0 dBTP is the common spoken-word ceiling, with −2 dBTP or more headroom when a lossy codec will re-encode your file (codecs add their own overshoot; §9).</p>
+
+<div class="callout warn">
+<strong>Misconception: "integrated is the average of the momentary readout."</strong>
+Close, but the gates change it — and the direction is not predictable without re-measuring. A file whose quiet 20-minute outro gets gated measures louder integrated than any average-of-everything would suggest. Never derive integrated by hand from the dancing numbers; let the meter run the whole file (§9, §7's offline analysis).
+</div>
+
+<h3>LUFS, LKFS, LU — the naming tangle</h3>
+<p><strong>LKFS</strong> (loudness, K-weighted, relative to full scale) is the name ITU and US law use. <strong>LUFS</strong> (loudness units relative to full scale) is the EBU's name for the identical scale. The numbers are interchangeable: −24 LKFS = −24 LUFS. A <strong>LU</strong> is a unit of <em>difference</em> on that same scale — you gain 3 LU, you deliver AT −16 LUFS. When a standard quotes tolerance "±0.5 LU," it means the same half-deibel step as "±0.5 dB" applied to loudness.</p>
+
+<p class="sources-line">Sources: <a href="https://www.itu.int/rec/R-REC-BS.1770" target="_blank" rel="noopener">ITU-R · BS.1770 (measurement algorithm)</a> · <a href="https://tech.ebu.ch/docs/r/r128.pdf" target="_blank" rel="noopener">EBU · R128</a> · <a href="https://tech.ebu.ch/docs/tech/tech3341.pdf" target="_blank" rel="noopener">EBU · Tech 3341, EBU Mode metering (M/S/I)</a> · <a href="https://tech.ebu.ch/docs/tech/tech3342.pdf" target="_blank" rel="noopener">EBU · Tech 3342, Loudness Range (PDF)</a> · ffmpeg 9.0.2 ebur128 measurements run 2026-09-29</p>
+</section>
+
+<!-- ============================================================ 5 -->
+<section id="standards">
+<h2>5 · The standards <span class="tag">One algorithm, three rulebooks. ITU wrote the ruler; everyone else wrote the numbers.</span></h2>
+<p class="lede">ITU-R BS.1770 defines <em>how to measure</em> — the algorithm from §4, nothing about targets. Every document you have ever been told to comply with is a policy layer on top of it: the EBU's R128 for European broadcast, ATSC's A/85 for US television (with actual law behind it), the AES's TD1008 for streaming, and each platform's private §6 policy. Learn the stack once and every "which standard applies?" question dissolves.</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 960 250" role="img" aria-labelledby="d5t">
+  <title id="d5t">The loudness standards stack</title>
+  <rect x="20" y="30" width="920" height="60" rx="10" fill="var(--surface2)" stroke="var(--line)" stroke-width="2"/>
+  <text x="480" y="55" text-anchor="middle" class="d-label">Policy layers — who wants what number</text>
+  <text x="480" y="76" text-anchor="middle" class="d-tiny">EBU R128 −23 · ATSC A/85 −24 (+ CALM Act) · AES TD1008 −18 speech / −16 music · platforms −16…−14</text>
+  <rect x="20" y="105" width="920" height="50" rx="10" fill="var(--accent-wash)" stroke="var(--accent)" stroke-width="2"/>
+  <text x="480" y="127" text-anchor="middle" class="d-label">Metering practice — EBU Mode (Tech 3341): momentary / short-term / integrated</text>
+  <text x="480" y="146" text-anchor="middle" class="d-tiny">plus Loudness Range, Tech 3342</text>
+  <rect x="20" y="170" width="920" height="60" rx="10" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+  <text x="480" y="195" text-anchor="middle" class="d-label">Measurement algorithm — ITU-R BS.1770 (current: −5, Nov 2023)</text>
+  <text x="480" y="216" text-anchor="middle" class="d-tiny">K-weighting · channel weights · 400 ms gating grid · two gates · true peak, 4× oversampled</text>
+</svg>
+<figcaption><b>The stack.</b> Your meters implement the bottom two layers; the delivery numbers you aim at live in policy documents above. Nothing in the policy layers changes the arithmetic — it only chooses targets and tolerances.</figcaption>
+</figure>
+
+<h3>ITU-R BS.1770 · the ruler</h3>
+<p>First published 2006, revised six times, current revision <strong>BS.1770-5 (November 2023)</strong>: "Algorithms to measure audio programme loudness and true-peak audio level." It specifies the K-weighting filter pair, the channel weights, the 400 ms gating block with 75% overlap, both gates (−70 LKFS absolute, then relative at −10 LU), and true peak via 4× oversampling (48 → 192 kHz), reported in dBTP. Revision history worth knowing:</p>
+<div class="table-wrap"><table>
+<tr><th>Revision</th><th>Year</th><th>What changed</th></tr>
+<tr><td class="num">−0</td><td>2006</td><td>The original measurement, ungated</td></tr>
+<tr><td class="num">−1</td><td>2007</td><td>Multi-channel summation fixes</td></tr>
+<tr><td class="num">−2</td><td>2011</td><td><strong>Gating added</strong> — the fix that made meters agree with ears on mixed programs</td></tr>
+<tr><td class="num">−3</td><td>2012</td><td>Editorial alignment</td></tr>
+<tr><td class="num">−4</td><td>2015</td><td>Extended measurement to layouts beyond 5.1 (per revision summaries)</td></tr>
+<tr><td class="num">−5</td><td>2023</td><td>Annexes for advanced-sound layouts with position-dependent weights, and object-based audio</td></tr>
+</table></div>
+<p>For stereo and 5.1 work — everything in this guide — the revisions are arithmetic-identical: ATSC A/85:2026 states it outright ("The BS.1770-3, -4, and -5 versions all have identical algorithms for Loudness and True-Peak measurement of stereo and 5.1 content"). Any BS.1770-2-or-later meter, including YouLean, dpMeter5 and ffmpeg's ebur128, produces comparable numbers.</p>
+
+<h3>EBU R128 + EBU Mode · Europe's rulebook (and your meter's vocabulary)</h3>
+<p>The European Broadcasting Union wrapped BS.1770 in practice: <strong>R128</strong> (current version 5.0, November 2023) sets broadcast delivery at <strong>−23.0 LUFS</strong>, with tolerance <strong>±1.0 LU</strong> where the target isn't practically attainable (live production) and <strong>±0.2 LU</strong> for quality-control workflows that account for measurement error. Production true peak <strong>shall not exceed −1 dBTP</strong> (±0.3 dB measurement tolerance), with lower distribution limits per its Tech 3344 companion. Its history is worth one line: the relative gate moved from −8 LU to <strong>−10 LU in 2011</strong>, and the 2014 edition's "±0.5 LU" tolerance is superseded — if an old tutorial quotes it, the tutorial is a decade stale.</p>
+<p>R128's companion <strong>Tech 3341</strong> defines <strong>EBU Mode</strong> metering — and here is a correction most guides never make: <em>momentary (400 ms) and short-term (3 s) are EBU Mode definitions, not part of BS.1770 itself.</em> BS.1770's 400 ms blocks are the gating grid for integrated loudness; the M/S/I display convention your tools follow comes from the EBU. <strong>Tech 3342</strong> defines LRA. Supplements cover the edges: s1 short-form content (ads), s2 streaming (produce to −23; only where devices lack gain may distribution loudness sit −20 to −16 LUFS), s3 radio, s4 cinematic.</p>
+
+<h3>ATSC A/85 + CALM Act · the one with legal teeth</h3>
+<p>US digital television anchors on <strong>A/85</strong> (current edition July 2026): <strong>−24 LKFS</strong> target loudness (anchored to dialogue for long-form content), tolerance about <strong>±2 dB</strong>, and true peak <strong>below −2 dBTP</strong> — the US broadcast ceiling is 1 dB tighter than Europe's, headroom against downstream processing. What makes A/85 unique is the law riding on it: the <strong>CALM Act</strong> (2010) directed the FCC to stop commercials from being louder than the shows around them, and since <strong>December 13, 2012</strong>, 47 CFR §73.682(e) has required compliance with A/85 (the 2013 edition is the version incorporated by reference) for commercial ad transmission on US TV. Loudness normalization, enforced by statute, with fines behind it — the end state the loudness war was always heading toward.</p>
+
+<h3>AES TD1008 · the streaming recommendation nobody quotes correctly</h3>
+<p>The Audio Engineering Society's <strong>TD1008</strong> (2021; supersedes TD1004 from 2015) is the honest attempt to give streaming and podcasting one set of numbers. Its headline choices: integrated loudness <strong>above −20 LUFS</strong> always (mobile devices lack gain to lift quieter content), <strong>speech and podcast content at −18 LUFS</strong> (+2 LU tolerance), <strong>track-normalized music at −16</strong>, album-loudest-track at −14, and <strong>−1 dBTP at the input of lossy codecs</strong> — with the explicit warning that codec overshoot grows as bitrate falls. Its most quoted reasoning: speech normalized 2 LU below music (−18 vs −16) <em>because speech reads perceptually louder than music at equal LUFS</em> — the model under-weights something about speech, so the numbers compensate. Where does Apple's −16 sit? At the loud end of the AES speech window — tighter, louder, and in practice the number podcasters actually hit. A mono −19 convention circulates in host documentation (stereo-to-mono sums +3 LU, so −16 stereo ≈ −19 mono playback); it is community convention, not an Apple or AES figure.</p>
+
+<div class="table-wrap"><table>
+<tr><th>Document</th><th>Body · domain</th><th>Target</th><th>Tolerance</th><th>True peak</th><th>Status</th></tr>
+<tr><td>BS.1770-5</td><td>ITU · measurement</td><td class="num">— (algorithm)</td><td class="num">—</td><td class="num">defines dBTP</td><td>Current, Nov 2023</td></tr>
+<tr><td>R128 v5.0</td><td>EBU · EU broadcast</td><td class="num">−23.0 LUFS</td><td class="num">±1.0 (live) · ±0.2 (QC)</td><td class="num">−1 dBTP</td><td>Current, Nov 2023</td></tr>
+<tr><td>A/85:2026</td><td>ATSC · US TV (+ CALM)</td><td class="num">−24 LKFS, dialogue</td><td class="num">~±2 dB</td><td class="num">−2 dBTP</td><td>Current, Jul 2026</td></tr>
+<tr><td>TD1008</td><td>AES · streaming</td><td class="num">−18 speech · −16 music</td><td class="num">+2 LU (speech)</td><td class="num">−1 dBTP at codec</td><td>Current, 2021</td></tr>
+<tr><td>Platform specs</td><td>§6 cast</td><td class="num">−16 … −14</td><td class="num">±1 typical</td><td class="num">−1 … −2</td><td>Policy, changes silently</td></tr>
+</table></div>
+
+<div class="callout blue">
+<strong>Why broadcast sits at −23/−24 while streaming sits at −16/−14.</strong>
+Broadcast chains were built with headroom margins and legacy alignment levels; a −23 LUFS program with LRA to spare plays through a transmission chain that adds processing without crushing. Mobile playback has limited available gain, so streaming needs program loudness closer to playback level — AES's "not below −20" floor exists exactly for the quiet end. Neither number is "more correct"; they are engineering answers to different constraint sets.
+</div>
+
+<h3>How we got here · five dates</h3>
+<ul>
+<li><strong>1994–2005 ·</strong> The loudness war escalates with the CD: look-ahead limiters make brutal mastering cheap; Oasis (1995), the loudness poster children, peak around 2005 when the trend arguably crests.</li>
+<li><strong>2001 ·</strong> ReplayGain — David Robinson's open standard for perceived-loudness normalization of digital files. Player-side normalization is born; foobar2000 and friends adopt it; its modern successors measure with BS.1770.</li>
+<li><strong>2009–2012 ·</strong> Spotify ships loudness normalization (on by default from the start; Ian Shepherd titled his October 2009 piece "Spotify Ends The Loudness War"). The CALM Act takes effect in the US, December 13, 2012.</li>
+<li><strong>2014–2015 ·</strong> YouTube's playback normalization arrives (reported March 2015, reference around −13 at the time).</li>
+<li><strong>2017–2019 ·</strong> Spotify drops its reference from −11 to −14 LUFS to match its neighbors; YouTube moves to exactly −14 LUFS (measured 2019). The war is over everywhere that normalizes; the survivors are the platforms that don't (§6, Rumble).</li>
+</ul>
+
+<div class="callout warn">
+<strong>Misconception: "−16 is the podcast standard."</strong>
+−16 LKFS is <em>Apple's delivery spec</em> — one platform's request, not a universal standard. The AES recommends −18 for speech; Spotify would like −14; the EBU would say −23 if you asked about broadcast. The universal master in §6 is a pragmatic compromise across §6's policies, not a standard anyone voted on. Standards define the ruler; you still choose which game to play.
+</div>
+
+<p class="sources-line">Sources: <a href="https://www.itu.int/rec/R-REC-BS.1770" target="_blank" rel="noopener">ITU-R · BS.1770 series (revision history)</a> · <a href="https://www.itu.int/dms_pubrec/itu-r/rec/bs/R-REC-BS.1770-5-202311-I!!PDF-E.pdf" target="_blank" rel="noopener">ITU-R · BS.1770-5 PDF (algorithm, gates, dBTP)</a> · <a href="https://tech.ebu.ch/docs/r/r128.pdf" target="_blank" rel="noopener">EBU · R128 v5.0 PDF (target, tolerances, −1 dBTP)</a> · <a href="https://tech.ebu.ch/docs/tech/tech3341.pdf" target="_blank" rel="noopener">EBU · Tech 3341, EBU Mode metering (M/S/I)</a> · <a href="https://tech.ebu.ch/docs/tech/tech3342.pdf" target="_blank" rel="noopener">EBU · Tech 3342, LRA</a> · <a href="https://tech.ebu.ch/docs/r/r128s2.pdf" target="_blank" rel="noopener">EBU · R128 s2, streaming</a> · <a href="https://www.atsc.org/atsc-documents/a85/" target="_blank" rel="noopener">ATSC · A/85 (current edition)</a> · <a href="https://www.law.cornell.edu/cfr/text/47/73.682" target="_blank" rel="noopener">47 CFR §73.682 (CALM Act rule)</a> · <a href="https://www.aes.org/wp-content/uploads/2024/01/20210924_TD1008_v3.13.pdf" target="_blank" rel="noopener">AES · TD1008 PDF (streaming targets)</a> · <a href="https://en.wikipedia.org/wiki/Loudness_war" target="_blank" rel="noopener">Wikipedia · Loudness war</a> · <a href="https://en.wikipedia.org/wiki/ReplayGain" target="_blank" rel="noopener">Wikipedia · ReplayGain</a> · <a href="https://productionadvice.co.uk/spotify-loudness-war" target="_blank" rel="noopener">Production Advice · Spotify 2009</a> · <a href="https://productionadvice.co.uk/youtube-loudness" target="_blank" rel="noopener">Production Advice · YouTube 2015</a> · all checked 2026-09-29</p>
+</section>
+<!-- ============================================================ 6 -->
+<section id="platforms">
+<h2>6 · What platforms do <span class="tag">Same unit everywhere. Different policy everywhere else.</span></h2>
+<p class="lede">Every normalizing platform runs the same BS.1770 arithmetic on your file — but they differ in the target, the <em>direction</em> of adjustment, and whether they publish any of it. Three policies cover the field: <strong>turn down only</strong> (loud content is attenuated, quiet content plays quiet), <strong>both directions</strong> (quiet content is boosted up to a headroom limit), and <strong>preconditioned delivery</strong> (you hit the number; the player just reads metadata). Know each platform's policy and you can predict what happens to your file before you upload it.</p>
+
+<h3>The table</h3>
+<div class="table-wrap"><table>
+<tr><th>Platform</th><th>Target</th><th>Status of that number</th><th>Adjustment policy</th></tr>
+<tr><td><strong>YouTube</strong></td><td class="num">−14 LUFS</td><td>Measured, not official — YouTube publishes no number</td><td>Turn down only; never boosts. Separate "Stable Volume" compressor, viewer-toggleable, off for music</td></tr>
+<tr><td><strong>YouTube Music</strong></td><td class="num">−7 LUFS</td><td>Measured (Shepherd 2023, MeterPlugs 2026), not official</td><td>Turn down only above −7 — the loosest music target anywhere</td></tr>
+<tr><td><strong>Spotify</strong></td><td class="num">−14 dB LUFS</td><td>Official, verbatim in their artist docs</td><td>Both directions; boost capped by true-peak headroom. User-selectable: Loud −11 / Normal −14 / Quiet −19; toggleable</td></tr>
+<tr><td><strong>Apple Podcasts</strong></td><td class="num">−16 dB LKFS ±1 dB, TP ≤ −1 dBFS</td><td>Official delivery spec (they say LKFS — same unit, §4)</td><td>Preconditioned delivery + loudness metadata; playback apps (Sound Check et al.) adjust if metadata present</td></tr>
+<tr><td><strong>SoundCloud</strong></td><td class="num">−14 LUFS recommended</td><td>Official mastering guidance; normalization itself confirmed official</td><td>Applies loudness normalization at playback; direction not stated</td></tr>
+<tr><td><strong>Rumble</strong></td><td class="num">none published</td><td>No spec, no statement, no credible measurement exists</td><td>Unknown. Assume nothing — deliver sane levels (below)</td></tr>
+<tr><td>Tidal · Amazon · Deezer</td><td class="num">~−14 each</td><td>Unverified officially; community-measured</td><td>Normalization on by default (community-reported); modeled turn-down only</td></tr>
+<tr><td>Bandcamp</td><td class="num">none</td><td>Community consensus: plays as uploaded</td><td>None</td></tr>
+<tr><td>Facebook / Instagram</td><td class="num">none published</td><td>Unverified; 2023 audio update was encoding-only</td><td>Unknown; ~−14 LUFS is convention, not spec</td></tr>
+<tr><td>Netflix <span class="small">(delivery, not playback)</span></td><td class="num">−27 LKFS dialogue ±2 LU, TP −2</td><td>Official delivery spec for content sold to Netflix</td><td>N/A — a contract, not a player</td></tr>
+</table></div>
+<p class="small">All platform facts checked 2026-09-29; per-claim sources at the end of this section. Platforms change policies quietly — re-verify before blaming a number on this table.</p>
+
+<h3>YouTube · measured, not promised</h3>
+<p>YouTube's help pages state no LUFS number at all — only that the player makes "automatic adjustments to volume levels and sound mixing." The −14 figure that every tutorial repeats comes from <strong>measurement</strong>: Ian Shepherd's MeterPlugs read the playback reference off "Stats for nerds" in September 2019 and published the change (YouTube's level had previously floated up to 3 dB different). Treat −14 as a well-corroborated observation of player behavior, subject to change without notice.</p>
+<p>The behavioral fact that matters more than the number: <strong>YouTube only turns audio down, never up.</strong> Deliver at −14 and you play as-is. Deliver at −9 and 5 dB of your hard-won level is discarded at playback — dynamics already crushed, noise floor riding 5 dB hotter than a −14 competitor's. Deliver at −18 and you simply play 4 LU quieter than everyone else. The strategy writes itself: land on −14, keep true peak ≤ −1 dBTP.</p>
+<p>Two wrinkles: <strong>Stable Volume</strong>, a separate dynamic-range compressor on by default in the main app (toggleable per-viewer in player settings; off for YouTube Music and official music videos), and <strong>YouTube Music's own −7 LUFS threshold</strong> — music louder than −7 is turned down, music between −7 and −14 plays <em>at its mastered level</em>. A dense −9 master plays louder on YouTube Music than on main YouTube. If your content is music-first, that asymmetry rewards keeping some level; if it is speech-first, ignore it and target −14.</p>
+
+<h3>Rumble · the honest answer is "unknown"</h3>
+<p>This guide dug for one and found nothing: no loudness statement in Rumble's support hub, upload FAQs, or creator studio; no reputable independent measurement indexed anywhere. Third-party guides that recommend "−14 LUFS for Rumble" are applying YouTube convention with no Rumble-specific basis.</p>
+<p>What to do with a platform that neither publishes a target nor provably normalizes: <strong>deliver the level you want heard.</strong> A file that lands at −14 LUFS integrated, ≤ −1 dBTP true peak is loud enough to compete, quiet enough to avoid clipping through any transcoding, and identical to what you send YouTube — one master, zero evidence you should do otherwise. If Rumble quietly normalizes later, that master still lands inside every plausible policy. Revisit if you ever measure playback gain there (§10's method works: capture Rumble playback through Audio Hijack, run it past the meter, compare against your uploaded file's numbers).</p>
+
+<h3>Spotify · the only one that boosts (with a catch)</h3>
+<p>Spotify is the best-documented normalizer: their artist support states verbatim, "We adjust tracks to −14 dB LUFS, according to the ITU 1770 standard," applied at playback across formats. Both directions apply — negative gain to loud masters, positive gain to soft ones — but boosts are <strong>capped by true-peak headroom</strong>: their own example is a −20 LUFS track with −5 dBTP peaks that only gets lifted to −16, because pushing further would breach the ceiling.</p>
+<p>Listeners hold three levers: normalization is toggleable, and Premium subscribers choose Loud (−11, with a limiter), Normal (−14) or Quiet (−19). Albums are normalized as a whole to preserve inter-track dynamics; playlists and shuffle normalize per-track. The web player and third-party devices (TVs, speakers) skip normalization entirely.</p>
+<div class="callout blue">
+<strong>The Spotify trap for quiet masters.</strong>
+"You can deliver at −20 and Spotify will lift you to −14" is true only with true-peak headroom to spend. A −20 LUFS master with peaks at −1 dBTP has zero headroom and stays at −20. If you master quiet on purpose, master quiet <em>and clean</em>: peaks well below the ceiling, so the platform's boost is actually available. Speech at −16 LUFS with TP at −6 has room to spare everywhere.
+</div>
+
+<h3>Apple Podcasts · the one that tells you exactly what to do</h3>
+<p>Apple is the only platform in the spoken-word world with a precise, official, enforceable-sounding spec, and it deserves to be quoted almost in full because it doubles as a mastering checklist:</p>
+<ul>
+<li>overall loudness <strong>around −16 dB LKFS</strong>, tolerance <strong>±1 dB</strong>;</li>
+<li>true peak <strong>not exceeding −1 dBFS</strong>, because their encoding "might clip the signal if the recommended true-peak value is not respected";</li>
+<li>measurement per <strong>ITU-R BS.1770-5</strong> — the exact algorithm §4 dissected;</li>
+<li>embed loudness metadata so playback engines "automatically and precisely" adjust levels (Apple's own players do this via Sound Check; when enabled, tagged content plays "consistently at −16 dB").</li>
+</ul>
+<p>Note the mechanism shift: Apple does not promise blanket server-side gain. You precondition the file; the player reads the tag. Compliance is cheap — §9's workflow produces it as a side effect — and non-compliance is silent: nothing rejects, listeners' apps just disagree about you.</p>
+
+<h3>SoundCloud, and the rest</h3>
+<p>SoundCloud <em>does</em> normalize — their own help says so — which contradicts a decade of stale forum lore that it plays files untouched. Their mastering guidance recommends delivering −14 LUFS integrated with at least −1 dBTP headroom (below −2 dBTP for loud masters). Tidal, Amazon Music and Deezer normalize with turn-down-only behavior per community modeling, targets around −14 but officially unverified; Bandcamp plays what you upload; Facebook/Instagram publish nothing, and their 2023 audio work was encoding, not loudness. Netflix's −27 LKFS dialogue-gated spec is a delivery contract for content sold <em>to</em> Netflix — included here because it shows up in every "loudness targets" list and is otherwise irrelevant to podcasters.</p>
+
+<h3>So what do you deliver?</h3>
+<p>The wrong question: "which platform's number do I optimize for?" The right one: "what single file lands acceptably everywhere I publish?" For spoken word — podcasts, voiceover, commentary video:</p>
+<div class="callout good">
+<strong>The universal spoken-word master.</strong>
+<strong>−16 LUFS integrated, true peak ≤ −1.5 dBTP.</strong> Hits Apple's spec dead center; plays un-boosted but competitive on YouTube (−2 LU under its threshold — per­ceptibly one notch quieter than −14 targets, a fair trade for one master everywhere); lifts cleanly on Spotify, which has headroom to spare; sane on Rumble and everywhere unverified. If YouTube is demonstrably your dominant platform and speech is your content, a −14 LUFS variant is the second master worth keeping.
+</div>
+<p>For music-led content the calculus changes: YouTube Music's −7 threshold rewards density, Spotify caps boosts, Apple Music sits near −14 with its own Sound Check behavior. The honest summary for musicians: deliver at −14 LUFS with the dynamics you can defend, or master to taste knowing turn-down-only platforms will punish nobody but your dynamic range. Ian Shepherd's Loudness Penalty site models the per-platform playback gain for any master — linked in Sources.</p>
+
+<div class="callout warn">
+<strong>Misconception: "−14 is YouTube's official target."</strong>
+It is a 2019 measurement of player behavior, still corroborated in 2026, published by a third party. Cite it that way or you will confidently repeat a number YouTube never wrote down. Same discipline for Tidal/Amazon/Deezer's "−14": community-measured, officially unconfirmed.
+</div>
+
+<p class="sources-line">Sources: <a href="https://support.google.com/youtube/answer/14106294" target="_blank" rel="noopener">Google · YouTube Stable Volume</a> · <a href="https://support.google.com/youtube/answer/16619284" target="_blank" rel="noopener">Google · YouTube audio enhancements</a> · <a href="https://www.meterplugs.com/blog/2019/09/18/youtube-changes-loudness-reference-to-14-lufs.html" target="_blank" rel="noopener">MeterPlugs · YouTube −14 measurement</a> · <a href="https://www.meterplugs.com/blog/2026/06/22/loudness-penalty-2-release.html" target="_blank" rel="noopener">MeterPlugs · Loudness Penalty 2 (YouTube Music −7)</a> · <a href="https://loudnesspenalty.com" target="_blank" rel="noopener">loudnesspenalty.com · per-platform playback-gain modeler</a> · <a href="https://support.spotify.com/artists/article/loudness-normalization" target="_blank" rel="noopener">Spotify · Loudness normalization (official)</a> · <a href="https://podcasters.apple.com/support/893-audio-requirements" target="_blank" rel="noopener">Apple · Podcast audio requirements (official)</a> · <a href="https://help.soundcloud.com/hc/en-us/articles/360053660014" target="_blank" rel="noopener">SoundCloud · Mastering tips (official)</a> · rumble.support surveyed — no loudness content exists · all checked 2026-09-29</p>
+</section>
+
+<!-- ============================================================ 7 -->
+<section id="toolchain">
+<h2>7 · The toolchain <span class="tag">Three meters, one host, zero overlap in what they're best at.</span></h2>
+<p class="lede">Audio Hijack is the workbench: it captures any macOS audio source, runs it through a chain of processing blocks — including any Audio Unit plugin you own — and records the result. YouLean Loudness Meter watches, dpMeter5 watches and can apply matched gain, and a future FinalLoud3 will land your file on target by itself. All three ship native AU builds for Apple Silicon, which is the one format Audio Hijack speaks.</p>
+
+<h3>The host: Audio Hijack 4</h3>
+<p>A session is a chain of <strong>blocks</strong> on a canvas: a source block (an app, an input device, the whole system), any number of effect blocks, then output blocks (recorders, speakers). Signal flows left to right; each block sees the output of the one before it. For loudness work you care about five pieces of the shipped palette:</p>
+<ul>
+<li><strong>Peak/RMS meter and VU meter</strong> — level readouts with clipping indicators (dBFS territory, §3);</li>
+<li><strong>Volume block</strong> — gain with on-face meters and a <em>look-ahead peak limiter</em> (enable it and it becomes your safety ceiling);</li>
+<li><strong>Simple Compressor</strong> — tames level swings (§8 puts it before the meter);</li>
+<li><strong>Magic Boost and ML Speech Denoise</strong> — spectral lift and noise reduction for thin or noisy speech sources;</li>
+<li><strong>Recorder</strong> — writes WAV/AIFF/FLAC/ALAC lossless or MP3/AAC, with 32-bit and dithering options. Lossless is the right choice for anything you will measure and process later.</li>
+</ul>
+<div class="callout blue">
+<strong>AU only — this constraint shapes every tool choice.</strong>
+Audio Hijack's effect-block library exposes third-party <strong>Audio Units</strong> only (AUv3 included); VST/VST3/AAX plugins never appear. It scans <code>/Library/Audio/Plug-Ins/Components</code> and <code>~/Library/Audio/Plug-Ins/Components</code>. Every tool recommended in this guide ships a native AU — which is exactly why they were chosen.
+</div>
+
+<h3>The meters</h3>
+<h4>YouLean Loudness Meter 2 — the referee</h4>
+<p>The readout you will stare at most: momentary/short-term/integrated, true peak, LRA, PLR (peak-to-loudness ratio — headroom in one number), dynamics graph in PRO. One edition, PRO-unlocked by license ($39 one-time at check; list $49); the free tier already shows every number §4 taught. What PRO buys that matters for this workflow:</p>
+<ul>
+<li><strong>drag-and-drop offline analysis</strong> of finished audio <em>and video</em> files — the post-production workflow of §9 without playing anything in real time;</li>
+<li><strong>streaming presets</strong> (Spotify, YouTube, Apple Podcasts-adjacent targets) so target lines sit on the meter itself;</li>
+<li>the <code>ylm2</code> command-line tool for batch analysis and normalization of whole folders;</li>
+<li>PDF/PNG/SVG report export, custom presets, A/B states.</li>
+</ul>
+<p>Its one hard limit, worth internalizing now: <strong>it is analysis-only.</strong> YouLean changes nothing about the audio passing through it — it is the judge, not the gain ride. (Its default "reset on play" behavior — measurements reset when playback stops and starts — is documented in its manual; expect fresh numbers each take.)</p>
+
+<h4>dpMeter5 — the meter that can also push a fader</h4>
+<p>TBProAudio's free meter (email registration) with three measurement modes — <strong>RMS</strong> (plain level, §3), <strong>EBU R128</strong> (the full loudness treatment), and <strong>DIAL</strong> (dialogue-gated, the Netflix-style measurement) — plus IL/SL/ML/LRA/TP readouts and switchable K/A/B/C/M weighting for the level modes. Its superpower over YouLean: <strong>manual loudness/peak/true-peak match</strong> — point it at a reference level and it applies the corrective gain for you, turning §9's subtraction into one button. What it does <em>not</em> have: any offline or batch mode. Its paid sibling <strong>dpMeterXT3</strong> (EUR 79) is the batch story — a standalone application as well as a plugin, CSV reports, loudness matching, a true-peak limiter — worth it the day folder-at-a-time processing becomes routine.</p>
+
+<h4>FinalLoud3 — the eventual endgame (you don't own it yet)</h4>
+<p>TBProAudio, EUR 29, and the shortest description of any tool here: <strong>gain control + true-peak limiter + loudness meter pointed at one target.</strong> Drop it last in a chain, set target LUFS and TP ceiling, and it lands the program on target while policing the ceiling — automating the entire manual dance §9 teaches. Streaming presets included; demo mutes every 90 seconds; Mac build is universal (native Apple Silicon) with AU confirmed, so it slots straight into Audio Hijack when you buy it. This guide teaches the manual workflow because understanding what FinalLoud3 automates is what makes its output trustworthy — and because YouLean + dpMeter5 already cover the need for free.</p>
+
+<div class="table-wrap"><table>
+<tr><th>Tool</th><th>Price</th><th>Live meter</th><th>Offline file analysis</th><th>Applies gain</th><th>Limits TP</th><th>Batch</th></tr>
+<tr><td>YouLean LM2 free</td><td class="num">$0</td><td>yes</td><td>no</td><td>no</td><td>no</td><td>no</td></tr>
+<tr><td>YouLean LM2 PRO</td><td class="num">$39 once</td><td>yes</td><td>yes — drag &amp; drop, audio + video</td><td>via ylm2 CLI only</td><td>no (plugin)</td><td>ylm2 CLI</td></tr>
+<tr><td>dpMeter5</td><td class="num">$0</td><td>yes</td><td>no</td><td>yes — manual match</td><td>no</td><td>no</td></tr>
+<tr><td>dpMeterXT3</td><td class="num">€79</td><td>yes</td><td>yes — app mode</td><td>yes</td><td>yes</td><td>yes</td></tr>
+<tr><td>FinalLoud3</td><td class="num">€29</td><td>yes</td><td>no</td><td>yes — automatic</td><td>yes</td><td>no</td></tr>
+</table></div>
+
+<h3>Install and verify (macOS)</h3>
+<p>Installers drop the AU bundles into the system or user Components folder; Audio Hijack finds them on next launch (its block library lists them under <strong>Audio Unit Effects</strong>). Verify what you actually have from a terminal — the same check this guide's version badges came from:</p>
+<pre><code><span class="comment"># which loudness AUs are installed, system-wide and per-user:</span>
+<span class="cmd">ls /Library/Audio/Plug-Ins/Components/ | grep -iE "dpmeter|youlean"</span>
+dpMeter5.component
+Youlean Loudness Meter 2.component
+
+<span class="comment"># exact version inside a bundle:</span>
+<span class="cmd">plutil -p /Library/Audio/Plug-Ins/Components/dpMeter5.component/Contents/Info.plist \
+  | grep CFBundleShortVersionString</span>
+"CFBundleShortVersionString" => <span class="val">"5.3.9"</span>
+
+<span class="cmd">plutil -p "/Library/Audio/Plug-Ins/Components/Youlean Loudness Meter 2.component/Contents/Info.plist" \
+  | grep CFBundleShortVersionString</span>
+"CFBundleShortVersionString" => <span class="val">"2.5.15"</span></code></pre>
+<p class="expect"><b>Expect:</b> your own versions within a few minor releases of these (dpMeter5 5.3.9, YouLean 2.5.15, verified on macOS 15.6 with Audio Hijack 4.6.0). A missing bundle means the installer put it in the <em>other</em> Components folder — check both paths before reinstalling.</p>
+
+<div class="callout warn">
+<strong>Misconception: "the meter plugin is processing my audio."</strong>
+YouLean is a passive observer — signal leaves exactly as it entered, so leaving it in the chain costs nothing but screen space. dpMeter5 only touches signal when you invoke its match function. FinalLoud3 and Audio Hijack's Volume block are the opposite: they exist to change level. Keeping "observes" and "alters" sorted prevents the classic mistake of watching a meter that sits <em>before</em> the block doing the gain — §8's chain order exists to make that mistake impossible.
+</div>
+
+<p class="sources-line">Sources: <a href="https://youlean.co/youlean-loudness-meter/" target="_blank" rel="noopener">YouLean · product + editions</a> · <a href="https://docs.youlean.co" target="_blank" rel="noopener">YouLean · docs (formats, macOS support)</a> · <a href="https://www.tbproaudio.de/products/dpmeter" target="_blank" rel="noopener">TBProAudio · dpMeter5</a> · <a href="https://www.tbproaudio.de/products/dpmeterxt" target="_blank" rel="noopener">TBProAudio · dpMeterXT3</a> · <a href="https://www.tbproaudio.de/products/finalloud" target="_blank" rel="noopener">TBProAudio · FinalLoud3</a> · <a href="https://rogueamoeba.com/audiohijack/" target="_blank" rel="noopener">Rogue Amoeba · Audio Hijack</a> · <a href="https://rogueamoeba.com/support/knowledgebase/?showArticle=Misc-Third-Party-Audio-Units&amp;product=Audio+Hijack" target="_blank" rel="noopener">Rogue Amoeba · third-party Audio Units in Audio Hijack</a> · versions verified locally 2026-09-29</p>
+</section>
+
+<!-- ============================================================ 8 -->
+<section id="live">
+<h2>8 · Live sessions <span class="tag">No second take. The meter stops being a report and becomes a co-pilot.</span></h2>
+<p class="lede">Live — streaming, recording a conversation as it happens, capturing a remote guest — changes what each readout is <em>for</em>. Integrated loudness needs the whole program to exist, so it is worthless mid-flight. Short-term becomes your steering wheel, momentary your collision alarm, true peak your hard wall. Set the chain once, watch two numbers, and the recording you walk away with is already 90% of a deliverable.</p>
+
+<h3>The chain, in order, and why the order is not negotiable</h3>
+<div class="flow">
+  <div class="node"><b>Source</b><span>app / mic / system audio</span></div>
+  <div class="arrow">→</div>
+  <div class="node"><b>Fix</b><span>Denoise, EQ — clean first, everything after benefits</span></div>
+  <div class="arrow">→</div>
+  <div class="node"><b>Compress</b><span>Simple Compressor: tame swings</span></div>
+  <div class="arrow">→</div>
+  <div class="node accent"><b>Volume</b><span>gain to taste + look-ahead limiter ON, ceiling −1 dBFS</span></div>
+  <div class="arrow">→</div>
+  <div class="node accent"><b>YouLean</b><span>meter LAST — it sees exactly what gets recorded</span></div>
+  <div class="arrow">→</div>
+  <div class="node hot"><b>Recorder + output</b><span>lossless WAV · stream out</span></div>
+</div>
+<p>Three placement rules do all the work:</p>
+<ol class="recipe">
+<li><strong>Clean before compress.</strong> Denoise and EQ ahead of the compressor, or the compressor amplifies the hiss and room boom you meant to remove.</li>
+<li><strong>Limit before the meter.</strong> The Volume block's look-ahead limiter with its ceiling at −1 dBFS is the wall; YouLean behind it reports the truth about what the wall let through — including true peak, so inter-sample overshoot (§4) is visible, not assumed away.</li>
+<li><strong>Meter last, always.</strong> A meter placed before any gain block flatters you. Placed after every block, it describes the artifact you will ship.</li>
+</ol>
+
+<h3>What to watch, minute to minute</h3>
+<div class="table-wrap"><table>
+<tr><th>Readout</th><th>Live target for speech (−16 LUFS program)</th><th>If it leaves the box</th></tr>
+<tr><td><strong>Short-term (S)</strong></td><td class="num">−20 to −15 LUFS while talking</td><td>Below −20 for a whole segment: ride the Volume block up. Above −15: you are eating your LRA budget; back off gain, not the mic</td></tr>
+<tr><td><strong>Momentary (M)</strong></td><td class="num">spikes to −10 LUFS are fine</td><td>A laugh or door slam hitting 0 with the limiter grabbing: acceptable occasionally; constant grabbing means lower input gain</td></tr>
+<tr><td><strong>True peak (TP)</strong></td><td class="num">≤ −1.0 dBTP, ideally ≤ −2</td><td>Anything pinned at your ceiling for more than a blink: the limiter is working overtime — prevent at the source (§15)</td></tr>
+</table></div>
+<p>Why short-term −20 to −15 lands integrated near −16: for consistent speech, pauses included, the gated integrated value settles a couple LU under the talking-level short-term average. Ride S into that box and the post-measurement in §9 usually comes back within a LU of target — the live session's whole job.</p>
+
+<div class="callout blue">
+<strong>Set input gain before guests arrive.</strong>
+With your natural speaking voice, aim momentary peaks around −12 to −6 dBFS on the loudest sentence you can sustain. That leaves headroom for laughter and excitement below the limiter. Gain set this way at the <em>source</em> (mic interface or app volume) beats gain added later at the Volume block: downstream gain amplifies the noise floor with it.
+</div>
+
+<h3>Live streaming specifics</h3>
+<p>Streaming to YouTube or Rumble live adds one uncertainty: whether the live pipeline normalizes the way the VOD pipeline does. YouTube's measured −14 applies to normal playback; live transcoding historically behaves the same way at the player, but you are at the mercy of encoder ingest either way. The defense is the same for both platforms and both certainties levels: <strong>send a healthy signal and let the platform do whatever it does.</strong> A stream that arrives around −16 LUFS short-term, peaks limited at −1 dBFS, sounds correct everywhere and normalizes gracefully into any VOD policy from §6.</p>
+
+<h3>Recording discipline during the session</h3>
+<ul>
+<li><strong>Record lossless.</strong> WAV or FLAC from the Recorder block. MP3/AAC recording throws away the headroom §9 needs for boosting, and adds codec overshoot you cannot remove.</li>
+<li><strong>Reset the meter at session start</strong> (YouLean resets on play by default) so the integrated readout describes <em>this</em> session only.</li>
+<li><strong>Log one timestamp per incident</strong> — "14:32 guest clipped for 3 s" — and post-production becomes a hunt for known events instead of an archaeology dig.</li>
+<li><strong>Room tone:</strong> record 30 seconds of silence at session end. Noise reduction and honest noise-floor measurement (§11) both want it.</li>
+</ul>
+
+<div class="callout warn">
+<strong>Misconception: "it's recording, I'll fix it in post."</strong>
+Post can shift a number; it cannot un-clip a limiter-slammed take or un-lift a hiss floor that downstream gain raises with it. The two live failures that are permanent — digital clipping and bad signal-to-noise at the source — are both prevented by the ten minutes of §8 setup, and only that setup.
+</div>
+
+<p class="sources-line">Sources: <a href="https://rogueamoeba.com/audiohijack/" target="_blank" rel="noopener">Rogue Amoeba · Audio Hijack (block palette, recorder formats)</a> · <a href="https://tech.ebu.ch/docs/r/r128.pdf" target="_blank" rel="noopener">EBU · R128 (live metering practice, M/S/I intent)</a> · chain behavior verified on Audio Hijack 4.6.0 · 2026-09-29</p>
+</section>
+
+<!-- ============================================================ 9 -->
+<section id="post">
+<h2>9 · Post-production <span class="tag">Measure, subtract, apply, re-measure. The re-measure is the workflow.</span></h2>
+<p class="lede">Hitting a loudness target is arithmetic you can do in your head — the target minus the measurement is the gain — wrapped in one trap: pushing level up pushes peaks toward the ceiling, and past the ceiling the arithmetic needs a limiter, not a fader. The five-step loop below runs the arithmetic, respects the ceiling, and ends by measuring the result instead of predicting it. Every number in it is real, from the 40-second lab file built in Lab 1.</p>
+
+<h3>Step 1 · Measure the finished edit</h3>
+<p>Two roads, same answer: YouLean PRO's drag-and-drop (drop the file on the plugin's window, read I / TP / LRA), or ffmpeg's ebur128 scanner, which prints the identical BS.1770 numbers and costs nothing:</p>
+<pre><code><span class="cmd">ffmpeg -hide_banner -nostats -loglevel info -i pink-dyn.wav \
+  -af ebur128=peak=true -f null -</span>
+<span class="comment">(per-frame readouts scroll by; the end-of-file Summary is what you want)</span>
+
+  Integrated loudness:
+    I:         <span class="val">-22.2 LUFS</span>
+    Threshold: -33.9 LUFS
+  Loudness range:
+    LRA:        14.0 LU
+  True peak:
+    Peak:      <span class="val">-10.5 dBFS</span></code></pre>
+<p class="expect"><b>Expect:</b> I about −22 LUFS for this lab file (loud/medium/quiet/silent stretch noise); LRA 14; TP −10.5. YouLean shows the same I within ~0.1 LU — two BS.1770 implementations agreeing is the sanity check that both are healthy.</p>
+
+<h3>Step 2 · Compute the move</h3>
+<pre><code>target  −16 LUFS   (§6 universal spoken-word master)
+measured −22.2 LUFS
+gain    = (−16) − (−22.2) = <span class="val">+6.2 dB</span>
+
+predicted true peak = −10.5 + 6.2 = <span class="val">−4.3 dBTP</span>   → ceiling −1.5 not breached → plain gain is enough</code></pre>
+<p>The prediction is the decision point for the whole workflow: if predicted TP breaches your ceiling, a pure gain move will clip — that is the case that needs a limiter (Audio Hijack's Volume block with look-ahead limiter, or FinalLoud3 doing the whole job). Here, +6.2 dB leaves the peaks at −4.3 dBTP with room to spare, so a plain gain stage is honest work.</p>
+
+<h3>Step 3 · Apply it — and meet the one-pass trap</h3>
+<p>ffmpeg's <code>loudnorm</code> filter is the free reference implementation of "hit the target," and its default behavior teaches a lesson worth the detour. One-pass mode uses a <em>dynamic</em> normalizer that compresses as it goes:</p>
+<pre><code><span class="cmd">ffmpeg -i pink-dyn.wav -af loudnorm=I=-16:TP=-1.5:LRA=7 \
+  -ar 48000 pink-16-onepass.wav</span>
+
+Input Integrated:    <span class="val">-22.3 LUFS</span>      Input True Peak:     -10.5 dBTP
+Output Integrated:   <span class="hot">-18.3 LUFS</span>      Output True Peak:     -5.8 dBTP
+Output LRA:           <span class="hot">8.4 LU</span>  <span class="comment">← asked for -16; got -18.3, and LRA crushed 14.1 → 8.4</span></code></pre>
+<p>It missed the target by 2.3 LU <em>and</em> squeezed the loudness range nearly in half — because one-pass loudnorm is riding gain dynamically and compressing to satisfy its LRA parameter. For finished programs that is vandalism. The fix is <strong>two-pass linear</strong>: pass one only measures; you feed those measurements back, and pass two applies one fixed gain with no dynamics touched:</p>
+<pre><code><span class="comment"># pass 1: measure only (loudnorm prints the numbers, writes nothing you keep)</span>
+<span class="cmd">ffmpeg -i pink-dyn.wav -af loudnorm=I=-16:TP=-1.5:LRA=15:print_format=summary -f null -</span>
+   Input Integrated: -22.3 LUFS · Input True Peak: -10.5 dBTP · Input LRA: 14.1 LU · Threshold: -33.9 LUFS
+
+<span class="comment"># pass 2: linear=true + those measured values = one fixed gain, no compression</span>
+<span class="cmd">ffmpeg -i pink-dyn.wav -af loudnorm=I=-16:TP=-1.5:LRA=15:\
+measured_I=-22.3:measured_TP=-10.5:measured_LRA=14.1:measured_thresh=-33.9:linear=true \
+  -ar 48000 pink16.wav</span></code></pre>
+<p>In the GUI world, dpMeter5's <strong>loudness match</strong> is this same move — point it at −16 and it applies the corrective gain — and FinalLoud3 wraps measure-apply-limit into one block. Understand the two-pass pattern and every tool's behavior, including when it is quietly compressing instead of shifting, becomes legible.</p>
+
+<h3>Step 4 · Re-measure — never skip</h3>
+<pre><code><span class="cmd">ffmpeg -hide_banner -nostats -loglevel info -i pink16.wav -af ebur128=peak=true -f null -</span>
+
+  Integrated loudness:
+    I:         <span class="val">-15.9 LUFS</span>     <span class="comment">← target −16, landed 0.1 over: inside every tolerance in §6</span>
+  Loudness range:
+    LRA:        14.0 LU        <span class="comment">← dynamics untouched, unlike the one-pass attempt</span>
+  True peak:
+    Peak:       <span class="val">-4.2 dBFS</span>      <span class="comment">← −10.5 + 6.3 ≈ prediction honored</span></code></pre>
+<p>Why re-measure when the math said +6.2? Because of §4's gates: gain can change which blocks the relative gate admits, monophonic downmixes shift the sum, and tool rounding is real. The loop's last step is always an instrument reading, not an inference. YouLean PRO's drag-and-drop makes it a five-second habit; ffmpeg makes it a scriptable one.</p>
+
+<h3>The ceiling table</h3>
+<div class="table-wrap"><table>
+<tr><th>Delivery</th><th>True-peak ceiling</th><th>Why</th></tr>
+<tr><td>Podcast/YouTube master (lossless or light AAC)</td><td class="num">−1.0 to −1.5 dBTP</td><td>Apple's stated −1 dBFS line, plus breathing room</td></tr>
+<tr><td>Anything re-encoded by the platform (most video, all streaming)</td><td class="num">−2.0 dBTP</td><td>Lossy codecs reconstruct slightly different waveforms and add overshoot of their own; headroom absorbs it</td></tr>
+<tr><td>Spotify-quiet or dynamic masters meant to be boosted</td><td class="num">as low as −6 dBTP</td><td>Spend the headroom you saved — §6's Spotify trap</td></tr>
+</table></div>
+<div class="callout danger">
+<strong>When the math needs a limiter.</strong>
+Say the edit measures −12.5 LUFS at −0.9 dBTP and you want −16: gain is −3.5 dB — pure attenuation, always safe. The dangerous direction is up: a −24 LUFS file with TP at −0.5 needs +8 dB to reach −16, which predicts +7.5 dBTP of peak — over any ceiling. Now the order is <strong>gain into a true-peak limiter set at the ceiling</strong> (Audio Hijack Volume block with look-ahead limiter, or FinalLoud3), so speech rises while transients are held — some LRA is the price. A peak limiter should engage on peaks only; if it is constantly grabbing, the gain staging upstream is wrong.
+</div>
+
+<h3>Step 5 · Export and archive</h3>
+<ul>
+<li><strong>Keep the lossless master</strong> (WAV/FLAC) of the −16-landed result; produce MP3/AAC delivery copies from it when a platform demands compressed uploads.</li>
+<li><strong>Sample rate:</strong> whatever the session ran (48 kHz is common for video work); loudnorm's two-pass output above resamples to 48 kHz deliberately — keep <code>-ar</code> consistent.</li>
+<li><strong>Metadata:</strong> Apple Podcasts asks for loudness metadata to be embedded so players can auto-adjust — podcast encoders (including Apple's own Podcasts bundle tooling and most hosts' upload pipelines) handle this from your measured values; the number they tag is only as good as the measurement you feed them.</li>
+<li><strong>Name the numbers:</strong> a filename suffix or a note (<code>ep042_I-15.9_TP-4.2</code>) makes month-later "why does this one sound right?" a lookup instead of a re-measure.</li>
+</ul>
+
+<div class="callout warn">
+<strong>Misconception: "a normalizer is a normalizer."</strong>
+Tools with the same goal apply wildly different processing: two-pass linear shifts one fixed gain (dynamics intact); one-pass dynamic rides gain continuously (dynamics altered); a true-peak limiter trades transient peaks for level; a compressor shapes range by design. §6 platforms do the linear kind. Match their behavior in production and what you measured is what listeners get.
+</div>
+
+<p class="sources-line">Sources: <a href="https://ffmpeg.org/ffmpeg-filters.html#loudnorm" target="_blank" rel="noopener">ffmpeg · loudnorm filter docs (two-pass workflow)</a> · <a href="https://ffmpeg.org/ffmpeg-filters.html#ebur128" target="_blank" rel="noopener">ffmpeg · ebur128 filter docs</a> · <a href="https://podcasters.apple.com/support/893-audio-requirements" target="_blank" rel="noopener">Apple · podcast audio requirements (TP −1 dBFS, metadata)</a> · all outputs above run locally with ffmpeg 9.0.2 · 2026-09-29</p>
+</section>
+
+<!-- ============================================================ 10 -->
+<section id="auditing">
+<h2>10 · Auditing published audio <span class="tag">Measure what platforms actually play. Trust nothing published about it — including this guide.</span></h2>
+<p class="lede">Every claim in §6 is a snapshot of documented-or-measured behavior, and platforms change silently. The audit loop closes the loop: capture what a platform actually plays back, run it through the same §4 meter you trust on your own work, and compare against the file that was uploaded. It is also the fastest way to calibrate your ears — five minutes of listening to content whose numbers you know teaches your perception what −16 sounds like.</p>
+
+<h3>The capture rig</h3>
+<p>Audio Hijack records what an application plays, upstream of your speaker volume:</p>
+<div class="flow">
+  <div class="node"><b>Source block</b><span>specific app — your browser</span></div>
+  <div class="arrow">→</div>
+  <div class="node accent"><b>YouLean</b><span>watch live while listening</span></div>
+  <div class="arrow">→</div>
+  <div class="node hot"><b>Recorder</b><span>WAV, lossless</span></div>
+  <div class="arrow">→</div>
+  <div class="node"><b>Output</b><span>headphones (so you hear exactly what's captured)</span></div>
+</div>
+<ol class="recipe">
+<li><strong>New session, Application source, pick the browser</strong> that will play the content. Audio Hijack taps that app's audio only — mail pings and system beeps stay out.</li>
+<li><strong>Player volume to maximum, platform normalization off where toggleable</strong> (Spotify: settings toggle; YouTube: player settings). In-app volume is applied before the tap, so leave it at 100% or your capture runs quiet. macOS system volume does <em>not</em> affect the recorded file.</li>
+<li><strong>Play the content start to finish</strong> (or the segment you care about) with the recorder running. Trim later; integrated loudness wants the whole program if you want a comparable number.</li>
+<li><strong>Measure the capture</strong> exactly like §9: YouLean drag-and-drop or <code>ffmpeg -i capture.wav -af ebur128=peak=true -f null -</code>.</li>
+</ol>
+
+<h3>Three audits worth running</h3>
+<div class="table-wrap"><table>
+<tr><th>Audit</th><th>Compare</th><th>What it tells you</th></tr>
+<tr><td><strong>Platform gain</strong></td><td>Your uploaded master's I (you have the number) vs. the playback capture's I</td><td>The platform's applied gain, empirically. Difference ≈ 0 means "plays as delivered"; capture quieter by exactly your overshoot confirms turn-down-only</td></tr>
+<tr><td><strong>Channel scouting</strong></td><td>Integrated + LRA of several shows you admire</td><td>Where successful content actually sits — often looser than forum lore claims, and the LRA tells you how processed it really is</td></tr>
+<tr><td><strong>Ear calibration</strong></td><td>Listen to a capture while watching the meter you trust</td><td>Anchor: "this is what −18 integrated with 9 LU of range sounds like." After a few reps, your gut readout gets within a couple LU before any tool opens</td></tr>
+</table></div>
+
+<h3>YouTube's own confession</h3>
+<p>YouTube exposes per-video playback numbers that most creators never open: right-click the player, choose <strong>Stats for nerds</strong>, and the overlay includes a <code>volume / normalized</code> pair and a <code>content loudness</code> figure in dB for the playing video. That "content loudness" is YouTube's own measurement of the uploaded file — compare it to your local measurement of the same file and you have verified YouTube's meter against yours. The <code>normalized</code> percentage is the applied gain relative to your player volume. This overlay is a long-standing player feature rather than a documented API, so treat its exact fields as observed behavior — but it is the cheapest ground truth in this entire guide: zero capture rig required.</p>
+
+<div class="callout warn">
+<strong>Misconception: "louder channel = better produced."</strong>
+Auditing dissolves this on contact. Channels that sound big often measure −14 with LRA 4 — a compressor doing the talking — while the ones that sound alive sit at −16 with LRA 10. Loudness is a delivery number; production quality lives in the range, the noise floor, and the consistency. §11 is about earning those.
+</div>
+
+<p class="sources-line">Sources: <a href="https://rogueamoeba.com/audiohijack/" target="_blank" rel="noopener">Rogue Amoeba · Audio Hijack (per-application capture)</a> · <a href="https://support.google.com/youtube/answer/14106294" target="_blank" rel="noopener">Google · YouTube Stable Volume (normalization toggling)</a> · Stats for nerds fields = observed player behavior, unverified against official docs</p>
+</section>
+
+<!-- ============================================================ 11 -->
+<section id="voiceover">
+<h2>11 · Voiceover craft <span class="tag">The listener sets volume once. Consistency is the whole job.</span></h2>
+<p class="lede">A listener touches the volume knob at second one and never again. Every inconsistency after that — a hot paragraph, a fading guest, a floor that rises between sentences — is experienced as a defect. Loudness targets (§6) and measurement (§4) are how you make consistency verifiable instead of vibes; this section is the craft that makes it true at the source, before any plugin helps.</p>
+
+<h3>Capture: the three wins at the mic</h3>
+<ol class="recipe">
+<li><strong>Fixed distance, 15–20 cm, slightly off-axis.</strong> Cardioid mics boost bass as you close in (proximity effect), so distance swings become EQ swings no downstream tool will fully undo. Off-axis by a hand's width turns plosive puffs of air into missable puffs instead of thumps.</li>
+<li><strong>Gain at the interface, not later.</strong> Set input so sustained speech reads −18 to −12 dBFS and excited peaks approach −6. Signal acquired this far above the noise floor makes every later stage cleaner — digital gain amplifies the floor with the voice (§8's warning, now with a reason).</li>
+<li><strong>Tame the room before the computer.</strong> Blankets, closet, carpet — any soft surface within a meter of the mic. A quiet, dead room at −55 dBFS floor beats any denoise plugin: denoise trades artifacts for hiss, and §8's ML Speech Denoise is a rescue tool, not a substitute.</li>
+</ol>
+<div class="table-wrap"><table>
+<tr><th>Capture metric</th><th>Healthy spoken-word value</th><th>How you know</th></tr>
+<tr><td>Noise floor (room tone)</td><td class="num">−50 to −60 dBFS</td><td>Record 10 s of silence, read the peak: well under any speech level</td></tr>
+<tr><td>Speech momentary peaks</td><td class="num">−18 to −6 dBFS</td><td>§8's gain-setting pass, natural voice</td></tr>
+<tr><td>Speech-to-floor ratio</td><td class="num">≥ 40 dB</td><td>Difference of the two rows above; drives perceived "clean"</td></tr>
+<tr><td>Program LRA (processed)</td><td class="num">4–8 LU for VO, 6–10 for conversation</td><td>Post-measure (§9); denser than 4 LU sounds pressed, looser than 10 wanders in the car</td></tr>
+</table></div>
+
+<h3>The processing spine</h3>
+<p>Order matters; each stage has one job, and the chain is the §8 live chain refined for a controlled edit:</p>
+<div class="flow">
+  <div class="node"><b>HPF 70–90 Hz</b><span>rumble the ear discounts — the meter's K-weighting already pretends it's gone; remove it for real</span></div>
+  <div class="arrow">→</div>
+  <div class="node"><b>Denoise (if needed)</b><span>light, last resort after room treatment</span></div>
+  <div class="arrow">→</div>
+  <div class="node"><b>EQ</b><span>cut mud 200–400 Hz, presence 3–5 kHz to taste</span></div>
+  <div class="arrow">→</div>
+  <div class="node"><b>De-ess</b><span>5–8 kHz sibilance, after EQ so they agree</span></div>
+  <div class="arrow">→</div>
+  <div class="node accent"><b>Compressor</b><span>2:1–4:1, a few dB of reduction on the loud sentences</span></div>
+  <div class="arrow">→</div>
+  <div class="node hot"><b>Limiter</b><span>ceiling −1 to −2 dBTP, catching what remains</span></div>
+</div>
+<p>The compressor earns consistency of short-term loudness — sentence-to-sentence and take-to-take. Two honest signs it is doing too much: the gain-reduction meter lives at 6+ dB on ordinary sentences, or quiet syllables audibly pump up after loud ones. Back off the ratio or raise the threshold; §9's final loudness move is a separate, fixed gain, not more compression.</p>
+
+<h3>Consistency drills (measurement-guided practice)</h3>
+<ul>
+<li><strong>Take matching:</strong> record the same 30-second script twice, an hour apart. Measure both short-term profiles (YouLean graph or §10's live rig). Matching within ±1 LU across the take is the skill; distance drift and energy drift show up here first.</li>
+<li><strong>Paragraph steering:</strong> read a page aloud watching short-term only. Practice keeping S inside a 3 LU band without changing vocal effort — tiny input-gain anticipation on deep breaths is the pro move this drill builds.</li>
+<li><strong>Reference read:</strong> keep one mastered clip you admire (§10 audited, numbers known) and one of your own best takes. A/B them before sessions; your target sound now has coordinates.</li>
+</ul>
+
+<div class="callout warn">
+<strong>Misconception: "the radio sound comes from the processing."</strong>
+Reverse it: broadcast voice is mostly performance and room, then modest compression. Stack aggressive processing on a mediocre capture and you get a compressed mediocre capture — louder flaws, identical flaws. The chain above is deliberately boring; every stage exists to protect something the mic already got right.
+</div>
+
+<div class="callout good">
+<strong>What "done" sounds like, in numbers.</strong>
+A finished spoken-word program you can defend anywhere from §6: integrated −16 LUFS ±0.5, true peak ≤ −1.5 dBTP, LRA 5–8 LU, noise floor inaudible under speech by 40 dB or more. Every one of those is a §9 re-measure away — no guessing, no vibes, no "sounds about right."
+</div>
+
+<p class="sources-line">Sources: <a href="https://podcasters.apple.com/support/893-audio-requirements" target="_blank" rel="noopener">Apple · podcast audio requirements (delivery numbers)</a> · <a href="https://tech.ebu.ch/docs/r/r128.pdf" target="_blank" rel="noopener">EBU · R128 (tolerance practice)</a> · capture/processing ranges are practitioner consensus, cross-checked against the platform specs cited in §6</p>
+</section>
+
+<!-- ============================================================ 12 -->
+<section id="matrix">
+<h2>12 · Which tool when <span class="tag">The wrong question: "which meter is best?" They don't overlap — they stack.</span></h2>
+<p class="lede">YouLean is an observer, dpMeter5 is an observer with a fader, FinalLoud3 is an autopilot, Audio Hijack is the bench they all sit on, and ffmpeg is the free auditor none of them can replace offline. Pick by the job in front of you, not by preference — the matrix below is the entire section, compressed.</p>
+
+<div class="table-wrap"><table>
+<tr><th>The job in front of you</th><th>Reach for</th><th>Why this one</th></tr>
+<tr><td>Monitoring a live session or stream</td><td><strong>YouLean</strong> in the Audio Hijack chain</td><td>Clearest M/S/I + TP display, streaming-preset target lines (PRO), costs nothing in the chain — analysis-only (§7)</td></tr>
+<tr><td>Quick "is this level sane?" on any source</td><td><strong>Audio Hijack Peak/RMS block</strong></td><td>No plugin load, dBFS answer in one glance — right tool for level questions that aren't loudness questions (§3)</td></tr>
+<tr><td>Measuring a finished file (audio or video)</td><td><strong>YouLean PRO</strong> drag-and-drop</td><td>Faster than any realtime pass; video files too; exports reports. Free fallback: <code>ffmpeg -af ebur128</code> (§9)</td></tr>
+<tr><td>Measuring many files, zero budget</td><td><strong>ffmpeg script loop</strong></td><td><code>for f in *.wav; do ffmpeg -i "$f" -af ebur128 -f null - ; done</code> — same BS.1770 numbers, scriptable (Lab 3)</td></tr>
+<tr><td>Applying the measured gain in a session</td><td><strong>dpMeter5 loudness match</strong></td><td>Point at reference, it moves the fader — §9 step 3 as one button</td></tr>
+<tr><td>Landing on target unattended, ceiling included</td><td><strong>FinalLoud3</strong> (€29, when you buy it)</td><td>Gain + TP limiter + meter around one target — §9's whole loop in one block (§7)</td></tr>
+<tr><td>Folder-at-a-time analysis + normalization, reports</td><td><strong>dpMeterXT3</strong> (€79) or <strong>ylm2</strong> CLI (PRO)</td><td>The batch tier — buy when "open file, drop, read, repeat" is your bottleneck</td></tr>
+<tr><td>Capturing what a platform actually plays</td><td><strong>Audio Hijack app-capture + YouLean/ffmpeg</strong></td><td>§10's audit rig; no substitute in any tool</td></tr>
+<tr><td>Recording the session itself</td><td><strong>Audio Hijack Recorder</strong>, WAV/FLAC</td><td>Lossless keeps §9's headroom; MP3/AAC recording forfeits it (§8)</td></tr>
+</table></div>
+
+<h3>The upgrade ladder</h3>
+<p>Everything from §8–§11 is achievable for $0 with YouLean free + dpMeter5 + ffmpeg. Money buys automation, not correctness — climb when the trigger fires:</p>
+<div class="table-wrap"><table>
+<tr><th>Trigger</th><th>Buy</th><th>What it removes</th></tr>
+<tr><td>You keep re-playing files in real time to measure them</td><td class="num">YouLean PRO $39</td><td>The wait; adds drag-drop video analysis, presets on the meter, ylm2 CLI</td></tr>
+<tr><td>You land targets weekly and trust-but-verify anyway</td><td class="num">FinalLoud3 €29</td><td>Manual measure-apply-limit; the §9 loop becomes one block</td></tr>
+<tr><td>Whole-show back-catalogs or client folders</td><td class="num">dpMeterXT3 €79</td><td>Per-file babysitting; CSV reports for delivery paperwork</td></tr>
+</table></div>
+
+<div class="callout blue">
+<strong>The universal starting pattern</strong> — one chain that covers recording, live monitoring and sane capture for later §9 work:
+<pre><code>source → HPF/denoise → compressor → Volume (limiter −1 dBFS) → YouLean → Recorder (WAV)</code></pre>
+Bolt dpMeter5's match or FinalLoud3 onto the end the day the manual loop feels slow. The chain's shape never changes — §8 proved the order is the protection.
+</div>
+
+<p class="sources-line">Sources: capabilities as verified per vendor pages in <a href="#toolchain">§7</a> · pricing checked 2026-09-29</p>
+</section>
+
+<!-- ============================================================ 13 -->
+<section id="labs">
+<h2>13 · Labs <span class="tag">Five hands-on runs. Every Expect line is real output, not a mock.</span></h2>
+<p class="lede">These labs build one practice file with ffmpeg — free, scriptable, and running the same BS.1770 arithmetic as YouLean and dpMeter5 — then walk it through measuring, gating, normalizing, live capture, and a platform audit. Do them in order; each assumes the previous file. All outputs quoted below were run on ffmpeg 9.0.2, macOS, 2026-09-29, in a throwaway directory.</p>
+
+<div class="lab">
+<div class="lab-title"><span class="n">Lab 1</span> · Build the practice file and take its temperature</div>
+<div class="lab-meta">8 minutes · terminal only · writes to a scratch folder</div>
+<pre><code><span class="cmd">mkdir loudness-lab && cd loudness-lab</span>
+
+<span class="comment"># pink noise, 40 s, four stretches: loud → medium → quiet → silence</span>
+<span class="cmd">ffmpeg -f lavfi -i "anoisesrc=color=pink:sample_rate=48000:duration=40" -af \
+"volume='if(lt(t,10),0.5, if(lt(t,20),0.32, if(lt(t,30),0.1,0.0)))':eval=frame,aformat=channel_layouts=stereo" \
+pink-dyn.wav</span>
+
+<span class="cmd">ffmpeg -hide_banner -nostats -loglevel info -i pink-dyn.wav \
+  -af ebur128=peak=true -f null -</span></code></pre>
+<p><b>Expect</b> — end-of-file summary:</p>
+<pre><code>  Integrated loudness:
+    I:         <span class="val">-22.2 LUFS</span>
+    Threshold: -33.9 LUFS
+  Loudness range:
+    LRA:        14.0 LU
+  True peak:
+    Peak:      <span class="val">-10.5 dBFS</span></code></pre>
+<div class="checkpoint"><strong>Checkpoint:</strong> you produced a file with a known loudness fingerprint. Drop the same file on YouLean (PRO drag-and-drop, or play it through any meter): integrated should agree within ~0.1 LU. Two meters, one number — §4's model, cross-verified.</div>
+</div>
+
+<div class="lab">
+<div class="lab-title"><span class="n">Lab 2</span> · Prove the gates ignore silence</div>
+<div class="lab-meta">5 minutes · terminal only · depends on Lab 1</div>
+<pre><code><span class="comment"># 20 s of digital silence, then glue it to the end of the practice file</span>
+<span class="cmd">ffmpeg -f lavfi -i "anullsrc=channel_layout=stereo:sample_rate=48000" -t 20 silence20.wav</span>
+<span class="cmd">ffmpeg -i pink-dyn.wav -i silence20.wav -filter_complex "[0:a][1:a]concat=n=2:v=0:a=1" \
+  pink-plus-silence.wav</span>
+
+<span class="cmd">ffmpeg -hide_banner -nostats -loglevel info -i pink-plus-silence.wav \
+  -af ebur128=peak=true -f null -</span></code></pre>
+<p><b>Expect</b> — a file 50% longer, measuring identically:</p>
+<pre><code>  Integrated loudness:
+    I:         <span class="val">-22.2 LUFS</span>      <span class="comment">← unchanged. The gates never heard the silence.</span>
+    Threshold: -33.9 LUFS
+  Loudness range:
+    LRA:        14.0 LU
+  True peak:
+    Peak:      -10.5 dBFS</code></pre>
+<div class="checkpoint"><strong>Checkpoint:</strong> integrated loudness describes the <em>program</em>, not the file length. This is exactly why trailing dead air, long outros, and upload buffers don't drag podcast numbers down (§4's stage 5) — and why you cannot cheat the meter by padding silence, either.</div>
+</div>
+
+<div class="lab">
+<div class="lab-title"><span class="n">Lab 3</span> · Normalize two ways and meet the compressor in disguise</div>
+<div class="lab-meta">10 minutes · terminal only · depends on Lab 1</div>
+<pre><code><span class="comment"># A) one-pass "just hit -16":</span>
+<span class="cmd">ffmpeg -i pink-dyn.wav -af loudnorm=I=-16:TP=-1.5:LRA=7 -ar 48000 onepass.wav</span>
+<span class="comment"># summary reports: Output Integrated -18.3 LUFS · Output LRA 8.4 LU</span>
+
+<span class="comment"># B) two-pass linear — pass 1 measures:</span>
+<span class="cmd">ffmpeg -i pink-dyn.wav -af loudnorm=I=-16:TP=-1.5:LRA=15:print_format=summary -f null -</span>
+<span class="comment"># note Input Integrated / TP / LRA / Threshold it prints</span>
+
+<span class="comment"># C) pass 2 applies one fixed gain:</span>
+<span class="cmd">ffmpeg -i pink-dyn.wav -af loudnorm=I=-16:TP=-1.5:LRA=15:\
+measured_I=-22.3:measured_TP=-10.5:measured_LRA=14.1:measured_thresh=-33.9:linear=true \
+  -ar 48000 twopass.wav</span>
+
+<span class="comment"># verify the result yourself:</span>
+<span class="cmd">ffmpeg -hide_banner -nostats -loglevel info -i twopass.wav -af ebur128=peak=true -f null -</span></code></pre>
+<p><b>Expect</b> — A misses by 2.3 LU and squashes LRA to 8.4; C lands on target with dynamics intact:</p>
+<pre><code>  Integrated loudness:
+    I:         <span class="val">-15.9 LUFS</span>      <span class="comment">← −16 target, 0.1 over — inside every §6 tolerance</span>
+  Loudness range:
+    LRA:        14.0 LU         <span class="comment">← preserved, not compressed</span>
+  True peak:
+    Peak:       <span class="val">-4.2 dBFS</span>       <span class="comment">← −10.5 + 6.3, the arithmetic honored</span></code></pre>
+<div class="checkpoint"><strong>Checkpoint:</strong> you watched a dynamic normalizer quietly compress (A) and a linear normalizer shift one honest gain (C). When a tool offers "normalize," §9's question is now automatic: <em>which kind?</em></div>
+</div>
+
+<div class="lab">
+<div class="lab-title"><span class="n">Lab 4</span> · Build the live chain and ride short-term</div>
+<div class="lab-meta">15 minutes · Audio Hijack + YouLean + dpMeter5 · mic required</div>
+<ol class="recipe">
+<li>New Audio Hijack session. Source: your microphone (or browser if testing remote capture). Add blocks in §8's order: Parametric EQ (high-pass 80 Hz) → Simple Compressor → Volume (look-ahead limiter on, ceiling −1 dBFS) → Youlean Loudness Meter 2 (from the Audio Unit Effects section) → Recorder (WAV).</li>
+<li>Enable the recorder, speak naturally for 60 seconds — include one deliberate laugh-level spike and 10 seconds of room silence at the end.</li>
+<li>Watch YouLean's short-term while talking: steer it into the −20 to −15 LUFS box using the Volume block's gain. Note what momentary did on your laugh spike, and whether the limiter engaged.</li>
+<li>Stop. Measure the recording: YouLean drag-and-drop (PRO) or <code>ffmpeg -i recording.wav -af ebur128=peak=true -f null -</code>.</li>
+</ol>
+<p><b>Expect</b> — integrated lands within ~2 LU of your short-term box's center (silence at the end is gated away per Lab 2); true peak at or under your limiter ceiling; the noise floor visible as a big gap below speech on YouLean's graph.</p>
+<div class="checkpoint"><strong>Checkpoint:</strong> you produced a capture that needs §9's polish, not §9's rescue. Run the Lab 3 two-pass on this recording targeting −16 — if it lands within ±1 LU, your live steering is calibrated.</div>
+</div>
+
+<div class="lab">
+<div class="lab-title"><span class="n">Lab 5</span> · Audit YouTube against its own meter</div>
+<div class="lab-meta">5 minutes · network required · any uploaded video, yours or anyone's</div>
+<ol class="recipe">
+<li>Open any YouTube video (one of yours is best — you have the source numbers). Right-click the player → <strong>Stats for nerds</strong>.</li>
+<li>Find the <code>content loudness</code> value (dB) and the <code>normalized</code> percentage.</li>
+<li>For your own video: compare <code>content loudness</code> against your local measurement of the master. Agreement within ~0.5 dB = YouTube's meter and yours agree.</li>
+</ol>
+<p><b>Expect</b> — a visible per-video loudness number and playback gain, no capture rig needed (§10). Fields are observed player behavior, not a documented API — which is precisely the point of auditing.</p>
+<div class="checkpoint"><strong>Checkpoint:</strong> you have now measured loudness three independent ways — your meter, ffmpeg, and the platform's own overlay — and made them agree. That triangulation habit is the entire discipline of this guide in one move.</div>
+</div>
+</section>
+
+<!-- ============================================================ 14 -->
+<section id="capstone">
+<h2>14 · Capstone <span class="tag">One two-minute voiceover, produced end to end against §6's universal master.</span></h2>
+<p class="lede">Produce, land, verify, and defend a single spoken-word deliverable at <strong>−16 LUFS integrated, ≤ −1.5 dBTP, LRA 5–8 LU</strong> — the numbers every platform in §6 accepts. The capstone exercises the full spine: live capture discipline (§8), measurement (§4, §9), gain work (§9), and audit-grade verification (§10). Budget 45 minutes.</p>
+
+<h3>The deliverable</h3>
+<ul>
+<li>Script: any 90–120 second read — a product blurb, channel intro, or a paragraph of this guide read aloud.</li>
+<li>Master: WAV, 48 kHz, integrated −16 LUFS ±0.5, true peak ≤ −1.5 dBTP, LRA 5–8 LU.</li>
+<li>Delivery copy: AAC encode of the master (the format most platforms re-encode anyway).</li>
+<li>Report: your four numbers, the tool that produced each, and one screenshot or terminal block as evidence.</li>
+</ul>
+
+<h3>Phases</h3>
+<ol class="recipe">
+<li><strong>Capture (§8, §11).</strong> Build the Lab 4 chain. Set input gain so sustained speech peaks −18 to −12 dBFS. Record the read plus 10 s of room tone. Ride short-term into −20 to −15 LUFS while speaking.</li>
+<li><strong>Edit.</strong> Trim mistakes; leave natural pauses (gates will ignore dead air — Lab 2 proved it). Light processing only, in §11's order. Do not chase loudness here.</li>
+<li><strong>Measure (§9 step 1).</strong> YouLean drag-and-drop or <code>ebur128</code>: record I, TP, LRA, threshold.</li>
+<li><strong>Compute (§9 step 2).</strong> gain = −16 − I. Predicted TP = TP + gain. Decide: plain gain, or gain-into-limiter if the prediction breaches −1.5 dBTP.</li>
+<li><strong>Apply (§9 step 3).</strong> dpMeter5 match in session, or two-pass loudnorm at the terminal, or FinalLoud3 if you own it. Linear only — Lab 3's lesson.</li>
+<li><strong>Verify (§9 step 4).</strong> Re-measure the result. Not within ±0.5 LU of −16 or under the ceiling? Loop back to step 5 — never "close enough."</li>
+<li><strong>Deliver (§9 step 5).</strong> Encode the AAC copy, name the numbers (<code>vo01_I-15.8_TP-2.1.m4a</code>), and file the report next to the WAV master.</li>
+<li><strong>Audit (stretch goal).</strong> Upload anywhere with a player you can measure, then run §10's capture or Lab 5's overlay check. Observed playback behavior beats every table in §6, including this guide's.</li>
+</ol>
+
+<h3>Evaluation rubric</h3>
+<div class="table-wrap"><table>
+<tr><th>Criterion</th><th>Strong</th><th>Weak</th></tr>
+<tr><td>Integrated</td><td class="num">−16 ±0.5 LUFS, verified by re-measure</td><td>Close enough / predicted-not-measured</td></tr>
+<tr><td>True peak</td><td class="num">≤ −1.5 dBTP with margin</td><td>Pinning the ceiling constantly (limiter did the work)</td></tr>
+<tr><td>LRA</td><td class="num">5–8 LU, achieved at capture+compression</td><td>Outside range because normalization squashed it (Lab 3's A)</td></tr>
+<tr><td>Noise floor</td><td>Inaudible under speech; room tone gated harmlessly</td><td>Hiss audible in pauses; silence padded to game the meter</td></tr>
+<tr><td>Evidence</td><td>Numbers from instruments, one per claim</td><td>"Sounds right"</td></tr>
+</table></div>
+<div class="checkpoint"><strong>Done when:</strong> the four numbers hold, the evidence exists, and re-measuring the uploaded copy (§10) shows the platform agreeing with you. Everything else in this guide was preparation for exactly this loop.</div>
+</section>
+
+<!-- ============================================================ 15 -->
+<section id="troubleshooting">
+<h2>15 · Troubleshooting <span class="tag">Symptom → cause → fix. Meters are deterministic; surprises have reasons.</span></h2>
+<div class="table-wrap"><table>
+<tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr>
+<tr><td>YouLean's integrated number won't move / seems stale</td><td>"Reset on play" behavior — integrated accumulates from the last playback start</td><td>Stop and restart playback to reset; for finished files use PRO drag-and-drop instead of realtime</td></tr>
+<tr><td>Integrated is 10+ LU quieter than the level you rode all session</td><td>Meter placed before a gain block, or measuring a file with long quiet material the gates still admit (within 10 LU)</td><td>Move the meter last in the chain (§8); check what the relative gate actually included — re-measure the trimmed edit</td></tr>
+<tr><td>File measures −16 but plays quiet on YouTube</td><td>YouTube never boosts (§6); −16 plays 2 LU under −14 content — and that is the accepted trade</td><td>Accept it, or keep the −14 variant for YouTube-dominant speech channels (§6)</td></tr>
+<tr><td>File was −1 dBTP on upload; platform playback clips</td><td>Lossy re-encoding adds overshoot — the codec's waveform is not yours</td><td>Deliver −2 dBTP for anything that gets re-encoded (§9 ceiling table)</td></tr>
+<tr><td>dpMeter5 or YouLean missing from Audio Hijack's blocks</td><td>Plugin installed as VST3, or into the other Components folder; library not rescanned</td><td>Audio Hijack is AU-only (§7) — install the AU build into <code>/Library/Audio/Plug-Ins/Components</code> or <code>~/Library/...</code>, relaunch, verify per §7's <code>ls</code> + <code>plutil</code></td></tr>
+<tr><td>Two tools disagree on integrated by &gt;0.5 LU</td><td>One measured a window/partial program, or channel layouts differ (mono file vs stereo — §4's +3 LU sum)</td><td>Measure the identical full file with identical channel config; if they still disagree, trust the one you can cross-check with <code>ebur128</code> (Lab 1)</td></tr>
+<tr><td>One-pass normalization missed its target</td><td>Dynamic mode compressing to satisfy LRA (Lab 3, result A)</td><td>Two-pass linear with measured values, or dpMeter5 match, or FinalLoud3</td></tr>
+<tr><td>Limiter engages constantly during speech</td><td>Input gain too hot at the source; limiter doing the compressor's job</td><td>Re-run §8's gain-setting pass (sustained speech −18 to −12 dBFS); back off source gain before touching the ceiling</td></tr>
+<tr><td>Short-term swings wildly sentence to sentence</td><td>Mic distance drift or off-mic turns (§11); compressor too gentle</td><td>Fixed distance practice drill; then ratio/threshold — a few dB of reduction on loud sentences, not none</td></tr>
+<tr><td>Added silence to "raise the average" — number didn't move</td><td>The gates (Lab 2) — by design</td><td>Stop padding; raise actual program loudness or accept the reading</td></tr>
+<tr><td>Your −16 episode sounds quieter than another show's −16</td><td>Spectral balance and LRA, not loudness units — equal-I content still differs in perceived impact</td><td>Compare LRA and the §10 audit; EQ presence and consistency, not more level</td></tr>
+<tr><td>Podcast app plays you at inconsistent level across episodes</td><td>Missing loudness metadata; app-level normalization (Sound Check) guessing</td><td>Deliver per Apple's spec incl. metadata (§6, §9 step 5); measure every episode before upload</td></tr>
+<tr><td>ffmpeg ebur128 prints no Summary</td><td>Log level suppressing it (or <code>-nostats</code> without info level)</td><td>Use exactly: <code>ffmpeg -hide_banner -nostats -loglevel info -i file -af ebur128=peak=true -f null -</code></td></tr>
+</table></div>
+<p class="small">Rule behind every row: when a number surprises you, re-derive it with a second instrument (Labs 1 and 5 built exactly that reflex) before changing any audio.</p>
+</section>
+
+<!-- ============================================================ 16 -->
+<section id="cheat-sheet">
+<h2>16 · Cheat sheet <span class="tag">The whole guide at arm's length.</span></h2>
+
+<h3>The universal spoken-word master</h3>
+<div class="table-wrap"><table>
+<tr><th>Metric</th><th>Value</th><th>Note</th></tr>
+<tr><td>Integrated</td><td class="num">−16 LUFS ±0.5</td><td>Apple spec center; acceptable everywhere in §6</td></tr>
+<tr><td>True peak</td><td class="num">≤ −1.5 dBTP (−2 if platform re-encodes)</td><td>Most video platforms re-encode</td></tr>
+<tr><td>LRA</td><td class="num">5–8 LU</td><td>VO tighter, conversation looser</td></tr>
+<tr><td>YouTube-dominant speech variant</td><td class="num">−14 LUFS, ≤ −1.5 dBTP</td><td>Plays un-attenuated; costs 2 LU of dynamics vs the −16 master</td></tr>
+</table></div>
+
+<h3>Platform targets, one-glance</h3>
+<div class="table-wrap"><table>
+<tr><th>Platform</th><th>Target</th><th>Policy</th></tr>
+<tr><td>Apple Podcasts</td><td class="num">−16 LKFS ±1 · TP −1</td><td>Official delivery spec + metadata</td></tr>
+<tr><td>YouTube</td><td class="num">−14 LUFS (measured, not official)</td><td>Turn down only</td></tr>
+<tr><td>YouTube Music</td><td class="num">−7 LUFS (measured)</td><td>Turn down only above −7</td></tr>
+<tr><td>Spotify</td><td class="num">−14 (official) · Loud −11 / Quiet −19</td><td>Both ways, boost headroom-capped</td></tr>
+<tr><td>SoundCloud</td><td class="num">−14 recommended</td><td>Normalizes (official)</td></tr>
+<tr><td>Rumble</td><td class="num">none published</td><td>Unknown — deliver sane, verify per §10</td></tr>
+</table></div>
+
+<h3>dB suffixes</h3>
+<div class="table-wrap"><table>
+<tr><th>Suffix</th><th>Ratio to</th><th>Realm</th></tr>
+<tr><td>dBFS</td><td>digital full scale (max sample)</td><td>file</td></tr>
+<tr><td>dBTP</td><td>full scale, 4× oversampled reconstruction</td><td>file</td></tr>
+<tr><td>LUFS / LKFS</td><td>BS.1770 loudness anchor (same scale, two names)</td><td>file→ear model</td></tr>
+<tr><td>LU</td><td>difference on the LUFS scale</td><td>changes only</td></tr>
+<tr><td>dBSPL</td><td>20 µPa air pressure</td><td>room</td></tr>
+<tr><td>dB(A)</td><td>SPL through A-weighting</td><td>room</td></tr>
+<tr><td>dBu / dBV</td><td>0.775 V / 1 V</td><td>wire</td></tr>
+</table></div>
+
+<h3>Readouts</h3>
+<div class="table-wrap"><table>
+<tr><th>Number</th><th>Window</th><th>Steers</th></tr>
+<tr><td>Momentary</td><td class="num">400 ms</td><td>transient alarms</td></tr>
+<tr><td>Short-term</td><td class="num">3 s</td><td>live riding: −20…−15 LUFS box</td></tr>
+<tr><td>Integrated</td><td class="num">gated whole program</td><td>delivery number</td></tr>
+<tr><td>True peak</td><td class="num">oversampled</td><td>the ceiling</td></tr>
+<tr><td>LRA</td><td class="num">10th–95th percentile of S</td><td>dynamics honesty</td></tr>
+</table></div>
+
+<h3>The gain pattern</h3>
+<pre><code>gain        = target − measured          <span class="comment"># always this subtraction</span>
+new TP      = old TP + gain              <span class="comment"># predict before applying</span>
+breaches ceiling?  → gain INTO limiter   <span class="comment"># never plain fader past the wall</span>
+verify      = re-measure                 <span class="comment"># never trust the prediction</span></code></pre>
+
+<h3>The chain</h3>
+<pre><code>source → HPF/denoise → EQ → de-ess → compressor → Volume(+limiter −1 dBFS) → YouLean → Recorder(WAV)</code></pre>
+<p class="small">Meter last. Clean before compress. Limit before meter. Lossless until delivery.</p>
+
+<h3>ffmpeg one-liners</h3>
+<pre><code><span class="comment"># measure any file (I, LRA, TP):</span>
+ffmpeg -hide_banner -nostats -loglevel info -i FILE -af ebur128=peak=true -f null -
+
+<span class="comment"># two-pass linear normalize to −16 / −1.5 (fill measured_* from pass 1's summary):</span>
+ffmpeg -i FILE -af loudnorm=I=-16:TP=-1.5:LRA=15:print_format=summary -f null -
+ffmpeg -i FILE -af loudnorm=I=-16:TP=-1.5:LRA=15:measured_I=-22.3:measured_TP=-10.5:\
+measured_LRA=14.1:measured_thresh=-33.9:linear=true -ar 48000 OUT.wav</code></pre>
+
+<h3>Which tool, ten-second version</h3>
+<div class="table-wrap"><table>
+<tr><th>Need</th><th>Tool</th></tr>
+<tr><td>Watch live</td><td>YouLean (free)</td></tr>
+<tr><td>Measure finished file</td><td>YouLean PRO drag-drop · free: ffmpeg</td></tr>
+<tr><td>Apply measured gain</td><td>dpMeter5 match</td></tr>
+<tr><td>Land target + ceiling automatically</td><td>FinalLoud3 (€29)</td></tr>
+<tr><td>Batch / reports</td><td>ylm2 CLI (PRO) · dpMeterXT3 (€79)</td></tr>
+<tr><td>Capture platform playback</td><td>Audio Hijack app-source + recorder</td></tr>
+</table></div>
+</section>
+
+<!-- ============================================================ 17 -->
+<section id="glossary">
+<h2>17 · Glossary <span class="tag">Every term of art, defined where it's taught.</span></h2>
+<dl class="glos">
+<dt id="g-aweighting">A-weighting</dt><dd>Frequency response curve approximating ear sensitivity at modest levels; applied to SPL measurements, written dB(A). (<a href="#decibels">§3</a>)</dd>
+<dt id="g-a85">ATSC A/85</dt><dd>US broadcast loudness recommendation: −24 LKFS target, the standard behind the CALM Act. (<a href="#standards">§5</a>)</dd>
+<dt id="g-bs1770">BS.1770 (ITU-R)</dt><dd>The measurement algorithm behind every LUFS readout: K-weight, square, channel-sum, gating grid, two gates, true peak. (<a href="#meter">§4</a>)</dd>
+<dt id="g-ebumode">EBU Mode</dt><dd>Tech 3341's metering convention: momentary 400 ms, short-term 3 s, integrated start-to-stop. (<a href="#standards">§5</a>)</dd>
+<dt id="g-db">dB (decibel)</dt><dd>Logarithmic ratio. Needs a suffix to mean anything. (<a href="#decibels">§3</a>)</dd>
+<dt id="g-dba">dB(A)</dt><dd>dBSPL through A-weighting — noise-regulation number. (<a href="#decibels">§3</a>)</dd>
+<dt id="g-dbfs">dBFS</dt><dd>Level relative to digital full scale; 0 is the largest storable sample. (<a href="#decibels">§3</a>)</dd>
+<dt id="g-dbtp">dBTP</dt><dd>Level relative to full scale of the oversampled reconstruction — the true peak scale. (<a href="#meter">§4</a>)</dd>
+<dt id="g-dbu">dBu / dBV</dt><dd>Analog voltage ratios (0.775 V / 1 V). (<a href="#decibels">§3</a>)</dd>
+<dt id="g-dbspl">dBSPL</dt><dd>Sound pressure relative to 20 µPa. (<a href="#decibels">§3</a>)</dd>
+<dt id="g-dial">DIAL mode</dt><dd>dpMeter5's dialogue-gated measurement mode, the Netflix-style flavor. (<a href="#toolchain">§7</a>)</dd>
+<dt id="g-dynnorm">Dynamic normalizer</dt><dd>Normalizer that continuously rides gain (e.g. one-pass loudnorm); alters dynamics as a side effect. (<a href="#post">§9</a>)</dd>
+<dt id="g-r128">EBU R128</dt><dd>European broadcast practice built on BS.1770: −23 LUFS target, M/S/I metering, LRA. (<a href="#standards">§5</a>)</dd>
+<dt id="g-gate">Gate (absolute / relative)</dt><dd>Integrated-loudness exclusions: blocks below −70 LUFS, then blocks more than 10 LU under the surviving loudness. (<a href="#meter">§4</a>)</dd>
+<dt id="g-integrated">Integrated loudness (I)</dt><dd>Gated loudness of the whole program — the delivery number. (<a href="#meter">§4</a>)</dd>
+<dt id="g-isp">Inter-sample peak</dt><dd>Overshoot that exists only in the reconstructed waveform between samples. (<a href="#meter">§4</a>)</dd>
+<dt id="g-kweight">K-weighting</dt><dd>BS.1770's pre-filter (≈60 Hz high-pass + high shelf above ≈2 kHz) modeling ear sensitivity. (<a href="#meter">§4</a>)</dd>
+<dt id="g-lkfs">LKFS</dt><dd>ITU/US name for the LUFS scale; numerically identical. (<a href="#meter">§4</a>)</dd>
+<dt id="g-lu">LU</dt><dd>Loudness unit of <em>difference</em> on the LUFS scale. (<a href="#meter">§4</a>)</dd>
+<dt id="g-lufs">LUFS</dt><dd>Loudness units relative to full scale — absolute loudness per BS.1770. (<a href="#meter">§4</a>)</dd>
+<dt id="g-lra">LRA (loudness range)</dt><dd>10th–95th percentile spread of gated short-term loudness (EBU Tech 3342). (<a href="#meter">§4</a>)</dd>
+<dt id="g-limiter">Limiter</dt><dd>Very aggressive compressor holding peaks at a ceiling; the §8/§9 wall. (<a href="#live">§8</a>)</dd>
+<dt id="g-war">Loudness war</dt><dd>The pre-normalization arms race of crushed masters competing on raw level. (<a href="#mental-model">§1</a>)</dd>
+<dt id="g-loudnorm">loudnorm</dt><dd>ffmpeg's loudness filter; one-pass dynamic or two-pass linear. (<a href="#post">§9</a>)</dd>
+<dt id="g-momentary">Momentary (M)</dt><dd>400 ms gated window loudness; the twitchy readout. (<a href="#meter">§4</a>)</dd>
+<dt id="g-normalization">Normalization (platform)</dt><dd>Server/player-side gain to a house target before playback. (<a href="#platforms">§6</a>)</dd>
+<dt id="g-oversample">Oversampling</dt><dd>Evaluating the signal at 4× (or more) the sample rate to find true peaks between samples. (<a href="#meter">§4</a>)</dd>
+<dt id="g-peak">Peak (sample peak)</dt><dd>Largest single sample magnitude. Says nothing about loudness. (<a href="#decibels">§3</a>)</dd>
+<dt id="g-pink">Pink noise</dt><dd>Noise falling 3 dB/octave; equal energy per octave, the stand-in for broadband program. (<a href="#labs">§13</a>)</dd>
+<dt id="g-plr">PLR</dt><dd>Peak-to-loudness ratio: true peak minus integrated — headroom in one number. (<a href="#toolchain">§7</a>)</dd>
+<dt id="g-rms">RMS</dt><dd>Root-mean-square level — energy average, unweighted. (<a href="#decibels">§3</a>)</dd>
+<dt id="g-roomtone">Room tone</dt><dd>The noise floor of the space, recorded deliberately; the honest noise reference. (<a href="#live">§8</a>)</dd>
+<dt id="g-shortterm">Short-term (S)</dt><dd>3 s gated window loudness; the live steering number. (<a href="#meter">§4</a>)</dd>
+<dt id="g-soundcheck">Sound Check</dt><dd>Apple playback-level metadata mechanism; tagged content plays consistently at −16. (<a href="#platforms">§6</a>)</dd>
+<dt id="g-stablevol">Stable Volume</dt><dd>YouTube's toggleable dynamic-range compressor, on by default, off for music. (<a href="#platforms">§6</a>)</dd>
+<dt id="g-tp">True peak</dt><dd>Maximum of the oversampled reconstruction, in dBTP. (<a href="#meter">§4</a>)</dd>
+<dt id="g-twopass">Two-pass normalization</dt><dd>Measure, then apply one fixed linear gain; preserves dynamics. (<a href="#post">§9</a>)</dd>
+</dl>
+</section>
+
+<!-- ============================================================ 18 -->
+<section id="index">
+<h2>18 · Index</h2>
+<ul class="idx">
+<li><a href="#g-aweighting">A-weighting</a></li>
+<li><a href="#toolchain">Audio Hijack</a> · <a href="#toolchain">AU plugins in</a></li>
+<li><a href="#g-a85">ATSC A/85</a></li>
+<li><a href="#toolchain">batch analysis</a></li>
+<li><a href="#g-bs1770">BS.1770</a></li>
+<li><a href="#g-dba">dB(A)</a></li>
+<li><a href="#g-db">dB (decibel)</a></li>
+<li><a href="#g-dbfs">dBFS</a></li>
+<li><a href="#g-dbtp">dBTP</a></li>
+<li><a href="#g-dbu">dBu / dBV</a></li>
+<li><a href="#g-dbspl">dBSPL</a></li>
+<li><a href="#g-dial">DIAL mode</a></li>
+<li><a href="#toolchain">dpMeter5</a> · <a href="#toolchain">dpMeterXT3</a></li>
+<li><a href="#g-r128">EBU R128</a></li>
+<li><a href="#g-ebumode">EBU Mode</a></li>
+<li><a href="#post">ebur128 (ffmpeg)</a></li>
+<li><a href="#g-dynnorm">dynamic normalizer</a></li>
+<li><a href="#toolchain">FinalLoud3</a></li>
+<li><a href="#g-gate">gates</a></li>
+<li><a href="#decibels">gain math</a></li>
+<li><a href="#g-integrated">integrated loudness</a></li>
+<li><a href="#g-isp">inter-sample peak</a></li>
+<li><a href="#g-kweight">K-weighting</a></li>
+<li><a href="#g-lkfs">LKFS</a></li>
+<li><a href="#g-lu">LU</a></li>
+<li><a href="#g-lufs">LUFS</a></li>
+<li><a href="#g-lra">LRA</a></li>
+<li><a href="#g-limiter">limiter</a></li>
+<li><a href="#g-loudnorm">loudnorm (ffmpeg)</a></li>
+<li><a href="#post">loudnorm, one-pass vs two-pass</a></li>
+<li><a href="#g-war">loudness war</a></li>
+<li><a href="#toolchain">look-ahead limiter (Volume block)</a></li>
+<li><a href="#g-momentary">momentary</a></li>
+<li><a href="#g-normalization">normalization</a></li>
+<li><a href="#g-oversample">oversampling</a></li>
+<li><a href="#platforms">platform targets table</a></li>
+<li><a href="#g-pink">pink noise</a></li>
+<li><a href="#g-plr">PLR</a></li>
+<li><a href="#g-peak">peak</a></li>
+<li><a href="#g-rms">RMS</a></li>
+<li><a href="#g-roomtone">room tone</a></li>
+<li><a href="#auditing">Stats for nerds</a></li>
+<li><a href="#g-shortterm">short-term</a></li>
+<li><a href="#g-soundcheck">Sound Check</a></li>
+<li><a href="#g-stablevol">Stable Volume</a></li>
+<li><a href="#g-tp">true peak</a></li>
+<li><a href="#g-twopass">two-pass normalization</a></li>
+<li><a href="#toolchain">ylm2 CLI</a></li>
+<li><a href="#toolchain">YouLean Loudness Meter</a></li>
+</ul>
+</section>
+
+<!-- ============================================================ 19 -->
+<section id="quiz">
+<h2>19 · Quiz <span class="tag">Flashcards, self-scored. Miss one, read its section again.</span></h2>
+<p id="quizScore">Score: 0 learned · 0 review · 0/16 answered</p>
+<button class="quiz-reset" id="quizReset" type="button">Reset quiz</button>
+
+<div class="quiz-item" data-q="1">
+<div class="quiz-q"><span class="qnum">Q1</span>A platform that only turns audio down receives your −10 LUFS master. What does the listener hear, and what did you lose?</div>
+<div class="quiz-answer">They hear −14-ish perceived loudness like everyone else — your master is attenuated 4 dB at playback. What you lost: dynamics crushed in mastering and a noise floor riding 4 dB hotter than necessary. (<a href="#mental-model">§1</a>)</div>
+<div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+
+<div class="quiz-item" data-q="2">
+<div class="quiz-q"><span class="qnum">Q2</span>−16 dBFS, −16 dBSPL, −16 LUFS: same number, three different facts. Name each fact.</div>
+<div class="quiz-answer">−16 dBFS: 16 dB under digital full scale (a level). −16 dBSPL: a whisper-quiet room (air pressure vs 20 µPa). −16 LUFS: the podcast delivery loudness target (BS.1770 perception model). (<a href="#decibels">§3</a>)</div>
+<div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+
+<div class="quiz-item" data-q="3">
+<div class="quiz-q"><span class="qnum">Q3</span>Your file measures −22.2 LUFS. Target −16. What gain, and what must you check before applying it?</div>
+<div class="quiz-answer">Gain = −16 − (−22.2) = +6.2 dB. Check predicted true peak: old TP + 6.2 — if it breaches your ceiling (−1 to −2 dBTP), the gain must go through a limiter, not a plain fader. (<a href="#post">§9</a>)</div>
+<div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+
+<div class="quiz-item" data-q="4">
+<div class="quiz-q"><span class="qnum">Q4</span>What are the two gates in integrated loudness, and what does each exclude?</div>
+<div class="quiz-answer">Absolute gate at −70 LUFS excludes hiss/room tone. Relative gate at (ungated loudness − 10 LU) excludes blocks far below the program — long quiet passages and pauses. Applied to overlapping 400 ms blocks. (<a href="#meter">§4</a>)</div>
+<div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+
+<div class="quiz-item" data-q="5">
+<div class="quiz-q"><span class="qnum">Q5</span>Why can the true peak of a file exceed 0 dBFS when no sample does?</div>
+<div class="quiz-answer">Reconstruction: the rebuilt analog waveform passes between samples, so the crest can top the tallest sample. Measuring it requires oversampling (4×). Hence dBTP and the −1/−2 dBTP delivery ceilings. (<a href="#meter">§4</a>)</div>
+<div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+
+<div class="quiz-item" data-q="6">
+<div class="quiz-q"><span class="qnum">Q6</span>Same content duplicated from one channel into two (mono → stereo). What happens to the loudness reading?</div>
+<div class="quiz-answer">Rises by 3.01 LU — channel energies sum (weight 1.0 each). Classic gotcha when comparing mono and stereo versions of a program. (<a href="#meter">§4</a>)</div>
+<div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+
+<div class="quiz-item" data-q="7">
+<div class="quiz-q"><span class="qnum">Q7</span>Which readout do you steer while recording speech live, and into what box?</div>
+<div class="quiz-answer">Short-term (3 s window), into −20 to −15 LUFS for a −16-ish program; momentary is the spike alarm, integrated is meaningless mid-flight. (<a href="#live">§8</a>)</div>
+<div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+
+<div class="quiz-item" data-q="8">
+<div class="quiz-q"><span class="qnum">Q8</span>Where does the meter go in an Audio Hijack chain, and why exactly there?</div>
+<div class="quiz-answer">Last, after every gain/limit block and before the recorder — it must observe exactly what gets recorded. A meter upstream of gain flatters you. (<a href="#live">§8</a>)</div>
+<div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+
+<div class="quiz-item" data-q="9">
+<div class="quiz-q"><span class="qnum">Q9</span>One-pass loudnorm asked for −16 and delivered −18.3 with LRA 8.4 (input 14.1). What happened, and what's the fix?</div>
+<div class="quiz-answer">Dynamic mode rode gain continuously and compressed to satisfy its LRA setting — missed target, crushed dynamics. Fix: two-pass linear with the measured values (lands −15.9, LRA preserved). (<a href="#post">§9</a>, Lab 3)</div>
+<div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+
+<div class="quiz-item" data-q="10">
+<div class="quiz-q"><span class="qnum">Q10</span>Name the only major platform that boosts quiet content, and the catch.</div>
+<div class="quiz-answer">Spotify (−14, both directions, Loud −11/Quiet −19 user-selectable). The catch: boosts are capped by true-peak headroom — a quiet master with peaks near the ceiling stays quiet. (<a href="#platforms">§6</a>)</div>
+<div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+
+<div class="quiz-item" data-q="11">
+<div class="quiz-q"><span class="qnum">Q11</span>What is YouTube's official loudness target?</div>
+<div class="quiz-answer">Trick question: none is published. −14 LUFS is a third-party measurement (Shepherd/MeterPlugs, 2019, corroborated 2026) of player behavior — turn-down only. (<a href="#platforms">§6</a>)</div>
+<div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+
+<div class="quiz-item" data-q="12">
+<div class="quiz-q"><span class="qnum">Q12</span>What does Apple Podcasts ask for, in which unit spelling, and by what mechanism is it honored at playback?</div>
+<div class="quiz-answer">Around −16 dB LKFS ±1 dB, true peak ≤ −1 dBFS, per BS.1770; honored via embedded loudness metadata that playback engines (Sound Check) use to adjust levels. (<a href="#platforms">§6</a>)</div>
+<div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+
+<div class="quiz-item" data-q="13">
+<div class="quiz-q"><span class="qnum">Q13</span>Rumble: what loudness behavior is documented, and what do you deliver?</div>
+<div class="quiz-answer">Nothing documented — no target, no normalization statement, no credible measurement. Deliver the universal master (−16 LUFS, ≤ −1.5 dBTP); verify empirically per §10 if it matters. (<a href="#platforms">§6</a>)</div>
+<div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+
+<div class="quiz-item" data-q="14">
+<div class="quiz-q"><span class="qnum">Q14</span>Which of your tools changes audio, and which only watches?</div>
+<div class="quiz-answer">Watch only: YouLean (analysis-only, always safe in chain). Watch + gain on command: dpMeter5 (loudness match). Gain + limit automatically: FinalLoud3. Watch level only: Audio Hijack's Peak/RMS blocks. (<a href="#toolchain">§7</a>)</div>
+<div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+
+<div class="quiz-item" data-q="15">
+<div class="quiz-q"><span class="qnum">Q15</span>You append 20 seconds of silence to a file. What happens to its integrated loudness?</div>
+<div class="quiz-answer">Nothing — the absolute gate excludes it. Measured proof: the lab file read −22.2 LUFS before and after. Same reason trailing outros don't drag podcast numbers down. (<a href="#meter">§4</a>, Lab 2)</div>
+<div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+
+<div class="quiz-item" data-q="16">
+<div class="quiz-q"><span class="qnum">Q16</span>Why deliver −2 dBTP instead of −1 for platform uploads?</div>
+<div class="quiz-answer">Platforms re-encode to lossy formats; codecs reconstruct slightly different waveforms and add their own overshoot. The extra headroom absorbs it so playback doesn't clip. (<a href="#post">§9</a>)</div>
+<div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+</div>
+</section>
+
+
+<!-- ============================================================ 20 -->
+<section id="sources">
+<h2>20 · Sources</h2>
+<p class="small">Provenance: written and checked 2026-09-29 against locally installed YouLean Loudness Meter 2 (2.5.15), dpMeter5 (5.3.9), Audio Hijack 4.6.0 on macOS 15.6, ffmpeg 9.0.2 — every lab output and Expect line in this guide was produced by real runs on this machine, in <code>/tmp/loudness-lab</code>. Platform and standards facts were verified against the primary documents below on the same date; measured-not-official numbers (YouTube −14, YouTube Music −7, Tidal/Amazon/Deezer ~−14) are attributed to their measurers inline in §6 and should be re-verified before being load-bearing for you. External links require network; the guide itself works offline.</p>
+<ul>
+<li><a href="https://www.itu.int/rec/R-REC-BS.1770" target="_blank" rel="noopener">ITU-R BS.1770 series</a> — the measurement algorithm and its revision history. Best used for: what any LUFS number actually means (§4), and confirming −3/−4/−5 equivalence for stereo work.</li>
+<li><a href="https://www.itu.int/dms_pubrec/itu-r/rec/bs/R-REC-BS.1770-5-202311-I!!PDF-E.pdf" target="_blank" rel="noopener">ITU-R BS.1770-5 (PDF)</a> — the current spec text: K-weighting, gates (−70 LKFS, relative −10 LU), 4× oversampled true peak. Best used for: settling any argument with arithmetic.</li>
+<li><a href="https://tech.ebu.ch/docs/r/r128.pdf" target="_blank" rel="noopener">EBU R128 (PDF)</a> — European broadcast policy: −23.0 LUFS, tolerances, −1 dBTP. Best used for: broadcast delivery and the lineage of the tolerance numbers tutorials misquote.</li>
+<li><a href="https://tech.ebu.ch/docs/tech/tech3341.pdf" target="_blank" rel="noopener">EBU Tech 3341 (PDF)</a> — EBU Mode metering: momentary, short-term, integrated. Best used for: why your meter shows the three windows it shows.</li>
+<li><a href="https://tech.ebu.ch/docs/tech/tech3342.pdf" target="_blank" rel="noopener">EBU Tech 3342 (PDF)</a> — Loudness Range definition. Best used for: what LRA percentiles mean before you act on an LRA number.</li>
+<li><a href="https://www.atsc.org/atsc-documents/a85/" target="_blank" rel="noopener">ATSC A/85</a> — US television loudness practice (−24 LKFS, −2 dBTP). Best used for: US broadcast delivery, and the CALM Act legal frame.</li>
+<li><a href="https://www.aes.org/wp-content/uploads/2024/01/20210924_TD1008_v3.13.pdf" target="_blank" rel="noopener">AES TD1008 (PDF)</a> — streaming/podcast loudness recommendation: −18 speech / −16 music, codec-overshoot guidance. Best used for: the reasoning behind streaming targets.</li>
+<li><a href="https://podcasters.apple.com/support/893-audio-requirements" target="_blank" rel="noopener">Apple · Podcast audio requirements</a> — the −16 dB LKFS ±1 dB, −1 dBFS TP delivery spec. Best used for: podcast delivery compliance, verbatim.</li>
+<li><a href="https://support.spotify.com/artists/article/loudness-normalization" target="_blank" rel="noopener">Spotify · Loudness normalization</a> — the only platform policy published with numbers and mechanism. Best used for: how two-direction normalization with headroom caps behaves.</li>
+<li><a href="https://support.google.com/youtube/answer/14106294" target="_blank" rel="noopener">Google · YouTube Stable Volume</a> plus <a href="https://www.meterplugs.com/blog/2019/09/18/youtube-changes-loudness-reference-to-14-lufs.html" target="_blank" rel="noopener">MeterPlugs' −14 measurement</a> — YouTube's official feature docs alongside the third-party measurement of its level. Best used for: remembering which parts of YouTube lore are measured, not promised.</li>
+<li><a href="https://loudnesspenalty.com" target="_blank" rel="noopener">loudnesspenalty.com</a> — per-platform playback-gain modeler (MeterPlugs). Best used for: previewing what any master loses or keeps on each service.</li>
+<li><a href="https://youlean.co/youlean-loudness-meter/" target="_blank" rel="noopener">YouLean Loudness Meter</a> · <a href="https://www.tbproaudio.de/products/dpmeter" target="_blank" rel="noopener">TBProAudio dpMeter5</a> · <a href="https://www.tbproaudio.de/products/finalloud" target="_blank" rel="noopener">FinalLoud3</a> · <a href="https://rogueamoeba.com/audiohijack/" target="_blank" rel="noopener">Rogue Amoeba Audio Hijack</a> — vendor pages for the toolchain. Best used for: current editions, prices, and AU availability before buying anything in §12's ladder.</li>
+<li><a href="https://ffmpeg.org/ffmpeg-filters.html#loudnorm" target="_blank" rel="noopener">ffmpeg filters · loudnorm &amp; ebur128</a> — the free measurement/normalization pair used in every lab. Best used for: scripting the §9 loop across folders.</li>
+</ul>
+</section>
+
+</main>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var root = document.documentElement;
+
+  /* ---- theme toggle: auto → dark → light ---- */
+  var toggle = document.querySelector('.theme-toggle');
+  var THEME_KEY = 'loudness-guide-theme';
+  var themes = ['auto', 'dark', 'light'];
+  var labels = { auto: '◐ auto', dark: '● dark', light: '○ light' };
+  function applyTheme(t) {
+    if (t === 'auto') { root.removeAttribute('data-theme'); }
+    else { root.setAttribute('data-theme', t); }
+    toggle.textContent = labels[t];
+  }
+  var saved = null;
+  try { saved = localStorage.getItem(THEME_KEY); } catch (e) {}
+  var current = themes.indexOf(saved) >= 0 ? saved : 'auto';
+  applyTheme(current);
+  toggle.addEventListener('click', function () {
+    current = themes[(themes.indexOf(current) + 1) % themes.length];
+    applyTheme(current);
+    try { localStorage.setItem(THEME_KEY, current); } catch (e) {}
+  });
+
+  /* ---- mobile TOC ---- */
+  var toc = document.getElementById('toc');
+  var tocToggle = document.getElementById('tocToggle');
+  function setToc(open) {
+    toc.classList.toggle('open', open);
+    tocToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    tocToggle.textContent = open ? '✕ Close' : '☰ Contents';
+  }
+  tocToggle.addEventListener('click', function () { setToc(!toc.classList.contains('open')); });
+  toc.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && toc.classList.contains('open')) setToc(false);
+  });
+
+  /* ---- copy buttons on every pre ---- */
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var btn = document.createElement('button');
+    btn.className = 'copy-btn'; btn.type = 'button'; btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var clone = pre.cloneNode(true);
+      var b = clone.querySelector('.copy-btn'); if (b) b.remove();
+      var text = clone.textContent.replace(/^\s+|\s+$/g, '');
+      function done() { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1400); }
+      function fail() { btn.textContent = 'Select & copy'; setTimeout(function () { btn.textContent = 'Copy'; }, 1800); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(fail);
+      } else { fail(); }
+    });
+    pre.appendChild(btn);
+  });
+
+  /* ---- scrollspy ---- */
+  var tocLinks = document.querySelectorAll('nav.toc a[href^="#"]');
+  var byId = {};
+  tocLinks.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  if ('IntersectionObserver' in window) {
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) {
+          tocLinks.forEach(function (a) { a.classList.remove('active'); });
+          var link = byId[en.target.id];
+          if (link) link.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-15% 0px -70% 0px' });
+    document.querySelectorAll('main section[id]').forEach(function (s) { spy.observe(s); });
+  }
+
+  /* ---- quiz ---- */
+  var QUIZ_KEY = 'loudness-guide-quiz';
+  var quizState = {};
+  try { quizState = JSON.parse(localStorage.getItem(QUIZ_KEY) || '{}'); } catch (e) { quizState = {}; }
+  var items = document.querySelectorAll('.quiz-item');
+  var scoreEl = document.getElementById('quizScore');
+  function saveQuiz() { try { localStorage.setItem(QUIZ_KEY, JSON.stringify(quizState)); } catch (e) {} }
+  function renderScore() {
+    var got = 0, missed = 0;
+    Object.keys(quizState).forEach(function (k) {
+      if (quizState[k] === 'got') got++; else if (quizState[k] === 'missed') missed++;
+    });
+    if (!scoreEl) return;
+    scoreEl.textContent = 'Score: ' + got + ' learned · ' + missed + ' review · ' +
+      (got + missed) + '/' + items.length + ' answered — aim for 14/' + items.length;
+  }
+  function setAnswerOpen(item, open) { item.querySelector('.quiz-answer').classList.toggle('open', open); }
+  items.forEach(function (item) {
+    var q = item.getAttribute('data-q');
+    if (quizState[q]) item.classList.add(quizState[q]);
+    item.querySelector('.reveal').addEventListener('click', function () {
+      item.querySelector('.quiz-answer').classList.toggle('open');
+    });
+    item.querySelector('.got').addEventListener('click', function () {
+      quizState[q] = 'got'; item.classList.remove('missed'); item.classList.add('got');
+      setAnswerOpen(item, true); saveQuiz(); renderScore();
+    });
+    item.querySelector('.missed').addEventListener('click', function () {
+      quizState[q] = 'missed'; item.classList.remove('got'); item.classList.add('missed');
+      setAnswerOpen(item, true); saveQuiz(); renderScore();
+    });
+  });
+  var quizReset = document.getElementById('quizReset');
+  if (quizReset) quizReset.addEventListener('click', function () {
+    quizState = {};
+    items.forEach(function (item) { item.classList.remove('got', 'missed'); setAnswerOpen(item, false); });
+    saveQuiz(); renderScore();
+  });
+  renderScore();
+})();
+</script>
+</body>
+</html>

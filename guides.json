@@ -135,6 +135,13 @@
       "accent": "lime"
     },
     {
+      "file": "loudness-user-guide.html",
+      "name": "loudness",
+      "subject": "Loudness from dB to LUFS - the BS.1770 meter model, EBU R128 and friends, what YouTube, Rumble, Spotify and Apple Podcasts actually do to your audio, and hitting target with YouLean, dpMeter5 and Audio Hijack",
+      "verified": "YouLean 2.5.15 · dpMeter5 5.3.9 · Audio Hijack 4.6.0 · ffmpeg 9.0.2 · 2026-09-29",
+      "accent": "magenta"
+    },
+    {
       "file": "charging-protocols-user-guide.html",
       "name": "charging protocols",
       "subject": "Every charging handshake from 500 mA to 240 W - BC 1.2, Type-C Current, USB PD 1.0 to 3.2, PPS, EPR and AVS, Quick Charge, VOOC and the vendor zoo, UFCS, Qi to Qi2 25W - with a negotiation simulator and what is proposed next",

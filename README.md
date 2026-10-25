@@ -81,6 +81,7 @@ command works as a local pre-commit hook.
 | [`tmux-user-guide.html`](tmux-user-guide.html) | Terminal multiplexing — sessions that outlive your connection, the client/server model, panes, copy-mode, scripting | tmux 3.7b · 2026-08-22 |
 | [`bw150-user-guide.html`](bw150-user-guide.html) | ATorch BW150 electronic load — wiring, every mode, battery capacity and health, charger and cable tests, cycling, the apps | firmware 1.1.0 · screens 2026-09-05 |
 | [`charging-protocols-user-guide.html`](charging-protocols-user-guide.html) | Charging protocols wire-level — BC 1.2, Type-C Current, USB PD through 3.2 (PPS, EPR, AVS), Quick Charge, VOOC and vendor protocols, UFCS, Qi/Qi2, negotiation simulator | USB PD R3.2 v1.2 · Qi 2.3 · 2026-09-25 |
+| [`loudness-user-guide.html`](loudness-user-guide.html) | Loudness — every dB suffix, the BS.1770 meter model, EBU R128/ATSC A/85/AES TD1008, what YouTube/Rumble/Spotify/Apple Podcasts do to your audio, live and post workflows with YouLean, dpMeter5, FinalLoud and Audio Hijack | YouLean 2.5.15 · dpMeter5 5.3.9 · Audio Hijack 4.6.0 · ffmpeg 9.0.2 · 2026-09-29 |
 
 ## How they are built
 
