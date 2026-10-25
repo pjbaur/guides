@@ -11,7 +11,7 @@ docs/superpowers/
 # Tool markers
 .gastown-ignore
 
-# Node — the UI audit script in guide-ui-review.md needs playwright; install it
+# Node — the UI audit script (kept in guides-private) needs playwright; install it
 # in a scratch directory, but ignore it here in case it lands in the repo.
 node_modules/
 package-lock.json

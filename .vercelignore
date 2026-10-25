@@ -1,1 +1,10 @@
-infra/
+# Allowlist: ignore everything in the project root, then re-allow only what the
+# site serves. A new root-level file type (e.g. .svg, .css) or directory is NOT
+# deployed until it is added below. See "Hosting on Vercel" in README.md.
+/*
+!*.html
+!*.md
+!fonts
+!guides.json
+!LICENSE
+!vercel.json

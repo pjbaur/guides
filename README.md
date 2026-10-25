@@ -62,6 +62,25 @@ fails when the baked cards don't match `guides.json`; the mismatch warnings
 above also fail the check (a plain run only prints them). The same `--check`
 command works as a local pre-commit hook.
 
+### Hosting on Vercel
+
+[`vercel.json`](vercel.json) sets the security headers (CSP, HSTS, framing,
+referrer, permissions). [`.vercelignore`](.vercelignore) is an **allowlist**:
+it ignores everything in the repo root, then re-allows only `*.html`, `*.md`,
+`fonts/`, `guides.json`, `LICENSE` and `vercel.json`. So `infra/`, `docs/`,
+`scripts/`, `.github/` and other dot-directories are not deployed or served.
+
+- **New root-level file type or directory** (an `.svg`, a stylesheet, an
+  `assets/` folder): add a `!` line to `.vercelignore`, or it will 404 on
+  Vercel while still working locally and on GitHub Pages.
+- **CSP:** `vercel.json` allows only same-origin resources plus inline
+  script/style and `data:` images. An external request added to a guide will be
+  blocked on Vercel; keep guides self-contained.
+- **Check after the first deploy:** `/infra/main.tf` and `/docs/` must return
+  404, and `/index.html`, `/fonts/ibm-plex-mono-400.woff2` and a guide must
+  load. The Vercel docs do not state whether Git-integration builds honor
+  `.vercelignore`, so this check is the confirmation.
+
 ## Public vs private
 
 This repo is public and served by GitHub Pages. Guides about my own AI setup,
@@ -104,16 +123,6 @@ disposable sandboxes and the transcripts pasted in. Where a documented feature
 behaved differently in practice, the guide says so rather than repeating the
 documentation. The atuin guide, for example, records eight such discrepancies
 found by running the tool.
-
-## Known gaps
-
-[`guide-ui-review.md`](guide-ui-review.md) is a measured UI audit of the eleven
-guides that predate the tmux guide — rendered in headless Chromium, not inferred from source. It documents
-five open issues, the most significant being that four guides render **no
-navigation at all** below their mobile breakpoint. It includes the re-runnable
-audit script and an explicit list of what the audit does not cover.
-
-Treat the audit as current as of 2026-08-07 and re-run it before acting on it.
 
 ## Staleness
 
