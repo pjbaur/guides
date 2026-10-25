@@ -2,13 +2,6 @@
   "_comment": "Source of truth for the hub page (index.html). Add an entry here when a new guide lands, then run: node scripts/build-index.mjs. TODO(s3-migration): once the site is hosted exclusively on S3, serve this file as-is and have index.html fetch it at runtime instead of baking cards in at build time.",
   "guides": [
     {
-      "file": "removed-guide.html",
-      "name": "Claude Code prompting",
-      "subject": "[removed]",
-      "verified": "[removed]",
-      "accent": "amber"
-    },
-    {
       "file": "file-search-macos-user-guide.html",
       "name": "file search",
       "subject": "Index vs walk, name vs contents — the four regex dialects, Spotlight's token rules, and which of six tools answers the question you actually asked",
@@ -155,5 +148,6 @@
       "verified": "macOS 15.6 · spoken 2026-10-05",
       "accent": "cyan"
     }
-  ]
+  ],
+  "visibility": "public"
 }

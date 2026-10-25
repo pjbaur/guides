@@ -62,6 +62,13 @@ fails when the baked cards don't match `guides.json`; the mismatch warnings
 above also fail the check (a plain run only prints them). The same `--check`
 command works as a local pre-commit hook.
 
+## Public vs private
+
+This repo is public and served by GitHub Pages. Guides about my own AI setup,
+sessions, quotas or measured data are personal and confidential and live in a
+separate private repo, never here. `scripts/build-index.mjs` fails CI if a
+private-marked guide or a known personal marker appears in this repo.
+
 ## The guides
 
 | Guide | Subject | Verified against |

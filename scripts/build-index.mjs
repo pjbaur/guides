@@ -43,6 +43,26 @@ for (const f of onDisk) {
   }
 }
 
+// --- guard: this repo is public. Personal guides live in the private repo.
+// Fails (via `warned`) if a private-marked file or a known personal marker
+// shows up in anything that gets published.
+const PRIVATE_MARKERS = [
+  'name="guide-visibility" content="private"',
+  "usage-guard",
+  "archive_transcripts",
+  "token-dashboard.db",
+  ".claude/archive",
+];
+for (const f of readdirSync(root).filter((f) => /\.(html|md|json)$/.test(f))) {
+  const text = readFileSync(join(root, f), "utf8");
+  for (const m of PRIVATE_MARKERS) {
+    if (text.includes(m)) {
+      console.warn(`WARN: ${f} contains private marker ${JSON.stringify(m)} — move it to guides-private`);
+      warned = true;
+    }
+  }
+}
+
 // --- build cards
 const cards = guides
   .map((g) => {
