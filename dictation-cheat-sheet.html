@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mac Dictation Cheat Sheet</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%A4%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f5f7f6; --surface:#ffffff; --surface2:#eaf0ee; --ink:#1c2321; --ink2:#44504c;
+  --muted:#6b7773; --line:#d3dcd9; --accent:#0b6e5f; --accent-wash:#d8efe9; --on-accent:#f2fffc;
+  --warn:#8a5a00; --danger:#a3271f; --ok:#2c7a46; --info:#3a62a5;
+}
+@media (prefers-color-scheme: dark){
+  :root:not(.light){
+    --bg:#111615; --surface:#181e1d; --surface2:#202827; --ink:#e6eeeb; --ink2:#b5c3be;
+    --muted:#86948f; --line:#2f3a38; --accent:#4fc7b2; --accent-wash:#16332e; --on-accent:#0b1613;
+    --warn:#e0b84a; --danger:#e2685c; --ok:#58c07c; --info:#7ea6e8;
+  }
+}
+:root.dark{
+  --bg:#111615; --surface:#181e1d; --surface2:#202827; --ink:#e6eeeb; --ink2:#b5c3be;
+  --muted:#86948f; --line:#2f3a38; --accent:#4fc7b2; --accent-wash:#16332e; --on-accent:#0b1613;
+  --warn:#e0b84a; --danger:#e2685c; --ok:#58c07c; --info:#7ea6e8;
+}
+:root.light{
+  --bg:#f5f7f6; --surface:#ffffff; --surface2:#eaf0ee; --ink:#1c2321; --ink2:#44504c;
+  --muted:#6b7773; --line:#d3dcd9; --accent:#0b6e5f; --accent-wash:#d8efe9; --on-accent:#f2fffc;
+  --warn:#8a5a00; --danger:#a3271f; --ok:#2c7a46; --info:#3a62a5;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin:0}
+a{color:var(--accent)}
+code,kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+main{max-width:1180px;margin:0 auto;padding:1.6rem clamp(1rem,3vw,2rem) 5rem}
+header h1{font-size:1.7rem;margin:0 0 .3rem}
+header .lede{color:var(--ink2);margin:0 0 .8rem;max-width:80ch}
+.legend{display:flex;flex-wrap:wrap;gap:.4rem .9rem;font-size:.8rem;color:var(--ink2);margin:.6rem 0 0}
+.legend span.item{display:inline-flex;align-items:center;gap:.35rem}
+.tag{display:inline-block;border-radius:999px;padding:.05rem .5rem;font-size:.68rem;font-weight:600;border:1px solid currentColor;white-space:nowrap}
+.tag.docs{color:var(--info)}
+.tag.macmost{color:var(--muted)}
+.tag.reported{color:var(--warn)}
+.tag.broken,.tag.fail{color:var(--danger)}
+.tag.pass{color:var(--ok)}
+.tag.quirk{color:var(--warn)}
+h2.band{font-size:1.05rem;margin:2rem 0 .8rem;padding-bottom:.35rem;border-bottom:2px solid var(--accent);color:var(--accent)}
+h2.band small{color:var(--muted);font-weight:400;font-size:.8rem;margin-left:.5rem}
+.cols{columns:3 300px;column-gap:1rem}
+.card{border-top:3px solid var(--accent);break-inside:avoid;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:.7rem .85rem;margin:0 0 1rem}
+.card.vc{border-top-color:var(--info)}
+.card h3{font-size:.92rem;margin:0;color:var(--ink)}
+.card .sub{margin:.1rem 0 .4rem;color:var(--muted);font-size:.74rem}
+table{border-collapse:collapse;width:100%;font-size:.8rem}
+td{padding:.22rem .3rem;vertical-align:top;border-top:1px solid var(--line)}
+tr:first-child td{border-top:0}
+td.say{font-weight:600;width:48%}
+td.say i{font-weight:400;color:var(--muted)}
+td.does{color:var(--ink2)}
+td.st{text-align:right;width:1%}
+.issues{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:8px;padding:.7rem 1rem .7rem 1.2rem;font-size:.84rem}
+.issues ul{margin:.2rem 0;padding-left:1rem}
+.sources{font-size:.82rem;color:var(--ink2)}
+.sources .date{color:var(--muted)}
+.printonly{display:none}
+.theme-toggle{position:fixed;bottom:1rem;right:1rem;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;font-size:1.1rem;z-index:50}
+@page{size:letter;margin:6mm}
+@media print{
+  :root,:root.dark{--bg:#fff;--surface:#fff;--ink:#000;--ink2:#222;--muted:#555;--line:#bbb}
+  body{font-size:7.2pt;line-height:1.25;background:#fff}
+  main{max-width:none;padding:0}
+  header h1{font-size:13pt;margin:0}
+  header .lede{font-size:7.5pt;margin:0 0 2pt}
+  .legend{font-size:6.5pt;margin:2pt 0}
+  h2.band{font-size:8.5pt;margin:2pt 0 2pt;padding-bottom:1pt}
+  .cols{columns:3;column-gap:6pt}
+  .card{padding:3pt 4pt;margin:0 0 4pt;border-radius:4pt}
+  .card.vc{border-top-color:var(--info)}
+.card h3{font-size:7.8pt}
+  .card .sub{display:none}
+  td.say{width:42%}
+  tr{break-inside:avoid}
+  table{font-size:6.3pt}
+  td{padding:.3pt 1.5pt}
+  .tag{font-size:5.4pt;padding:0 2.5pt;line-height:1.2}
+  .issues{font-size:6pt;padding:1pt 5pt 1pt 8pt}
+  .issues ul{margin:0}
+  .sources-wrap,.theme-toggle,.noprint{display:none}
+  .printonly{display:inline}
+}
+</style>
+</head>
+<body>
+<main id="content">
+<header>
+  <h1>Mac Dictation Cheat Sheet</h1>
+  <p class="lede">Two features, not one. <strong>Dictation</strong> (Fn Fn) types what you say and knows punctuation and layout words. <strong>Voice Control</strong> (Accessibility) adds select, delete, move and correct by voice. <span class="noprint">Dictation settings: System Settings › Keyboard › Dictation. Voice Control settings: System Settings › Accessibility › Voice Control.</span> <span class="noprint">Spoken on macOS 15.6 on 2026-10-05: punctuation and line breaks work; most symbols, emoji and plain-Dictation voice edits do not. Voice Control passed everything tested.</span><span class="printonly">Spoken on macOS 15.6, 2026-10-05.</span></p>
+  <div class="legend" aria-label="Status legend">
+    <span class="item"><span class="tag pass">tested ✓</span> spoken on this Mac</span>
+    <span class="item"><span class="tag quirk">tested ~</span> works with caveats</span>
+    <span class="item"><span class="tag fail">tested ✗</span> failed here</span>
+    <span class="item"><span class="tag docs">docs</span> Apple documents it, not tested</span>
+    <span class="item"><span class="tag reported">reported</span> third-party claim</span>
+    <span class="item"><span class="tag broken">broken</span> reported not working</span>
+  </div>
+</header>
+
+<div class="cols">
+<div class="card dc" id="dict-start"><h3>Dictation: start and stop</h3><p class="sub">System Settings › Keyboard › Dictation (on)</p><table><tbody><tr id="r-s1"><td class="say">Fn Fn</td><td class="does">Start or stop. Mic key works on keyboards that have one.</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-s2"><td class="say">Esc</td><td class="does">Stop</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-s3"><td class="say">30 s of silence</td><td class="does">Docs say it stops itself. It did not stop after 60 s of silence here. Press Esc.</td><td class="st"><span class="tag fail">tested ✗</span></td></tr><tr id="r-s4"><td class="say">Edit › Start Dictation</td><td class="does">Menu fallback in most apps</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-s5"><td class="say">Shortcut › Customize</td><td class="does">Change the trigger (Settings › Keyboard › Dictation)</td><td class="st"><span class="tag docs">docs</span></td></tr><tr id="r-s6"><td class="say">Microphone source</td><td class="does">Automatic or pick a device, same pane</td><td class="st"><span class="tag docs">docs</span></td></tr></tbody></table></div>
+<div class="card dc" id="dict-layout"><h3>Dictation: layout words</h3><p class="sub">Say them in the middle of a sentence</p><table><tbody><tr id="r-l1"><td class="say">new line</td><td class="does">Return once</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-l2"><td class="say">new paragraph</td><td class="does">Return twice</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-l3"><td class="say">tab key</td><td class="does">Typed the words “tag key” every time</td><td class="st"><span class="tag fail">tested ✗</span></td></tr><tr id="r-l4"><td class="say">numeral <i>five</i></td><td class="does">5. Stray commas appeared after it.</td><td class="st"><span class="tag quirk">tested ~</span></td></tr><tr id="r-l5"><td class="say">roman numeral <i>five</i></td><td class="does">Typed “Roman 5”. One try in five gave V.</td><td class="st"><span class="tag fail">tested ✗</span></td></tr><tr id="r-l6"><td class="say">caps on · caps off</td><td class="does">Title Cases the phrase, but often capitalized the next word and added commas</td><td class="st"><span class="tag quirk">tested ~</span></td></tr><tr id="r-l7"><td class="say">all caps <i>word</i></td><td class="does">ALL CAPS, next word only</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-l8"><td class="say">all caps on · all caps off</td><td class="does">Only the first word went ALL CAPS. “off” was sometimes typed.</td><td class="st"><span class="tag fail">tested ✗</span></td></tr><tr id="r-l9"><td class="say">no space on · no space off</td><td class="does">Typed the words, no effect</td><td class="st"><span class="tag fail">tested ✗</span></td></tr></tbody></table></div>
+<div class="card dc" id="dict-punct"><h3>Dictation: punctuation</h3><p class="sub">Say the name</p><table><tbody><tr id="r-p1"><td class="say">period · full stop · point · dot</td><td class="does">.</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-p2"><td class="say">comma</td><td class="does">,</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-p3"><td class="say">question mark</td><td class="does">? Say it as one run: “questionmark”. A pause spells the words.</td><td class="st"><span class="tag quirk">tested ~</span></td></tr><tr id="r-p4"><td class="say">exclamation mark</td><td class="does">!</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-p5"><td class="say">colon · semicolon</td><td class="does">: ;</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-p6"><td class="say">dash · hyphen</td><td class="does">– typed (an en dash)</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-p7"><td class="say">ellipsis</td><td class="does">…</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-p8"><td class="say">quote … end quote</td><td class="does">“ ”</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-p9"><td class="say">begin single quote … end single quote</td><td class="does">‘ ’</td><td class="st"><span class="tag docs">docs</span></td></tr><tr id="r-p10"><td class="say">apostrophe</td><td class="does">'</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-p11"><td class="say">open / close parenthesis</td><td class="does">( )</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-p12"><td class="say">open / close square bracket</td><td class="does">“close” gave ]. “open square bracket” gave only text.</td><td class="st"><span class="tag fail">tested ✗</span></td></tr><tr id="r-p13"><td class="say">open / close brace</td><td class="does">“close” gave }. “open brace” typed the word.</td><td class="st"><span class="tag fail">tested ✗</span></td></tr><tr id="r-p14"><td class="say">open / close angle bracket</td><td class="does">“open” gave &lt; in 3 of 5. “close” typed the words.</td><td class="st"><span class="tag fail">tested ✗</span></td></tr></tbody></table></div>
+<div class="card dc" id="dict-symbols"><h3>Dictation: symbols</h3><p class="sub">Typography, math, money, legal</p><table><tbody><tr id="r-y1"><td class="say">ampersand · asterisk · at sign</td><td class="does">&amp; * @</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-y2"><td class="say">hashtag · pound sign</td><td class="does">#</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-y3"><td class="say">underscore · vertical bar</td><td class="does">_ |</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-y4"><td class="say">forward slash · backslash</td><td class="does">/ \</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-y5"><td class="say">percent sign</td><td class="does">%</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-y5b"><td class="say">caret</td><td class="does">Typed the word “carrot”, not ^</td><td class="st"><span class="tag fail">tested ✗</span></td></tr><tr id="r-y6"><td class="say">degree sign · center dot</td><td class="does">Typed the words “degree sign”. Center dot not tested.</td><td class="st"><span class="tag fail">tested ✗</span></td></tr><tr id="r-y7"><td class="say">plus sign</td><td class="does">+</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-y7b"><td class="say">minus sign</td><td class="does">Typed the word “minus”</td><td class="st"><span class="tag fail">tested ✗</span></td></tr><tr id="r-y8"><td class="say">equal sign</td><td class="does">=</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-y9"><td class="say">greater than sign · less than sign</td><td class="does">Typed the words</td><td class="st"><span class="tag fail">tested ✗</span></td></tr><tr id="r-y10"><td class="say">multiplication sign</td><td class="does">×</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-y11"><td class="say">dollar sign</td><td class="does">$</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-y11b"><td class="say">cent sign</td><td class="does">Heard as “sent sign”, typed as words</td><td class="st"><span class="tag fail">tested ✗</span></td></tr><tr id="r-y12"><td class="say">pound sterling sign · euro sign · yen sign</td><td class="does">Typed the words. £ appeared once.</td><td class="st"><span class="tag fail">tested ✗</span></td></tr><tr id="r-y13"><td class="say">copyright sign · registered sign · trademark sign</td><td class="does">Typed the words</td><td class="st"><span class="tag fail">tested ✗</span></td></tr><tr id="r-y14"><td class="say"><i>name</i> emoji</td><td class="does">Typed the words “Heart emoji”</td><td class="st"><span class="tag fail">tested ✗</span></td></tr><tr id="r-y15"><td class="say">smiley face · frowny face · winky face</td><td class="does">Typed the words</td><td class="st"><span class="tag fail">tested ✗</span></td></tr></tbody></table></div>
+<div class="card dc" id="dict-edit"><h3>Dictation: edit by voice</h3><p class="sub">Not in Apple’s command page. All four failed on macOS 15.6.</p><table><tbody><tr id="r-e1"><td class="say">undo</td><td class="does">Typed as text, no edit happened</td><td class="st"><span class="tag fail">tested ✗</span></td></tr><tr id="r-e2"><td class="say">delete that</td><td class="does">Typed as text, no edit happened</td><td class="st"><span class="tag fail">tested ✗</span></td></tr><tr id="r-e3"><td class="say">select <i>text</i></td><td class="does">Typed as text, no edit happened</td><td class="st"><span class="tag fail">tested ✗</span></td></tr><tr id="r-e4"><td class="say">replace <i>a</i> with <i>b</i></td><td class="does">Typed as text, no edit happened</td><td class="st"><span class="tag fail">tested ✗</span></td></tr></tbody></table></div>
+<div class="card vc" id="vc-setup"><h3>Voice Control: switch on</h3><p class="sub">Separate feature, separate switch</p><table><tbody><tr id="r-v1"><td class="say">Settings › Accessibility › Voice Control</td><td class="does">Turn on. Shows a mic indicator. Pick language and microphone here.</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-v2"><td class="say">Show commands</td><td class="does">Context-sensitive list for the app you are in</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-v3"><td class="say">Stop listening · Start listening</td><td class="does">Pause and resume</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-v4"><td class="say">Dictation mode</td><td class="does">Default. Words become text.</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-v5"><td class="say">Command mode</td><td class="does">Only commands. Words are ignored.</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-v6"><td class="say">Spelling mode</td><td class="does">Letters one by one. Alfa Bravo Charlie gives abc.</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-v7"><td class="say">Type <i>letters</i></td><td class="does">“Type ABCDE” types ABCDE</td><td class="st"><span class="tag pass">tested ✓</span></td></tr></tbody></table></div>
+<div class="card vc" id="vc-select"><h3>Voice Control: select</h3><p class="sub">X is a number</p><table><tbody><tr id="r-c1"><td class="say">Select that</td><td class="does">Select the last thing you said</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-c2"><td class="say">Select <i>phrase</i></td><td class="does">“Select the quick brown fox”</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-c3"><td class="say">Select all</td><td class="does"></td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-c4"><td class="say">Select word · sentence · paragraph · line</td><td class="does">Around the cursor</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-c5"><td class="say">Select previous · next <i>unit</i></td><td class="does">“Select next word”</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-c6"><td class="say">Select previous · next X <i>units</i></td><td class="does">“Select previous 3 words”</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-c7"><td class="say">Extend selection [back] X <i>units</i></td><td class="does">Grow the selection</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-c8"><td class="say">Deselect that</td><td class="does"></td><td class="st"><span class="tag pass">tested ✓</span></td></tr></tbody></table></div>
+<div class="card vc" id="vc-delete"><h3>Voice Control: delete</h3><p class="sub">Units: character, word, sentence, paragraph, line</p><table><tbody><tr id="r-d1"><td class="say">Delete that</td><td class="does">Last dictated chunk</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-d2"><td class="say">Delete <i>phrase</i></td><td class="does">“Delete the quick brown fox”</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-d3"><td class="say">Delete <i>unit</i></td><td class="does">“Delete sentence”</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-d4"><td class="say">Delete previous · next <i>unit</i></td><td class="does">“Delete next word”</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-d5"><td class="say">Delete previous · next X <i>units</i></td><td class="does">“Delete previous 3 words”</td><td class="st"><span class="tag pass">tested ✓</span></td></tr></tbody></table></div>
+<div class="card vc" id="vc-move"><h3>Voice Control: move and scroll</h3><table><tbody><tr id="r-m1"><td class="say">Move left · right · up · down</td><td class="does">Cursor</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-m2"><td class="say">Move to beginning · end</td><td class="does">Of the text</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-m3"><td class="say">Move to beginning · end of <i>unit</i></td><td class="does">“Move to end of paragraph”</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-m4"><td class="say">Move forward · back X <i>units</i></td><td class="does">“Move back 3 words”</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-m5"><td class="say">Move up · down X paragraphs · lines</td><td class="does"></td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-m6"><td class="say">Move before · after <i>phrase</i></td><td class="does">“Move after quick brown fox”</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-m7"><td class="say">Scroll up · down · to top · to bottom</td><td class="does"></td><td class="st"><span class="tag pass">tested ✓</span></td></tr></tbody></table></div>
+<div class="card vc" id="vc-fix"><h3>Voice Control: fix and format</h3><table><tbody><tr id="r-f1"><td class="say">Correct that</td><td class="does">Show alternatives. Select the text first.</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-f2"><td class="say">Replace <i>a</i> with <i>b</i></td><td class="does">“Replace brown with gray”</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-f3"><td class="say">Insert <i>a</i> before · after <i>b</i></td><td class="does">“Insert very before quick”</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-f4"><td class="say">Undo that · Redo that</td><td class="does">Undo steps back through several changes</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-f5"><td class="say">Cut that · Copy that · Paste that</td><td class="does"></td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-f6"><td class="say">Capitalize · Lowercase · Uppercase that</td><td class="does">Or add a phrase</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-f7"><td class="say">Add to vocabulary</td><td class="does">Select the word first</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-f8"><td class="say">Press Return key · New line</td><td class="does">Return</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-f9"><td class="say">New paragraph</td><td class="does">Return twice</td><td class="st"><span class="tag pass">tested ✓</span></td></tr><tr id="r-f10"><td class="say">Tab key</td><td class="does">Tab</td><td class="st"><span class="tag pass">tested ✓</span></td></tr></tbody></table></div>
+</div>
+
+<h2 class="band">Known problems</h2>
+<div class="issues"><ul><li>Tested on macOS 15.6: “new line” and “new paragraph” work. The forum reports of them inserting only a space cover 15.3.1, 15.4.1 and 26, so treat them as version-specific.</li><li>Tested on macOS 15.6 with the built-in mic and a Grado GW100: currency, legal and comparison signs, emoji, “no space on”, “all caps on” and the edit commands were typed as plain words.</li><li>Voice Control is the reliable route for editing. Select, delete, move, replace, insert, correct, undo and its modes all passed on macOS 15.6, where the plain Dictation edit commands failed.</li><li>Brackets, braces and “tab key” are unreliable. Closing marks work more often than opening marks.</li><li>Monterey (macOS 12): Apple Community reports new line did not work and pressing Return ends dictation. Workaround there: press Return, then start dictation again.</li><li>The MacMost sheet is v2.0 from 2019, and its Voice Control commands still passed on macOS 15.6. Say “Show commands” to see what your macOS accepts.</li></ul></div>
+
+<div class="sources-wrap">
+<h2 class="band">Sources</h2>
+<p class="sources date">Fetched 2026-10-05. Apple pages describe macOS 27 and earlier down to 10.15; this Mac runs macOS 15.6.</p>
+<ul class="sources"><li><a href="https://support.apple.com/guide/mac-help/commands-for-dictating-text-on-mac-mh40695/mac">Apple Support: Commands for dictating text on Mac</a> — Punctuation, symbols, layout words, caps, emoticons. Page covers macOS 27 back to 10.15.</li><li><a href="https://support.apple.com/guide/mac-help/use-dictation-mh40584/mac">Apple Support: Dictate messages and documents on Mac</a> — Turn on, shortcut, Esc, 30 s silence, mic source.</li><li><a href="https://support.apple.com/guide/mac-help/use-voice-control-mh40719/mac">Apple Support: Use Voice Control on Mac</a> — Show commands, Stop and Start listening, Dictation, Command and Spelling modes.</li><li><a href="https://macmost.com/">MacMost: macOS Voice Control Dictation Cheat Sheet v2.0 (PDF, 2019)</a> — Select, delete, move, replace, characters. File read from ~/Downloads/MacMostMacDictationCheatSheet2.pdf.</li><li><a href="https://macmost.com/20-voice-control-dictation-tips.html">MacMost: 20 Voice Control Dictation Tips</a> — Voice Control versus Dictation, command phrasing, modes.</li><li><a href="https://speakhapi.com/blog/speech-to-text-mac-shortcut">Hapi: Mac Speech to Text Shortcuts</a> — Fn Fn default, custom shortcuts, the Sonoma-and-later edit commands (undo, select, replace, delete that).</li><li><a href="https://www.mac-forums.com/threads/macos-15-3-1-sequoia-dictation-formatting-commands-not-working.379247/">mac-forums: Sequoia dictation formatting commands not working</a> — New line and new paragraph bug on 15.x and 26.</li><li><a href="https://discussions.apple.com/thread/254352350">Apple Community: How to insert a paragraph using Dictation in Monterey</a> — Monterey behavior, Return ends dictation.</li></ul>
+</div>
+</main>
+<button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme">◐</button>
+<script>
+'use strict';
+(function(){
+  var KEY='dictation-cheat-theme';
+  var root=document.documentElement;
+  function apply(t){root.classList.remove('dark','light');if(t==='dark')root.classList.add('dark');if(t==='light')root.classList.add('light');}
+  var saved=null;try{saved=localStorage.getItem(KEY);}catch(e){}
+  var order=['auto','dark','light'];
+  var cur=order.indexOf(saved)>=0?saved:'auto';
+  apply(cur);
+  var btn=document.getElementById('theme-toggle');
+  if(btn){btn.addEventListener('click',function(){cur=order[(order.indexOf(cur)+1)%order.length];apply(cur);try{localStorage.setItem(KEY,cur);}catch(e){}});}
+})();
+</script>
+</body>
+</html>
