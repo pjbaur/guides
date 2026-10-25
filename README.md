@@ -99,14 +99,6 @@ verification, numbered modules that each depend only on what came before,
 hands-on labs, a cumulative capstone, troubleshooting, a cheat sheet, glossary,
 index, and a self-scored retrieval quiz.
 
-Two working documents drive that:
-
-- **[`create-guide-prompt.md`](create-guide-prompt.md)** — the phased workflow:
-  orient, clarify, establish ground truth, build, QA.
-- **[`instructional-design-guidance.md`](instructional-design-guidance.md)** —
-  the pedagogy companion covering progressive layering, misconception handling
-  and assessment design.
-
 The rule that matters most: **labs quote real output.** Commands were run in
 disposable sandboxes and the transcripts pasted in. Where a documented feature
 behaved differently in practice, the guide says so rather than repeating the

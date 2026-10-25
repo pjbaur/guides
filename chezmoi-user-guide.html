@@ -468,27 +468,27 @@ alias ll="ls -la"</span></code></pre>
       <h3 id="add-preflight">Before you add: is this path yours to add?</h3>
       <p><code>chezmoi add</code> succeeds on almost any file under <code>~</code>. Succeeding does not mean it was the right tool. A tool may already own the file, a second git repo may already track it, or the directory may hold state you never want in a dotfiles repo. Run four checks first. Each is read-only.</p>
       <div class="table-wrap"><table><thead><tr><th>Question</th><th>Command</th><th>What the answer means</th></tr></thead><tbody>
-        <tr><td>Is it already managed?</td><td><code>chezmoi source-path ~/.claude/ROLLBACK.md</code></td><td>A path means yes: use <code>edit</code> or <code>re-add</code>. <code>…: not managed</code> means no.</td></tr>
-        <tr><td>Is the whole directory managed?</td><td><code>chezmoi unmanaged ~/.claude</code></td><td>An unmanaged directory prints as one line (<code>.claude</code>). chezmoi does not list its contents.</td></tr>
-        <tr><td>Does another git repo own it?</td><td><code>git -C ~/.claude rev-parse --show-toplevel</code><br><code>git -C ~/.claude ls-files ROLLBACK.md</code></td><td>If the directory is its own working tree and the file is listed, that repo is the source of truth. Use plain <code>git</code> there.</td></tr>
-        <tr><td>What would <code>add</code> change?</td><td><code>chezmoi add --dry-run -v ~/.claude/ROLLBACK.md</code></td><td>Prints the source-state changes as a diff and writes nothing.</td></tr>
+        <tr><td>Is it already managed?</td><td><code>chezmoi source-path ~/.toolcfg/ROLLBACK.md</code></td><td>A path means yes: use <code>edit</code> or <code>re-add</code>. <code>…: not managed</code> means no.</td></tr>
+        <tr><td>Is the whole directory managed?</td><td><code>chezmoi unmanaged ~/.toolcfg</code></td><td>An unmanaged directory prints as one line (<code>.toolcfg</code>). chezmoi does not list its contents.</td></tr>
+        <tr><td>Does another git repo own it?</td><td><code>git -C ~/.toolcfg rev-parse --show-toplevel</code><br><code>git -C ~/.toolcfg ls-files ROLLBACK.md</code></td><td>If the directory is its own working tree and the file is listed, that repo is the source of truth. Use plain <code>git</code> there.</td></tr>
+        <tr><td>What would <code>add</code> change?</td><td><code>chezmoi add --dry-run -v ~/.toolcfg/ROLLBACK.md</code></td><td>Prints the source-state changes as a diff and writes nothing.</td></tr>
       </tbody></table></div>
       <p>Real output from the fourth check, run against a directory chezmoi did not manage yet:</p>
-      <pre><code><span class="cmd">chezmoi</span> add --dry-run -v ~/.claude/ROLLBACK.md
-<span class="out">diff --git a/private_dot_claude b/private_dot_claude
+      <pre><code><span class="cmd">chezmoi</span> add --dry-run -v ~/.toolcfg/ROLLBACK.md
+<span class="out">diff --git a/private_dot_toolcfg b/private_dot_toolcfg
 new file mode 40755
 …
-diff --git a/private_dot_claude/ROLLBACK.md b/private_dot_claude/ROLLBACK.md
+diff --git a/private_dot_toolcfg/ROLLBACK.md b/private_dot_toolcfg/ROLLBACK.md
 new file mode 100644</span></code></pre>
-      <p>Two things show up. The new directory entry is <code>private_dot_claude</code>, because the real directory is mode 700. And <code>add</code> would make chezmoi a second owner of that file.</p>
+      <p>Two things show up. The new directory entry is <code>private_dot_toolcfg</code>, because the real directory is mode 700. And <code>add</code> would make chezmoi a second owner of that file.</p>
       <h3>Which tool owns this file?</h3>
       <div class="table-wrap"><table><thead><tr><th>Situation</th><th>Right tool</th></tr></thead><tbody>
         <tr><td>A config you want on every machine, and no other repo tracks it</td><td><code>chezmoi add</code>, then commit the source repo</td></tr>
         <tr><td>Already managed, and you changed the real file</td><td><code>chezmoi re-add &lt;file&gt;</code></td></tr>
-        <tr><td>The directory is its own git working tree (<code>~/.claude</code> is <code>&lt;username&gt;/&lt;your-repo&gt;</code>)</td><td>Plain <code>git add</code> / <code>commit</code> / <code>push</code> inside that directory. Do not add it to chezmoi.</td></tr>
+        <tr><td>The directory is its own git working tree (<code>~/.toolcfg</code> is <code>&lt;username&gt;/&lt;your-repo&gt;</code>)</td><td>Plain <code>git add</code> / <code>commit</code> / <code>push</code> inside that directory. Do not add it to chezmoi.</td></tr>
         <tr><td>Runtime state: history, caches, logs, tokens (<code>history.jsonl</code>, <code>cache/</code>, <code>debug/</code>)</td><td>Neither. Never add whole directories of tool state. Add single files by name, or ignore the rest.</td></tr>
       </tbody></table></div>
-      <div class="callout warn"><strong>Two repos, one file</strong>If chezmoi and another git repo both track <code>~/.claude/ROLLBACK.md</code>, each repo records its own history. They drift apart, and <code>chezmoi apply</code> can overwrite edits that the other repo has not seen. Pick one owner per file. A directory that is its own git repo should keep that single owner.</div>
+      <div class="callout warn"><strong>Two repos, one file</strong>If chezmoi and another git repo both track <code>~/.toolcfg/ROLLBACK.md</code>, each repo records its own history. They drift apart, and <code>chezmoi apply</code> can overwrite edits that the other repo has not seen. Pick one owner per file. A directory that is its own git repo should keep that single owner.</div>
       <h3>After the add</h3>
       <ol>
         <li><code>chezmoi status</code> and <code>chezmoi managed | grep ROLLBACK</code> confirm the entry exists.</li>
@@ -496,7 +496,7 @@ new file mode 100644</span></code></pre>
         <li>When the real file changes later, run <code>chezmoi re-add &lt;file&gt;</code>. A plain <code>apply</code> would overwrite the edit with the stored copy.</li>
       </ol>
       <div class="callout warn"><strong>Repo documents deploy to your home directory</strong>Any non-ignored file in the source root is a target. A <code>ROLLBACK.md</code> committed at the top of the source directory shows up in <code>chezmoi managed</code>, <code>chezmoi status</code> prints <code> A ROLLBACK.md</code>, and the next <code>apply</code> writes <code>~/ROLLBACK.md</code>. List repo-only files in <code>.chezmoiignore</code> (in the source root): <code>ROLLBACK.md</code>, <code>README.md</code>, <code>LICENSE</code>. Check with <code>chezmoi ignored</code>. Verified in a sandbox: after the ignore entries exist, <code>managed</code> and <code>status</code> both print nothing for those files.</div>
-      <div class="callout"><strong>An ignored add is a warning, not an error</strong>If the path matches <code>.chezmoiignore</code>, <code>chezmoi add</code> prints <code>chezmoi: warning: ignoring .claude/OTHER.md</code>, exits 0, and adds nothing. A script or a quick glance will miss it. Run <code>chezmoi managed</code> after the add to confirm.</div>
+      <div class="callout"><strong>An ignored add is a warning, not an error</strong>If the path matches <code>.chezmoiignore</code>, <code>chezmoi add</code> prints <code>chezmoi: warning: ignoring .toolcfg/OTHER.md</code>, exits 0, and adds nothing. A script or a quick glance will miss it. Run <code>chezmoi managed</code> after the add to confirm.</div>
       <p class="sources-line">Sources: <a href="https://www.chezmoi.io/user-guide/daily-operations/" target="_blank" rel="noopener">daily operations</a> · <a href="https://www.chezmoi.io/user-guide/command-overview/" target="_blank" rel="noopener">command overview</a> · <a href="https://www.chezmoi.io/reference/commands/add/" target="_blank" rel="noopener">add reference</a> · <a href="https://www.chezmoi.io/user-guide/manage-different-types-of-file/" target="_blank" rel="noopener">managing different file types</a></p>
     </section>
 
@@ -1161,7 +1161,7 @@ encryption = "age"
         <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
       </div>
       <div class="quiz-item" data-q="15">
-        <div class="quiz-q"><span class="qnum">Q15</span>A tool wrote a new file into <code>~/.claude</code>. Can you just run <code>chezmoi add</code> on it? Name the checks first.</div>
+        <div class="quiz-q"><span class="qnum">Q15</span>A tool wrote a new file into <code>~/.toolcfg</code>. Can you just run <code>chezmoi add</code> on it? Name the checks first.</div>
         <div class="quiz-answer">Not blindly. Run <code>chezmoi source-path FILE</code> (already managed?), <code>chezmoi unmanaged DIR</code> (is the directory managed?), <code>git -C DIR rev-parse --show-toplevel</code> (does another repo own it?), and <code>chezmoi add --dry-run -v FILE</code> (what changes?). If the directory is its own git repo, commit there and skip chezmoi. (<a href="#adopt">§5</a>)</div>
         <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
       </div>
