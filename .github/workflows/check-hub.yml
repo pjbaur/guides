@@ -14,7 +14,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # No setup-node: the runner image ships Node, and build-index.mjs uses
       # only node:fs, node:path and node:url.
       - name: index.html matches guides.json
