@@ -465,7 +465,39 @@ alias ll="ls -la"</span></code></pre>
         <li><code>chezmoi forget ~/.hushlogin</code> — stop managing a file (source entry removed, real file left in place). <code>chezmoi destroy</code> deletes both — almost never what you want.</li>
       </ul>
       <div class="callout warn"><strong>Misconception: "chezmoi add copies my file into a config database"</strong>It copies the file into a plain git repo with an encoded filename, nothing more. <code>chezmoi source-path ~/.zshrc</code> prints exactly where; you can open that file with any editor. There is no database for file contents — only a small state boltdb for script bookkeeping (§9).</div>
-      <p class="sources-line">Sources: <a href="https://www.chezmoi.io/user-guide/daily-operations/" target="_blank" rel="noopener">daily operations</a> · <a href="https://www.chezmoi.io/user-guide/command-overview/" target="_blank" rel="noopener">command overview</a></p>
+      <h3 id="add-preflight">Before you add: is this path yours to add?</h3>
+      <p><code>chezmoi add</code> succeeds on almost any file under <code>~</code>. Succeeding does not mean it was the right tool. A tool may already own the file, a second git repo may already track it, or the directory may hold state you never want in a dotfiles repo. Run four checks first. Each is read-only.</p>
+      <div class="table-wrap"><table><thead><tr><th>Question</th><th>Command</th><th>What the answer means</th></tr></thead><tbody>
+        <tr><td>Is it already managed?</td><td><code>chezmoi source-path ~/.claude/ROLLBACK.md</code></td><td>A path means yes: use <code>edit</code> or <code>re-add</code>. <code>…: not managed</code> means no.</td></tr>
+        <tr><td>Is the whole directory managed?</td><td><code>chezmoi unmanaged ~/.claude</code></td><td>An unmanaged directory prints as one line (<code>.claude</code>). chezmoi does not list its contents.</td></tr>
+        <tr><td>Does another git repo own it?</td><td><code>git -C ~/.claude rev-parse --show-toplevel</code><br><code>git -C ~/.claude ls-files ROLLBACK.md</code></td><td>If the directory is its own working tree and the file is listed, that repo is the source of truth. Use plain <code>git</code> there.</td></tr>
+        <tr><td>What would <code>add</code> change?</td><td><code>chezmoi add --dry-run -v ~/.claude/ROLLBACK.md</code></td><td>Prints the source-state changes as a diff and writes nothing.</td></tr>
+      </tbody></table></div>
+      <p>Real output from the fourth check, run against a directory chezmoi did not manage yet:</p>
+      <pre><code><span class="cmd">chezmoi</span> add --dry-run -v ~/.claude/ROLLBACK.md
+<span class="out">diff --git a/private_dot_claude b/private_dot_claude
+new file mode 40755
+…
+diff --git a/private_dot_claude/ROLLBACK.md b/private_dot_claude/ROLLBACK.md
+new file mode 100644</span></code></pre>
+      <p>Two things show up. The new directory entry is <code>private_dot_claude</code>, because the real directory is mode 700. And <code>add</code> would make chezmoi a second owner of that file.</p>
+      <h3>Which tool owns this file?</h3>
+      <div class="table-wrap"><table><thead><tr><th>Situation</th><th>Right tool</th></tr></thead><tbody>
+        <tr><td>A config you want on every machine, and no other repo tracks it</td><td><code>chezmoi add</code>, then commit the source repo</td></tr>
+        <tr><td>Already managed, and you changed the real file</td><td><code>chezmoi re-add &lt;file&gt;</code></td></tr>
+        <tr><td>The directory is its own git working tree (<code>~/.claude</code> is <code>&lt;username&gt;/&lt;your-repo&gt;</code>)</td><td>Plain <code>git add</code> / <code>commit</code> / <code>push</code> inside that directory. Do not add it to chezmoi.</td></tr>
+        <tr><td>Runtime state: history, caches, logs, tokens (<code>history.jsonl</code>, <code>cache/</code>, <code>debug/</code>)</td><td>Neither. Never add whole directories of tool state. Add single files by name, or ignore the rest.</td></tr>
+      </tbody></table></div>
+      <div class="callout warn"><strong>Two repos, one file</strong>If chezmoi and another git repo both track <code>~/.claude/ROLLBACK.md</code>, each repo records its own history. They drift apart, and <code>chezmoi apply</code> can overwrite edits that the other repo has not seen. Pick one owner per file. A directory that is its own git repo should keep that single owner.</div>
+      <h3>After the add</h3>
+      <ol>
+        <li><code>chezmoi status</code> and <code>chezmoi managed | grep ROLLBACK</code> confirm the entry exists.</li>
+        <li>Commit it. <code>autoCommit</code> is off by default, so the source repo is dirty until you do: <code>chezmoi git -- add -A</code>, then <code>chezmoi git -- commit -m "add ROLLBACK.md"</code>. See §8 to automate this.</li>
+        <li>When the real file changes later, run <code>chezmoi re-add &lt;file&gt;</code>. A plain <code>apply</code> would overwrite the edit with the stored copy.</li>
+      </ol>
+      <div class="callout warn"><strong>Repo documents deploy to your home directory</strong>Any non-ignored file in the source root is a target. A <code>ROLLBACK.md</code> committed at the top of the source directory shows up in <code>chezmoi managed</code>, <code>chezmoi status</code> prints <code> A ROLLBACK.md</code>, and the next <code>apply</code> writes <code>~/ROLLBACK.md</code>. List repo-only files in <code>.chezmoiignore</code> (in the source root): <code>ROLLBACK.md</code>, <code>README.md</code>, <code>LICENSE</code>. Check with <code>chezmoi ignored</code>. Verified in a sandbox: after the ignore entries exist, <code>managed</code> and <code>status</code> both print nothing for those files.</div>
+      <div class="callout"><strong>An ignored add is a warning, not an error</strong>If the path matches <code>.chezmoiignore</code>, <code>chezmoi add</code> prints <code>chezmoi: warning: ignoring .claude/OTHER.md</code>, exits 0, and adds nothing. A script or a quick glance will miss it. Run <code>chezmoi managed</code> after the add to confirm.</div>
+      <p class="sources-line">Sources: <a href="https://www.chezmoi.io/user-guide/daily-operations/" target="_blank" rel="noopener">daily operations</a> · <a href="https://www.chezmoi.io/user-guide/command-overview/" target="_blank" rel="noopener">command overview</a> · <a href="https://www.chezmoi.io/reference/commands/add/" target="_blank" rel="noopener">add reference</a> · <a href="https://www.chezmoi.io/user-guide/manage-different-types-of-file/" target="_blank" rel="noopener">managing different file types</a></p>
     </section>
 
     <section id="attributes">
@@ -885,6 +917,10 @@ encryption = "age"
         <tr><td><code>run_once_</code> script never re-runs after you fixed it</td><td>"Once" is keyed on contents hash in the persistent state — the failed run recorded success? No: only successful runs record. If it ran successfully once, same contents won't re-run</td><td>Change the script contents, or <code>chezmoi state delete-bucket --bucket=scriptState</code> to reset all once-state</td></tr>
         <tr><td>Ignored file still appears</td><td><code>.chezmoiignore</code> logic inverted — patterns name what to <em>ignore</em>, conditions choose when</td><td><code>chezmoi execute-template &lt; .chezmoiignore</code> to see the rendered pattern list for this machine</td></tr>
         <tr><td>Secret rendered world-readable</td><td><code>--encrypt</code> or <code>.tmpl</code> without <code>private_</code></td><td><code>chezmoi chattr private &lt;target&gt;</code>; verify with <code>ls -l</code></td></tr>
+        <tr><td><code>chezmoi: warning: ignoring …</code> after <code>add</code>, and nothing appears in the source</td><td>The path matches a <code>.chezmoiignore</code> pattern. <code>add</code> exits 0 anyway</td><td><code>chezmoi ignored</code> lists the matching patterns. Edit <code>.chezmoiignore</code>, or accept that the file is excluded on purpose</td></tr>
+        <tr><td><code>chezmoi status</code> shows <code> A SOMEFILE.md</code> for a file you never added to <code>~</code></td><td>A repo-only document sits in the source root. Every non-ignored source file is a target</td><td>Add it to <code>.chezmoiignore</code>. Re-run <code>status</code>: the row disappears</td></tr>
+        <tr><td><code>chezmoi: …: not managed</code> from <code>source-path</code> or <code>edit</code></td><td>The file was never added, or its parent directory is ignored</td><td>Decide the owner first (§5 preflight). Then <code>chezmoi add</code>, or use the tool that owns it</td></tr>
+        <tr><td><code>add --dry-run</code> proposes a <code>private_dot_&lt;dir&gt;</code> entry for a tool's own directory</td><td>The real directory is mode 700 and chezmoi does not manage it yet. The directory may also be its own git repo</td><td>Stop. Check <code>git -C &lt;dir&gt; rev-parse --show-toplevel</code>. If it is a git working tree, commit there instead</td></tr>
         <tr><td>Edits to <code>~/.zshrc</code> keep vanishing</td><td>You edit the destination; apply rewrites from source</td><td>Retrain the hand: <code>chezmoi edit --apply ~/.zshrc</code>; recover past edits with <code>re-add</code> before the next apply</td></tr>
       </tbody></table></div>
     </section>
@@ -900,6 +936,14 @@ encryption = "age"
 <span class="cmd">chezmoi</span> status
 <span class="cmd">chezmoi</span> re-add
 <span class="cmd">chezmoi</span> cd</code></pre></div>
+        <div class="card"><h4>Before you add</h4>
+<pre><code><span class="cmd">chezmoi</span> source-path FILE   <span class="comment"># or: not managed</span>
+<span class="cmd">chezmoi</span> unmanaged DIR
+<span class="cmd">git</span> -C DIR rev-parse --show-toplevel
+<span class="cmd">chezmoi</span> add --dry-run -v FILE
+<span class="cmd">chezmoi</span> ignored
+<span class="cmd">chezmoi</span> git -- add -A <span class="comment"># then commit</span></code></pre>
+<p class="mini">Add files one by one. Never add a tool's whole state directory.</p></div>
         <div class="card"><h4>Sync</h4>
 <pre><code><span class="cmd">chezmoi</span> update            <span class="comment"># pull + apply</span>
 <span class="cmd">chezmoi</span> git pull -- --autostash --rebase
@@ -947,6 +991,8 @@ encryption = "age"
         <dt id="g-clobber">clobber guard</dt><dd>Apply-time confirmation when a managed destination file changed out-of-band since chezmoi last wrote it. Resolved by <code>re-add</code> (keep) or <code>--force</code> (discard). (<a href="#attributes">§6</a>)</dd>
         <dt id="g-script">script (run_)</dt><dd>A source-state entry executed rather than written: <code>run_once_</code> (per unique contents), <code>run_onchange_</code> (when rendered contents change), with <code>before_</code>/<code>after_</code> ordering around the file pass. (<a href="#scripts">§9</a>)</dd>
         <dt id="g-adopt">adoption</dt><dd>Bringing existing real files under management with <code>chezmoi add</code> — as opposed to authoring files in the source first. Your current, half-finished journey. (<a href="#adopt">§5</a>, <a href="#capstone">§12</a>)</dd>
+        <dt id="g-unmanaged">unmanaged</dt><dd>A path under the destination that chezmoi does not track. <code>chezmoi unmanaged DIR</code> lists such paths. An unmanaged directory appears as one line. <code>source-path</code> on one of its files prints <code>not managed</code>. (<a href="#adopt">§5</a>)</dd>
+        <dt id="g-chezmoiignore">.chezmoiignore</dt><dd>File in the source root. Its patterns name <em>target</em> paths that chezmoi skips, including repo-only documents such as <code>README.md</code>. Templated, so it can differ per machine. <code>chezmoi ignored</code> prints the result. (<a href="#adopt">§5</a>, <a href="#templates">§7</a>)</dd>
       </dl>
     </section>
 
@@ -956,7 +1002,7 @@ encryption = "age"
       <div class="index-cols">
         <div class="index-letter">A</div>
         <ul>
-          <li><a href="#adopt">add</a> · <a href="#secrets">add --encrypt</a></li>
+          <li><a href="#adopt">add</a> · <a href="#adopt">add --dry-run</a> · <a href="#secrets">add --encrypt</a></li>
           <li><a href="#templates">.chezmoi.os / .arch / .hostname</a></li>
           <li><a href="#mental-model">apply</a> · <a href="#attributes">apply --force</a></li>
           <li><a href="#scripts">application order</a></li>
@@ -997,6 +1043,7 @@ encryption = "age"
           <li><a href="#adopt">forget</a></li>
           <li><a href="#git-layer">git passthrough</a></li>
           <li><a href="#install">get.chezmoi.io one-liner</a></li>
+          <li><a href="#adopt">ignored · ignore (repo docs)</a></li>
           <li><a href="#git-layer">init · init --apply</a></li>
           <li><a href="#attributes">inconsistent state error</a></li>
         </ul>
@@ -1022,7 +1069,7 @@ encryption = "age"
         <ul>
           <li><a href="#install">sandbox (--source/--destination)</a></li>
           <li><a href="#scripts">sha256sum hash trick</a></li>
-          <li><a href="#adopt">source-path</a></li>
+          <li><a href="#adopt">source-path</a> · <a href="#adopt">second-owner (two repos)</a></li>
           <li><a href="#scripts">state · scriptState · state delete-bucket</a></li>
           <li><a href="#adopt">status ( M vs MM)</a></li>
           <li><a href="#attributes">symlink_</a></li>
@@ -1032,14 +1079,15 @@ encryption = "age"
           <li><a href="#templates">templates · .tmpl</a></li>
           <li><a href="#secrets">TOML top-level key footgun</a></li>
           <li><a href="#git-layer">update</a></li>
+          <li><a href="#adopt">unmanaged · "not managed"</a></li>
         </ul>
       </div>
     </section>
 
     <section id="quiz">
       <h2>Retrieval quiz</h2>
-      <p>Flashcard style: answer out loud first, then reveal. Aim for 12/14 before calling the guide done; anything marked Review, reread its section the next day.</p>
-      <div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0/14 answered</div>
+      <p>Flashcard style: answer out loud first, then reveal. Aim for 14/16 before calling the guide done; anything marked Review, reread its section the next day.</p>
+      <div class="quiz-score" id="quizScore" aria-live="polite">Score: 0 learned · 0 review · 0/16 answered</div>
       <div class="quiz-actions quiz-reset"><button id="quizReset" type="button">Reset score</button></div>
 
       <div class="quiz-item" data-q="1">
@@ -1112,6 +1160,16 @@ encryption = "age"
         <div class="quiz-answer">Tracked files = frozen vendored copy polluting every diff; a script clone isn't managed at all (no <code>managed</code>, no <code>exact</code> cleanup, no refresh). An external is managed content with an update policy (<code>refreshPeriod</code>), cached for offline applies. (<a href="#externals">§11</a>)</div>
         <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
       </div>
+      <div class="quiz-item" data-q="15">
+        <div class="quiz-q"><span class="qnum">Q15</span>A tool wrote a new file into <code>~/.claude</code>. Can you just run <code>chezmoi add</code> on it? Name the checks first.</div>
+        <div class="quiz-answer">Not blindly. Run <code>chezmoi source-path FILE</code> (already managed?), <code>chezmoi unmanaged DIR</code> (is the directory managed?), <code>git -C DIR rev-parse --show-toplevel</code> (does another repo own it?), and <code>chezmoi add --dry-run -v FILE</code> (what changes?). If the directory is its own git repo, commit there and skip chezmoi. (<a href="#adopt">§5</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
+      <div class="quiz-item" data-q="16">
+        <div class="quiz-q"><span class="qnum">Q16</span><code>chezmoi status</code> prints <code> A ROLLBACK.md</code> but you never added that file to <code>~</code>. Why, and what is the fix?</div>
+        <div class="quiz-answer">The file is a repo document in the source root, and every non-ignored source file is a target. <code>apply</code> would write <code>~/ROLLBACK.md</code>. Fix: list it in <code>.chezmoiignore</code>. <code>managed</code> and <code>status</code> then print nothing for it. (<a href="#adopt">§5</a>)</div>
+        <div class="quiz-actions"><button class="reveal" type="button">Reveal</button><button class="got" type="button">Got it</button><button class="missed" type="button">Review</button></div>
+      </div>
     </section>
 
     <section id="sources">
@@ -1131,7 +1189,7 @@ encryption = "age"
         <li><a href="https://github.com/twpayne/chezmoi/releases" target="_blank" rel="noopener">Releases</a> — v2.72.0 (2026-08-02) confirmed latest at check date; trust the changelog over this page as versions move.</li>
         <li><code>chezmoi help</code> and <code>man chezmoi</code> — exact flag semantics for your installed binary.</li>
       </ul>
-      <p class="mini">Compiled 2026-08-06 by Claude Code for Paul. Facts verified against the sources and live sandbox runs on that date.</p>
+      <p class="mini">Compiled 2026-08-06 by Claude Code for Paul. Facts verified against the sources and live sandbox runs on that date. §5 preflight, the matching troubleshooting rows, and Q15–Q16 added 2026-10-01 and checked on chezmoi v2.72.2.</p>
       <p class="print-only">Printed from the local chezmoi field guide.</p>
     </section>
   </main>
