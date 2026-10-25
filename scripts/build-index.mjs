@@ -63,6 +63,24 @@ for (const f of readdirSync(root).filter((f) => /\.(html|md|json)$/.test(f))) {
   }
 }
 
+// --- validate: every accent has a matching .accent-* rule in index.html.
+// An unknown or missing accent would render a class no CSS rule matches, and
+// the card would silently fall back to green. Keep this list in sync with the
+// .accent-* rules in index.html: adding a color means adding it in both places.
+// The allowlist also means only these fixed words ever reach the class
+// attribute, so the value needs no escaping.
+const ACCENTS = new Set([
+  "green", "amber", "cyan", "magenta", "blue", "violet", "red", "lime", "orange",
+]);
+for (const g of guides) {
+  if (!ACCENTS.has(g.accent)) {
+    console.warn(
+      `WARN: ${g.file} has accent ${JSON.stringify(g.accent)}; expected one of: ${[...ACCENTS].join(", ")}`
+    );
+    warned = true;
+  }
+}
+
 // --- build cards
 const cards = guides
   .map((g) => {

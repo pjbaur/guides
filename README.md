@@ -40,10 +40,16 @@ Fields per `guides.json` entry:
 - `verified` — badge text (e.g. `tmux 3.7b · 2026-08-22`), or `null` for the
   "checked when written" badge.
 - `accent` — card color: one of `green`, `amber`, `cyan`, `magenta`, `blue`,
-  `violet`, `red`, `lime`. Anything else silently falls back to green.
+  `violet`, `red`, `lime`, `orange`. The script checks this against its
+  `ACCENTS` allowlist and warns on anything else, including a missing value.
 
 The script warns in both directions: a `*-guide.html` file with no
-`guides.json` entry, and an entry whose file is missing from disk.
+`guides.json` entry, and an entry whose file is missing from disk. It also
+warns on an unknown `accent`.
+
+To add a new accent color, change two places together: add a
+`.accent-<name>` rule to the stylesheet in `index.html`, and add `<name>` to
+`ACCENTS` in `scripts/build-index.mjs`.
 
 ### Adding, renaming or removing a guide
 
