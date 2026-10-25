@@ -117,6 +117,9 @@ private-marked guide or a known personal marker appears in this repo.
 | [`cmux-user-guide.html`](cmux-user-guide.html) | Terminal workspace and pane orchestration | 2026-07-09 |
 | [`tmux-user-guide.html`](tmux-user-guide.html) | Terminal multiplexing — sessions that outlive your connection, the client/server model, panes, copy-mode, scripting | tmux 3.7b · 2026-08-22 |
 | [`bw150-user-guide.html`](bw150-user-guide.html) | ATorch BW150 electronic load — wiring, every mode, battery capacity and health, charger and cable tests, cycling, the apps | firmware 1.1.0 · screens 2026-09-05 |
+| [`de5000-user-guide.html`](de5000-user-guide.html) | DER EE DE-5000 dual-display LCR meter — the impedance vector, open/short calibration, series vs parallel, and reading D/Q/ESR/θ | — |
+| [`ups-user-guide.html`](ups-user-guide.html) | Keeping a Tripp Lite UPS honest from macOS — NUT's three-layer stack, launchd persistence, automated shutdown, battery calibration | NUT 2.8.5 · macOS 15.6 · 2026-09-03 |
+| [`usb-testers-user-guide.html`](usb-testers-user-guide.html) | Seven USB power meters compared from their manuals — voltage/current range, fast-charge protocol coverage, cable diagnostics, and a filterable pick by use case | 7 devices · manuals surveyed 2026-09-22 |
 | [`charging-protocols-user-guide.html`](charging-protocols-user-guide.html) | Charging protocols wire-level — BC 1.2, Type-C Current, USB PD through 3.2 (PPS, EPR, AVS), Quick Charge, VOOC and vendor protocols, UFCS, Qi/Qi2, negotiation simulator | USB PD R3.2 v1.2 · Qi 2.3 · 2026-09-25 |
 | [`loudness-user-guide.html`](loudness-user-guide.html) | Loudness — every dB suffix, the BS.1770 meter model, EBU R128/ATSC A/85/AES TD1008, what YouTube/Rumble/Spotify/Apple Podcasts do to your audio, live and post workflows with YouLean, dpMeter5, FinalLoud and Audio Hijack | YouLean 2.5.15 · dpMeter5 5.3.9 · Audio Hijack 4.6.0 · ffmpeg 9.0.2 · 2026-09-29 |
 | [`dictation-cheat-sheet.html`](dictation-cheat-sheet.html) | One-page Mac Dictation and Voice Control cheat sheet — layout words, punctuation, symbols, select/delete/move/correct, each command tagged tested, docs or reported from a spoken run | macOS 15.6 · spoken 2026-10-05 |
@@ -150,3 +153,8 @@ documentation, which every guide links to per-section.
 The tools these guides describe are separate projects under their own licenses,
 and quoted documentation belongs to those projects. Each guide links its sources
 inline and in a Sources section.
+
+Vendor screenshots, product photos and manual excerpts in the hardware guides
+(`bw150`, `de5000`, `ups`, `usb-testers`, `charging-protocols`) remain the
+copyright of their vendors. They are reproduced for commentary and are not
+covered by the MIT license.
