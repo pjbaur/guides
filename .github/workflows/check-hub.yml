@@ -5,13 +5,17 @@ on:
     branches: [main]
   pull_request:
 
+# Read-only token. The repo default is already read, but this keeps the
+# workflow read-only if that setting ever changes.
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
+      # No setup-node: the runner image ships Node, and build-index.mjs uses
+      # only node:fs, node:path and node:url.
       - name: index.html matches guides.json
         run: node scripts/build-index.mjs --check

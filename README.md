@@ -62,6 +62,11 @@ fails when the baked cards don't match `guides.json`; the mismatch warnings
 above also fail the check (a plain run only prints them). The same `--check`
 command works as a local pre-commit hook.
 
+The workflow runs with a read-only token (`permissions: contents: read`) and
+uses the runner image's preinstalled Node instead of `actions/setup-node`,
+since the script needs only `node:fs`, `node:path` and `node:url`. Its one
+only action dependency is `actions/checkout`.
+
 ### Hosting on Vercel
 
 [`vercel.json`](vercel.json) sets the security headers (CSP, HSTS, framing,
